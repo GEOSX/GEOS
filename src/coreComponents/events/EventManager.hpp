@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -95,6 +96,9 @@ public:
     static constexpr char const * cycleString() { return "cycle"; }
     static constexpr char const * currentSubEventString() { return "currentSubEvent"; }
 
+    static constexpr char const * timeOutputFormat() { return "timeOutputFormat"; }
+
+
     dataRepository::ViewKey time = { "time" };
     dataRepository::ViewKey dt = { "dt" };
     dataRepository::ViewKey cycle = { "cycle" };
@@ -112,7 +116,25 @@ public:
   /// @copydoc dataRepository::Group::getCatalog()
   static CatalogInterface::CatalogType & getCatalog();
 
+  /// enum class defining the format of the time output in the log
+  enum class TimeOutputFormat : integer
+  {
+    seconds,
+    minutes,
+    hours,
+    days,
+    years,
+    full
+  };
+
 private:
+
+
+  /**
+   * @brief ouput time information to the log
+   *
+   */
+  void outputTime() const;
 
   /// Min time for a simulation
   real64 m_minTime;
@@ -134,8 +156,19 @@ private:
 
   /// Current subevent index
   integer m_currentSubEvent;
+
+  /// time output type
+  TimeOutputFormat m_timeOutputFormat;
 };
 
+/// valid strings fort the time output enum.
+ENUM_STRINGS( EventManager::TimeOutputFormat,
+              "seconds",
+              "minutes",
+              "hours",
+              "days",
+              "years",
+              "full" );
 
 } /* namespace geos */
 

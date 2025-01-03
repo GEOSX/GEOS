@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -39,14 +40,14 @@ namespace ops
 {
 
 template< typename T >
-GEOS_HYPRE_DEVICE
+GEOS_HYPRE_HOST_DEVICE
 constexpr T identity( T const v )
 {
   return v;
 }
 
 template< typename T >
-GEOS_HYPRE_DEVICE
+GEOS_HYPRE_HOST_DEVICE
 constexpr T plus( T const lhs, T const rhs )
 {
   return lhs + rhs;
@@ -103,7 +104,7 @@ struct RowReducer
   F transform;
   R reduce;
 
-  auto GEOS_HYPRE_DEVICE
+  auto GEOS_HYPRE_HOST_DEVICE
   operator()( double acc, double v ) const
   {
     return reduce( acc, transform( v ) );
@@ -123,38 +124,38 @@ void rescaleMatrixRows( hypre_ParCSRMatrix * const mat,
   HYPRE_BigInt const firstLocalRow = hypre_ParCSRMatrixFirstRowIndex( mat );
   internal::RowReducer< F, R > reducer{ std::move( transform ), std::move( reduce ) };
 
-  forAll< execPolicy >( rowIndices.size(), [diag, offd, reducer, rowIndices, firstLocalRow] GEOS_HYPRE_DEVICE ( localIndex const i )
-  {
-    HYPRE_Int const localRow = LvArray::integerConversion< HYPRE_Int >( rowIndices[i] - firstLocalRow );
-    GEOS_ASSERT( 0 <= localRow && localRow < diag.nrow );
-
-    HYPRE_Real scale = 0.0;
-    for( HYPRE_Int k = diag.rowptr[localRow]; k < diag.rowptr[localRow + 1]; ++k )
-    {
-      scale = reducer( scale, diag.values[k] );
-    }
-    if( offd.ncol > 0 )
-    {
-      for( HYPRE_Int k = offd.rowptr[localRow]; k < offd.rowptr[localRow + 1]; ++k )
+  forAll< execPolicy >( rowIndices.size(), [diag, offd, reducer, rowIndices, firstLocalRow] GEOS_HYPRE_HOST_DEVICE ( localIndex const i )
       {
-        scale = reducer( scale, offd.values[k] );
-      }
-    }
+        HYPRE_Int const localRow = LvArray::integerConversion< HYPRE_Int >( rowIndices[i] - firstLocalRow );
+        GEOS_ASSERT( 0 <= localRow && localRow < diag.nrow );
 
-    GEOS_ASSERT_MSG( !isZero( scale ), "Zero row sum in row " << rowIndices[i] );
-    scale = 1.0 / scale;
-    for( HYPRE_Int k = diag.rowptr[localRow]; k < diag.rowptr[localRow + 1]; ++k )
-    {
-      diag.values[k] *= scale;
-    }
-    if( offd.ncol > 0 )
-    {
-      for( HYPRE_Int k = offd.rowptr[localRow]; k < offd.rowptr[localRow + 1]; ++k )
-      {
-        offd.values[k] *= scale;
-      }
-    }
-  } );
+        HYPRE_Real scale = 0.0;
+        for( HYPRE_Int k = diag.rowptr[localRow]; k < diag.rowptr[localRow + 1]; ++k )
+        {
+          scale = reducer( scale, diag.values[k] );
+        }
+        if( offd.ncol > 0 )
+        {
+          for( HYPRE_Int k = offd.rowptr[localRow]; k < offd.rowptr[localRow + 1]; ++k )
+          {
+            scale = reducer( scale, offd.values[k] );
+          }
+        }
+
+        GEOS_ASSERT_MSG( !isZero( scale ), "Zero row sum in row " << rowIndices[i] );
+        scale = 1.0 / scale;
+        for( HYPRE_Int k = diag.rowptr[localRow]; k < diag.rowptr[localRow + 1]; ++k )
+        {
+          diag.values[k] *= scale;
+        }
+        if( offd.ncol > 0 )
+        {
+          for( HYPRE_Int k = offd.rowptr[localRow]; k < offd.rowptr[localRow + 1]; ++k )
+          {
+            offd.values[k] *= scale;
+          }
+        }
+      } );
 }
 
 template< typename F, typename R >
@@ -168,29 +169,29 @@ void computeRowsSums( hypre_ParCSRMatrix const * const mat,
   HYPRE_Real * const values = hypre_VectorData( hypre_ParVectorLocalVector( vec ) );
   internal::RowReducer< F, R > reducer{ std::move( transform ), std::move( reduce ) };
 
-  forAll< execPolicy >( diag.nrow, [diag, offd, reducer, values] GEOS_HYPRE_DEVICE ( HYPRE_Int const localRow )
-  {
-    HYPRE_Real sum = 0.0;
-    for( HYPRE_Int k = diag.rowptr[localRow]; k < diag.rowptr[localRow + 1]; ++k )
-    {
-      sum = reducer( sum, diag.values[k] );
-    }
-    if( offd.ncol )
-    {
-      for( HYPRE_Int k = offd.rowptr[localRow]; k < offd.rowptr[localRow + 1]; ++k )
+  forAll< execPolicy >( diag.nrow, [diag, offd, reducer, values] GEOS_HYPRE_HOST_DEVICE ( HYPRE_Int const localRow )
       {
-        sum = reducer( sum, offd.values[k] );
-      }
-    }
-    values[localRow] = sum;
-  } );
+        HYPRE_Real sum = 0.0;
+        for( HYPRE_Int k = diag.rowptr[localRow]; k < diag.rowptr[localRow + 1]; ++k )
+        {
+          sum = reducer( sum, diag.values[k] );
+        }
+        if( offd.ncol )
+        {
+          for( HYPRE_Int k = offd.rowptr[localRow]; k < offd.rowptr[localRow + 1]; ++k )
+          {
+            sum = reducer( sum, offd.values[k] );
+          }
+        }
+        values[localRow] = sum;
+      } );
 }
 
 namespace internal
 {
 
 template< typename MAP >
-void GEOS_HYPRE_DEVICE
+void GEOS_HYPRE_HOST_DEVICE
 makeSortedPermutation( HYPRE_Int const * const indices,
                        HYPRE_Int const size,
                        HYPRE_Int * const perm,
@@ -200,7 +201,10 @@ makeSortedPermutation( HYPRE_Int const * const indices,
   {
     perm[i] = i; // std::iota
   }
-  auto const comp = [indices, map] GEOS_HYPRE_DEVICE ( HYPRE_Int i, HYPRE_Int j ) { return map( indices[i] ) < map( indices[j] ); };
+  auto const comp = [indices, map] GEOS_HYPRE_HOST_DEVICE ( HYPRE_Int i, HYPRE_Int j )
+  {
+    return map( indices[i] ) < map( indices[j] );
+  };
   LvArray::sortedArrayManipulation::makeSorted( perm, perm + size, comp );
 }
 
@@ -226,14 +230,20 @@ void addEntriesRestricted( hypre_CSRMatrix const * const src_mat,
   }
 
   // Allocate contiguous memory to store sorted column permutations of each row
-  array1d< HYPRE_Int > const src_permutation( hypre_CSRMatrixNumNonzeros( src_mat ) );
-  array1d< HYPRE_Int > const dst_permutation( hypre_CSRMatrixNumNonzeros( dst_mat ) );
+  array1d< HYPRE_Int > const src_permutation_arr( hypre_CSRMatrixNumNonzeros( src_mat ) );
+  array1d< HYPRE_Int > const dst_permutation_arr( hypre_CSRMatrixNumNonzeros( dst_mat ) );
 
+  arrayView1d< HYPRE_Int > const src_permutation = src_permutation_arr.toView();
+  arrayView1d< HYPRE_Int > const dst_permutation = dst_permutation_arr.toView();
   // Each thread adds one row of src into dst
   forAll< hypre::execPolicy >( dst.nrow,
-                               [src, src_colmap, dst, dst_colmap, scale,
-                                src_permutation = src_permutation.toView(),
-                                dst_permutation = dst_permutation.toView()] GEOS_HYPRE_DEVICE ( HYPRE_Int const localRow )
+                               [ src,
+                                 src_colmap,
+                                 dst,
+                                 dst_colmap,
+                                 scale,
+                                 src_permutation,
+                                 dst_permutation] GEOS_HYPRE_DEVICE ( HYPRE_Int const localRow )
   {
     HYPRE_Int const src_offset = src.rowptr[localRow];
     HYPRE_Int const src_length = src.rowptr[localRow + 1] - src_offset;

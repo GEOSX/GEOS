@@ -12,7 +12,6 @@ known models.
    Theory
    Voight
    Plasticity
-   TriaxialDriver
    ElasticIsotropic
    ElasticIsotropicPressureDependent
    ElasticTransverseIsotropic
@@ -22,3 +21,4 @@ known models.
    ModifiedCamClay
    DelftEgg
    Damage
+   ViscoPlasticity 

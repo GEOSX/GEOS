@@ -2,11 +2,12 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
@@ -57,7 +58,7 @@ struct SolidModelDiscretizationOpsOrthotropic : public SolidModelDiscretizationO
                        real64 ( &diagSumElementStiffness )[NUM_SUPPORT_POINTS*3] );
 
   GEOS_HOST_DEVICE
-  GEOS_FORCE_INLINE
+  inline
   void scaleParams( real64 const scale )
   {
     m_c11 *= scale;
@@ -91,7 +92,7 @@ struct SolidModelDiscretizationOpsOrthotropic : public SolidModelDiscretizationO
 template< int NUM_SUPPORT_POINTS,
           typename BASIS_GRADIENT >
 GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
+inline
 void SolidModelDiscretizationOpsOrthotropic::
   BTDB( BASIS_GRADIENT const & gradN,
         real64 const & detJxW,
@@ -139,7 +140,7 @@ void SolidModelDiscretizationOpsOrthotropic::
 template< int NUM_SUPPORT_POINTS,
           typename BASIS_GRADIENT >
 GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
+inline
 void SolidModelDiscretizationOpsOrthotropic::
   upperBTDB( BASIS_GRADIENT const & gradN,
              real64 const & detJxW,
@@ -187,7 +188,7 @@ void SolidModelDiscretizationOpsOrthotropic::
 template< int NUM_SUPPORT_POINTS,
           typename BASIS_GRADIENT >
 GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
+inline
 void SolidModelDiscretizationOpsOrthotropic::diagBTDB( BASIS_GRADIENT const & gradN,
                                                        real64 const & detJxW,
                                                        real64 (& diagElementStiffness)[NUM_SUPPORT_POINTS *3] )
@@ -220,7 +221,7 @@ void SolidModelDiscretizationOpsOrthotropic::diagBTDB( BASIS_GRADIENT const & gr
 template< int NUM_SUPPORT_POINTS,
           typename BASIS_GRADIENT >
 GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
+inline
 void SolidModelDiscretizationOpsOrthotropic::diagRowSumBTDB( BASIS_GRADIENT const & gradN,
                                                              real64 const & detJxW,
                                                              real64 ( & diagSumElementStiffness )[NUM_SUPPORT_POINTS*3] )

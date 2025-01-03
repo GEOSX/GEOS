@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -87,7 +88,6 @@ void createAMG( LinearSolverParameters const & params,
   GEOS_LAI_CHECK_ERROR( HYPRE_BoomerAMGSetTol( precond.ptr, 0.0 ) );
   GEOS_LAI_CHECK_ERROR( HYPRE_BoomerAMGSetMaxIter( precond.ptr, 1 ) );
   GEOS_LAI_CHECK_ERROR( HYPRE_BoomerAMGSetPrintLevel( precond.ptr, logLevel ) );
-  GEOS_LAI_CHECK_ERROR( HYPRE_BoomerAMGSetNumFunctions( precond.ptr, params.dofsPerNode ) );
 
   // Set maximum number of multigrid levels (default 25)
   GEOS_LAI_CHECK_ERROR( HYPRE_BoomerAMGSetMaxLevels( precond.ptr, LvArray::integerConversion< HYPRE_Int >( params.amg.maxLevels ) ) );
@@ -173,7 +173,9 @@ void createAMG( LinearSolverParameters const & params,
     GEOS_LAI_CHECK_ERROR( HYPRE_BoomerAMGSetPMaxElmts( precond.ptr, params.amg.interpolationMaxNonZeros ) );
   }
 
+  // Unknown-based AMG parameters
   GEOS_LAI_CHECK_ERROR( HYPRE_BoomerAMGSetNumFunctions( precond.ptr, params.amg.numFunctions ) );
+  GEOS_LAI_CHECK_ERROR( HYPRE_BoomerAMGSetFilterFunctions( precond.ptr, params.amg.separateComponents ) );
 
   if( params.amg.aggressiveNumLevels )
   {
@@ -182,6 +184,7 @@ void createAMG( LinearSolverParameters const & params,
     GEOS_LAI_CHECK_ERROR( HYPRE_BoomerAMGSetNumPaths( precond.ptr, params.amg.aggressiveNumPaths ) );
     GEOS_LAI_CHECK_ERROR( HYPRE_BoomerAMGSetAggNumLevels( precond.ptr, params.amg.aggressiveNumLevels ) );
     GEOS_LAI_CHECK_ERROR( HYPRE_BoomerAMGSetAggInterpType( precond.ptr, aggInterpType ) );
+    GEOS_LAI_CHECK_ERROR( HYPRE_BoomerAMGSetAggPMaxElmts( precond.ptr, params.amg.aggressiveInterpMaxNonZeros ) );
   }
 
   // Set coarsest level solver
@@ -338,32 +341,6 @@ void HyprePreconditioner::create( DofManager const * const dofManager )
 
 HypreMatrix const & HyprePreconditioner::setupPreconditioningMatrix( HypreMatrix const & mat )
 {
-  GEOS_MARK_FUNCTION;
-
-  if( m_params.preconditionerType == LinearSolverParameters::PreconditionerType::mgr && m_params.mgr.separateComponents )
-  {
-    GEOS_LAI_ASSERT_MSG( mat.dofManager() != nullptr, "MGR preconditioner requires a DofManager instance" );
-    HypreMatrix Pu;
-    HypreMatrix Auu;
-    {
-      Stopwatch timer( m_makeRestrictorTime );
-      mat.dofManager()->makeRestrictor( { { m_params.mgr.displacementFieldName, { 3, true } } }, mat.comm(), true, Pu );
-    }
-    {
-      Stopwatch timer( m_computeAuuTime );
-      mat.multiplyPtAP( Pu, Auu );
-    }
-    {
-      Stopwatch timer( m_componentFilterTime );
-      Auu.separateComponentFilter( m_precondMatrix, m_params.dofsPerNode );
-    }
-  }
-  else if( m_params.preconditionerType == LinearSolverParameters::PreconditionerType::amg && m_params.amg.separateComponents )
-  {
-    Stopwatch timer( m_componentFilterTime );
-    mat.separateComponentFilter( m_precondMatrix, m_params.dofsPerNode );
-    return m_precondMatrix;
-  }
   return mat;
 }
 
@@ -376,7 +353,6 @@ void HyprePreconditioner::setup( Matrix const & mat )
     m_precond = std::make_unique< HyprePrecWrapper >();
     create( mat.dofManager() );
   }
-
   HypreMatrix const & precondMat = setupPreconditioningMatrix( mat );
   Base::setup( precondMat );
 
@@ -384,16 +360,22 @@ void HyprePreconditioner::setup( Matrix const & mat )
   {
     LvArray::system::FloatingPointExceptionGuard guard( FE_ALL_EXCEPT );
 
-    // Perform setup of the MGR mechanics F-solver with SDC matrix, if used
-    if( m_mgrData && m_mgrData->mechSolver.ptr && m_mgrData->mechSolver.setup )
-    {
-//      GEOS_LAI_CHECK_ERROR( m_mgrData->mechSolver.setup( m_mgrData->mechSolver.ptr, m_precondMatrix.unwrapped(), nullptr, nullptr ) );
-    }
-
     // Perform setup of the main solver, if needed
     if( m_precond->setup )
     {
-      GEOS_LAI_CHECK_ERROR( m_precond->setup( m_precond->ptr, precondMat.unwrapped(), nullptr, nullptr ) );
+      HYPRE_Int const ierr = m_precond->setup( m_precond->ptr, precondMat.unwrapped(), nullptr, nullptr );
+      if( ierr != 0 )
+      {
+        if( m_params.logLevel > 0 )
+        {
+          HYPRE_PrintErrorMessages( precondMat.comm() );
+          GEOS_ERROR( "HyprePreconditioner setup failed" );
+        }
+        else
+        {
+          GEOS_ERROR( "HyprePreconditioner setup failed, use logLevel > 0 to get more information" );
+        }
+      }
     }
     else if( m_params.preconditionerType == LinearSolverParameters::PreconditionerType::direct )
     {
@@ -403,7 +385,9 @@ void HyprePreconditioner::setup( Matrix const & mat )
       {
         m_precond->destroy( m_precond->ptr );
       }
+#if defined(GEOS_USE_SUPERLU_DIST)
       hypre_SLUDistSetup( &m_precond->ptr, precondMat.unwrapped(), 0 );
+#endif
     }
   }
 }

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -86,7 +87,7 @@ void PetscVector::reset()
 void PetscVector::create( localIndex const localSize, MPI_Comm const & comm )
 {
   VectorBase::create( localSize, comm );
-  m_values.move( LvArray::MemorySpace::host, false );
+  m_values.move( hostMemorySpace, false );
   GEOS_LAI_CHECK_ERROR( VecCreateMPIWithArray( comm, 1, localSize, PETSC_DETERMINE, m_values.data(), &m_vec ) );
 }
 
@@ -125,7 +126,7 @@ void PetscVector::rand( unsigned const seed )
 void PetscVector::close()
 {
   GEOS_LAI_ASSERT( !closed() );
-  m_values.move( LvArray::MemorySpace::host, false );
+  m_values.move( hostMemorySpace, false );
   m_closed = true;
   GEOS_LAI_CHECK_ERROR( VecAssemblyBegin( m_vec ) );
   GEOS_LAI_CHECK_ERROR( VecAssemblyEnd( m_vec ) );
@@ -134,7 +135,7 @@ void PetscVector::close()
 void PetscVector::touch()
 {
   GEOS_LAI_ASSERT( ready() );
-  m_values.registerTouch( LvArray::MemorySpace::host );
+  m_values.registerTouch( hostMemorySpace );
 }
 
 void PetscVector::scale( real64 const scalingFactor )
@@ -385,4 +386,4 @@ MPI_Comm PetscVector::comm() const
   return comm;
 }
 
-} // end geosx
+} // end geos

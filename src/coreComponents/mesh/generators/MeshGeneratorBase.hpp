@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -19,18 +20,22 @@
 #ifndef GEOS_MESH_GENERATORS_MESHGENERATORBASE_HPP
 #define GEOS_MESH_GENERATORS_MESHGENERATORBASE_HPP
 
+#include "mesh/mpiCommunications/SpatialPartition.hpp"
+
 #include "dataRepository/Group.hpp"
 #include "dataRepository/WrapperBase.hpp"
 #include "codingUtilities/Utilities.hpp"
 #include "common/DataTypes.hpp"
 
+
 namespace geos
 {
 
-namespace dataRepository
-{}
-
-class DomainPartition;
+// This forward declaration prevents from exposing the internals of the module,
+// which are only accessed through some private functions signatures.
+// In order to avoid this forward declaration, we could expose an ABC
+// instead of exposing the MeshGeneratorBase implementation.
+class CellBlockManager;
 
 /**
  *  @class MeshGeneratorBase
@@ -49,11 +54,8 @@ public:
   explicit MeshGeneratorBase( string const & name,
                               Group * const parent );
 
-  /**
-   * @brief Return the name of the MeshGenerator in object catalog.
-   * @return string that contains the catalog name of the MeshGenerator
-   */
-  static string catalogName() { return "MeshGeneratorBase"; }
+  /// This function is used to expand any catalogs in the data structure
+  virtual void expandObjectCatalogs() override;
 
   /// using alias for templated Catalog meshGenerator type
   using CatalogInterface = dataRepository::CatalogInterface< MeshGeneratorBase, string const &, Group * const >;
@@ -74,9 +76,10 @@ public:
 
   /**
    * @brief Generate the mesh object the input mesh object.
-   * @param[in] domain the domain partition from which to construct the mesh object
+   * @param parent The parent group of the CellBlockManager.
+   * @param[in] partition The reference to spatial partition
    */
-  virtual void generateMesh( DomainPartition & domain ) = 0;
+  void generateMesh( Group & parent, SpatialPartition & partition );
 
   /**
    * @brief Describe which kind of block must be considered.
@@ -111,23 +114,53 @@ public:
   virtual void freeResources() {}
 
   /**
-   * @brief Get the name mapping between mesh volumic field names and internal GEOSX volumic field names.
+   * @brief Get the name mapping between mesh volumic field names and internal GEOS volumic field names.
    * @return The string to string mapping of field names.
    */
   std::map< string, string > const & getVolumicFieldsMapping() const { return m_volumicFields; }
 
   /**
-   * @brief Get the name mapping between mesh surfacic field names and internal GEOSX surfacic field names.
+   * @brief Get the name mapping between mesh surfacic field names and internal GEOS surfacic field names.
    * @return The string to string mapping of field names.
    */
   std::map< string, string > const & getSurfacicFieldsMapping() const { return m_surfacicFields; }
 
 protected:
-  /// Mapping from volumic field source to GEOSX field.
+  /// Mapping from volumic field source to GEOS field.
   std::map< string, string > m_volumicFields;
 
-  /// Mapping from surfacic field source to GEOSX field.
+  /// Mapping from surfacic field source to GEOS field.
   std::map< string, string > m_surfacicFields;
+
+private:
+  /**
+   * @brief Fill the cellBlockManager object .
+   * @param[inout] cellBlockManager the CellBlockManager that will receive the meshing information
+   * @param[in] partition The reference to spatial partition
+   */
+  virtual void fillCellBlockManager( CellBlockManager & cellBlockManager, SpatialPartition & partition )
+  {
+    GEOS_UNUSED_VAR( cellBlockManager );
+    GEOS_UNUSED_VAR( partition );
+    GEOS_ERROR( "Cell mesh generation not implemented for generator of this type" );
+  }
+
+  void attachWellInfo( CellBlockManager & cellBlockManager );
+
+  /**
+   * @brief Fill the particleBlockManager object .
+   * @param[inout] particleBlockManager the particleBlockManager that will receive the meshing information
+   * @param[in] particleManager The reference to the particle manager
+   * @param[in] partition The reference to spatial partition
+   */
+  virtual void fillParticleBlockManager( ParticleBlockManager & particleBlockManager, ParticleManager & particleManager, SpatialPartition const & partition )
+  {
+    GEOS_UNUSED_VAR( particleBlockManager );
+    GEOS_UNUSED_VAR( particleManager );
+    GEOS_UNUSED_VAR( partition );
+    GEOS_ERROR( "Particle mesh generation not implemented for generator of this type" );
+  }
+
 };
 }
 

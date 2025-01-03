@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -63,7 +64,7 @@ template< typename SUBREGION_TYPE,
           typename CONSTITUTIVE_TYPE,
           typename FE_TYPE >
 GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
+inline
 void ExplicitSmallStrain< SUBREGION_TYPE, CONSTITUTIVE_TYPE, FE_TYPE >::setup( localIndex const k,
                                                                                StackVariables & stack ) const
 {
@@ -89,7 +90,7 @@ template< typename SUBREGION_TYPE,
           typename CONSTITUTIVE_TYPE,
           typename FE_TYPE >
 GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
+inline
 void ExplicitSmallStrain< SUBREGION_TYPE, CONSTITUTIVE_TYPE, FE_TYPE >::quadraturePointKernel( localIndex const k,
                                                                                                localIndex const q,
                                                                                                StackVariables & stack ) const
@@ -100,11 +101,12 @@ void ExplicitSmallStrain< SUBREGION_TYPE, CONSTITUTIVE_TYPE, FE_TYPE >::quadratu
   real64 const detJ = m_finiteElementSpace.template getGradN< FE_TYPE >( k, q, stack.xLocal, dNdX );
   /// Macro to substitute in the shape function derivatives.
   real64 strain[6] = {0};
+  //real64 timeIncrement = 0.0;
   FE_TYPE::symmetricGradient( dNdX, stack.varLocal, strain );
 
   real64 stressLocal[ 6 ] = {0};
 #if UPDATE_STRESS == 2
-  m_constitutiveUpdate.smallStrainUpdate_StressOnly( k, q, strain, stressLocal );
+  m_constitutiveUpdate.smallStrainUpdate_StressOnly( k, q, m_dt, strain, stressLocal );
 #else
   m_constitutiveUpdate.smallStrainNoStateUpdate_StressOnly( k, q, strain, stressLocal );
 #endif
@@ -133,7 +135,7 @@ void ExplicitSmallStrain< SUBREGION_TYPE, CONSTITUTIVE_TYPE, FE_TYPE >::quadratu
 
   real64 stressLocal[ 6 ] = {0};
 #if UPDATE_STRESS == 2
-  m_constitutiveUpdate.smallStrainUpdate_StressOnly( k, q, strain, stressLocal );
+  m_constitutiveUpdate.smallStrainUpdate_StressOnly( k, q, m_dt, strain, stressLocal );
 #else
   m_constitutiveUpdate.smallStrainNoStateUpdate_StressOnly( k, q, strain, stressLocal );
 #endif
@@ -159,7 +161,7 @@ template< typename SUBREGION_TYPE,
           typename CONSTITUTIVE_TYPE,
           typename FE_TYPE >
 GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
+inline
 real64 ExplicitSmallStrain< SUBREGION_TYPE, CONSTITUTIVE_TYPE, FE_TYPE >::complete( localIndex const k,
                                                                                     StackVariables const & stack ) const
 {

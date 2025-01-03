@@ -20,14 +20,16 @@
         tasksPerNode="2"
         autoPartition="On"
         timeLimit="10"
-        strongScaling="{ 1, 2, 4, 8 }"/>
+        scaling="strong"
+        scaleList="{ 1, 2, 4, 8 }"/>
       <Run
         name="MPI"
-        nodes="1"
-        tasksPerNode="36"
         autoPartition="On"
         timeLimit="10"
-        strongScaling="{ 1, 2, 4, 8 }"/>
+        nodes="1"
+        tasksPerNode="36"
+        scaling="strong"
+        scaleList="{ 1, 2, 4, 8 }"/>
     </quartz>
 
     <lassen>
@@ -39,12 +41,24 @@
         timeLimit="10"/>
       <Run
         name="MPI_OMP_CUDA"
-        nodes="1"
-        tasksPerNode="4"
         autoPartition="On"
         timeLimit="10"
-        strongScaling="{ 1, 2, 4, 8 }"/>
+        nodes="1"
+        tasksPerNode="4"
+        scaling="strong"
+        scaleList="{ 1, 2, 4, 8 }"/>
     </lassen>
+    <crusher>
+      <Run
+        name="HIP"
+        autoPartition="On"
+        timeLimit="20"
+        nodes="1"
+        tasksPerNode="1"
+        scaling="weak"
+        meshSizes="{ 4000 }"
+        scaleList="{ 1, 2, 4, 8, 16, 32, 64 }"/>
+    </crusher>
   </Benchmarks>
 
   <Mesh>
@@ -54,9 +68,9 @@
       xCoords="{ 0, 10 }"
       yCoords="{ 0, 10 }"
       zCoords="{ 0, 10 }"
-      nx="{ 190 }"
-      ny="{ 190 }"
-      nz="{ 190 }"
+      nx="{ 10 }"
+      ny="{ 10 }"
+      nz="{ 10 }"
       cellBlockNames="{ cb1 }"/>
   </Mesh>
 

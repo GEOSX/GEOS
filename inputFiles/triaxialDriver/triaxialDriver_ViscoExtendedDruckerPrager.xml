@@ -1,0 +1,21 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <!-- SPHINX_TASK -->
+  <Tasks>
+    <TriaxialDriver
+      name="triaxialDriver"
+      material="ViscoExtendedDruckerPrager"
+      mode="mixedControl" 
+      axialControl="strainFunction"
+      radialControl="stressFunction"
+      initialStress="-10.e6"
+      steps="200" 
+      output="ViscoExtendedDruckerPragerResults.txt" />
+  </Tasks>
+  <!-- SPHINX_TASK_END -->
+
+  <Included>
+    <File name="./triaxialDriver_base.xml"/>
+  </Included>
+</Problem>

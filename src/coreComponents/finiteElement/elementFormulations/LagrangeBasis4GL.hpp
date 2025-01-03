@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 Total, S.A
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -307,6 +308,64 @@ public:
   constexpr static real64 gradient4( const real64 xi )
   {
     return (1.0/8.0)*(-3.0+xi*(-6.0+7.0*xi*(3.0+4.0*xi)));
+  }
+
+  /**
+   * @brief The gradient of the basis function for a support point evaluated at
+   *   a given support point. By symmetry, p is assumed to be in 0, ..., (N-1)/2
+   * @param q The index of the basis function
+   * @param p The index of the support point
+   * @return The gradient of basis function.
+   */
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
+  constexpr static real64 gradientAt( const int q,
+                                      const int p )
+  {
+    switch( q )
+    {
+      case 0:
+        switch( p )
+        {
+          case 0: return -5.0000000000000000000;
+          case 1: return -1.2409902530309828578;
+          case 2: return 0.37500000000000000000;
+        }
+        break;
+      case 1:
+        switch( p )
+        {
+          case 0: return 6.7565024887242400038;
+          case 1: return 0.0;
+          case 2: return -1.3365845776954533353;
+        }
+        break;
+      case 2:
+        switch( p )
+        {
+          case 0: return -2.6666666666666666667;
+          case 1: return 1.7457431218879390501;
+          case 2: return 0.0;
+        }
+        break;
+      case 3:
+        switch( p )
+        {
+          case 0: return 1.4101641779424266628;
+          case 1: return -0.7637626158259733344;
+          case 2: return 1.3365845776954533353;
+        }
+        break;
+      case 4:
+        switch( p )
+        {
+          case 0: return -0.50000000000000000000;
+          case 1: return 0.25900974696901714215;
+          case 2: return -0.37500000000000000000;
+        }
+        break;
+    }
+    return 0;
   }
 
   /**

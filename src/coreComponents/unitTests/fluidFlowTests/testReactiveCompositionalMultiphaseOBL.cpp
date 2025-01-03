@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -33,95 +34,97 @@ CommandLineOptions g_commandLineOptions;
 // Sphinx start after input XML
 
 char const * xmlInput =
-  "<Problem>\n"
-  "  <Solvers gravityVector=\"{ 0.0, 0.0, -9.81 }\">\n"
-  "    <ReactiveCompositionalMultiphaseOBL\n"
-  "                      name=\"compflow\"\n"
-  "                      logLevel=\"1\"\n"
-  "                      discretization=\"fluidTPFA\"\n"
-  "                      targetRegions=\"{ region }\"\n"
-  "                      componentNames=\"{N2, C10, C20}\"\n"
-  "                      enableEnergyBalance=\"0\"\n"
-  "                      maxCompFractionChange=\"1\"\n"
-  "                      numComponents=\"3\"\n"
-  "                      numPhases=\"2\"\n"
-  "                      OBLOperatorsTableFile=\"obl_3comp_static.txt\">\n"
-  "                                 \n"
-  "      <NonlinearSolverParameters newtonTol=\"1.0e-6\"\n"
-  "                                 newtonMaxIter=\"2\"/>\n"
-  "      <LinearSolverParameters solverType=\"gmres\"\n"
-  "                              krylovTol=\"1.0e-10\"/>\n"
-  "    </ReactiveCompositionalMultiphaseOBL>\n"
-  "  </Solvers>\n"
-  "  <Mesh>\n"
-  "    <InternalMesh name=\"mesh\"\n"
-  "                  elementTypes=\"{C3D8}\" \n"
-  "                  xCoords=\"{0, 3}\"\n"
-  "                  yCoords=\"{0, 1}\"\n"
-  "                  zCoords=\"{0, 1}\"\n"
-  "                  nx=\"{3}\"\n"
-  "                  ny=\"{1}\"\n"
-  "                  nz=\"{1}\"\n"
-  "                  cellBlockNames=\"{cb1}\"/>\n"
-  "  </Mesh>\n"
-  "  <NumericalMethods>\n"
-  "    <FiniteVolume>\n"
-  "      <TwoPointFluxApproximation name=\"fluidTPFA\"/>\n"
-  "    </FiniteVolume>\n"
-  "  </NumericalMethods>\n"
-  "  <ElementRegions>\n"
-  "    <CellElementRegion name=\"region\" cellBlocks=\"{cb1}\" materialList=\"{rock}\" />\n"
-  "  </ElementRegions>\n"
-  "  <Constitutive>\n"
-  "    <CompressibleSolidConstantPermeability name=\"rock\"\n"
-  "        solidModelName=\"nullSolid\"\n"
-  "        porosityModelName=\"rockPorosity\"\n"
-  "        permeabilityModelName=\"rockPerm\"/>\n"
-  "   <NullModel name=\"nullSolid\"/> \n"
-  "   <PressurePorosity name=\"rockPorosity\"\n"
-  "                     defaultReferencePorosity=\"0.05\"\n"
-  "                     referencePressure = \"0.0\"\n"
-  "                     compressibility=\"1.0e-9\"/>\n"
-  "  <ConstantPermeability name=\"rockPerm\"\n"
-  "                        permeabilityComponents=\"{2.0e-16, 2.0e-16, 2.0e-16}\"/> \n"
-  "  </Constitutive>\n"
-  "  <FieldSpecifications>\n"
-  "    <FieldSpecification name=\"initialPressure\"\n"
-  "               initialCondition=\"1\"\n"
-  "               setNames=\"{all}\"\n"
-  "               objectPath=\"ElementRegions/region/cb1\"\n"
-  "               fieldName=\"pressure\"\n"
-  "               functionName=\"initialPressureFunc\"\n"
-  "               scale=\"5e6\"/>\n"
-  "    <FieldSpecification name=\"initialComposition_N2\"\n"
-  "               initialCondition=\"1\"\n"
-  "               setNames=\"{all}\"\n"
-  "               objectPath=\"ElementRegions/region/cb1\"\n"
-  "               fieldName=\"globalCompFraction\"\n"
-  "               component=\"0\"\n"
-  "               scale=\"0.099\"/>\n"
-  "    <FieldSpecification name=\"initialComposition_C10\"\n"
-  "               initialCondition=\"1\"\n"
-  "               setNames=\"{all}\"\n"
-  "               objectPath=\"ElementRegions/region/cb1\"\n"
-  "               fieldName=\"globalCompFraction\"\n"
-  "               component=\"1\"\n"
-  "               scale=\"0.3\"/>\n"
-  "    <FieldSpecification name=\"initialComposition_C20\"\n"
-  "               initialCondition=\"1\"\n"
-  "               setNames=\"{all}\"\n"
-  "               objectPath=\"ElementRegions/region/cb1\"\n"
-  "               fieldName=\"globalCompFraction\"\n"
-  "               component=\"2\"\n"
-  "               scale=\"0.6\"/>\n"
-  "  </FieldSpecifications>\n"
-  "  <Functions>\n"
-  "    <TableFunction name=\"initialPressureFunc\"\n"
-  "                   inputVarNames=\"{elementCenter}\"\n"
-  "                   coordinates=\"{0.0, 3.0}\"\n"
-  "                   values=\"{1.0, 0.5}\"/>\n"
-  "  </Functions>"
-  "</Problem>";
+  R"xml(
+  <Problem>
+    <Solvers gravityVector="{ 0.0, 0.0, -9.81 }">
+      <ReactiveCompositionalMultiphaseOBL
+                        name="compflow"
+                        logLevel="1"
+                        discretization="fluidTPFA"
+                        targetRegions="{ region }"
+                        componentNames="{N2, C10, C20}"
+                        enableEnergyBalance="0"
+                        maxCompFractionChange="1"
+                        numComponents="3"
+                        numPhases="2"
+                        OBLOperatorsTableFile="obl_3comp_static.txt">
+
+        <NonlinearSolverParameters newtonTol="1.0e-6"
+                                   newtonMaxIter="2"/>
+        <LinearSolverParameters solverType="gmres"
+                                krylovTol="1.0e-10"/>
+      </ReactiveCompositionalMultiphaseOBL>
+    </Solvers>
+    <Mesh>
+      <InternalMesh name="mesh"
+                    elementTypes="{C3D8}"
+                    xCoords="{0, 3}"
+                    yCoords="{0, 1}"
+                    zCoords="{0, 1}"
+                    nx="{3}"
+                    ny="{1}"
+                    nz="{1}"
+                    cellBlockNames="{cb1}"/>
+    </Mesh>
+    <NumericalMethods>
+      <FiniteVolume>
+        <TwoPointFluxApproximation name="fluidTPFA"/>
+      </FiniteVolume>
+    </NumericalMethods>
+    <ElementRegions>
+      <CellElementRegion name="region" cellBlocks="{*}" materialList="{rock}" />
+    </ElementRegions>
+    <Constitutive>
+      <CompressibleSolidConstantPermeability name="rock"
+          solidModelName="nullSolid"
+          porosityModelName="rockPorosity"
+          permeabilityModelName="rockPerm"/>
+     <NullModel name="nullSolid"/>
+     <PressurePorosity name="rockPorosity"
+                       defaultReferencePorosity="0.05"
+                       referencePressure = "0.0"
+                       compressibility="1.0e-9"/>
+    <ConstantPermeability name="rockPerm"
+                          permeabilityComponents="{2.0e-16, 2.0e-16, 2.0e-16}"/>
+    </Constitutive>
+    <FieldSpecifications>
+      <FieldSpecification name="initialPressure"
+                 initialCondition="1"
+                 setNames="{all}"
+                 objectPath="ElementRegions/region/cb1"
+                 fieldName="pressure"
+                 functionName="initialPressureFunc"
+                 scale="5e6"/>
+      <FieldSpecification name="initialComposition_N2"
+                 initialCondition="1"
+                 setNames="{all}"
+                 objectPath="ElementRegions/region/cb1"
+                 fieldName="globalCompFraction"
+                 component="0"
+                 scale="0.099"/>
+      <FieldSpecification name="initialComposition_C10"
+                 initialCondition="1"
+                 setNames="{all}"
+                 objectPath="ElementRegions/region/cb1"
+                 fieldName="globalCompFraction"
+                 component="1"
+                 scale="0.3"/>
+      <FieldSpecification name="initialComposition_C20"
+                 initialCondition="1"
+                 setNames="{all}"
+                 objectPath="ElementRegions/region/cb1"
+                 fieldName="globalCompFraction"
+                 component="2"
+                 scale="0.6"/>
+    </FieldSpecifications>
+    <Functions>
+      <TableFunction name="initialPressureFunc"
+                     inputVarNames="{elementCenter}"
+                     coordinates="{0.0, 3.0}"
+                     values="{1.0, 0.5}"/>
+    </Functions>
+  </Problem>
+  )xml";
 
 char const * oblInput =
   "3 28 \n"
@@ -332,13 +335,13 @@ void testNumericalJacobian( ReactiveCompositionalMultiphaseOBL & solver,
   jacobian.zero();
 
   assembleFunction( jacobian.toViewConstSizes(), residual.toView() );
-  residual.move( LvArray::MemorySpace::host, false );
+  residual.move( hostMemorySpace, false );
 
   // copy the analytical residual
   array1d< real64 > residualOrig( residual );
 
   // create the numerical jacobian
-  jacobian.move( LvArray::MemorySpace::host );
+  jacobian.move( hostMemorySpace );
   CRSMatrix< real64, globalIndex > jacobianFD( jacobian );
   jacobianFD.zero();
 
@@ -361,11 +364,11 @@ void testNumericalJacobian( ReactiveCompositionalMultiphaseOBL & solver,
 
       arrayView1d< real64 > const & pres =
         subRegion.getField< fields::flow::pressure >();
-      pres.move( LvArray::MemorySpace::host, false );
+      pres.move( hostMemorySpace, false );
 
       arrayView2d< real64, compflow::USD_COMP > const & compFrac =
         subRegion.getField< fields::flow::globalCompFraction >();
-      compFrac.move( LvArray::MemorySpace::host, false );
+      compFrac.move( hostMemorySpace, false );
 
       for( localIndex ei = 0; ei < subRegion.size(); ++ei )
       {
@@ -378,11 +381,11 @@ void testNumericalJacobian( ReactiveCompositionalMultiphaseOBL & solver,
         {
           solver.resetStateToBeginningOfStep( domain );
 
-          pres.move( LvArray::MemorySpace::host, true );
+          pres.move( hostMemorySpace, true );
           real64 const dP = perturbParameter * ( pres[ei] + perturbParameter );
           pres[ei] += dP;
-#if defined(GEOSX_USE_CUDA)
-          pres.move( LvArray::MemorySpace::cuda, false );
+#if defined(GEOS_USE_CUDA)
+          pres.move( parallelDeviceMemorySpace, false );
 #endif
 
           solver.forDiscretizationOnMeshTargets( domain.getMeshBodies(),
@@ -414,10 +417,10 @@ void testNumericalJacobian( ReactiveCompositionalMultiphaseOBL & solver,
         {
           solver.resetStateToBeginningOfStep( domain );
 
-          compFrac.move( LvArray::MemorySpace::host, true );
+          compFrac.move( hostMemorySpace, true );
           compFrac[ei][jc] += perturbParameter;
-#if defined(GEOSX_USE_CUDA)
-          compFrac.move( LvArray::MemorySpace::cuda, false );
+#if defined(GEOS_USE_CUDA)
+          compFrac.move( parallelDeviceMemorySpace, false );
 #endif
 
 

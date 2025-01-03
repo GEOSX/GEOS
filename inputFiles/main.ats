@@ -1,0 +1,20 @@
+"""
+Primary ATS script
+"""
+import ats
+from pathlib import Path
+
+# Set default ats parameters
+glue(collection='')
+glue(checks='')
+glue(solvers='')
+glue(outputs='')
+glue(constitutive_models='')
+
+# Recursively search the child directories and add them to ATS
+root_path = Path(ats.tests.AtsTest.getOptions().get("atsRootDir"))
+Nr = len(root_path.parts)
+for path in root_path.rglob('*.ats'):
+    if (path.name != 'main.ats'):
+        glue(collection=path.parts[Nr + 1])
+        source(path.absolute())

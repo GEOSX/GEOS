@@ -1,0 +1,17 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Included>
+    <File name="./elas3D_benchmark_base.xml"/>
+  </Included>
+
+  <NumericalMethods>
+    <FiniteElements>
+      <FiniteElementSpace
+        name="FE1"
+        order="3"
+        formulation="SEM"/>
+    </FiniteElements>
+  </NumericalMethods>
+</Problem>
+

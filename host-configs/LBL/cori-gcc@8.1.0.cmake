@@ -24,12 +24,7 @@ set(MPI_Fortran_COMPILER ${MPI_HOME}/bin/mpifort CACHE PATH "")
 set(MPIEXEC              /usr/bin/srun CACHE PATH "")
 set(MPIEXEC_NUMPROC_FLAG "-n" CACHE STRING "")
 
-set(GEOSX_ENABLE_FPE OFF CACHE BOOL "" FORCE)
-set(GEOSX_TPL_DIR "/global/project/projectdirs/m1411/GEOSX/tpls/install-cori-gcc\@8.1.0-release-24-07-20" CACHE PATH "" )
-
-
-set(GEOSX_LINK_PREPEND_FLAG  "-Wl,--whole-archive"    CACHE STRING "" FORCE)
-set(GEOSX_LINK_POSTPEND_FLAG "-Wl,--no-whole-archive" CACHE STRING "" FORCE)
+set(GEOS_TPL_DIR "/global/project/projectdirs/m1411/GEOSX/tpls/install-cori-gcc\@8.1.0-release-24-07-20" CACHE PATH "" )
 
 set(ENABLE_SPHINX_EXECUTABLE OFF CACHE BOOL "")
 set(ENABLE_UNCRUSTIFY OFF CACHE BOOL "")
@@ -45,7 +40,7 @@ set(ENABLE_PAPI ON CACHE BOOL "")
 set(PAPI_PREFIX "/opt/cray/pe/papi/5.7.0.1" CACHE PATH "" FORCE)
 
 set(ENABLE_OPENMP ON CACHE BOOL "")
-set(CUDA_ENABLED OFF CACHE BOOL "")
+set(ENABLE_CUDA OFF CACHE BOOL "")
 
 set(ENABLE_TOTALVIEW_OUTPUT OFF CACHE BOOL "Enables Totalview custom view" FORCE)
 set(ENABLE_PETSC OFF CACHE BOOL "")

@@ -1,0 +1,18 @@
+import os
+from geos.ats.test_builder import TestDeck, RestartcheckParameters, generate_geos_tests
+
+restartcheck_params = {}
+restartcheck_params['atol'] = 0.0001
+restartcheck_params['rtol'] = 2e-05
+
+decks = [
+    TestDeck(
+        name="elas3D_vti_abc_smoke",
+        description='Elastic VTI wave solver, first-order FE, absorbing BC',
+        partitions=((1, 1, 1), (2, 2, 2)),
+        restart_step=100,
+        check_step=200,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params))
+]
+
+generate_geos_tests(decks)

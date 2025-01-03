@@ -2,11 +2,12 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
@@ -67,9 +68,9 @@ void PetscExport::exportCRS( PetscMatrix const & mat,
   Mat * submat; // needed by MatCreateSubMatrices API
   Mat localMatrix;
 
-  rowOffsets.move( LvArray::MemorySpace::host, false );
-  colIndices.move( LvArray::MemorySpace::host, false );
-  values.move( LvArray::MemorySpace::host, false );
+  rowOffsets.move( hostMemorySpace, false );
+  colIndices.move( hostMemorySpace, false );
+  values.move( hostMemorySpace, false );
 
   if( m_targetRank < 0 )
   {
@@ -120,7 +121,7 @@ void PetscExport::exportCRS( PetscMatrix const & mat,
 void PetscExport::exportVector( PetscVector const & vec,
                                 arrayView1d< real64 > const & values ) const
 {
-  values.move( LvArray::MemorySpace::host, false );
+  values.move( hostMemorySpace, false );
   if( m_targetRank >= 0 )
   {
     int const rank = MpiWrapper::commRank( vec.comm() );
@@ -135,7 +136,7 @@ void PetscExport::exportVector( PetscVector const & vec,
   else
   {
     arrayView1d< real64 const > const data = vec.values();
-    data.move( LvArray::MemorySpace::host, false );
+    data.move( hostMemorySpace, false );
     std::copy( data.begin(), data.end(), values.data() );
   }
 }
@@ -143,7 +144,7 @@ void PetscExport::exportVector( PetscVector const & vec,
 void PetscExport::importVector( arrayView1d< const real64 > const & values,
                                 PetscVector & vec ) const
 {
-  values.move( LvArray::MemorySpace::host, false );
+  values.move( hostMemorySpace, false );
   if( m_targetRank >= 0 )
   {
     int const rank = MpiWrapper::commRank( vec.comm() );

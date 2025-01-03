@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -19,8 +20,9 @@
 #include "FaceManager.hpp"
 
 #include "common/GEOS_RAJA_Interface.hpp"
-#include "common/Logger.hpp"
+#include "common/logger/Logger.hpp"
 #include "common/TimingMacros.hpp"
+#include "common/MpiWrapper.hpp"
 #include "LvArray/src/tensorOps.hpp"
 #include "mesh/BufferOps.hpp"
 #include "mesh/ElementRegionManager.hpp"
@@ -28,6 +30,7 @@
 #include "mesh/NodeManager.hpp"
 #include "mesh/utilities/MeshMapUtilities.hpp"
 #include "utilities/ComputationalGeometry.hpp"
+#include "CellElementRegion.hpp"
 
 namespace geos
 {
@@ -96,7 +99,7 @@ void FaceManager::buildSets( NodeManager const & nodeManager )
   } );
 }
 
-void FaceManager::setDomainBoundaryObjects()
+void FaceManager::setDomainBoundaryObjects( ElementRegionManager const & elemRegionManager )
 {
   arrayView1d< integer > const isFaceOnDomainBoundary = getDomainBoundaryIndicator();
   isFaceOnDomainBoundary.zero();
@@ -110,15 +113,46 @@ void FaceManager::setDomainBoundaryObjects()
       isFaceOnDomainBoundary( kf ) = 1;
     }
   } );
+
+  // We want to tag as boundary faces all the faces that touch a surface element (mainly a fracture),
+  // if this element only has one unique neighbor.
+  auto const f = [&]( SurfaceElementRegion const & region )
+  {
+    if( region.subRegionType() != SurfaceElementRegion::SurfaceSubRegionType::faceElement )
+    {
+      return;
+    }
+
+    FaceElementSubRegion const & subRegion = region.getUniqueSubRegion< FaceElementSubRegion >();
+    arrayView2d< localIndex const > const elem2dToFaces = subRegion.faceList().toViewConst();
+    for( int ei = 0; ei < elem2dToFaces.size( 0 ); ++ei )
+    {
+      if( elem2dToFaces[ei][0] == -1 || elem2dToFaces[ei][1] == -1 )
+      {
+        for( localIndex const & face: elem2dToFaces[ei] )
+        {
+          if( face != -1 )
+          {
+            isFaceOnDomainBoundary[face] = 1;
+          }
+        }
+      }
+    }
+  };
+  elemRegionManager.forElementRegions< SurfaceElementRegion >( f );
 }
 
 void FaceManager::setGeometricalRelations( CellBlockManagerABC const & cellBlockManager,
                                            ElementRegionManager const & elemRegionManager,
-                                           NodeManager const & nodeManager )
+                                           NodeManager const & nodeManager,
+                                           bool isBaseMeshLevel )
 {
   GEOS_MARK_FUNCTION;
 
-  resize( cellBlockManager.numFaces() );
+  if( isBaseMeshLevel )
+  {
+    resize( cellBlockManager.numFaces() );
+  }
 
   m_toNodesRelation.base() = cellBlockManager.getFaceToNodes();
   m_toEdgesRelation.base() = cellBlockManager.getFaceToEdges();
@@ -129,17 +163,63 @@ void FaceManager::setGeometricalRelations( CellBlockManagerABC const & cellBlock
                                                                          toCellBlock,
                                                                          m_toElements );
 
-  computeGeometry( nodeManager );
+  // Since the mappings of the current FaceManager instance were only filled based on the {face -> elements} mapping,
+  // they do not take into account any connection between the 3d elements and the 2d elements of fracture meshes.
+  // The following function adds those connections between the 3d and 2d elements.
+  auto const connect2dElems = [&]( localIndex er,
+                                   SurfaceElementRegion const & region )
+  {
+    if( region.subRegionType() != SurfaceElementRegion::SurfaceSubRegionType::faceElement )
+    {
+      return;
+    }
+
+    constexpr char err[] = "Internal error when trying to connect matrix mapping and fracture mapping. Face {} seems wrongly connected.";
+
+    FaceElementSubRegion const & subRegion = region.getUniqueSubRegion< FaceElementSubRegion >();
+    int const esr = 0;  // Since there's only on unique subregion, the index is always 0.
+    // The fracture subregion knows the faces it's connected to.
+    // And since a 2d element is connected to a given face, and since a face can only have 2 neighbors,
+    // then the second neighbor of the face is bound to be undefined (i.e. -1).
+    arrayView2d< localIndex const > const & elem2dToFaces = subRegion.faceList().toViewConst();
+    for( localIndex ei = 0; ei < elem2dToFaces.size( 0 ); ++ei )
+    {
+      for( localIndex const & faceIndex: elem2dToFaces[ei] )
+      {
+        if( faceIndex != -1 )
+        {
+          GEOS_ERROR_IF_EQ_MSG( m_toElements.m_toElementRegion( faceIndex, 0 ), -1, GEOS_FMT( err, faceIndex ) );
+          GEOS_ERROR_IF_EQ_MSG( m_toElements.m_toElementSubRegion( faceIndex, 0 ), -1, GEOS_FMT( err, faceIndex ) );
+          GEOS_ERROR_IF_EQ_MSG( m_toElements.m_toElementIndex( faceIndex, 0 ), -1, GEOS_FMT( err, faceIndex ) );
+
+          GEOS_ERROR_IF_NE_MSG( m_toElements.m_toElementRegion( faceIndex, 1 ), -1, GEOS_FMT( err, faceIndex ) );
+          GEOS_ERROR_IF_NE_MSG( m_toElements.m_toElementSubRegion( faceIndex, 1 ), -1, GEOS_FMT( err, faceIndex ) );
+          GEOS_ERROR_IF_NE_MSG( m_toElements.m_toElementIndex( faceIndex, 1 ), -1, GEOS_FMT( err, faceIndex ) );
+
+          m_toElements.m_toElementRegion( faceIndex, 1 ) = er;
+          m_toElements.m_toElementSubRegion( faceIndex, 1 ) = esr;
+          m_toElements.m_toElementIndex( faceIndex, 1 ) = ei;
+        }
+      }
+    }
+  };
+  // Connecting all the 3d elements (information is already in the m_toElements mappings) and all the 2d elements.
+  elemRegionManager.forElementRegionsComplete< SurfaceElementRegion >( connect2dElems );
+
+  if( isBaseMeshLevel )
+  {
+    computeGeometry( nodeManager );
+  }
 }
 
 void FaceManager::setupRelatedObjectsInRelations( NodeManager const & nodeManager,
                                                   EdgeManager const & edgeManager,
-                                                  ElementRegionManager const & elementRegionManager )
+                                                  ElementRegionManager const & elemRegionManager )
 {
   m_toNodesRelation.setRelatedObject( nodeManager );
   m_toEdgesRelation.setRelatedObject( edgeManager );
 
-  m_toElements.setElementRegionManager( elementRegionManager );
+  m_toElements.setElementRegionManager( elemRegionManager );
 }
 
 void FaceManager::computeGeometry( NodeManager const & nodeManager )
@@ -196,7 +276,8 @@ void FaceManager::sortAllFaceNodes( NodeManager const & nodeManager,
     // The face should be connected to at least one element.
     if( facesToElements( faceIndex, 0 ) < 0 && facesToElements( faceIndex, 1 ) < 0 )
     {
-      GEOS_ERROR( "Face " << faceIndex << " is not connected to an element." );
+      GEOS_ERROR( getDataContext() << ": Face " << faceIndex <<
+                  " is not connected to any cell. You might have an invalid mesh." );
     }
 
     // Take the first defined face-to-(elt/region/sub region) to sorting direction.
@@ -208,10 +289,17 @@ void FaceManager::sortAllFaceNodes( NodeManager const & nodeManager,
 
     if( er < 0 || esr < 0 || ei < 0 )
     {
-      GEOS_ERROR( GEOS_FMT( "Face {} is connected to an invalid element ({}/{}/{}).", faceIndex, er, esr, ei ) );
+      GEOS_ERROR( GEOS_FMT( "{0}: Face {1} is connected to an invalid element ({2}/{3}/{4}).",
+                            getDataContext().toString(), faceIndex, er, esr, ei ) );
     }
 
-    sortFaceNodes( X, elemCenter[er][esr][ei], facesToNodes[faceIndex] );
+    try
+    {
+      sortFaceNodes( X, elemCenter[er][esr][ei], facesToNodes[faceIndex] );
+    } catch( std::runtime_error const & e )
+    {
+      throw std::runtime_error( getDataContext().toString() + ": " + e.what() );
+    }
   } );
 }
 
@@ -220,7 +308,7 @@ void FaceManager::sortFaceNodes( arrayView2d< real64 const, nodes::REFERENCE_POS
                                  Span< localIndex > const faceNodes )
 {
   localIndex const numFaceNodes = LvArray::integerConversion< localIndex >( faceNodes.size() );
-  GEOS_ERROR_IF_GT_MSG( numFaceNodes, MAX_FACE_NODES, "Node per face limit exceeded" );
+  GEOS_THROW_IF_GT_MSG( numFaceNodes, MAX_FACE_NODES, "The number of maximum nodes allocated per cell face has been reached.", std::runtime_error );
 
   localIndex const firstNodeIndex = faceNodes[0];
 
@@ -279,7 +367,6 @@ void FaceManager::sortFaceNodes( arrayView2d< real64 const, nodes::REFERENCE_POS
     }
 
     std::sort( thetaOrder, thetaOrder + numFaceNodes );
-
     // Reorder nodes on face
     for( localIndex n = 0; n < numFaceNodes; ++n )
     {
@@ -430,6 +517,9 @@ localIndex FaceManager::unpackUpDownMaps( buffer_unit_type const * & buffer,
                                      packList,
                                      m_toElements.getElementRegionManager(),
                                      overwriteUpMaps );
+
+  GEOS_ERROR_IF_NE( m_unmappedGlobalIndicesInToNodes.size(), 0 );
+  GEOS_ERROR_IF_NE( m_unmappedGlobalIndicesInToEdges.size(), 0 );
 
   return unPackedSize;
 }

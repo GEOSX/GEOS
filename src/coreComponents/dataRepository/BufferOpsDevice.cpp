@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -87,15 +88,16 @@ template< bool DO_PACKING, typename T, int NDIM, int USD >
 typename std::enable_if< can_memcpy< T >, localIndex >::type
 PackDataDevice( buffer_unit_type * & buffer,
                 ArrayView< T const, NDIM, USD > const & var,
-                parallelDeviceEvents & events )
+                parallelDeviceEvents & GEOS_UNUSED_PARAM( events ) )
 {
   if( DO_PACKING )
   {
-    parallelDeviceStream stream;
-    events.emplace_back( forAll< parallelDeviceAsyncPolicy<> >( stream, var.size(), [=] GEOS_DEVICE ( localIndex ii )
+//    parallelDeviceStream stream;
+//    events.emplace_back( forAll< parallelDeviceAsyncPolicy<> >( stream, var.size(), [=] GEOS_DEVICE ( localIndex ii )
+    forAll< parallelDevicePolicy<> >( var.size(), [=] GEOS_DEVICE ( localIndex ii )
     {
       reinterpret_cast< std::remove_const_t< T > * >( buffer )[ ii ] = var.data()[ ii ];
-    } ) );
+    } );
   }
   localIndex packedSize = var.size() * sizeof(T);
   if( DO_PACKING )
@@ -121,13 +123,14 @@ template< typename T, int NDIM, int USD >
 typename std::enable_if< can_memcpy< T >, localIndex >::type
 UnpackDataDevice( buffer_unit_type const * & buffer,
                   ArrayView< T, NDIM, USD > const & var,
-                  parallelDeviceEvents & events )
+                  parallelDeviceEvents & GEOS_UNUSED_PARAM( events ) )
 {
-  parallelDeviceStream stream;
-  events.emplace_back( forAll< parallelDeviceAsyncPolicy<> >( stream, var.size(), [=] GEOS_DEVICE ( localIndex ii )
+  // parallelDeviceStream stream;
+  // events.emplace_back( forAll< parallelDeviceAsyncPolicy<> >( stream, var.size(), [=] GEOS_DEVICE ( localIndex ii )
+  forAll< parallelDevicePolicy<> >( var.size(), [=] GEOS_DEVICE ( localIndex ii )
   {
     var.data()[ ii ] = reinterpret_cast< const T * >( buffer )[ ii ];
-  } ) );
+  } );
   localIndex packedSize = var.size() * sizeof(T);
   buffer += var.size() * sizeof(T);
   return packedSize;
@@ -210,22 +213,76 @@ typename std::enable_if< can_memcpy< T >, localIndex >::type
 UnpackDataByIndexDevice ( buffer_unit_type const * & buffer,
                           ArrayView< T, NDIM, USD > const & var,
                           T_INDICES const & indices,
-                          parallelDeviceEvents & events )
+                          parallelDeviceEvents & events,
+                          MPI_Op op )
 {
   localIndex numIndices = indices.size();
   localIndex sliceSize = var.size() / var.size( 0 );
   localIndex unpackSize = numIndices * sliceSize * sizeof( T );
   T const * devBuffer = reinterpret_cast< T const * >( buffer );
   parallelDeviceStream stream;
-  events.emplace_back( forAll< parallelDeviceAsyncPolicy<> >( stream, numIndices, [=] GEOS_DEVICE ( localIndex const ii )
+  if( op == MPI_SUM )
   {
-    T const * threadBuffer = &devBuffer[ ii * sliceSize ];
-    LvArray::forValuesInSlice( var[ indices[ ii ] ], [&threadBuffer] GEOS_DEVICE ( T & value )
+    events.emplace_back( forAll< parallelDeviceAsyncPolicy<> >( stream, numIndices, [=] GEOS_DEVICE ( localIndex const ii )
     {
-      value = *threadBuffer;
-      ++threadBuffer;
-    } );
-  } ) );
+      T const * threadBuffer = &devBuffer[ ii * sliceSize ];
+      LvArray::forValuesInSlice( var[ indices[ ii ] ], [&threadBuffer] GEOS_DEVICE ( T & value )
+      {
+        value += *threadBuffer;
+        ++threadBuffer;
+      } );
+    } ) );
+  }
+  else if( op == MPI_REPLACE )
+  {
+    events.emplace_back( forAll< parallelDeviceAsyncPolicy<> >( stream, numIndices, [=] GEOS_DEVICE ( localIndex const ii )
+    {
+      T const * threadBuffer = &devBuffer[ ii * sliceSize ];
+      LvArray::forValuesInSlice( var[ indices[ ii ] ], [&threadBuffer] GEOS_DEVICE ( T & value )
+      {
+        value = *threadBuffer;
+        ++threadBuffer;
+      } );
+    } ) );
+  }
+  else if( op == MPI_MAX )
+  {
+    events.emplace_back( forAll< parallelDeviceAsyncPolicy<> >( stream, numIndices, [=] GEOS_DEVICE ( localIndex const ii )
+    {
+      T const * threadBuffer = &devBuffer[ ii * sliceSize ];
+      int count = 0;
+      real64 LHSNormSquared = 0.0, RHSNormSquared = 0.0;
+
+      // Identify if existing value or incoming value has higher norm
+      LvArray::forValuesInSlice( var[ indices[ ii ] ], [&threadBuffer, &LHSNormSquared, &RHSNormSquared, &count] GEOS_DEVICE ( T & value )
+      {
+        LHSNormSquared += value * value; // "value" can be an R1Tensor, in which case this becomes the dot product
+        RHSNormSquared += (*threadBuffer) * (*threadBuffer);
+        ++threadBuffer;
+        ++count;
+      } );
+
+      // Roll back threadBuffer
+      for( int i=0; i<count; i++ )
+      {
+        --threadBuffer;
+      }
+
+      // Load in the buffer if it had higher norm
+      if( LHSNormSquared < RHSNormSquared )
+      {
+        LvArray::forValuesInSlice( var[ indices[ ii ] ], [&threadBuffer] GEOS_DEVICE ( T & value )
+        {
+          value = *threadBuffer;
+          ++threadBuffer;
+        } );
+      }
+    } ) );
+  }
+  else
+  {
+    GEOS_ERROR( "Unsupported MPI operator! MPI_SUM, MPI_REPLACE and MPI_MAX are supported." );
+  }
 
   buffer += unpackSize;
   return unpackSize;
@@ -236,7 +293,8 @@ typename std::enable_if< can_memcpy< T >, localIndex >::type
 UnpackByIndexDevice ( buffer_unit_type const * & buffer,
                       ArrayView< T, NDIM, USD > const & var,
                       T_INDICES const & indices,
-                      parallelDeviceEvents & events )
+                      parallelDeviceEvents & events,
+                      MPI_Op op )
 {
   size_t typeSize = sizeof( T );
   localIndex strides[NDIM];
@@ -248,7 +306,7 @@ UnpackByIndexDevice ( buffer_unit_type const * & buffer,
     buffer += typeSize - misalignment;
   }
   unpackSize += typeSize - 1;
-  unpackSize += UnpackDataByIndexDevice( buffer, var, indices, events );
+  unpackSize += UnpackDataByIndexDevice( buffer, var, indices, events, op );
   return unpackSize;
 }
 
@@ -279,7 +337,8 @@ UnpackByIndexDevice ( buffer_unit_type const * & buffer,
     ( buffer_unit_type const * & buffer, \
     ArrayView< TYPE, NDIM, USD > const & var, \
     arrayView1d< const localIndex > const & indices, \
-    parallelDeviceEvents & events ); \
+    parallelDeviceEvents & events, \
+    MPI_Op op ); \
     \
   template localIndex PackDataDevice< true, TYPE, NDIM, USD > \
     ( buffer_unit_type * &buffer, \
@@ -307,7 +366,8 @@ UnpackByIndexDevice ( buffer_unit_type const * & buffer,
     ( buffer_unit_type const * & buffer, \
     ArrayView< TYPE, NDIM, USD > const & var, \
     arrayView1d< const localIndex > const & indices, \
-    parallelDeviceEvents & events )
+    parallelDeviceEvents & events, \
+    MPI_Op op )
 
 #define DECLARE_PACK_UNPACK_UP_TO_2D( TYPE ) \
   DECLARE_PACK_UNPACK( TYPE, 1, 0 ); \

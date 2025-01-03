@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -63,6 +64,10 @@ public:
 
   /// The number of nodes/support points per element.
   constexpr static localIndex numNodes = 5;
+
+  /// The number of faces/support points per element.
+  constexpr static localIndex numFaces = 5;
+
   /// The maximum number of support points per element.
   constexpr static localIndex maxSupportPoints = numNodes;
 
@@ -72,6 +77,7 @@ public:
   /// The number of sampling points per element.
   constexpr static int numSamplingPoints = numSamplingPointsPerDirection * numSamplingPointsPerDirection * numSamplingPointsPerDirection;
 
+  GEOS_HOST_DEVICE
   virtual ~H1_Pyramid_Lagrange1_Gauss5() override
   {}
 
@@ -162,10 +168,42 @@ public:
    *   point.
    */
   GEOS_HOST_DEVICE
-  GEOS_FORCE_INLINE
+  inline
   static void calcN( localIndex const q,
                      StackVariables const & stack,
                      real64 ( &N )[numNodes] );
+
+  /**
+   * @brief Calculate shape functions values for each support face at a
+   *   given point in the parent space.
+   * @param pointCoord coordinates of the given point.
+   * @param N An array to pass back the shape function values for each support
+   *   face.
+   */
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
+  static void calcFaceBubbleN( real64 const (&pointCoord)[3],
+                               real64 (& N)[numFaces] )
+  {
+    GEOS_UNUSED_VAR( pointCoord, N );
+    GEOS_ERROR( "Unsupported bubble functions for pyramid elements" );
+  }
+
+  /**
+   * @brief Calculate shape functions values for each support face at a
+   *   quadrature point.
+   * @param q Index of the quadrature point.
+   * @param N An array to pass back the shape function values for each support
+   *   point.
+   */
+  GEOS_HOST_DEVICE
+  inline
+  static void calcFaceBubbleN( localIndex const q,
+                               real64 (& N)[numFaces] )
+  {
+    GEOS_UNUSED_VAR( q, N );
+    GEOS_ERROR( "Unsupported bubble functions for pyramid elements" );
+  }
 
   /**
    * @brief Calculate the shape functions derivatives wrt the physical
@@ -192,11 +230,25 @@ public:
    * @return The determinant of the parent/physical transformation matrix.
    */
   GEOS_HOST_DEVICE
-  GEOS_FORCE_INLINE
+  inline
   static real64 calcGradN( localIndex const q,
                            real64 const (&X)[numNodes][3],
                            StackVariables const & stack,
                            real64 ( &gradN )[numNodes][3] );
+
+  /**
+   * @brief Calculate the shape bubble function derivatives wrt the physical
+   *   coordinates.
+   * @param q Index of the quadrature point.
+   * @param X Array containing the coordinates of the support points.
+   * @param gradN Array to contain the shape bubble function derivatives for all
+   *   support points at the coordinates of the quadrature point @p q.
+   * @return The determinant of the parent/physical transformation matrix.
+   */
+  GEOS_HOST_DEVICE
+  static real64 calcGradFaceBubbleN( localIndex const q,
+                                     real64 const (&X)[numNodes][3],
+                                     real64 ( &gradN )[numFaces][3] );
 
   /**
    * @brief Calculate the integration weights for a quadrature point.
@@ -208,6 +260,20 @@ public:
   GEOS_HOST_DEVICE
   static real64 transformedQuadratureWeight( localIndex const q,
                                              real64 const (&X)[numNodes][3] );
+
+  /**
+   * @brief Calculate the integration weights for a quadrature point.
+   * @param q Index of the quadrature point.
+   * @param X Array containing the coordinates of the support points.
+   * @param stack Variables allocated on the stack as filled by @ref setupStack.
+   * @return The product of the quadrature rule weight and the determinate of
+   *   the parent/physical transformation matrix.
+   */
+  GEOS_HOST_DEVICE
+  static real64 transformedQuadratureWeight( localIndex const q,
+                                             real64 const (&X)[numNodes][3],
+                                             StackVariables const & stack )
+  { GEOS_UNUSED_VAR( stack ); return transformedQuadratureWeight( q, X ); }
 
   /**
    * @brief Calculates the isoparametric "Jacobian" transformation
@@ -255,7 +321,7 @@ private:
    */
   template< typename T >
   GEOS_HOST_DEVICE
-  GEOS_FORCE_INLINE
+  inline
   constexpr static T linearMap( T const i, T const j )
   {
     return i + 2 * j;
@@ -268,7 +334,7 @@ private:
    * @return parent coordinate in the xi0 direction.
    */
   GEOS_HOST_DEVICE
-  GEOS_FORCE_INLINE
+  inline
   constexpr static real64 parentCoords0( localIndex const a )
   {
     return -1.0 + 2.0 * ( a & 1 ) + 0.25 * ( a & 4 );
@@ -281,7 +347,7 @@ private:
    * @return parent coordinate in the xi1 direction.
    */
   GEOS_HOST_DEVICE
-  GEOS_FORCE_INLINE
+  inline
   constexpr static real64 parentCoords1( localIndex const a )
   {
     return -1.0 + ( a & 2 ) + 0.25 * ( a & 4 );
@@ -294,7 +360,7 @@ private:
    * @return parent coordinate in the xi2 direction.
    */
   GEOS_HOST_DEVICE
-  GEOS_FORCE_INLINE
+  inline
   constexpr static real64 parentCoords2( localIndex const a )
   {
     return -1.0 + 0.5 * ( a & 4 );
@@ -307,7 +373,7 @@ private:
    * @return parent coordinate in the xi0 direction.
    */
   GEOS_HOST_DEVICE
-  GEOS_FORCE_INLINE
+  inline
   constexpr static real64 quadratureParentCoords0( localIndex const q )
   {
     return parentCoords0( q ) * quadratureCrossSectionCoord;
@@ -320,7 +386,7 @@ private:
    * @return parent coordinate in the xi1 direction.
    */
   GEOS_HOST_DEVICE
-  GEOS_FORCE_INLINE
+  inline
   constexpr static real64 quadratureParentCoords1( localIndex const q )
   {
     return parentCoords1( q ) * quadratureCrossSectionCoord;
@@ -333,7 +399,7 @@ private:
    * @return parent coordinate in the xi2 direction.
    */
   GEOS_HOST_DEVICE
-  GEOS_FORCE_INLINE
+  inline
   constexpr static real64 quadratureParentCoords2( localIndex const q )
   {
     return quadratureLongitudinalCoordNeg + 0.5 * ( 1 + parentCoords2( q ) ) * quadratureLongitudinalCoordDelta;
@@ -345,7 +411,7 @@ private:
    * @return The quadrature rule weight.
    */
   GEOS_HOST_DEVICE
-  GEOS_FORCE_INLINE
+  inline
   constexpr static real64 quadratureWeight( localIndex const q )
   {
     return weight + 0.5 * ( 1 + parentCoords2( q ) ) * weightDelta;
@@ -382,7 +448,7 @@ private:
 /// @cond Doxygen_Suppress
 
 GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
+inline
 void
 H1_Pyramid_Lagrange1_Gauss5::
   jacobianTransformation( int const q,
@@ -429,7 +495,7 @@ H1_Pyramid_Lagrange1_Gauss5::
 //*************************************************************************************************
 
 GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
+inline
 void
 H1_Pyramid_Lagrange1_Gauss5::
   applyJacobianTransformationToShapeFunctionsDerivatives( int const q,
@@ -477,7 +543,7 @@ H1_Pyramid_Lagrange1_Gauss5::
 //*************************************************************************************************
 
 GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
+inline
 void
 H1_Pyramid_Lagrange1_Gauss5::
   calcN( real64 const ( &pointCoord )[3],
@@ -491,7 +557,7 @@ H1_Pyramid_Lagrange1_Gauss5::
 }
 
 GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
+inline
 void
 H1_Pyramid_Lagrange1_Gauss5::
   calcN( localIndex const q,
@@ -505,7 +571,7 @@ H1_Pyramid_Lagrange1_Gauss5::
 }
 
 GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
+inline
 void H1_Pyramid_Lagrange1_Gauss5::
   calcN( localIndex const q,
          StackVariables const & GEOS_UNUSED_PARAM( stack ),
@@ -517,7 +583,7 @@ void H1_Pyramid_Lagrange1_Gauss5::
 //*************************************************************************************************
 
 GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
+inline
 real64 H1_Pyramid_Lagrange1_Gauss5::calcGradN( localIndex const q,
                                                real64 const (&X)[numNodes][3],
                                                real64 (& gradN)[numNodes][3] )
@@ -534,7 +600,7 @@ real64 H1_Pyramid_Lagrange1_Gauss5::calcGradN( localIndex const q,
 }
 
 GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
+inline
 real64 H1_Pyramid_Lagrange1_Gauss5::
   calcGradN( localIndex const q,
              real64 const (&X)[numNodes][3],
@@ -544,10 +610,22 @@ real64 H1_Pyramid_Lagrange1_Gauss5::
   return calcGradN( q, X, gradN );
 }
 
+GEOS_HOST_DEVICE
+inline
+real64
+H1_Pyramid_Lagrange1_Gauss5::calcGradFaceBubbleN( localIndex const q,
+                                                  real64 const (&X)[numNodes][3],
+                                                  real64 (& gradN)[numFaces][3] )
+{
+  GEOS_UNUSED_VAR( q, X, gradN );
+  GEOS_ERROR( "Unsupported bubble functions for pyramid elements" );
+  return 0.0;
+}
+
 //*************************************************************************************************
 
 GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
+inline
 real64
 H1_Pyramid_Lagrange1_Gauss5::
   transformedQuadratureWeight( localIndex const q,

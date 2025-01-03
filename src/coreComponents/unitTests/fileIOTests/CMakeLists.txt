@@ -1,45 +1,23 @@
-#
 # Specify list of tests
-#
+set( geosx_fileio_tests testHDFFile.cpp )
 
-set(geosx_fileio_tests
-   testHDFFile.cpp
-   )
+set( tplDependencyList ${parallelDeps} gtest )
 
-set( dependencyList gtest hdf5 )
+set( dependencyList mainInterface )
 
-if ( GEOSX_BUILD_SHARED_LIBS )
-  set (dependencyList ${dependencyList} geosx_core )
-else()
-  set (dependencyList ${dependencyList} ${geosx_core_libs} )
-endif()
+geos_decorate_link_dependencies( LIST decoratedDependencies
+                                 DEPENDENCIES ${dependencyList} )
 
-if ( ENABLE_CUDA )
-  set( dependencyList ${dependencyList} cuda )
-endif()
-
-if( ENABLE_CUDA_NVTOOLSEXT )
-  set( dependencyList ${dependencyList} CUDA::nvToolsExt )
-endif()
-
-if ( ENABLE_OPENMP )
-  set( dependencyList ${dependencyList} openmp )
-endif()
-
-#
 # Add gtest C++ based tests
-#
 foreach(test ${geosx_fileio_tests})
     get_filename_component( test_name ${test} NAME_WE )
     blt_add_executable( NAME ${test_name}
                         SOURCES ${test}
                         OUTPUT_DIR ${TEST_OUTPUT_DIRECTORY}
-                        DEPENDS_ON ${dependencyList}
-                        )
+                        DEPENDS_ON ${decoratedDependencies} ${tplDependencyList} )
 
-    blt_add_test( NAME ${test_name}
-                  COMMAND ${test_name}
-                  )
+    geos_add_test( NAME ${test_name}
+                   COMMAND ${test_name} )
 endforeach()
 
 if ( ENABLE_MPI )
@@ -49,16 +27,14 @@ if ( ENABLE_MPI )
   set( geosx_fileio_parallel_tests
        testHDFParallelFile.cpp )
   foreach(test ${geosx_fileio_parallel_tests})
-     get_filename_component( test_name ${test} NAME_WE )
-     blt_add_executable( NAME ${test_name}
-                          SOURCES ${test}
-                          OUTPUT_DIR ${TEST_OUTPUT_DIRECTORY}
-                          DEPENDS_ON ${dependencyList}
-                          )
+    get_filename_component( test_name ${test} NAME_WE )
+    blt_add_executable( NAME ${test_name}
+                        SOURCES ${test}
+                        OUTPUT_DIR ${TEST_OUTPUT_DIRECTORY}
+                        DEPENDS_ON ${decoratedDependencies} ${tplDependencyList} )
 
-      blt_add_test( NAME ${test_name}
-                    COMMAND ${test_name}
-                    NUM_MPI_TASKS ${nranks}
-                    )
+    geos_add_test( NAME ${test_name}
+                   COMMAND ${test_name}
+                   NUM_MPI_TASKS ${nranks} )
   endforeach()
 endif()

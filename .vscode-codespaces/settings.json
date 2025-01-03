@@ -2,6 +2,7 @@
     "cmake": {
         "sourceDirectory": "${workspaceFolder}/src",
         "buildDirectory": "${userHome}/geos-build",
+        "installPrefix": "${userHome}/geos-install",
         "cacheInit": "/workspaces/GEOS/host-configs/environment.cmake",
         "configureSettings": {
             "BLT_MPI_COMMAND_APPEND": "--use-hwthread-cpus;--oversubscribe",

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -17,6 +18,7 @@
  */
 
 #include "MeshLevel.hpp"
+#include "LvArray/src/memcpy.hpp"
 
 #include "EdgeManager.hpp"
 #include "ElementRegionManager.hpp"
@@ -31,6 +33,7 @@ MeshLevel::MeshLevel( string const & name,
                       Group * const parent ):
   Group( name, parent ),
   m_nodeManager( new NodeManager( groupStructKeys::nodeManagerString(), this ) ),
+  m_particleManager( new ParticleManager( groupStructKeys::particleManagerString(), this ) ),
   m_edgeManager( new EdgeManager( groupStructKeys::edgeManagerString(), this ) ),
   m_faceManager( new FaceManager( groupStructKeys::faceManagerString(), this ) ),
   m_elementManager( new ElementRegionManager( groupStructKeys::elemManagerString(), this ) ),
@@ -42,6 +45,8 @@ MeshLevel::MeshLevel( string const & name,
 {
 
   registerGroup( groupStructKeys::nodeManagerString(), m_nodeManager );
+
+  registerGroup( groupStructKeys::particleManagerString(), m_particleManager );
 
   registerGroup( groupStructKeys::edgeManagerString(), m_edgeManager );
 
@@ -70,6 +75,7 @@ MeshLevel::MeshLevel( string const & name,
                       MeshLevel & source ):
   Group( name, parent ),
   m_nodeManager( source.m_nodeManager ),
+  m_particleManager( source.m_particleManager ),
   m_edgeManager( source.m_edgeManager ),
   m_faceManager( source.m_faceManager ),
   m_elementManager( source.m_elementManager ),
@@ -106,399 +112,154 @@ MeshLevel::MeshLevel( string const & name,
 
 
 MeshLevel::MeshLevel( string const & name,
-                      Group * const parent,
+                      Group * const meshBody,
                       MeshLevel const & source,
                       int const order ):
-  MeshLevel( name, parent )
+  MeshLevel( name, meshBody )
 {
-
   GEOS_MARK_FUNCTION;
-  localIndex const numBasisSupportPoints = order+1;
 
+  // constants for hex mesh
+  localIndex const numNodesPerEdge = ( order+1 );
+  localIndex const numNodesPerCell = ( order+1 )*( order+1 )*( order+1 );
 
+  localIndex const numInternalNodesPerEdge = ( order-1 );
+  localIndex const numInternalNodesPerFace = ( order-1 )*( order-1 );
+  localIndex const numInternalNodesPerCell = ( order-1 )*( order-1 )*( order-1 );
+
+  localIndex const numLocalVertices = source.m_nodeManager->size();
+  localIndex const numLocalEdges = source.m_edgeManager->size();
+  localIndex const numLocalFaces = source.m_faceManager->size();
+
+  globalIndex const maxVertexGlobalID = source.getNodeManager().maxGlobalIndex() + 1;
+  globalIndex const maxEdgeGlobalID = source.getEdgeManager().maxGlobalIndex() + 1;
+  globalIndex const maxFaceGlobalID = source.getFaceManager().maxGlobalIndex() + 1;
+
+  localIndex numLocalCells = 0;
+  source.m_elementManager->forElementSubRegions< CellElementSubRegion >( [&]( CellElementSubRegion const & sourceSubRegion )
+  {
+    numLocalCells+= sourceSubRegion.size();
+  } );
+
+  ////////////////////////////////
+  // Get the new number of nodes
+  ////////////////////////////////
+  localIndex numLocalNodes = numLocalVertices
+                             + numLocalEdges * numInternalNodesPerEdge
+                             + numLocalFaces * numInternalNodesPerFace
+                             + numLocalCells * numInternalNodesPerCell;
+
+  /////////////////////////
+  // Nodes
+  //////////////////////////
+
+  m_nodeManager->resize( numLocalNodes );
+
+  /////////////////////////
   // Edges
-  localIndex const numNodesPerEdge = numBasisSupportPoints;
-  localIndex const numNonVertexNodesPerEdge = numNodesPerEdge - 2;
+  //////////////////////////
 
-  m_edgeManager->resize( source.m_edgeManager->size() );
-  localIndex const numInternalEdgeNodes = m_edgeManager->size() * numNonVertexNodesPerEdge;
+  // the total number of nodes: to add the number of non-vertex edge nodes
+  m_edgeManager->resize( numLocalEdges );
+  m_edgeManager->getDomainBoundaryIndicator() = source.m_edgeManager->getDomainBoundaryIndicator();
 
-  m_faceManager->resize( source.m_faceManager->size() );
-  m_faceManager->edgeList() = source.m_faceManager->edgeList();
+  arrayView1d< globalIndex > edgeLocalToGlobal = m_edgeManager->localToGlobalMap();
+  arrayView1d< globalIndex const > sourceEdgeLocalToGlobal = source.m_edgeManager->localToGlobalMap();
+  LvArray::memcpy( edgeLocalToGlobal.toSlice(), sourceEdgeLocalToGlobal.toSlice() );
+
+  m_edgeManager->constructGlobalToLocalMap();
+  m_edgeManager->nodeList().resize( numLocalEdges, numNodesPerEdge );
+
+
+  /////////////////////////
+  // Faces
+  //////////////////////////
+
+  m_faceManager->resize( numLocalFaces );
   m_faceManager->faceCenter() = source.m_faceManager->faceCenter();
   m_faceManager->faceNormal() = source.m_faceManager->faceNormal();
-  m_faceManager->getDomainBoundaryIndicator() = source.m_faceManager->getDomainBoundaryIndicator();
+
+  // copy the faces-to-edgs map from source
+  m_faceManager->edgeList() = source.m_faceManager->edgeList();
+  // copy the faces-to-elements map from source
   m_faceManager->elementList() = source.m_faceManager->elementList();
+  m_faceManager->elementRegionList() = source.m_faceManager->elementRegionList();
+  m_faceManager->elementSubRegionList() = source.m_faceManager->elementSubRegionList();
+  // copy the faces-boundaryIndicator from source
+  m_faceManager->getDomainBoundaryIndicator() = source.m_faceManager->getDomainBoundaryIndicator();
 
-  // Faces
-  ArrayOfArrays< localIndex > & faceToNodeMapNew = m_faceManager->nodeList();
-  ArrayOfArraysView< localIndex const > const & facesToEdges = m_faceManager->edgeList().toViewConst();
-  localIndex const numNodesPerFace = pow( order+1, 2 );
+  arrayView1d< globalIndex > faceLocalToGlobal = m_faceManager->localToGlobalMap();
+  arrayView1d< globalIndex const > sourceFaceLocalToGlobal = source.m_faceManager->localToGlobalMap();
+  LvArray::memcpy( faceLocalToGlobal.toSlice(), sourceFaceLocalToGlobal.toSlice() );
 
-  // number of elements in each row of the map as capacity
-  array1d< localIndex > counts( faceToNodeMapNew.size());
-  counts.setValues< parallelHostPolicy >( numNodesPerFace );
+  m_faceManager->constructGlobalToLocalMap();
 
-  //  reconstructs the faceToNodeMap with the provided capacity in counts
-  faceToNodeMapNew.resizeFromCapacities< parallelHostPolicy >( faceToNodeMapNew.size(), counts.data() );
+  /////////////////////////
+  // Elements
+  //////////////////////////
 
-  // setup initial values of the faceToNodeMap using emplaceBack
-  forAll< parallelHostPolicy >( faceToNodeMapNew.size(),
-                                [faceToNodeMapNew = faceToNodeMapNew.toView()]
-                                  ( localIndex const faceIndex )
-  {
-    for( localIndex i = 0; i < faceToNodeMapNew.capacityOfArray( faceIndex ); ++i )
-    {
-      faceToNodeMapNew.emplaceBack( faceIndex, -1 );
-    }
-  } );
-
-  // add the number of non-edge face nodes
-  localIndex numInternalFaceNodes = 0;
-  localIndex const numNonEdgeNodesPerFace = pow( order-1, 2 );
-  for( localIndex kf=0; kf<m_faceManager->size(); ++kf )
-  {
-    localIndex const numEdgesPerFace = facesToEdges.sizeOfArray( kf );
-    if( numEdgesPerFace==4 )
-      numInternalFaceNodes += numNonEdgeNodesPerFace;
-    else
-    {
-      GEOS_ERROR( "need more support for face geometry" );
-    }
-  }
-
-  // add the number of non-face element nodes
-  localIndex numInternalElementNodes = 0;
+  // check that all elements are hexahedra
   source.m_elementManager->forElementRegions< CellElementRegion >( [&]( CellElementRegion const & sourceRegion )
   {
-    sourceRegion.forElementSubRegions< CellElementSubRegion >( [&]( CellElementSubRegion const & sourceSubRegion )
-    {
-      if( sourceSubRegion.getElementType() == ElementType::Hexahedron )
-      {
-        numInternalElementNodes += sourceSubRegion.size() * pow( order-1, 3 );
-      }
-    } );
-  } );
-
-
-
-  localIndex const numNodes = source.m_nodeManager->size()
-                              + numInternalEdgeNodes
-                              + numInternalFaceNodes
-                              + numInternalElementNodes;
-
-  m_nodeManager->resize( numNodes );
-
-  arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const refPosSource = source.m_nodeManager->referencePosition();
-  arrayView2d< real64, nodes::REFERENCE_POSITION_USD > const refPosNew = m_nodeManager->referencePosition().toView();
-
-  {
-    Group & nodeSets = m_nodeManager->sets();
-    SortedArray< localIndex > & allNodes  = nodeSets.registerWrapper< SortedArray< localIndex > >( string( "all" ) ).reference();
-    allNodes.reserve( m_nodeManager->size() );
-
-    for( localIndex a=0; a<m_nodeManager->size(); ++a )
-    {
-      allNodes.insert( a );
-    }
-  }
-
-
-
-  ArrayOfArraysView< localIndex const > const & faceToNodeMapSource = source.m_faceManager->nodeList().toViewConst();
-
-  FaceManager::ElemMapType const & faceToElem = source.m_faceManager->toElementRelation();
-
-  arrayView2d< localIndex const > const & faceToElemIndex = faceToElem.m_toElementIndex.toViewConst();
-
-
-  source.m_elementManager->forElementRegions< CellElementRegion >( [&]( CellElementRegion const & sourceRegion )
-  {
+    // create element region with the same name as source element region "Region"
     CellElementRegion & region = *(dynamic_cast< CellElementRegion * >( m_elementManager->createChild( sourceRegion.getCatalogName(),
                                                                                                        sourceRegion.getName() ) ) );
-
-    region.addCellBlockNames( sourceRegion.getCellBlockNames() );
+    // set cell block to the new element region with the same name as cell block name from source element region
+    region.setCellBlockNames( sourceRegion.getCellBlockNames() );
 
     sourceRegion.forElementSubRegions< CellElementSubRegion >( [&]( CellElementSubRegion const & sourceSubRegion )
     {
-      localIndex const numNodesPerElem = pow( order+1, 3 );
+      if( sourceSubRegion.getElementType() != ElementType::Hexahedron )
+      {
+        GEOS_ERROR( "Current order number "<<order<<" is higher than one are only available for hexahedral meshes." );
+      }
 
+      // create element sub region with the same name as source element sub region "cb"
       CellElementSubRegion & newSubRegion = region.getSubRegions().registerGroup< CellElementSubRegion >( sourceSubRegion.getName() );
       newSubRegion.setElementType( sourceSubRegion.getElementType() );
 
-      newSubRegion.resizePerElementValues( numNodesPerElem,
+      // resize per elements value for the new sub region with the new number of nodes per element
+      newSubRegion.resizePerElementValues( numNodesPerCell,
                                            sourceSubRegion.numEdgesPerElement(),
                                            sourceSubRegion.numFacesPerElement() );
 
       newSubRegion.resize( sourceSubRegion.size() );
 
-      arrayView2d< localIndex const > const & elemToFaces = sourceSubRegion.faceList();
+      // copy new elemCenter map from source
+      newSubRegion.getElementCenter() = sourceSubRegion.getElementCenter();
 
-      arrayView2d< localIndex const, cells::NODE_MAP_USD > const elemsToNodesSource = sourceSubRegion.nodeList().toViewConst();
-      array2d< localIndex, cells::NODE_MAP_PERMUTATION > & elemsToNodesNew = newSubRegion.nodeList();
+      // copy the elements-to-faces map from source
+      newSubRegion.faceList() = sourceSubRegion.faceList();
 
-      array2d< localIndex > & elemToFacesNew = newSubRegion.faceList();
-      elemToFacesNew = elemToFaces;
+      // copy the elements-to-edges map from source
+      newSubRegion.edgeList() = sourceSubRegion.edgeList();
 
-      // Copy a new elemCenter map from the old one
-      array2d< real64 > & elemCenterNew = newSubRegion.getElementCenter();
-      arrayView2d< real64 const > const elemCenterOld = sourceSubRegion.getElementCenter();
-      elemCenterNew = elemCenterOld;
-      for( localIndex elem = 0; elem < elemsToNodesNew.size( 0 ); ++elem )
-      {
-        for( localIndex a = 0; a < 3; ++a )
-        {
-          elemCenterNew[elem][a] = elemCenterOld[elem][a];
-        }
-      }
+      arrayView1d< globalIndex > newSubRegionLocalToGlobal = newSubRegion.localToGlobalMap();
+      arrayView1d< globalIndex const > sourceSubRegionLocalToGlobal = sourceSubRegion.localToGlobalMap();
+      LvArray::memcpy( newSubRegionLocalToGlobal.toSlice(), sourceSubRegionLocalToGlobal.toSlice() );
 
-      // Fill a temporary table which knowing the global number of a degree of freedom and a face, gives you the local number of this degree
-      // of freedom on the considering face
-      array2d< localIndex > localElemToLocalFace( 6, numNodesPerElem );
+      newSubRegion.constructGlobalToLocalMap();
 
-      //Init arrays
-      for( localIndex i = 0; i < 6; ++i )
-      {
-        for( localIndex j = 0; j < numNodesPerElem; ++j )
-        {
-          localElemToLocalFace[i][j]=-1;
-        }
-
-      }
-
-
-
-      for( localIndex i = 0; i < faceToNodeMapSource.size(); ++i )
-      {
-        for( localIndex j = 0; j < numNodesPerFace; ++j )
-        {
-          faceToNodeMapNew[i][j] = -1;
-        }
-
-      }
-
-      //Face 0
-      for( localIndex i = 0; i < order+1; i++ )
-      {
-        for( localIndex j = 0; j <order+1; j++ )
-        {
-          localElemToLocalFace[0][i + numNodesPerFace * j] = i + (order+1)*j;
-        }
-
-      }
-
-      //Face 1
-      for( localIndex i = 0; i < order+1; i++ )
-      {
-        for( localIndex k = 0; k < order+1; k++ )
-        {
-          localElemToLocalFace[1][k+(order+1)*i] = k + (order+1)*i;
-        }
-
-      }
-
-      //Face 2
-      for( localIndex k = 0; k < order+1; k++ )
-      {
-        for( localIndex j = 0; j < order+1; j++ )
-        {
-          localElemToLocalFace[2][k * numNodesPerFace +j*(order+1)] = j + (order+1)*k;
-        }
-
-      }
-
-      //Face 3
-      for( localIndex j = 0; j < order+1; j++ )
-      {
-        for( localIndex k = 0; k < order+1; k++ )
-        {
-          localElemToLocalFace[3][order +k*(order+1)+j * numNodesPerFace] = k + (order+1)*j;
-        }
-
-      }
-
-      //Face 4
-      for( localIndex j = 0; j < order+1; j++ )
-      {
-        for( localIndex i = 0; i < order+1; i++ )
-        {
-          localElemToLocalFace[4][order*(order+1)+i+j * numNodesPerFace] = i + (order+1)*j;
-        }
-
-      }
-
-      //Face 5
-      for( localIndex k = 0; k < order+1; k++ )
-      {
-        for( localIndex i = 0; i < order+1; i++ )
-        {
-          localElemToLocalFace[5][order * numNodesPerFace +i+k*(order+1)] = i + (order+1)*k;
-        }
-
-      }
-
-      //Initialisation of elemToNodes
-      for( localIndex e = 0; e < elemsToNodesNew.size( 0 ); ++e )
-      {
-        for( localIndex i = 0; i < numNodesPerElem; i++ )
-        {
-          elemsToNodesNew[e][i] =-1;
-        }
-
-      }
-
-      localIndex count=0;
-
-      for( localIndex elem = 0; elem < elemsToNodesNew.size( 0 ); ++elem )
-      {
-        for( localIndex k = 0; k < order+1; ++k )
-        {
-          for( localIndex j = 0; j< order+1; ++j )
-          {
-            for( localIndex i = 0; i <order+1; ++i )
-            {
-
-              localIndex face = 0;
-              localIndex foundFace = 0;
-              localIndex nodeindex = i + (order+1)*j + (order+1)*(order+1)*k;
-
-              while( face<6 && foundFace<1 )
-              {
-                localIndex m = localElemToLocalFace[face][nodeindex];
-
-                if( m != -1 )
-                {
-                  if( faceToNodeMapNew[elemToFaces[elem][face]][m] != -1 )
-                  {
-                    foundFace = 1;
-                    for( localIndex l = 0; l < 2; ++l )
-                    {
-                      localIndex elemNeighbour = faceToElemIndex[elemToFaces[elem][face]][l];
-                      if( elemNeighbour != elem && elemNeighbour != -1 )
-                      {
-                        for( localIndex node = 0; node < numNodesPerElem; ++node )
-                        {
-                          if( elemsToNodesNew[elemNeighbour][node] == faceToNodeMapNew[elemToFaces[elem][face]][m] )
-                          {
-                            elemsToNodesNew[elem][nodeindex] = elemsToNodesNew[elemNeighbour][node];
-                            break;
-                          }
-                        }
-                        break;
-                      }
-                    }
-                    for( localIndex face2 = 0; face2 < 6; ++face2 )
-                    {
-                      localIndex m2 = localElemToLocalFace[face2][nodeindex];
-
-                      if( m2 != -1 && face2!=face )
-                      {
-                        faceToNodeMapNew[elemToFaces[elem][face2]][m2] = faceToNodeMapNew[elemToFaces[elem][face]][m];
-                      }
-                    }
-                  }
-                  else
-                  {
-                    faceToNodeMapNew[elemToFaces[elem][face]][m] = count;
-                  }
-                }
-                face++;
-              }
-              if( face > 5 && foundFace < 1 )
-              {
-                elemsToNodesNew[elem][nodeindex] = count;
-                count++;
-              }
-            }
-          }
-        }
-      }
-
-      //Fill a temporary array which contains the Gauss-Lobatto points depending on the order
-      array1d< real64 > GaussLobattoPts( order+1 );
-
-      switch( order )
-      {
-        case 1:
-          GaussLobattoPts[0] = -1.0;
-          GaussLobattoPts[1] = 1.0;
-          break;
-        case 2:
-          GaussLobattoPts[0] = -1.0;
-          GaussLobattoPts[1] = 0.0;
-          GaussLobattoPts[2] = 1.0;
-          break;
-        case 3:
-          static constexpr real64 sqrt5 = 2.2360679774997897;
-          GaussLobattoPts[0] = -1.0;
-          GaussLobattoPts[1] = -1./sqrt5;
-          GaussLobattoPts[2] = 1./sqrt5;
-          GaussLobattoPts[3] = 1.;
-          break;
-        case 4:
-          static constexpr real64 sqrt3_7 = 0.6546536707079771;
-          GaussLobattoPts[0] = -1.0;
-          GaussLobattoPts[1] = -sqrt3_7;
-          GaussLobattoPts[2] = 0.0;
-          GaussLobattoPts[3] = sqrt3_7;
-          GaussLobattoPts[4] = 1.0;
-          break;
-        case 5:
-          static constexpr real64 sqrt__7_plus_2sqrt7__ = 3.50592393273573196;
-          static constexpr real64 sqrt__7_mins_2sqrt7__ = 1.30709501485960033;
-          static constexpr real64 sqrt_inv21 = 0.218217890235992381;
-          GaussLobattoPts[0] = -1.0;
-          GaussLobattoPts[1] = -sqrt_inv21*sqrt__7_plus_2sqrt7__;
-          GaussLobattoPts[2] = -sqrt_inv21*sqrt__7_mins_2sqrt7__;
-          GaussLobattoPts[3] = sqrt_inv21*sqrt__7_mins_2sqrt7__;
-          GaussLobattoPts[4] = sqrt_inv21*sqrt__7_plus_2sqrt7__;
-          GaussLobattoPts[5] = 1.0;
-          break;
-      }
-
-      //Three 1D arrays to contains the GL points in the new coordinates knowing the mesh nodes
-      array1d< real64 > x( order+1 );
-      array1d< real64 > y( order+1 );
-      array1d< real64 > z( order+1 );
-
-      for( localIndex e = 0; e < elemsToNodesNew.size( 0 ); e++ )
-      {
-        //Fill the three 1D array
-        for( localIndex i = 0; i < order+1; i++ )
-        {
-          x[i] = refPosSource[elemsToNodesSource[e][0]][0] + ((refPosSource[elemsToNodesSource[e][1]][0]-refPosSource[elemsToNodesSource[e][0]][0])/2.)*GaussLobattoPts[i]
-                 + (refPosSource[elemsToNodesSource[e][1]][0]-refPosSource[elemsToNodesSource[e][0]][0])/2;
-          y[i] = refPosSource[elemsToNodesSource[e][0]][1] + ((refPosSource[elemsToNodesSource[e][2]][1]-refPosSource[elemsToNodesSource[e][0]][1])/2.)*GaussLobattoPts[i]
-                 + (refPosSource[elemsToNodesSource[e][2]][1]-refPosSource[elemsToNodesSource[e][0]][1])/2;
-          z[i] = refPosSource[elemsToNodesSource[e][0]][2] + ((refPosSource[elemsToNodesSource[e][4]][2]-refPosSource[elemsToNodesSource[e][0]][2])/2.)*GaussLobattoPts[i]
-                 + (refPosSource[elemsToNodesSource[e][4]][2]-refPosSource[elemsToNodesSource[e][0]][2])/2;
-        }
-
-
-        //Fill new refPos array
-        for( localIndex k = 0; k< order+1; k++ )
-        {
-          for( localIndex j = 0; j < order+1; j++ )
-          {
-            for( localIndex i = 0; i < order+1; i++ )
-            {
-              localIndex const nodeIndex = elemsToNodesNew( e, i+j*(order+1)+k* numNodesPerFace );
-
-              refPosNew( nodeIndex, 0 ) = x[i];
-              refPosNew( nodeIndex, 1 ) = y[j];
-              refPosNew( nodeIndex, 2 ) = z[k];
-
-            }
-
-          }
-
-        }
-
-      }
     } );
-  } );
-}
 
+  } );
+
+  CellBlockManagerABC & cellBlockManager = meshBody->getGroup< CellBlockManagerABC >( keys::cellManager );
+
+  cellBlockManager.generateHighOrderMaps( order,
+                                          maxVertexGlobalID,
+                                          maxEdgeGlobalID,
+                                          maxFaceGlobalID,
+                                          edgeLocalToGlobal,
+                                          faceLocalToGlobal );
+
+
+  /////////////////////////
+  // NodesSets
+  //////////////////////////
+
+  this->generateSets();
+}
 
 
 MeshLevel::~MeshLevel()
@@ -546,61 +307,148 @@ void MeshLevel::generateAdjacencyLists( arrayView1d< localIndex const > const & 
   std::set< localIndex > faceAdjacencySet;
   std::vector< std::vector< std::set< localIndex > > > elementAdjacencySet( elemManager.numRegions() );
 
-  for( localIndex a=0; a<elemManager.numRegions(); ++a )
+  // Add the nodes, edges, and faces connected to the volumic element.
+  auto const addVolumicSupport = [&]( localIndex const er,
+                                      localIndex const esr,
+                                      CellElementSubRegion const & subRegion )
+  {
+    arrayView2d< localIndex const, cells::NODE_MAP_USD > const elemsToNodes = subRegion.nodeList();
+    arrayView2d< localIndex const > const elemsToFaces = subRegion.faceList();
+
+    for( localIndex const ei: elementAdjacencySet[er][esr] )
+    {
+      for( localIndex a = 0; a < elemsToNodes.size( 1 ); ++a )  // Range-based for loop not supported for GPU layout.
+      {
+        nodeAdjacencySet.insert( elemsToNodes( ei, a ) );
+      }
+      for( localIndex const fi: elemsToFaces[ei] )
+      {
+        faceAdjacencySet.insert( fi );
+        for( auto const & edi: faceToEdges[fi] )
+        {
+          edgeAdjacencySet.insert( edi );
+        }
+      }
+    }
+  };
+
+  // Add the nodes, edges, and faces connected to the fracture element.
+  auto const addFractureSupport = [&]( localIndex const er,
+                                       localIndex const esr,
+                                       FaceElementSubRegion const & subRegion )
+  {
+    ArrayOfArraysView< localIndex const > const elems2dToNodes = subRegion.nodeList().toViewConst();
+    ArrayOfArraysView< localIndex const > const elem2dToEdges = subRegion.edgeList().toViewConst();
+    arrayView2d< localIndex const > const elems2dToFaces = subRegion.faceList().toViewConst();
+
+    for( localIndex const ei: elementAdjacencySet[er][esr] )
+    {
+      for( localIndex const & ni: elems2dToNodes[ei] )
+      {
+        nodeAdjacencySet.insert( ni );
+      }
+      for( localIndex const & edi: elem2dToEdges[ei] )
+      {
+        edgeAdjacencySet.insert( edi );
+      }
+      for( localIndex const & fi: elems2dToFaces[ei] )
+      {
+        if( fi != -1 )
+        {
+          faceAdjacencySet.insert( fi );
+        }
+      }
+    }
+  };
+
+  // Add all the nodes connected/related to the well elements.
+  auto const addWellSupport = [&]( localIndex const er,
+                                   localIndex const esr,
+                                   WellElementSubRegion const & subRegion )
+  {
+    arrayView2d< localIndex const, cells::NODE_MAP_USD > const elemsToNodes = subRegion.nodeList();
+
+    for( localIndex const ei: elementAdjacencySet[er][esr] )
+    {
+      for( localIndex a = 0; a < elemsToNodes.size( 1 ); ++a )  // Range-based for loop not supported for GPU layout.
+      {
+        nodeAdjacencySet.insert( elemsToNodes( ei, a ) );
+      }
+    }
+  };
+
+  // Add all the collocated nodes of the fracture element.
+  auto const addCollocatedFractureNodes = [&]( FaceElementSubRegion const & subRegion )
+  {
+    auto const & l2g = nodeManager.localToGlobalMap();
+    auto const & g2l = nodeManager.globalToLocalMap();
+
+    std::set< localIndex > newNodes;
+    for( localIndex const & ln: nodeAdjacencySet )
+    {
+      globalIndex const & gn = l2g[ln];
+      for( std::set< globalIndex > const & bucket: subRegion.getCollocatedNodes() )
+      {
+        if( bucket.find( gn ) != bucket.cend() )
+        {
+          for( globalIndex const & n: bucket )
+          {
+            auto it = g2l.find( n );
+            if( it != g2l.cend() )
+            {
+              newNodes.insert( it->second );
+            }
+          }
+        }
+      }
+    }
+    nodeAdjacencySet.insert( newNodes.cbegin(), newNodes.cend() );
+  };
+
+  for( localIndex a = 0; a < elemManager.numRegions(); ++a )
   {
     elementAdjacencySet[a].resize( elemManager.getRegion( a ).numSubRegions() );
   }
 
   nodeAdjacencySet.insert( seedNodeList.begin(), seedNodeList.end() );
 
-  for( integer d=0; d<depth; ++d )
+  for( integer d = 0; d < depth; ++d )
   {
-    for( localIndex const nodeIndex : nodeAdjacencySet )
+    for( localIndex const nodeIndex: nodeAdjacencySet )
     {
-      for( localIndex b=0; b<nodeToElementRegionList.sizeOfArray( nodeIndex ); ++b )
+      for( localIndex b = 0; b < nodeToElementRegionList.sizeOfArray( nodeIndex ); ++b )
       {
-        localIndex const regionIndex = nodeToElementRegionList[nodeIndex][b];
-        localIndex const subRegionIndex = nodeToElementSubRegionList[nodeIndex][b];
-        localIndex const elementIndex = nodeToElementList[nodeIndex][b];
-        elementAdjacencySet[regionIndex][subRegionIndex].insert( elementIndex );
+        localIndex const er = nodeToElementRegionList[nodeIndex][b];
+        localIndex const esr = nodeToElementSubRegionList[nodeIndex][b];
+        localIndex const ei = nodeToElementList[nodeIndex][b];
+        elementAdjacencySet[er][esr].insert( ei );
       }
     }
 
-    for( typename dataRepository::indexType kReg=0; kReg<elemManager.numRegions(); ++kReg )
+    for( localIndex er = 0; er < elemManager.numRegions(); ++er )
     {
-      ElementRegionBase const & elemRegion = elemManager.getRegion( kReg );
+      ElementRegionBase const & elemRegion = elemManager.getRegion( er );
 
-      elemRegion.forElementSubRegionsIndex< CellElementSubRegion,
-                                            WellElementSubRegion >( [&]( localIndex const kSubReg,
-                                                                         auto const & subRegion )
+      elemRegion.forElementSubRegionsIndex< CellElementSubRegion >( [&]( localIndex const esr,
+                                                                         CellElementSubRegion const & subRegion )
       {
-        arrayView2d< localIndex const, cells::NODE_MAP_USD > const elemsToNodes = subRegion.nodeList();
-        arrayView2d< localIndex const > const elemsToFaces = subRegion.faceList();
-        for( auto const elementIndex : elementAdjacencySet[kReg][kSubReg] )
-        {
-          for( localIndex a=0; a<elemsToNodes.size( 1 ); ++a )
-          {
-            nodeAdjacencySet.insert( elemsToNodes[elementIndex][a] );
-          }
-
-          for( localIndex a=0; a<elemsToFaces.size( 1 ); ++a )
-          {
-            faceAdjacencySet.insert( elemsToFaces[elementIndex][a] );
-
-            localIndex const faceIndex = elemsToFaces[elementIndex][a];
-            localIndex const numEdges = faceToEdges.sizeOfArray( faceIndex );
-            for( localIndex b=0; b<numEdges; ++b )
-            {
-              edgeAdjacencySet.insert( faceToEdges( faceIndex, b ));
-            }
-
-          }
-
-        }
+        addVolumicSupport( er, esr, subRegion );
+      } );
+      elemRegion.forElementSubRegionsIndex< FaceElementSubRegion >( [&]( localIndex const esr,
+                                                                         FaceElementSubRegion const & subRegion )
+      {
+        addFractureSupport( er, esr, subRegion );
+        addCollocatedFractureNodes( subRegion );
+      } );
+      elemRegion.forElementSubRegionsIndex< WellElementSubRegion >( [&]( localIndex const esr,
+                                                                         WellElementSubRegion const & subRegion )
+      {
+        addWellSupport( er, esr, subRegion );
       } );
     }
   }
 
+  // Convert the `std::set` containers to `LvArray` containers.
   nodeAdjacencyList.resize( LvArray::integerConversion< localIndex >( nodeAdjacencySet.size()));
   std::copy( nodeAdjacencySet.begin(), nodeAdjacencySet.end(), nodeAdjacencyList.begin() );
 
@@ -610,21 +458,20 @@ void MeshLevel::generateAdjacencyLists( arrayView1d< localIndex const > const & 
   faceAdjacencyList.resize( LvArray::integerConversion< localIndex >( faceAdjacencySet.size()));
   std::copy( faceAdjacencySet.begin(), faceAdjacencySet.end(), faceAdjacencyList.begin() );
 
-  for( localIndex kReg=0; kReg<elemManager.numRegions(); ++kReg )
+  for( localIndex er=0; er < elemManager.numRegions(); ++er )
   {
-    ElementRegionBase const & elemRegion = elemManager.getRegion( kReg );
+    ElementRegionBase const & elemRegion = elemManager.getRegion( er );
 
-    for( localIndex kSubReg = 0; kSubReg < elemRegion.numSubRegions(); ++kSubReg )
+    for( localIndex esr = 0; esr < elemRegion.numSubRegions(); ++esr )
     {
-      elementAdjacencyList[kReg][kSubReg].get().clear();
-      elementAdjacencyList[kReg][kSubReg].get().resize( LvArray::integerConversion< localIndex >( elementAdjacencySet[kReg][kSubReg].size()) );
-      std::copy( elementAdjacencySet[kReg][kSubReg].begin(),
-                 elementAdjacencySet[kReg][kSubReg].end(),
-                 elementAdjacencyList[kReg][kSubReg].get().begin() );
+      elementAdjacencyList[er][esr].get().clear();
+      elementAdjacencyList[er][esr].get().resize( LvArray::integerConversion< localIndex >( elementAdjacencySet[er][esr].size()) );
+      std::copy( elementAdjacencySet[er][esr].begin(),
+                 elementAdjacencySet[er][esr].end(),
+                 elementAdjacencyList[er][esr].get().begin() );
 
     }
   }
-
 }
 
 void MeshLevel::generateSets()

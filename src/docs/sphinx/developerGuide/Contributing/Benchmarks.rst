@@ -51,7 +51,7 @@ A group of benchmarks is specified with a standard GEOS input XML file with an e
 
 *[Source: benchmarks/SSLE-small.xml]*
 
-The ``Benchmarks`` block consists of a block for each machine the benchmarks are to run on. Currently the only options are ``quartz`` and ``lassen``.
+The ``Benchmarks`` block consists of a block for each machine the benchmarks are to run on. Currently the only options are ``quartz``, ``lassen``, and ``crusher``.
 
 
 The ``Run`` block

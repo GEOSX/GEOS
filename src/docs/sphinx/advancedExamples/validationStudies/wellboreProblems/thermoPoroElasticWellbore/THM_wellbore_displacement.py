@@ -9,15 +9,15 @@ import analyticalResults
 def main():
 	# Plot GEOSX results
 	hf = h5py.File("displacementHistory.hdf5", 'r')
-	time = np.array( hf.get('totalDisplacement Time') )
-	center = np.array( hf.get('totalDisplacement ReferencePosition') )
-	displacement = np.array( hf.get('totalDisplacement') )
+	time = np.asarray( hf.get('totalDisplacement Time') )
+	center = np.asarray( hf.get('totalDisplacement ReferencePosition') )
+	displacement = np.asarray( hf.get('totalDisplacement') )
 
 	nNodes = center.shape[1]
 	xCoord = center[0, 0:nNodes, 0]
 	yCoord = center[0, 0:nNodes, 1]	
-	ux_60s = displacement[9, 0:nNodes, 0] # the index for time step at 60s is 9
-	ux_3600s = displacement[23, 0:nNodes, 0] # the index for time step at 3600s is 23
+	ux_60s = displacement[10, 0:nNodes, 0] # the index for time step at 60s is 10
+	ux_3600s = displacement[24, 0:nNodes, 0] # the index for time step at 3600s is 24
 
 	rCoord, ur_60s, ur_3600s = [], [], []
 
@@ -33,12 +33,12 @@ def main():
 	plt.plot( rCoord,
 			  ur_60s,        
 			  'r+',
-			  label='GEOSX: t = 1 (min)')
+			  label='GEOS: t = 1 (min)')
 
 	plt.plot( rCoord,
 			  ur_3600s,        
 			  'b+',
-			  label='GEOSX: t = 1 (hour)')
+			  label='GEOS: t = 1 (hour)')
 	
 	# Plot analytical results at one minute
 	t = 60 #s
@@ -47,7 +47,7 @@ def main():
 	plt.plot( r_anal,
 			  ur_anal * 1e6, # converted to um        
 			  'r-',
-			  label='Analytic: t = 1 (min)')
+			  label='Analytical: t = 1 (min)')
 
 	# Plot analytical results at one hour
 	t = 3600 #s
@@ -56,7 +56,7 @@ def main():
 	plt.plot( r_anal,
 			  ur_anal * 1e6, # converted to um        
 			  'b-',
-			  label='Analytic: t = 1 (hour)')
+			  label='Analytical: t = 1 (hour)')
 
 	plt.grid()
 	plt.ylabel(r'Displacement [$\mu$m]')

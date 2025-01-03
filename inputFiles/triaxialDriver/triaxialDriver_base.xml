@@ -1,0 +1,146 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <!-- SPHINX_EVENTS -->
+  <Events
+    maxTime="1">
+    <SoloEvent
+      name="triaxialDriver"
+      target="/Tasks/triaxialDriver"/>
+  </Events>
+  <!-- SPHINX_EVENTS_END -->
+
+  <!-- SPHINX_MATERIAL -->
+  <Constitutive>  
+  <!-- SPHINX_MATERIAL_DRUCKER_PRAGER --> 
+    <DruckerPrager 
+      name="DruckerPrager"
+      defaultDensity="2700"
+      defaultBulkModulus="10.0e9"
+      defaultShearModulus="6.0e9"
+      defaultCohesion="0.1e6"
+      defaultFrictionAngle="6.0"
+      defaultDilationAngle="3.0"
+      defaultHardeningRate="0.5e9"
+    /> 
+  <!-- SPHINX_MATERIAL_DRUCKER_PRAGER_END -->   
+
+  <!-- SPHINX_MATERIAL_VISCO_DRUCKER_PRAGER -->
+    <ViscoDruckerPrager 
+      name="ViscoDruckerPrager"
+      defaultDensity="2700"
+      defaultBulkModulus="10.0e9"
+      defaultShearModulus="6.0e9"
+      defaultCohesion="0.1e6"
+      defaultFrictionAngle="6.0"
+      defaultDilationAngle="3.0"
+      defaultHardeningRate="0.5e9"
+      relaxationTime="0.1"
+    />
+  <!-- SPHINX_MATERIAL_VISCO_DRUCKER_PRAGER_END -->
+
+  <!-- SPHINX_MATERIAL_EXTENDED_DRUCKER_PRAGER -->
+    <ExtendedDruckerPrager 
+      name="ExtendedDruckerPrager"
+      defaultDensity="2700"
+      defaultBulkModulus="10.0e9"
+      defaultShearModulus="6.0e9"
+      defaultCohesion="0.1e6"
+      defaultInitialFrictionAngle="6.0"
+      defaultResidualFrictionAngle="10.0"
+      defaultDilationRatio="0.5"
+      defaultHardening="0.0001"
+    />  
+  <!-- SPHINX_MATERIAL_EXTENDED_DRUCKER_PRAGER_END -->
+
+  <!-- SPHINX_MATERIAL_VISCO_EXTENDED_DRUCKER_PRAGER -->
+    <ViscoExtendedDruckerPrager 
+      name="ViscoExtendedDruckerPrager"
+      defaultDensity="2700"
+      defaultBulkModulus="10.0e9"
+      defaultShearModulus="6.0e9"
+      defaultCohesion="0.1e6"
+      defaultInitialFrictionAngle="6.0"
+      defaultResidualFrictionAngle="10.0"
+      defaultDilationRatio="0.5"
+      defaultHardening="0.0001"
+      relaxationTime="0.1"
+    />  
+  <!-- SPHINX_MATERIAL_VISCO_EXTENDED_DRUCKER_PRAGER_END -->
+
+  <!-- SPHINX_MATERIAL_MODIFIED_CAMCLAY -->
+    <ModifiedCamClay 
+      name="ModifiedCamClay"
+      defaultDensity="2700"
+      defaultRefPressure="-1e5"
+      defaultRefStrainVol="0.0"
+      defaultShearModulus="5e7"
+      defaultPreConsolidationPressure="-1.5e5"
+      defaultCslSlope="1.2"
+      defaultRecompressionIndex="0.002"
+      defaultVirginCompressionIndex="0.003" 
+    />
+  <!-- SPHINX_MATERIAL_MODIFIED_CAMCLAY_END -->
+
+  <!-- SPHINX_MATERIAL_VISCO_MODIFIED_CAMCLAY -->
+    <ViscoModifiedCamClay 
+      name="ViscoModifiedCamClay"
+      defaultDensity="2700"
+      defaultRefPressure="-1e5"
+      defaultRefStrainVol="0.0"
+      defaultShearModulus="5e7"
+      defaultPreConsolidationPressure="-1.5e5"
+      defaultCslSlope="1.2"
+      defaultRecompressionIndex="0.002"
+      defaultVirginCompressionIndex="0.003" 
+      relaxationTime="0.1"
+    />
+  <!-- SPHINX_MATERIAL_VISCO_MODIFIED_CAMCLAY_END -->
+
+  </Constitutive>
+  <!-- SPHINX_MATERIAL_END -->
+
+  <!-- SPHINX_FUNCTION -->
+  <Functions>
+    <TableFunction
+      name="zeroStrain"
+      inputVarNames="{ time }"
+      coordinates="{ 0.0, 1e9 }"
+      values="{ 0.0, 0.0 }"/>
+
+    <TableFunction
+      name="strainFunction"
+      inputVarNames="{ time }"
+      coordinateFiles="{ tables/time.geos }"
+      voxelFile="tables/axialStrain.geos"/>
+
+    <TableFunction
+      name="stressFunction"
+      inputVarNames="{ time }"
+      coordinateFiles="{ tables/time.geos }"
+      voxelFile="tables/radialStress.geos"/>
+  </Functions>
+  <!-- SPHINX_FUNCTION_END -->
+
+  <!-- SPHINX_MESH -->
+  <Mesh>
+    <InternalMesh
+      name="mesh1"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0, 1 }"
+      yCoords="{ 0, 1 }"
+      zCoords="{ 0, 1 }"
+      nx="{ 1 }"
+      ny="{ 1 }"
+      nz="{ 1 }"
+      cellBlockNames="{ cellBlock01 }"/>
+  </Mesh>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="dummy"
+      cellBlocks="{ * }"
+      materialList="{ dummy }"/>
+  </ElementRegions>
+  <!-- SPHINX_MESH_END -->
+</Problem>

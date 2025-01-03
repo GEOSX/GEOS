@@ -19,7 +19,6 @@
       trajectory="{ { 0.0, 0.0, 0.0 },
                     { 0.0, 0.0, 0.1 } }"
       autoSpaceRadialElems="{ 0, 0, 1 }"
-      useCartesianOuterBoundary="3"
       cellBlockNames="{ casing, cement, rock }"
       />
   </Mesh>

@@ -1,0 +1,21 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <!-- SPHINX_TASK -->
+  <Tasks>
+   <TriaxialDriver
+      name="triaxialDriver"
+      material="ViscoModifiedCamClay"
+      mode="strainControl" 
+      axialControl="strainFunction"
+      radialControl="zeroStrain"
+      initialStress="-1e5"
+      steps="200" 
+      output="ViscoModifiedCamClayResults.txt" />
+  </Tasks>
+  <!-- SPHINX_TASK_END -->
+
+  <Included>
+    <File name="./triaxialDriver_base.xml"/>
+  </Included>
+</Problem>

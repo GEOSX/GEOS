@@ -19,13 +19,12 @@ set(ENABLE_WRAP_ALL_TESTS_WITH_MPIEXEC ON CACHE BOOL "")
 
 # CUDA options
 if(ENABLE_CUDA)
-  set(CMAKE_CUDA_HOST_COMPILER ${MPI_CXX_COMPILER} CACHE STRING "") 
-  set(CMAKE_CUDA_COMPILER ${CUDA_TOOLKIT_ROOT_DIR}/bin/nvcc CACHE STRING "") 
-  set(CMAKE_CUDA_STANDARD 14 CACHE STRING "") 
-  set(CMAKE_CUDA_FLAGS "-restrict -arch ${CUDA_ARCH} --expt-extended-lambda --expt-relaxed-constexpr -Werror cross-execution-space-call,reorder,deprecated-declarations" CACHE STRING "") 
-  set(CMAKE_CUDA_FLAGS_RELEASE "-O3 -DNDEBUG -Xcompiler -DNDEBUG -Xcompiler -O3" CACHE STRING "") 
-  set(CMAKE_CUDA_FLAGS_RELWITHDEBINFO "-g -lineinfo ${CMAKE_CUDA_FLAGS_RELEASE}" CACHE STRING "") 
-  set(CMAKE_CUDA_FLAGS_DEBUG "-g -G -O0 -Xcompiler -O0" CACHE STRING "") 
+  set(CMAKE_CUDA_HOST_COMPILER ${MPI_CXX_COMPILER} CACHE STRING "")
+  set(CMAKE_CUDA_COMPILER ${CUDA_TOOLKIT_ROOT_DIR}/bin/nvcc CACHE STRING "")
+  set(CMAKE_CUDA_FLAGS "-restrict -arch ${CUDA_ARCH} --expt-extended-lambda --expt-relaxed-constexpr -Werror cross-execution-space-call,reorder,deprecated-declarations" CACHE STRING "")
+  set(CMAKE_CUDA_FLAGS_RELEASE "-O3 -DNDEBUG -Xcompiler -DNDEBUG -Xcompiler -O3" CACHE STRING "")
+  set(CMAKE_CUDA_FLAGS_RELWITHDEBINFO "-g -lineinfo ${CMAKE_CUDA_FLAGS_RELEASE}" CACHE STRING "")
+  set(CMAKE_CUDA_FLAGS_DEBUG "-g -G -O0 -Xcompiler -O0" CACHE STRING "")
 endif()
 
 # Blas/Lapack options
@@ -41,11 +40,11 @@ set(LAPACK_LIBRARIES "/share/software/user/open/openblas/0.3.10/lib/liblapack.so
 set(ENABLE_VALGRIND OFF CACHE BOOL "")
 set(ENABLE_CALIPER ON CACHE BOOL "")
 
-if(ENABLE_HYPRE_CUDA)
-  set(ENABLE_PETSC OFF CACHE BOOL "") 
-  set(ENABLE_TRILINOS OFF CACHE BOOL "") 
-  set(GEOSX_LA_INTERFACE "Hypre" CACHE STRING "") 
+if( ${ENABLE_HYPRE_DEVICE} STREQUAL "CUDA" )
+  set(ENABLE_PETSC OFF CACHE BOOL "")
+  set(ENABLE_TRILINOS OFF CACHE BOOL "")
+  set(GEOS_LA_INTERFACE "Hypre" CACHE STRING "")
 endif()
 
-set(GEOSX_TPL_DIR /home/groups/tchelepi/geosx/thirdPartyLibs/install-${CONFIG_NAME}-release CACHE PATH "")
+set(GEOS_TPL_DIR /home/groups/tchelepi/geosx/thirdPartyLibs/install-${CONFIG_NAME}-release CACHE PATH "")
 include(/home/groups/tchelepi/geosx/GEOSX/host-configs/tpls.cmake)

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -29,7 +30,7 @@
 
 // Pre-define some suitesparse variables since they are not properly defined
 // in the header for alternate index types.
-//#if GEOSX_GLOBALINDEX_TYPE_FLAG==0
+//#if GEOS_GLOBALINDEX_TYPE_FLAG==0
 #if 0
 /// Set alias for SuiteSparse_long
 #define SuiteSparse_long int
@@ -116,9 +117,9 @@ void factorize( SuiteSparseData & data, LinearSolverParameters const & params )
   SSlong status;
   SSlong const numRows = data.rowPtr.size() - 1;
 
-  data.rowPtr.move( LvArray::MemorySpace::host, false );
-  data.colIndices.move( LvArray::MemorySpace::host, false );
-  data.values.move( LvArray::MemorySpace::host, false );
+  data.rowPtr.move( hostMemorySpace, false );
+  data.colIndices.move( hostMemorySpace, false );
+  data.values.move( hostMemorySpace, false );
 
   // symbolic factorization
   status = umfpack_dl_symbolic( numRows,
@@ -283,7 +284,7 @@ void SuiteSparse< LAI >::solve( Vector const & rhs,
 
   if( m_params.logLevel >= 1 )
   {
-    GEOS_LOG_RANK_0( "\t\tLinear Solver | " << m_result.status <<
+    GEOS_LOG_RANK_0( "        Linear Solver | " << m_result.status <<
                      " | Iterations: " << m_result.numIterations <<
                      " | Final Rel Res: " << m_result.residualReduction <<
                      " | Setup Time: " << m_result.setupTime << " s" <<
@@ -304,8 +305,8 @@ void SuiteSparse< LAI >::doSolve( Vector const & b, Vector & x, bool transpose )
 
   if( MpiWrapper::commRank( b.comm() ) == m_workingRank )
   {
-    m_data->rhs.move( LvArray::MemorySpace::host, false );
-    m_data->sol.move( LvArray::MemorySpace::host, true );
+    m_data->rhs.move( hostMemorySpace, false );
+    m_data->sol.move( hostMemorySpace, true );
 
     // To be able to use UMFPACK direct solver we need to disable floating point exceptions
     LvArray::system::FloatingPointExceptionGuard guard;
@@ -370,15 +371,15 @@ real64 SuiteSparse< LAI >::estimateConditionNumberAdvanced() const
 // -----------------------
 // Explicit Instantiations
 // -----------------------
-#ifdef GEOSX_USE_TRILINOS
+#ifdef GEOS_USE_TRILINOS
 template class SuiteSparse< TrilinosInterface >;
 #endif
 
-#ifdef GEOSX_USE_HYPRE
+#ifdef GEOS_USE_HYPRE
 template class SuiteSparse< HypreInterface >;
 #endif
 
-#ifdef GEOSX_USE_PETSC
+#ifdef GEOS_USE_PETSC
 template class SuiteSparse< PetscInterface >;
 #endif
 

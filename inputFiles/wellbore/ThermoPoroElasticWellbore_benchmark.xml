@@ -19,14 +19,13 @@
       trajectory="{ { 0.0, 0.0, 0.0 },
                     { 0.0, 0.0, 0.1 } }"
       autoSpaceRadialElems="{ 1 }"
-      useCartesianOuterBoundary="1"
       cellBlockNames="{ rock }"
       />
   </Mesh>
   <!-- SPHINX_WellboreMeshEnd -->
 
   <Events
-    maxTime="3600">
+    maxTime="3700">
 
     <PeriodicEvent
       name="stressHistoryCollection_rock_1"
@@ -43,13 +42,13 @@
     <PeriodicEvent
       name="stressHistoryCollection_rock_2"
       beginTime="360"
-      endTime="3600"
+      endTime="3700"
       forceDt="360"
       target="/Tasks/stressCollection_rock"/>
     <PeriodicEvent
       name="stressTimeHistoryOutput_rock_2"
       beginTime="360"
-      endTime="3600"
+      endTime="3700"
       forceDt="360"
       target="/Outputs/stressHistoryOutput_rock"/>
 
@@ -68,13 +67,13 @@
     <PeriodicEvent
       name="temperatureHistoryCollection_rock_2"
       beginTime="360"
-      endTime="3600"
+      endTime="3700"
       forceDt="360"
       target="/Tasks/temperatureCollection_rock"/>
     <PeriodicEvent
       name="temperatureTimeHistoryOutput_rock_2"
       beginTime="360"
-      endTime="3600"
+      endTime="3700"
       forceDt="360"
       target="/Outputs/temperatureHistoryOutput_rock"/>
 
@@ -93,13 +92,13 @@
     <PeriodicEvent
       name="pressureHistoryCollection_rock_2"
       beginTime="360"
-      endTime="3600"
+      endTime="3700"
       forceDt="360"
       target="/Tasks/pressureCollection_rock"/>
     <PeriodicEvent
       name="pressureTimeHistoryOutput_rock_2"
       beginTime="360"
-      endTime="3600"
+      endTime="3700"
       forceDt="360"
       target="/Outputs/pressureHistoryOutput_rock"/>
 
@@ -119,13 +118,13 @@
     <PeriodicEvent
       name="displacementHistoryCollection_2"
       beginTime="360"
-      endTime="3600"
+      endTime="3700"
       forceDt="360"
       target="/Tasks/displacementCollection"/>
     <PeriodicEvent
       name="displacementTimeHistoryOutput_2"
       beginTime="360"
-      endTime="3600"
+      endTime="3700"
       forceDt="360"
       target="/Outputs/displacementHistoryOutput"/>
     <!-- SPHINX_DisplacementPeriodicEventEnd -->
@@ -149,7 +148,7 @@
     <PeriodicEvent
       name="solverApplications_3"
       beginTime="360"
-      endTime="3600"
+      endTime="3700"
       forceDt="360"
       target="/Solvers/THMSolver"/>
 

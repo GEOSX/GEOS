@@ -2,11 +2,12 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
@@ -16,7 +17,7 @@
  * @file FiniteElementBase.hpp
  */
 
-#if defined(GEOSX_USE_CUDA)
+#if defined(GEOS_USE_DEVICE)
 #define CALC_FEM_SHAPE_IN_KERNEL
 #endif
 
@@ -56,6 +57,7 @@ public:
    * @brief Copy Constructor
    * @param source The object to copy.
    */
+  GEOS_HOST_DEVICE
   FiniteElementBase( FiniteElementBase const & source ):
 #ifdef CALC_FEM_SHAPE_IN_KERNEL
     m_viewGradN(),
@@ -64,7 +66,9 @@ public:
     m_viewGradN( source.m_viewGradN ),
     m_viewDetJ( source.m_viewDetJ )
 #endif
-  {}
+  {
+    GEOS_UNUSED_VAR( source ); // suppress warning when CALC_FEM_SHAPE_IN_KERNEL is defined
+  }
 
   /// Default Move constructor
   FiniteElementBase( FiniteElementBase && ) = default;
@@ -84,7 +88,9 @@ public:
   /**
    * @brief Destructor
    */
-  virtual ~FiniteElementBase() = default;
+  GEOS_HOST_DEVICE
+  virtual ~FiniteElementBase()
+  {}
 
   /**
    * @struct StackVariables

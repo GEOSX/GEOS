@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -143,17 +144,17 @@ public:
   }
 
   /**
-   * @brief Generate the mesh.
+   * @brief Generate the mesh. Produce an error if a required cellBlock doesn't exist in the source mesh.
    * @param [in,out] cellBlockManager Reference to the abstract cell block manager.
    */
-  void generateMesh( CellBlockManagerABC & cellBlockManager );
+  void generateMesh( CellBlockManagerABC const & cellBlockManager );
 
   /**
    * @brief Generate the wells.
-   * @param [in] meshManager pointer to meshManager
+   * @param [in] cellBlockManager pointer to cellBlockManager
    * @param [in] meshLevel pointer to meshLevel
    */
-  void generateWells( MeshManager & meshManager, MeshLevel & meshLevel );
+  void generateWells( CellBlockManagerABC const & cellBlockManager, MeshLevel & meshLevel );
 
   /**
    * @brief Build sets from the node sets
@@ -1089,6 +1090,34 @@ public:
                         ElementReferenceAccessor< localIndex_array > & packList,
                         bool const overwriteMap );
 
+
+  /**
+   * @brief Get the buffer size needed to pack element-to-node and element-to-face maps.
+   * @param packList list of indices to pack
+   * @return the size of data packed.
+   */
+  int packFaceElementToFaceSize( ElementViewAccessor< arrayView1d< localIndex > > const & packList ) const;
+
+  /**
+   * @brief Pack element-to-node and element-to-face maps.
+   * @param buffer pointer to the buffer to be packed
+   * @param packList list of indices to pack
+   * @return the size of data packed.
+   */
+  int packFaceElementToFace( buffer_unit_type * & buffer,
+                             ElementViewAccessor< arrayView1d< localIndex > > const & packList ) const;
+
+  /**
+   * @brief Unpack element-to-node and element-to-face maps.
+   * @param buffer pointer to the buffer to be unpacked
+   * @param packList list of indices to pack
+   * @param overwriteMap flag to indicate whether to overwrite the local map
+   * @return the size of data packed.
+   */
+  int unpackFaceElementToFace( buffer_unit_type const * & buffer,
+                               ElementReferenceAccessor< localIndex_array > & packList,
+                               bool const overwriteMap );
+
   /**
    * @brief Get the buffer size needed to pack the set of fractured elements and the map toEmbSurfaces.
    * @param packList list of indices to pack
@@ -1119,6 +1148,12 @@ public:
   int unpackFracturedElements( buffer_unit_type const * & buffer,
                                ElementReferenceAccessor< localIndex_array > & packList,
                                string const fractureRegionName );
+
+  /**
+   * @brief Function to output connectivity in order to assist debugging issues
+   *        with object connectivity.
+   */
+  virtual void outputObjectConnectivity() const override final;
 
 
 private:
@@ -1153,6 +1188,12 @@ private:
   int
   packUpDownMapsImpl( buffer_unit_type * & buffer,
                       T const & packList ) const;
+
+  template< bool DO_PACKING, typename T >
+  int
+  packFaceElementToFaceImpl( buffer_unit_type * & buffer,
+                             T const & packList ) const;
+
   /**
    * @brief Unpack element-to-node and element-to-face maps.
    * @param buffer pointer to the buffer to be unpacked
@@ -1185,8 +1226,6 @@ private:
    * @return reference to this object
    */
   ElementRegionManager & operator=( const ElementRegionManager & );
-
-
 };
 
 
@@ -1303,17 +1342,17 @@ ElementRegionManager::
 
 template< typename VIEWTYPE >
 ElementRegionManager::ElementViewAccessor< ReferenceWrapper< VIEWTYPE > >
-ElementRegionManager::
-  constructReferenceAccessor( string const & viewName, string const & neighborName )
+ElementRegionManager::constructReferenceAccessor( string const & viewName,
+                                                  string const & neighborName )
 {
   ElementViewAccessor< ReferenceWrapper< VIEWTYPE > > viewAccessor;
   viewAccessor.resize( numRegions() );
-  for( typename dataRepository::indexType kReg=0; kReg<numRegions(); ++kReg )
+  for( typename dataRepository::indexType kReg = 0; kReg < numRegions(); ++kReg )
   {
     ElementRegionBase & elemRegion = getRegion( kReg );
     viewAccessor[kReg].resize( elemRegion.numSubRegions() );
 
-    for( typename dataRepository::indexType kSubReg=0; kSubReg<elemRegion.numSubRegions(); ++kSubReg )
+    for( typename dataRepository::indexType kSubReg = 0; kSubReg < elemRegion.numSubRegions(); ++kSubReg )
     {
       Group * group = &elemRegion.getSubRegion( kSubReg );
 
@@ -1447,7 +1486,10 @@ ElementRegionManager::constructMaterialViewAccessor( string const & viewName,
         }
         else
         {
-          GEOS_ERROR_IF( !allowMissingViews, "Material " << materialKeyName[k] << " does not contain " << viewName );
+          GEOS_ERROR_IF( !allowMissingViews,
+                         subRegion.getDataContext() <<
+                         ": Material " << constitutiveRelation.getDataContext() <<
+                         " does not contain " << viewName );
         }
       } );
     }
@@ -1494,7 +1536,8 @@ ElementRegionManager::constructMaterialViewAccessor( string const & viewName,
         }
         else
         {
-          GEOS_ERROR_IF( !allowMissingViews, "Material " << materialName << " does not contain " << viewName );
+          GEOS_ERROR_IF( !allowMissingViews, region.getDataContext() << ": Material " << materialName
+                                                                     << " does not contain " << viewName );
         }
       } );
     }

@@ -1,70 +1,9 @@
 <?xml version="1.0" ?>
 
 <Problem>
-  <Solvers>
-    <!-- define the solver -->
-    <!-- define the source coordinates -->
-    <!-- define the time source frequency -->
-    <!-- define the receiver coordinates -->
-    <AcousticSEM
-      name="acousticSolver"
-      cflFactor="0.25"
-      discretization="FE1"
-      targetRegions="{ Region }"
-      sourceCoordinates="{ { 1000.1, 1000.1, 1000.1 } }"
-      timeSourceFrequency="5.0"
-      receiverCoordinates="{ { 1000.1, 1000.1, 1500.1 } }" />
-  </Solvers>
-
-  <!-- hexahedral mesh generated internally by GEOSX -->
-  <Mesh>
-    <InternalMesh
-      name="mesh"
-      elementTypes="{ C3D8 }"
-      xCoords="{ 0, 2000 }"
-      yCoords="{ 0, 2000 }"
-      zCoords="{ 0, 2000 }"
-      nx="{ 100 }"
-      ny="{ 100 }"
-      nz="{ 100 }"
-      cellBlockNames="{ cb }"/>
-  </Mesh>
-
-  <Geometry>
-    <Box
-      name="zpos"
-      xMin="{ -0.01, -0.01, 1999.99 }"
-      xMax="{ 2000.01, 2000.01, 2000.01 }"/>
-  </Geometry>
-
-  <Events
-    maxTime="1.5">
-    <!-- trigger the application of the solver -->
-    <!-- control the timestepping here with forceDt -->
-    <PeriodicEvent
-      name="solverApplications"
-      forceDt="0.005"
-      target="/Solvers/acousticSolver"/>
-
-    <!-- generate an output that can be read from VTK -->
-    <PeriodicEvent
-      name="vtk"
-      timeFrequency="0.05"
-      targetExactTimestep="0"
-      target="/Outputs/vtkOutput"/>
-
-    <!-- two events to output pressure in an hdf5 file -->
-    <PeriodicEvent
-      name="timeHistoryCollection"
-      timeFrequency="0.005"
-      target="/Tasks/pressureCollection"/>
-
-    <PeriodicEvent
-      name="timeHistoryOutput"
-      timeFrequency="0.05"
-      targetExactTimestep="0"
-      target="/Outputs/timeHistoryOutput"/>
-  </Events>
+  <Included>
+    <File name="./acous3D_benchmark_base.xml"/>
+  </Included>
 
   <NumericalMethods>
     <FiniteElements>
@@ -74,73 +13,4 @@
         formulation="SEM"/>
     </FiniteElements>
   </NumericalMethods>
-
-  <ElementRegions>
-    <CellElementRegion
-      name="Region"
-      cellBlocks="{ cb }"
-      materialList="{ nullModel }"/>
-  </ElementRegions>
-
-  <Constitutive>
-    <NullModel
-      name="nullModel"/>
-  </Constitutive>
-
-  <FieldSpecifications>
-    <!-- 1) The initial pressure field -->
-    <FieldSpecification
-      name="initialPressure"
-      initialCondition="1"
-      setNames="{ all }"
-      objectPath="nodeManager"
-      fieldName="pressure_n"
-      scale="0.0"/>
-
-    <FieldSpecification
-      name="initialPressure_nm1"
-      initialCondition="1"
-      setNames="{ all }"
-      objectPath="nodeManager"
-      fieldName="pressure_nm1"
-      scale="0.0"/>
-
-    <!-- 2) The velocity in the domain -->
-    <FieldSpecification
-      name="cellVelocity"
-      initialCondition="1"
-      objectPath="ElementRegions/Region/cb"
-      fieldName="mediumVelocity"
-      scale="1500"
-      setNames="{ all }"/>
-
-    <!-- 3) The free surface condition the domain -->
-    <FieldSpecification
-      name="zposFreeSurface"
-      objectPath="faceManager"
-      fieldName="FreeSurface"
-      scale="0.0"
-      setNames="{ zpos }"/>
-  </FieldSpecifications>
-
-  <!-- collect the pressure values at the nodes -->
-  <Tasks>
-    <PackCollection
-      name="pressureCollection"
-      objectPath="/Problem/domain/MeshBodies/mesh/meshLevels/FE1/nodeManager"
-      fieldName="pressure_np1"/>
-  </Tasks>
-
-  <Outputs>
-    <!-- output all the mesh values registered with a plot level LEVEL_0, LEVEL_1, LEVEL_2, LEVEL_3   -->
-    <VTK
-      name="vtkOutput"
-      plotLevel="3"/>
-
-    <!-- output the pressure values to a file named pressure_history.hdf5  -->
-    <TimeHistory
-      name="timeHistoryOutput"
-      sources="{ /Tasks/pressureCollection }"
-      filename="pressure_history"/>
-  </Outputs>
 </Problem>

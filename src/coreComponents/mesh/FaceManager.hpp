@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -117,20 +118,21 @@ public:
    * @param[in] cellBlockManager Provides the mappings.
    * @param[in] elemRegionManager element region manager, needed to map blocks to subregion
    * @param[in] nodeManager Provides the nodes positions.
+   * @param[in] isBaseMeshLevel True if this manager belonds to the base mesh level, false otherwise
    */
   void setGeometricalRelations( CellBlockManagerABC const & cellBlockManager,
                                 ElementRegionManager const & elemRegionManager,
-                                NodeManager const & nodeManager );
+                                NodeManager const & nodeManager, bool isBaseMeshLevel );
 
   /**
    * @brief Link the current manager to other managers.
    * @param[in] nodeManager The node manager instance.
    * @param[in] edgeManager The edge manager instance.
-   * @param[in] elementRegionManager The element region manager instance.
+   * @param[in] elemRegionManager The element region manager instance.
    */
   void setupRelatedObjectsInRelations( NodeManager const & nodeManager,
                                        EdgeManager const & edgeManager,
-                                       ElementRegionManager const & elementRegionManager );
+                                       ElementRegionManager const & elemRegionManager );
 
   /**
    * @brief Compute faces center, area and normal.
@@ -140,10 +142,11 @@ public:
 
   /**
    * @brief Builds the face-on-domain-boundary indicator.
+   * @param[in] elemRegionManager The element region manager.
    * @note Based on the face to element region mapping that must be defined.
    * @see ObjectManagerBase::getDomainBoundaryIndicator()
    */
-  void setDomainBoundaryObjects();
+  void setDomainBoundaryObjects( ElementRegionManager const & elemRegionManager );
 
   /**
    * @brief Build sets from the node sets
@@ -365,7 +368,7 @@ public:
    * @return non-const reference to faces-to-ElementRegion relation
    * @copydetails FaceManager::elementList()
    */
-  array2d< localIndex > const & elementRegionList() { return m_toElements.m_toElementRegion; }
+  array2d< localIndex > & elementRegionList() { return m_toElements.m_toElementRegion; }
 
   /**
    * @brief Get an immutable accessor to the faces-to-ElementRegion relation.
@@ -379,7 +382,7 @@ public:
    * @return non-const reference to faces-to-ElementSubRegion relation
    * @copydetails FaceManager::elementList()
    */
-  array2d< localIndex > const & elementSubRegionList() { return m_toElements.m_toElementSubRegion; }
+  array2d< localIndex > & elementSubRegionList() { return m_toElements.m_toElementSubRegion; }
 
   /**
    * @brief Get an immutable accessor to the faces-to-ElementSubRegion relation.
@@ -432,6 +435,11 @@ public:
 
   ///}@
 
+  /**
+   * @brief Get the maximum number of nodes per face.
+   * @return the maximum number of nodes per face
+   */
+  constexpr static int maxFaceNodes() { return MAX_FACE_NODES; }
 private:
 
   /**

@@ -1,0 +1,71 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Included>
+    <File name="./CasedThermoElasticWellbore_ImperfectInterfaces_base.xml" />
+  </Included>
+
+  <!-- SPHINX_WellboreMesh -->
+  <Mesh>
+    <InternalWellbore
+      name="mesh1"
+      elementTypes="{ C3D8, C3D8, C3D8 }"
+      radius="{ 0.15707, 0.17780, 0.21272, 1.5707 }"
+      theta="{ 0, 90 }"
+      zCoords="{ 0, 0.1 }"
+      nr="{ 2, 2, 2 }"
+      nt="{ 4 }"
+      nz="{ 1 }"
+      trajectory="{ { 0.0, 0.0, 0.0 },
+                    { 0.0, 0.0, 0.1 } }"
+      autoSpaceRadialElems="{ 0, 0, 1 }"
+      cellBlockNames="{ casing, cement, rock }"
+      />
+  </Mesh>
+  <!-- SPHINX_WellboreMeshEnd -->
+
+  <!-- SPHINX_CementSheathInterfaces -->
+  <Geometry>
+    <Cylinder
+      name="casingCementInterface"
+      firstFaceCenter="{ 0.0, 0.0,  -0.001 }"
+      secondFaceCenter="{ 0.0, 0.0, 0.101 }"
+      outerRadius="0.17781"
+      innerRadius="0.17779"
+    />
+
+    <Cylinder
+      name="cementRockInterface"
+      firstFaceCenter="{ 0.0, 0.0,  -0.001 }"
+      secondFaceCenter="{ 0.0, 0.0, 0.101 }"
+      outerRadius="0.21273"
+      innerRadius="0.21271"
+    />
+  </Geometry>
+  <!-- SPHINX_CementSheathInterfacesEnd -->
+
+  <Events maxTime="1.0">
+
+    <SoloEvent
+      name="preFracture"
+      target="/Solvers/SurfaceGen"/>
+
+    <PeriodicEvent
+      name="solverApplications"
+      forceDt="1.0"
+      target="/Solvers/fractureThermoPoroElasticSolver"/>
+
+    <PeriodicEvent
+      name="outputs"
+      timeFrequency="1.0"
+      targetExactTimestep="1"
+      target="/Outputs/vtkOutput"/>
+
+    <PeriodicEvent
+      name="restarts"
+      timeFrequency="0.5"
+      targetExactTimestep="0"
+      target="/Outputs/restartOutput"/>
+  </Events>
+
+</Problem>

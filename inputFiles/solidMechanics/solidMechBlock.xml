@@ -67,7 +67,7 @@
     <!-- ElementRegion name="Region1" cellBlocks="cb1"     numericalMethod="FE1" material="granite"/-->
     <CellElementRegion
       name="Region2"
-      cellBlocks="{ cb1 }"
+      cellBlocks="{ * }"
       materialList="{ shale }"/>
   </ElementRegions>
 
@@ -110,14 +110,6 @@
       scale="0.0"
       setNames="{ zneg, zpos }"/>
 
-    <FieldSpecification
-      name="xposconstraint"
-      objectPath="nodeManager"
-      fieldName="Force"
-      component="1"
-      scale="1.0e6"
-      functionName="timeFunction"
-      setNames="{ source }"/>
   </FieldSpecifications>
 
   <Functions>

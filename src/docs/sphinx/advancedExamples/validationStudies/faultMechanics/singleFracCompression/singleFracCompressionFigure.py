@@ -7,6 +7,8 @@ from mpmath import *
 import math
 from math import sin, cos, tan, exp, atan, asin
 from mpl_toolkits.mplot3d import axes3d
+import os
+import argparse
 
 
 class Analytical:
@@ -64,13 +66,13 @@ def getCompressiveStressFromXML(xmlFilePath):
 def getFractureGeometryFromXML(xmlFilePath):
     tree = ElementTree.parse(xmlFilePath)
 
-    boundedPlane = tree.find('Geometry/BoundedPlane')
-    dimensions = boundedPlane.get("dimensions")
+    rectangle = tree.find('Geometry/Rectangle')
+    dimensions = rectangle.get("dimensions")
     dimensions = [float(i) for i in dimensions[1:-1].split(",")]
     length = dimensions[0] / 2
-    origin = boundedPlane.get("origin")
+    origin = rectangle.get("origin")
     origin = [float(i) for i in origin[1:-1].split(",")]
-    direction = boundedPlane.get("lengthVector")
+    direction = rectangle.get("lengthVector")
     direction = [float(i) for i in direction[1:-1].split(",")]
     inclination = atan(direction[1] / direction[0])
 
@@ -78,17 +80,30 @@ def getFractureGeometryFromXML(xmlFilePath):
 
 
 def main():
+
+   # Initialize the argument parser
+    parser = argparse.ArgumentParser(description="Script to generate figure from tutorial.")
+
+    # Add arguments to accept individual file paths
+    parser.add_argument('--geosDir', help='Path to the GEOS repository ', default='../../../../../../..')
+    parser.add_argument('--outputDir', help='Path to output directory', default='.')
+
+    # Parse the command-line arguments
+    args = parser.parse_args()
+
     # File path
-    hdf5File1Path = "traction_history.hdf5"
-    hdf5File2Path = "displacementJump_history.hdf5"
-    xmlFile1Path = "../../../../../../../inputFiles/lagrangianContactMechanics/ContactMechanics_SingleFracCompression_base.xml"
-    xmlFile2Path = "../../../../../../../inputFiles/lagrangianContactMechanics/ContactMechanics_SingleFracCompression_benchmark.xml"
+    outputDir = args.outputDir
+    geosDir = args.geosDir
+    hdf5File1Path = outputDir + "/traction_history.hdf5"
+    hdf5File2Path = outputDir + "/displacementJump_history.hdf5"
+    xmlFile1Path = geosDir + "/inputFiles/lagrangianContactMechanics/SingleFracCompression_base.xml"
+    xmlFile2Path = geosDir + "/inputFiles/lagrangianContactMechanics/SingleFracCompression_benchmark.xml"
 
     # Read HDF5
     # Global Coordinate of Fracture Element Center
     hf = h5py.File(hdf5File1Path, 'r')
     xl = hf.get('traction elementCenter')
-    xl = np.array(xl)
+    xl = np.asarray(xl)
     xcord = xl[0, :, 0]
     ycord = xl[0, :, 1]
     zcord = xl[0, :, 2]
@@ -96,13 +111,13 @@ def main():
     # Local Normal Traction
     hf = h5py.File(hdf5File1Path, 'r')
     trac = hf.get('traction')
-    trac = np.array(trac)
+    trac = np.asarray(trac)
     normalTraction = trac[0, :, 0]
 
     # Local Shear Displacement
     hf = h5py.File(hdf5File2Path, 'r')
     jump = hf.get('displacementJump')
-    jump = np.array(jump)
+    jump = np.asarray(jump)
     displacementJump = jump[0, :, 1]
 
     # Extract Local Inform for The Middle Layer

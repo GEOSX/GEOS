@@ -43,9 +43,20 @@ def getMeshSettings(xmlFilePath):
 
 
 def main():
+
+   # Initialize the argument parser
+    parser = argparse.ArgumentParser(description="Script to generate figure from tutorial.")
+
+    # Add arguments to accept individual file paths
+    parser.add_argument('--geosDir', help='Path to the GEOS repository ', default='../../../../../../..')
+    parser.add_argument('--outputDir', help='Path to output directory', default='.')
+
+    # Parse the command-line arguments
+    args = parser.parse_args()
+
     # Load and process GEOSX results
     # File path
-    prefix = "../../../../../../../inputFiles/hydraulicFracturing/"
+    prefix = geosDir + "/inputFiles/hydraulicFracturing/"
     hdf5File = prefix + "KGD_validation_output.hdf5"
     xmlFile1Path = prefix + "kgdValidation_base.xml"
     xmlFile2Path = prefix + "kgdValidation_benchmark.xml"
@@ -62,21 +73,21 @@ def main():
     # Global Coordinate of Element Center
     hf = hdf5_wrapper.hdf5_wrapper(hdf5File)
     xl = hf['pressure elementCenter']
-    xl = np.array(xl)
+    xl = np.asarray(xl)
     xcord = xl[-1, :, 0]
     ycord = xl[-1, :, 1]
     zcord = xl[-1, :, 2]
     tl = hf['pressure Time']
-    tl = np.array(tl)
+    tl = np.asarray(tl)
     # Load pressure
     fpre = hf['pressure']
-    fpre = np.array(fpre)
+    fpre = np.asarray(fpre)
     # Load elementAperture
     aper = hf['elementAperture']
-    aper = np.array(aper)
+    aper = np.asarray(aper)
     # Load elementArea
     area = hf['elementArea']
-    area = np.array(area)
+    area = np.asarray(area)
 
     # Query simulation results
     xloc_58 = 0.015

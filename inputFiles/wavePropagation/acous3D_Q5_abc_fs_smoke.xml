@@ -1,0 +1,37 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Included>
+    <File name="./acous3D_Q5_small_base.xml"/>
+  </Included>
+
+  <!-- hexahedral mesh generated internally by GEOSX -->
+  <Mesh>
+    <InternalMesh
+      name="mesh"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0, 101 }"
+      yCoords="{ 0, 101 }"
+      zCoords="{ 0, 101 }"
+      nx="{ 2 }"
+      ny="{ 2 }"
+      nz="{ 2 }"
+      cellBlockNames="{ cb }"/>
+  </Mesh>
+
+  <Geometry>
+    <Box
+      name="zpos"
+      xMin="{ -0.01, -0.01, 100.99 }"
+      xMax="{ 101.01, 101.01, 101.01 }"/>
+  </Geometry>
+
+    <!-- The free surface condition the domain -->
+  <FieldSpecifications>
+    <FieldSpecification
+      name="zposFreeSurface"
+      objectPath="mesh/FE2/faceManager"
+      fieldName="FreeSurface"
+      setNames="{ zpos }"/>
+  </FieldSpecifications>
+</Problem>

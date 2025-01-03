@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -100,17 +101,13 @@ public:
   using UPDATE_BASE::smallStrainUpdate;
   using UPDATE_BASE::smallStrainNoStateUpdate_StressOnly;
   using UPDATE_BASE::smallStrainUpdate_StressOnly;
-  using UPDATE_BASE::hypoUpdate;
-  using UPDATE_BASE::hypoUpdate_StressOnly;
-  using UPDATE_BASE::hyperUpdate;
-  using UPDATE_BASE::hyperUpdate_StressOnly;
   using UPDATE_BASE::saveConvergedState;
 
   using UPDATE_BASE::m_disableInelasticity;
 
   //Standard quadratic degradation functions
 
-  GEOS_FORCE_INLINE
+  inline
   GEOS_HOST_DEVICE
   virtual real64 getDegradationValue( localIndex const k,
                                       localIndex const q ) const
@@ -133,7 +130,7 @@ public:
   }
 
 
-  GEOS_FORCE_INLINE
+  inline
   GEOS_HOST_DEVICE
   virtual real64 getDegradationDerivative( real64 const d ) const
   {
@@ -141,7 +138,7 @@ public:
   }
 
 
-  GEOS_FORCE_INLINE
+  inline
   GEOS_HOST_DEVICE
   virtual real64 getDegradationSecondDerivative( real64 const d ) const
   {
@@ -153,11 +150,12 @@ public:
   GEOS_HOST_DEVICE
   virtual void smallStrainUpdate( localIndex const k,
                                   localIndex const q,
+                                  real64 const & timeIncrement,
                                   real64 const ( &strainIncrement )[6],
                                   real64 ( & stress )[6],
                                   DiscretizationOps & stiffness ) const override
   {
-    UPDATE_BASE::smallStrainUpdate( k, q, strainIncrement, stress, stiffness );
+    UPDATE_BASE::smallStrainUpdate( k, q, timeIncrement, strainIncrement, stress, stiffness );
 
     if( m_disableInelasticity )
     {
@@ -284,7 +282,7 @@ public:
   static string catalogName() { return string( "Damage" ) + BASE::m_catalogNameString; }
   virtual string getCatalogName() const override { return catalogName(); }
 
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   virtual void allocateConstitutiveData( dataRepository::Group & parent,
                                          localIndex const numConstitutivePointsPerParentIndex ) override;

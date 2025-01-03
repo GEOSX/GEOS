@@ -2,11 +2,12 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
@@ -59,7 +60,7 @@ namespace twoInvariant
  * @param[out] deviator Unit orientation (tensor) for deviatoric part in "stress" Voight notation
  */
 GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
+inline
 void strainDecomposition( real64 const ( &strain )[6],
                           real64 & volStrain,
                           real64 & devStrain,
@@ -109,7 +110,7 @@ void strainDecomposition( real64 const ( &strain )[6],
  * @param[out] deviator Unit orientation (tensor) for deviatoric part in "stress" Voight notation
  */
 GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
+inline
 void stressDecomposition( real64 const ( &stress )[6],
                           real64 & volStress,
                           real64 & devStress,
@@ -160,7 +161,7 @@ void stressDecomposition( real64 const ( &stress )[6],
  * @param[out] strain Strain tensor in Voight notation
  */
 GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
+inline
 void strainRecomposition( real64 const & volStrain,
                           real64 const & devStrain,
                           real64 const ( &deviator )[6],
@@ -187,7 +188,7 @@ void strainRecomposition( real64 const & volStrain,
  * @param[out] stress Stress tensor in Voight notation
  */
 GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
+inline
 void stressRecomposition( real64 const & volStress,
                           real64 const & devStress,
                           real64 const ( &deviator )[6],

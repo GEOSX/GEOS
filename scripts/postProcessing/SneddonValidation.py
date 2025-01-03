@@ -59,12 +59,12 @@ def getFracturePressureFromXML(xmlFilePath):
 
 def getFractureLengthFromXML(xmlFilePath):
     tree = ElementTree.parse(xmlFilePath)
-    boundedPlane = tree.find('Geometry/BoundedPlane')
-    dimensions = boundedPlane.get("dimensions")
+    rectangle = tree.find('Geometry/Rectangle')
+    dimensions = rectangle.get("dimensions")
     dimensions = [float(i) for i in dimensions[1:-1].split(",")]
     length = dimensions[0] / 2
 
-    origin = boundedPlane.get("origin")
+    origin = rectangle.get("origin")
     origin = [float(i) for i in origin[1:-1].split(",")]
     return length, origin[0]
 
@@ -77,7 +77,7 @@ def main(filesPaths):
     # Read HDF5
     hf = h5py.File(hdf5File1Path, 'r')
     jump = hf.get('displacementJump')
-    jump = np.array(jump)
+    jump = np.asarray(jump)
     aperture = jump[0, :, 0]
 
     hf = h5py.File(hdf5File1Path, 'r')

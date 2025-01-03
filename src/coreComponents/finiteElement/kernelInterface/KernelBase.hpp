@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -149,7 +150,7 @@ public:
    * of global data into local stack storage.
    */
   GEOS_HOST_DEVICE
-  GEOS_FORCE_INLINE
+  inline
   void setup( localIndex const k,
               StackVariables & stack ) const
   {
@@ -199,7 +200,7 @@ public:
    * Jacobian and Residual into the global Jacobian and Residual.
    */
   GEOS_HOST_DEVICE
-  GEOS_FORCE_INLINE
+  inline
   real64 complete( localIndex const k,
                    StackVariables & stack ) const
   {
@@ -240,6 +241,7 @@ public:
       typename KERNEL_TYPE::StackVariables stack;
 
       kernelComponent.setup( k, stack );
+      // #pragma unroll
       for( integer q=0; q<numQuadraturePointsPerElem; ++q )
       {
         kernelComponent.quadraturePointKernel( k, q, stack );
@@ -263,7 +265,7 @@ protected:
 
   /// The finite element space/discretization object for the element type in
   /// the SUBREGION_TYPE.
-  FE_TYPE const & m_finiteElementSpace;
+  FE_TYPE const m_finiteElementSpace;
 };
 
 /**

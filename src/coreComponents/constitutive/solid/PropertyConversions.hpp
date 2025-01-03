@@ -2,11 +2,12 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
@@ -40,7 +41,7 @@ namespace bulkModAndShearMod
  * @return Young's modulus
  */
 GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
+inline
 real64 toYoungMod( real64 const & K, real64 const & G )
 {
   return 9 * K * G / ( 3 * K + G );
@@ -53,7 +54,7 @@ real64 toYoungMod( real64 const & K, real64 const & G )
  * @return Poisson's ratio
  */
 GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
+inline
 real64 toPoissonRatio( real64 const & K, real64 const & G )
 {
   return ( 3 * K - 2 * G ) / ( 2 * ( 3 * K + G ) );
@@ -66,7 +67,7 @@ real64 toPoissonRatio( real64 const & K, real64 const & G )
  * @return First Lamé parameter
  */
 GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
+inline
 real64 toFirstLame( real64 const & K, real64 const & G )
 {
   return K - 2 * G / 3;
@@ -85,7 +86,7 @@ namespace youngModAndPoissonRatio
  * @return Bulk modulus
  */
 GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
+inline
 real64 toBulkMod( real64 const & E, real64 const & nu )
 {
   return E / (3 * ( 1 - 2*nu ) );
@@ -98,7 +99,7 @@ real64 toBulkMod( real64 const & E, real64 const & nu )
  * @return Shear modulus
  */
 GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
+inline
 real64 toShearMod( real64 const & E, real64 const & nu )
 {
   return E / (2 * ( 1 + nu ) );
@@ -117,7 +118,7 @@ namespace shearModAndPoissonRatio
  * @return Bulk modulus
  */
 GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
+inline
 real64 toBulkMod( real64 const & G, real64 const & nu )
 {
   return 2 * G * ( 1 + nu ) / ( 3 * ( 1 - 2 * nu ) );
@@ -130,7 +131,7 @@ real64 toBulkMod( real64 const & G, real64 const & nu )
  * @return Young's modulus
  */
 GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
+inline
 real64 toYoungMod( real64 const & G, real64 const & nu )
 {
   return 2 * G * ( 1 + nu );
@@ -149,7 +150,7 @@ namespace bulkModAndPoissonRatio
  * @return Young's modulus
  */
 GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
+inline
 real64 toYoungMod( real64 const & K, real64 const & nu )
 {
   return 3 * K * ( 1 - 2 * nu );
@@ -162,7 +163,7 @@ real64 toYoungMod( real64 const & K, real64 const & nu )
  * @return Shear modulus
  */
 GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
+inline
 real64 toShearMod( real64 const & K, real64 const & nu )
 {
   return 3 * K * ( 1 - 2 * nu) / ( 2 * ( 1 + nu ) );
@@ -181,7 +182,7 @@ namespace bulkModAndYoungMod
  * @return Shear modulus
  */
 GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
+inline
 real64 toShearMod( real64 const & K, real64 const & E )
 {
   return 3 * K * E / ( 9 * K - E );
@@ -194,7 +195,7 @@ real64 toShearMod( real64 const & K, real64 const & E )
  * @return Poisson's ratio
  */
 GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
+inline
 real64 toPoissonRatio( real64 const & K, real64 const & E )
 {
   return ( 3 * K - E ) / ( 6 * K);
@@ -212,7 +213,7 @@ namespace shearModAndYoungMod
  * @return Poisson's ratio
  */
 GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
+inline
 real64 toPoissonRatio( real64 const & G, real64 const & E )
 {
   return 0.5 * E / G - 1.0;
@@ -225,7 +226,7 @@ real64 toPoissonRatio( real64 const & G, real64 const & E )
  * @return Bulk modulus
  */
 GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
+inline
 real64 toBulkMod( real64 const & G, real64 const & E )
 {
   return E * G / ( 3 * ( 3 * G - E ) );

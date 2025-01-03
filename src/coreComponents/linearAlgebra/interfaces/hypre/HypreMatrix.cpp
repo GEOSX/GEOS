@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -19,6 +20,7 @@
 #include "HypreMatrix.hpp"
 
 #include "common/TimingMacros.hpp"
+#include "common/GeosxConfig.hpp"
 #include "codingUtilities/Utilities.hpp"
 #include "linearAlgebra/interfaces/hypre/HypreKernels.hpp"
 #include "linearAlgebra/interfaces/hypre/HypreUtils.hpp"
@@ -328,7 +330,7 @@ void HypreMatrix::insert( globalIndex const rowIndex0,
 
   GEOS_LAI_ASSERT( insertable() );
 
-#if defined(GEOSX_USE_HYPRE_CUDA)
+#if GEOS_USE_HYPRE_DEVICE == GEOS_USE_HYPRE_CUDA || GEOS_USE_HYPRE_DEVICE == GEOS_USE_HYPRE_HIP
   array1d< HYPRE_BigInt > rowIndexDevice( 1 );
   array1d< HYPRE_BigInt > colIndexDevice( 1 );
   array1d< HYPRE_Int > ncolsDevice( 1 );
@@ -339,10 +341,10 @@ void HypreMatrix::insert( globalIndex const rowIndex0,
   ncolsDevice[0] = 1;
   valueDevice[0] = value0;
 
-  rowIndexDevice.move( LvArray::MemorySpace::cuda, false );
-  colIndexDevice.move( LvArray::MemorySpace::cuda, false );
-  ncolsDevice.move( LvArray::MemorySpace::cuda, false );
-  valueDevice.move( LvArray::MemorySpace::cuda, false );
+  rowIndexDevice.move( parallelDeviceMemorySpace, false );
+  colIndexDevice.move( parallelDeviceMemorySpace, false );
+  ncolsDevice.move( parallelDeviceMemorySpace, false );
+  valueDevice.move( parallelDeviceMemorySpace, false );
 
   HYPRE_Int * const ncols = ncolsDevice.data();
   HYPRE_BigInt const * const rowIndex = rowIndexDevice.data();
@@ -415,15 +417,15 @@ void HypreMatrix::insert( globalIndex const rowIndex0,
 
   GEOS_LAI_ASSERT( insertable() );
 
-#if defined(GEOSX_USE_HYPRE_CUDA)
+#if GEOS_USE_HYPRE_DEVICE == GEOS_USE_HYPRE_CUDA || GEOS_USE_HYPRE_DEVICE == GEOS_USE_HYPRE_HIP
   array1d< globalIndex > rowIndexDevice( 1 );
   array1d< HYPRE_Int > ncolsDevice( 1 );
 
   rowIndexDevice[0] = rowIndex0;
   ncolsDevice[0] = LvArray::integerConversion< HYPRE_Int >( size );
 
-  rowIndexDevice.move( LvArray::MemorySpace::cuda, false );
-  ncolsDevice.move( LvArray::MemorySpace::cuda, false );
+  rowIndexDevice.move( parallelDeviceMemorySpace, false );
+  ncolsDevice.move( parallelDeviceMemorySpace, false );
 
   globalIndex const * const rowIndex = rowIndexDevice.data();
   HYPRE_Int * const ncols = ncolsDevice.data();
@@ -576,11 +578,11 @@ void HypreMatrix::insert( arrayView1d< globalIndex const > const & rowIndices,
   {
     nCols[i] = 1;
   }
-#if defined(GEOSX_USE_HYPRE_CUDA)
-  rowIndices.move( LvArray::MemorySpace::cuda, false );
-  colIndices.move( LvArray::MemorySpace::cuda, false );
-  values.move( LvArray::MemorySpace::cuda, false );
-  nCols.move( LvArray::MemorySpace::cuda, false );
+#if GEOS_USE_HYPRE_DEVICE == GEOS_USE_HYPRE_CUDA || GEOS_USE_HYPRE_DEVICE == GEOS_USE_HYPRE_HIP
+  rowIndices.move( parallelDeviceMemorySpace, false );
+  colIndices.move( parallelDeviceMemorySpace, false );
+  values.move( parallelDeviceMemorySpace, false );
+  nCols.move( parallelDeviceMemorySpace, false );
 #endif
   GEOS_LAI_CHECK_ERROR( HYPRE_IJMatrixAddToValues( m_ij_mat,
                                                    numRows,
@@ -845,13 +847,17 @@ void HypreMatrix::separateComponentFilter( HypreMatrix & dst,
   GEOS_LAI_ASSERT_EQ( temp, 0 );
 
   CRSMatrix< real64 > tempMat;
+
   tempMat.resize( numLocalRows(), numGlobalCols(), maxRowEntries / dofsPerNode );
   CRSMatrixView< real64 > const tempMatView = tempMat.toView();
 
   globalIndex const firstLocalRow = ilower();
   globalIndex const firstLocalCol = jlower();
+
   hypre::CSRData< true > const diag{ hypre_ParCSRMatrixDiag( unwrapped() ) };
+
   hypre::CSRData< true > const offd{ hypre_ParCSRMatrixOffd( unwrapped() ) };
+
   HYPRE_BigInt const * const colMap = hypre::getOffdColumnMap( unwrapped() );
 
   auto const getComponent = [dofsPerNode] GEOS_HYPRE_DEVICE ( auto const i )
@@ -885,6 +891,7 @@ void HypreMatrix::separateComponentFilter( HypreMatrix & dst,
   } );
 
   dst.create( tempMatView.toViewConst(), numLocalCols(), comm() );
+
   dst.setDofManager( dofManager() );
 }
 
@@ -998,10 +1005,16 @@ localIndex HypreMatrix::rowLength( globalIndex const globalRowIndex ) const
   HYPRE_Int ia_diag_h[2];
   HYPRE_Int ia_offd_h[2];
 
-#if defined(GEOSX_USE_HYPRE_CUDA)
+#if GEOS_USE_HYPRE_DEVICE == GEOS_USE_HYPRE_CUDA
   // Don't know if this is faster or slower than launching a kernel. We should deprecate this function in any case.
   cudaMemcpy( ia_diag_h, ia_diag + localRow, 2 * sizeof( HYPRE_Int ), cudaMemcpyDeviceToHost );
   cudaMemcpy( ia_offd_h, ia_offd + localRow, 2 * sizeof( HYPRE_Int ), cudaMemcpyDeviceToHost );
+#elif GEOS_USE_HYPRE_DEVICE == GEOS_USE_HYPRE_HIP
+  // Don't know if this is faster or slower than launching a kernel. We should deprecate this function in any case.
+  hipError_t err = hipMemcpy( ia_diag_h, ia_diag + localRow, 2 * sizeof( HYPRE_Int ), hipMemcpyDeviceToHost );
+  GEOS_ERROR_IF( err != 0, GEOS_FMT( "{}", hipGetErrorString( err ) ) );
+  err = hipMemcpy( ia_offd_h, ia_offd + localRow, 2 * sizeof( HYPRE_Int ), hipMemcpyDeviceToHost );
+  GEOS_ERROR_IF( err != 0, GEOS_FMT( "{}", hipGetErrorString( err ) ) );
 #else
   ia_diag_h[0] = ia_diag[localRow]; ia_diag_h[1] = ia_diag[localRow + 1];
   ia_offd_h[0] = ia_offd[localRow]; ia_offd_h[1] = ia_offd[localRow + 1];
@@ -1040,8 +1053,10 @@ void HypreMatrix::getRowCopy( globalIndex const globalRowIndex,
                                                        -1,
                                                        &numEntries,
                                                        &row,
+                                                       nullptr,
                                                        hypre::toHypreBigInt( colIndices ),
-                                                       values ) );
+                                                       values,
+                                                       0 ) );
 }
 
 void HypreMatrix::extractDiagonal( HypreVector & dst ) const

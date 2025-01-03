@@ -5,10 +5,10 @@ import HydrofractureSolutions
 import sys
 
 
-def getParametersFromXML(xmlFilePath):
-    prefix = "../../../../../../../inputFiles/hydraulicFracturing/"
+def getParametersFromXML( geosDir, xmlFilePrefix):
+    prefix = geosDir + "/inputFiles/hydraulicFracturing/"
 
-    tree = ElementTree.parse(prefix + xmlFilePath + "_benchmark.xml")
+    tree = ElementTree.parse(prefix + xmlFilePrefix + "_benchmark.xml")
 
     maxTime = float(tree.find('Events').get('maxTime'))
 
@@ -22,7 +22,7 @@ def getParametersFromXML(xmlFilePath):
             found_source = True
         if found_source: break
 
-    tree = ElementTree.parse(prefix + xmlFilePath + "_base.xml")
+    tree = ElementTree.parse(prefix + xmlFilePrefix + "_base.xml")
 
     elasticParam = tree.find('Constitutive/ElasticIsotropic')    
 
@@ -30,30 +30,30 @@ def getParametersFromXML(xmlFilePath):
 
     fluidDensity = float(tree.find('Constitutive/CompressibleSinglePhaseFluid').get('defaultDensity'))
 
-    if xmlFilePath == 'kgdToughnessDominated' or xmlFilePath == 'kgdViscosityDominated':
+    if xmlFilePrefix == 'kgdToughnessDominated' or xmlFilePrefix == 'kgdViscosityDominated':
 
         youngModulus = float(elasticParam.get('defaultYoungModulus'))
         poissonRatio = float(elasticParam.get('defaultPoissonRatio'))
         injectionRate = -2.0 * float(tree.find('FieldSpecifications/SourceFlux').get('scale')) / fluidDensity
-        tree = ElementTree.parse(prefix + xmlFilePath + "_base.xml")
+        tree = ElementTree.parse(prefix + xmlFilePrefix + "_base.xml")
         toughness = float(tree.find('Solvers/SurfaceGenerator').get('rockToughness'))
 
-    elif xmlFilePath == 'pennyShapedToughnessDominated' or xmlFilePath == 'pennyShapedViscosityDominated':
+    elif xmlFilePrefix == 'pennyShapedToughnessDominated' or xmlFilePrefix == 'pennyShapedViscosityDominated':
         K = float(elasticParam.get('defaultBulkModulus'))
         G = float(elasticParam.get('defaultShearModulus'))
         youngModulus = (9.0 * K * G) / (3.0 * K + G)
         poissonRatio = youngModulus / (2.0 * G) - 1.0
         injectionRate = -4.0 * float(tree.find('FieldSpecifications/SourceFlux').get('scale')) / fluidDensity
-        tree = ElementTree.parse(prefix + xmlFilePath + "_benchmark.xml")
+        tree = ElementTree.parse(prefix + xmlFilePrefix + "_benchmark.xml")
         toughness = float(tree.find('Solvers/SurfaceGenerator').get('rockToughness'))
 
-    elif xmlFilePath == 'pknViscosityDominated':
+    elif xmlFilePrefix == 'pknViscosityDominated':
         K = float(elasticParam.get('defaultBulkModulus'))
         G = float(elasticParam.get('defaultShearModulus'))
         youngModulus = (9.0 * K * G) / (3.0 * K + G)
         poissonRatio = youngModulus / (2.0 * G) - 1.0
         injectionRate = -4.0 * float(tree.find('FieldSpecifications/SourceFlux').get('scale')) / fluidDensity
-        tree = ElementTree.parse(prefix + xmlFilePath + "_benchmark.xml")
+        tree = ElementTree.parse(prefix + xmlFilePrefix + "_benchmark.xml")
         toughness = float(tree.find('Solvers/SurfaceGenerator').get('rockToughness'))
         found_core = False
         for elem in param:
@@ -67,43 +67,18 @@ def getParametersFromXML(xmlFilePath):
     return [maxTime, youngModulus, poissonRatio, toughness, viscosity, injectionRate, x_source]
 
 
-class PKN_viscosityStorageDominated:
 
-    def __init__(self, E, nu, KIC, mu, Q0, t, h):
-        Ep = E / (1.0 - nu**2.0)
-        self.t = t
-        self.Q0 = Q0
-        self.mu = mu
-        self.Ep = Ep
-        self.h = h
+def main( geosDir, xmlFilePrefix=''):
+    if not xmlFilePrefix:
+        xmlFilePrefix = sys.argv[1]
 
-    def analyticalSolution(self):
-        t = self.t
-        Q0 = self.Q0
-        mu = self.mu
-        Ep = self.Ep
-        h = self.h
-
-        halfLength = 0.3817 * ((Ep * Q0**3.0 * t**4.0) / (mu * h**4.0))**(1.0 / 5.0)
-
-        inletAperture = 3.0 * ((mu * Q0 * halfLength) / (Ep))**(1.0 / 4.0)
-
-        inletPressure = ((16.0 * mu * Q0 * Ep**3.0 * halfLength) / (np.pi * h**4.0))**(1.0 / 4.0)
-
-        return [halfLength, inletAperture, inletPressure]
-
-
-def main(xmlFilePathPrefix=''):
-    if not xmlFilePathPrefix:
-        xmlFilePathPrefix = sys.argv[1]
-
-    tMax, E, nu, KIC, mu, Q0, xSource = getParametersFromXML(xmlFilePathPrefix)
+    tMax, E, nu, KIC, mu, Q0, xSource = getParametersFromXML( geosDir, xmlFilePrefix)
     Ep = E / (1.0 - nu**2.0)
 
     t = np.arange(0.01 * tMax, tMax, 0.01 * tMax)
     radTimes = np.array([tMax])
 
-    if xmlFilePathPrefix == 'kgdToughnessDominated':
+    if xmlFilePrefix == 'kgdToughnessDominated':
         hfsolns = HydrofractureSolutions.KGDSolutions()
         kgdFrac = hfsolns.Solutions(mu, Ep, Q0, KIC, t, radTimes, xSource)
         inletPressure = kgdFrac[5]
@@ -111,7 +86,7 @@ def main(xmlFilePathPrefix=''):
         inletAperture = kgdFrac[7]
         lablelist = ['Asymptotic ( $\mu$ => 0, $C_{L}$ => 0 )', 'GEOSX ( $\mu$ => 0, $C_{L}$ => 0 )']
 
-    elif xmlFilePathPrefix == 'kgdViscosityDominated':
+    elif xmlFilePrefix == 'kgdViscosityDominated':
         hfsolns = HydrofractureSolutions.KGDSolutions()
         kgdFrac = hfsolns.Solutions(mu, Ep, Q0, KIC, t, radTimes, xSource)
         inletPressure = kgdFrac[8]
@@ -119,7 +94,7 @@ def main(xmlFilePathPrefix=''):
         inletAperture = kgdFrac[10]
         lablelist = ['Asymptotic ( $K_{IC}$ => 0, $C_{L}$ => 0 )', 'GEOSX ( $K_{IC}$ => 0, $C_{L}$ => 0 )']
 
-    elif xmlFilePathPrefix == 'pennyShapedToughnessDominated':
+    elif xmlFilePrefix == 'pennyShapedToughnessDominated':
         hfsolns = HydrofractureSolutions.PennySolutions()
         pennyFrac = hfsolns.Solutions(mu, Ep, Q0, KIC, t, radTimes, xSource)
         inletPressure = pennyFrac[5]
@@ -127,7 +102,7 @@ def main(xmlFilePathPrefix=''):
         inletAperture = pennyFrac[7]
         lablelist = ['Asymptotic ( $\mu$ => 0, $C_{L}$ => 0 )', 'GEOSX ( $\mu$ => 0, $C_{L}$ => 0 )']
 
-    elif xmlFilePathPrefix == 'pennyShapedViscosityDominated':
+    elif xmlFilePrefix == 'pennyShapedViscosityDominated':
         hfsolns = HydrofractureSolutions.PennySolutions()
         pennyFrac = hfsolns.Solutions(mu, Ep, Q0, KIC, t, radTimes, xSource)
         inletPressure = pennyFrac[8]
@@ -135,8 +110,8 @@ def main(xmlFilePathPrefix=''):
         inletAperture = pennyFrac[10]
         lablelist = ['Asymptotic ( $K_{IC}$ => 0, $C_{L}$ => 0 )', 'GEOSX ( $K_{IC}$ => 0, $C_{L}$ => 0 )']
 
-    elif xmlFilePathPrefix == 'pknViscosityDominated':
-        pknFrac = PKN_viscosityStorageDominated(E, nu, KIC, mu, Q0, t, xSource)
+    elif xmlFilePrefix == 'pknViscosityDominated':
+        pknFrac = HydrofractureSolutions.PKN_viscosityStorageDominated(E, nu, KIC, mu, Q0, t, xSource)
         halfLength, inletAperture, inletPressure = pknFrac.analyticalSolution()
         lablelist = ['Asymptotic ( $K_{IC}$ => 0, $C_{L}$ => 0 )', 'GEOSX ( $K_{IC}$ => 0, $C_{L}$ => 0 )']
 

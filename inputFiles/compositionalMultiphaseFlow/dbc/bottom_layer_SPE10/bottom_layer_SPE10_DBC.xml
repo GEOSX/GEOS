@@ -1,0 +1,108 @@
+<?xml version="1.0" ?>
+
+<Problem>
+
+  <Included>
+    <File name="./bottom_layer_SPE10_base.xml"/>
+  </Included>
+
+  <Solvers
+    gravityVector="{ 0.0, 0.0, 9.81 }">
+
+    <CompositionalMultiphaseFVM
+      name="bottom_layer_SPE10"
+      logLevel="1"
+      discretization="fluidTPFA"
+      temperature="300"
+      useMass="1"
+      initialDt="10000"
+      solutionChangeScalingFactor="1"
+      targetPhaseVolFractionChangeInTimeStep="1.0"
+      targetRelativePressureChangeInTimeStep="1.0"
+      maxCompFractionChange="1.0"
+      targetRegions="{ region }"
+      useDBC="1"
+      continuationDBC="1"
+      omegaDBC="1"
+      miscibleDBC="0"
+      kappaminDBC="1e-3"
+      contMultiplierDBC="0.1">
+      <NonlinearSolverParameters
+        newtonTol="1e-4"
+        newtonMaxIter="20"
+        maxTimeStepCuts="1000"
+        lineSearchAction="None"
+        timeStepDecreaseFactor="0.9"
+        timeStepIncreaseFactor="1.5" 
+        timeStepDecreaseIterLimit="0.8"
+        timeStepIncreaseIterLimit="0.6"/>
+      <LinearSolverParameters
+        directParallel="0"/>
+    </CompositionalMultiphaseFVM>
+
+  </Solvers>
+
+  <Events
+    maxTime="2e7">
+
+    <PeriodicEvent
+      name="solverApplications"
+      maxEventDt="2e7"	
+      target="/Solvers/bottom_layer_SPE10"/>
+
+    <PeriodicEvent
+      name="outputs"
+      timeFrequency="2e7"
+      target="/Outputs/vtkOutput_cont"/> 
+
+    <PeriodicEvent
+      name="restarts"
+      timeFrequency="2e7" 
+      target="/Outputs/restartOutput"/>   
+    
+  </Events>
+
+  <Tasks>
+     <CompositionalMultiphaseStatistics
+      name="compflowstats"
+      flowSolverName="bottom_layer_SPE10"
+      logLevel="1"
+      computeCFLNumbers="1"/> 
+      <!-- computeRegionStatistics="1" -->
+  </Tasks>
+  
+  <Mesh>
+    <InternalMesh
+      name="mesh"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0, 365.76 }"
+      yCoords="{ 0, 670.56 }"
+      zCoords="{ 0, 0.6096 }"
+      nx="{ 60 }"
+      ny="{ 220 }"
+      nz="{ 1 }"
+      cellBlockNames="{ cellBlock }"/>
+  </Mesh>
+
+  <Geometry>
+    <Box
+      name="source"
+      xMin="{ -0.01, 667.482, -0.01 }"
+      xMax="{ 6.126, 670.60, 0.61 }"/>
+    <Box
+      name="sink1"
+      xMin="{ 359.634, -0.01, -0.01 }"
+      xMax="{ 365.8, 3.048, 0.61 }"/>
+  </Geometry>
+
+  <Outputs>
+    <VTK 
+      name="vtkOutput_cont"/>
+ 
+    <Restart
+      name="restartOutput"/>  
+  </Outputs>
+
+  
+  
+</Problem>

@@ -2,11 +2,12 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
@@ -18,7 +19,7 @@
 #include "constitutive/solid/DruckerPrager.hpp"
 #include "constitutive/solid/DruckerPragerExtended.hpp"
 #include "constitutive/solid/InvariantDecompositions.hpp"
-
+#include "constitutive/solid/SolidUtilities.hpp"
 #include "dataRepository/xmlWrapper.hpp"
 #include "common/GEOS_RAJA_Interface.hpp"
 
@@ -72,8 +73,7 @@ void testDruckerPragerDriver()
                                                                   "</Constitutive>";
 
   xmlWrapper::xmlDocument xmlDocument;
-  xmlWrapper::xmlResult xmlResult = xmlDocument.load_buffer( inputStream.c_str(),
-                                                             inputStream.size() );
+  xmlWrapper::xmlResult xmlResult = xmlDocument.loadString( inputStream );
   if( !xmlResult )
   {
     GEOS_LOG_RANK_0( "XML parsed with errors!" );
@@ -81,9 +81,9 @@ void testDruckerPragerDriver()
     GEOS_LOG_RANK_0( "Error offset: " << xmlResult.offset );
   }
 
-  xmlWrapper::xmlNode xmlConstitutiveNode = xmlDocument.child( "Constitutive" );
-  constitutiveManager.processInputFileRecursive( xmlConstitutiveNode );
-  constitutiveManager.postProcessInputRecursive();
+  xmlWrapper::xmlNode xmlConstitutiveNode = xmlDocument.getChild( "Constitutive" );
+  constitutiveManager.processInputFileRecursive( xmlDocument, xmlConstitutiveNode );
+  constitutiveManager.postInputInitializationRecursive();
 
   localIndex constexpr numElem = 2;
   localIndex constexpr numQuad = 4;
@@ -108,14 +108,15 @@ void testDruckerPragerDriver()
 
   StrainData data;
   data.strainIncrement[0] = -1e-4;
+  real64 timeIncrement = 0;
 
   for( localIndex loadstep=0; loadstep < 50; ++loadstep )
   {
-    forAll< parallelDevicePolicy<> >( 1, [=] GEOS_HOST_DEVICE ( localIndex const k )
+    forAll< POLICY >( 1, [=] GEOS_HOST_DEVICE ( localIndex const k )
     {
       real64 stress[6] = {0};
       real64 stiffness[6][6] = {{0}};
-      cmw.smallStrainUpdate( k, 0, data.strainIncrement, stress, stiffness );
+      cmw.smallStrainUpdate( k, 0, timeIncrement, data.strainIncrement, stress, stiffness );
     } );
     cm.saveConvergedState();
   }
@@ -142,12 +143,12 @@ void testDruckerPragerDriver()
   // we now use a finite-difference check of tangent stiffness to confirm
   // the analytical form is working properly.
 
-  EXPECT_TRUE( cmw.checkSmallStrainStiffness( 0, 0, data.strainIncrement ) );
+  EXPECT_TRUE( SolidUtilities::checkSmallStrainStiffness( cmw, 0, 0, timeIncrement, data.strainIncrement ) );
 }
 
 
-#ifdef USE_CUDA
-TEST( DruckerPragerTests, testDruckerPragerHost )
+#ifdef GEOS_USE_DEVICE
+TEST( DruckerPragerTests, testDruckerPragerDevice )
 {
   testDruckerPragerDriver< geos::parallelDevicePolicy< > >();
 }
@@ -188,8 +189,7 @@ void testDruckerPragerExtendedDriver()
                                 "</Constitutive>";
 
   xmlWrapper::xmlDocument xmlDocument;
-  xmlWrapper::xmlResult xmlResult = xmlDocument.load_buffer( inputStream.c_str(),
-                                                             inputStream.size() );
+  xmlWrapper::xmlResult xmlResult = xmlDocument.loadString( inputStream );
   if( !xmlResult )
   {
     GEOS_LOG_RANK_0( "XML parsed with errors!" );
@@ -197,9 +197,9 @@ void testDruckerPragerExtendedDriver()
     GEOS_LOG_RANK_0( "Error offset: " << xmlResult.offset );
   }
 
-  xmlWrapper::xmlNode xmlConstitutiveNode = xmlDocument.child( "Constitutive" );
-  constitutiveManager.processInputFileRecursive( xmlConstitutiveNode );
-  constitutiveManager.postProcessInputRecursive();
+  xmlWrapper::xmlNode xmlConstitutiveNode = xmlDocument.getChild( "Constitutive" );
+  constitutiveManager.processInputFileRecursive( xmlDocument, xmlConstitutiveNode );
+  constitutiveManager.postInputInitializationRecursive();
 
   localIndex constexpr numElem = 2;
   localIndex constexpr numQuad = 4;
@@ -223,6 +223,7 @@ void testDruckerPragerExtendedDriver()
   DruckerPragerExtended::KernelWrapper cmw = cm.createKernelUpdates();
 
   StrainData data;
+  real64 timeIncrement = 0;
   data.strainIncrement[0] = -1e-3;
   real64 invariantP, invariantQ;
   real64 deviator[6] = {0};
@@ -230,11 +231,11 @@ void testDruckerPragerExtendedDriver()
   //FILE* fp = fopen("pq.txt","w");
   for( localIndex loadstep=0; loadstep < 300; ++loadstep )
   {
-    forAll< parallelDevicePolicy<> >( 1, [=] GEOS_HOST_DEVICE ( localIndex const k )
+    forAll< POLICY >( 1, [=] GEOS_HOST_DEVICE ( localIndex const k )
     {
       real64 stress[6] = {0};
       real64 stiffness[6][6] = {{0}};
-      cmw.smallStrainUpdate( k, 0, data.strainIncrement, stress, stiffness );
+      cmw.smallStrainUpdate( k, 0, timeIncrement, data.strainIncrement, stress, stiffness );
     } );
 
     cm.saveConvergedState();
@@ -264,10 +265,10 @@ void testDruckerPragerExtendedDriver()
   // we now use a finite-difference check of tangent stiffness to confirm
   // the analytical form is working properly.
 
-  EXPECT_TRUE( cmw.checkSmallStrainStiffness( 0, 0, data.strainIncrement ) );
+  EXPECT_TRUE( SolidUtilities::checkSmallStrainStiffness( cmw, 0, 0, timeIncrement, data.strainIncrement ) );
 }
 
-#ifdef USE_CUDA
+#ifdef GEOS_USE_DEVICE
 TEST( DruckerPragerTests, testDruckerPragerExtendedDevice )
 {
   testDruckerPragerExtendedDriver< geos::parallelDevicePolicy< > >();

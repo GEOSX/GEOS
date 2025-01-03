@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -15,69 +16,73 @@
 #include <gtest/gtest.h>
 
 #include "dataRepository/xmlWrapper.hpp"
+#include "common/format/EnumStrings.hpp"
 
 using namespace geos;
 
 TEST( testXmlWrapper, array3d_errors )
 {
-  string input;
-
-  // This should work
-  {
-    input = " { { {0,1,2},{3,4,5} }, { {6,7,8},{9,10,11} }, { {12,13,14},{15,16,17} } , { {18,19,20},{21,22,23} } }";
-    array3d< int > array;
-    xmlWrapper::stringToInputVariable( array, input );
-  }
-  // This should fail the num('{')==num('}') test
-  {
-    input = " { { {0,1,2},{3,4,5} }, { {6,7,8},{9,10,11} }, { {12,13,14},{15,16,17} } , { {18,19,20},{21,22,23} } ";
-    array3d< int > array;
-    ASSERT_THROW( xmlWrapper::stringToInputVariable( array, input ), std::invalid_argument );
-  }
-  {
-    input = " { { {0,1,2},{3,4,5} }, { {6,7,8},{9,10,11} }, { {12,13,14},{15,16,17}  , { {18,19,20},{21,22,23} } }";
-    array3d< int > array;
-    ASSERT_THROW( xmlWrapper::stringToInputVariable( array, input ), std::invalid_argument );
-  }
-  {
-    input = " { { {0,1,2},{3,4,5} }, { {6,7,8},{9,10,11} }, { {12,13,14,{15,16,17} } , { {18,19,20},{21,22,23} } }";
-    array3d< int > array;
-    ASSERT_THROW( xmlWrapper::stringToInputVariable( array, input ), std::invalid_argument );
-  }
-  {
-    input = " { { {0,1,2},{3,4,5} }, { {6,7,8,{9,10,11} }, { {12,13,14},{15,16,17} } , { {18,19,20},{21,22,23} } }";
-    array3d< int > array;
-    ASSERT_THROW( xmlWrapper::stringToInputVariable( array, input ), std::invalid_argument );
-  }
-  {
-    input = " { { 0,1,2},{3,4,5} }, { {6,7,8},{9,10,11} }, { {12,13,14},{15,16,17} } , { {18,19,20},{21,22,23} } }";
-    array3d< int > array;
-    ASSERT_THROW( xmlWrapper::stringToInputVariable( array, input ), std::invalid_argument );
-  }
-  {
-    input = "  { {0,1,2},{3,4,5} }, { {6,7,8},{9,10,11} }, { {12,13,14},{15,16,17} } , { {18,19,20},{21,22,23} } ";
-    array3d< int > array;
-    ASSERT_THROW( xmlWrapper::stringToInputVariable( array, input ), std::invalid_argument );
-  }
+  Regex const & array3DIntRegex = rtTypes::getTypeRegex< array3d< int > >();
+  array3d< int > array;
 
   {
-    input = " { { {,1,2},{3,4,5} }, { {6,7,8},{9,10,11} }, { {12,13,14},{15,16,17} } , { {18,19,20},{21,22,23} } }";
-    array3d< int > array;
-    ASSERT_THROW( xmlWrapper::stringToInputVariable( array, input ), std::invalid_argument );
+    std::vector< string > workingInputs = {
+      // testing without spaces with various array sizes
+      "{{{0}}}",
+      "{{{0,1,2}}}",
+      "{{{0,1,2},{3,4,5},{3,4,5}}}",
+      "{{{0,1,2},{3,4,5},{3,4,5}},{{6,7,8},{9,10,11},{12,13,14}},{{15,16,17},{18,19,20},{21,22,23}}}",
+      //testing with spaces
+      " { { { 0 } } } ",
+      " { { { 0, 1, 2 } } } ",
+      " { { { 0 , 1 , 2 } } } ",
+      " { { { 0, 1, 2 }, { 3, 4, 5 }, { 3, 4, 5 } } } ",
+      " { { { 0 , 1 , 2 } , { 3 , 4 , 5 } , { 3 , 4 , 5 } } } ",
+      " { { { 0, 1, 2 }, { 3, 4, 5 }, { 3, 4, 5 } }, { { 6, 7, 8 }, { 9, 10, 11 }, { 12, 13, 14 } }, { { 15, 16, 17 }, { 18, 19, 20 }, { 21, 22, 23 } } } ",
+      " { { { 0 , 1 , 2 } , { 3 , 4 , 5 } , { 3 , 4 , 5 } } , { { 6 , 7 , 8 } , { 9 , 10 , 11 } , { 12 , 13 , 14 } } , { { 15 , 16 , 17 } , { 18 , 19 , 20 } , { 21 , 22 , 23 } } } ",
+      "   {   {   {   0   }   }   }   ",
+      "   {   {   {   0,   1,   2   }   }   }   ",
+      "   {   {   {   0   ,   1   ,   2   }   }   }   ",
+      "   {   {   {   0,   1,   2   },   {   3,   4,   5   },   {   3,   4,   5   }   }   }   ",
+      "   {   {   {   0   ,   1   ,   2   }   ,   {   3   ,   4   ,   5   }   ,   {   3   ,   4   ,   5   }   }   }   ",
+      "   {   {   {   0,   1,   2   },   {   3,   4,   5   },   {   3,   4,   5   }   },   {   {   6,   7,   8   },   {   9,   10,   11   },   {   12,   13,   14   }   },   {   {   15,   16,   17   },   {   18,   19,   20   },   {   21,   22,   23   }   }   }   ",
+      "   {   {   {   0   ,   1   ,   2   }   ,   {   3   ,   4   ,   5   }   ,   {   3   ,   4   ,   5   }   }   ,   {   {   6   ,   7   ,   8   }   ,   {   9   ,   10   ,   11   }   ,   {   12   ,   13   ,   14   }   }   ,   {   {   15   ,   16   ,   17   }   ,   {   18   ,   19   ,   20   }   ,   {   21   ,   22   ,   23   }   }   }   ",
+    };
+    for( string const & input : workingInputs )
+    {
+      EXPECT_NO_THROW( xmlWrapper::stringToInputVariable( array, input, array3DIntRegex ) );
+    }
   }
-
   {
-    input = " { { {},{3,4,5} }, { {6,7,8},{9,10,11} }, { {12,13,14},{15,16,17} } , { {18,19,20},{21,22,23} } }";
-    array3d< int > array;
-    ASSERT_THROW( xmlWrapper::stringToInputVariable( array, input ), std::invalid_argument );
+    std::vector< string > erroneousInputs = {
+      // fordbiden characters
+      "{{{0,1,2},{3, hello,5},{3,4,5}},{{6,7,8},{9,10,11},{12,13,14}},{{15,16,17},{18,19,20},{21,22,23}}}",
+      "{{{0,1,2 + 2},{3, 2 * 2,5},{3,4,5}},{{6,7,8},{9,10,11},{12,13,14}},{{15,16,17},{18,19,20},{21,22,23}}}",
+      // illegal empty entries
+      "{{{ }}}",
+      "{{{0, ,2}}}",
+      "{{{0,1,2}, ,{3,4,5}}}",
+      "{{{0,1,2},{3,4,5},{3,4,5}}, ,{{15,16,17},{18,19,20},{21,22,23}}}",
+      // unclosed brackets (these should fail the num('{')==num('}') test)
+      " { { {0,1,2},{3,4,5} }, { {6,7,8},{9,10,11} }, { {12,13,14},{15,16,17} } , { {18,19,20},{21,22,23} } ",
+      " { { {0,1,2},{3,4,5} }, { {6,7,8},{9,10,11} }, { {12,13,14},{15,16,17}  , { {18,19,20},{21,22,23} } }",
+      " { { {0,1,2},{3,4,5} }, { {6,7,8},{9,10,11} }, { {12,13,14,{15,16,17} } , { {18,19,20},{21,22,23} } }",
+      " { { {0,1,2},{3,4,5} }, { {6,7,8,{9,10,11} }, { {12,13,14},{15,16,17} } , { {18,19,20},{21,22,23} } }",
+      " { { 0,1,2},{3,4,5} }, { {6,7,8},{9,10,11} }, { {12,13,14},{15,16,17} } , { {18,19,20},{21,22,23} } }",
+      "  { {0,1,2},{3,4,5} }, { {6,7,8},{9,10,11} }, { {12,13,14},{15,16,17} } , { {18,19,20},{21,22,23} } ",
+      " { { {,1,2},{3,4,5} }, { {6,7,8},{9,10,11} }, { {12,13,14},{15,16,17} } , { {18,19,20},{21,22,23} } }",
+      " { { {},{3,4,5} }, { {6,7,8},{9,10,11} }, { {12,13,14},{15,16,17} } , { {18,19,20},{21,22,23} } }",
+      " { { {0,1,2}}{ } }",
+      // comma mistakes (arbitrary replaced with spaces)
+      "{{{0,1,2},{3,4   5},{3,4,5}},{{6,7,8},{9,10,11},{12,13,14}},{{15,16,17},{18,19,20},{21,22,23}}}",
+      "{{{0,1,2},{3,4,5}   {3,4,5}},{{6,7,8},{9,10,11},{12,13,14}},{{15,16,17},{18,19,20},{21,22,23}}}",
+      "{{{0,1,2},{3,4,5},{3,4,5}}   {{6,7,8},{9,10,11},{12,13,14}},{{15,16,17},{18,19,20},{21,22,23}}}",
+    };
+    for( string const & input : erroneousInputs )
+    {
+      EXPECT_ANY_THROW( xmlWrapper::stringToInputVariable( array, input, array3DIntRegex ) );
+    }
   }
-  {
-    input = " { { {0,1,2}}{ } }";
-    array3d< int > array;
-    ASSERT_THROW( xmlWrapper::stringToInputVariable( array, input ), std::invalid_argument );
-  }
-
-
 }
 
 TEST( testXmlWrapper, array3d )
@@ -118,7 +123,8 @@ TEST( testXmlWrapper, array3d )
   input += " }";
 
   array3d< int > array;
-  xmlWrapper::stringToInputVariable( array, input );
+  EXPECT_NO_THROW( xmlWrapper::stringToInputVariable( array, input,
+                                                      rtTypes::getTypeRegex< array3d< int > >() ) );
 
   ASSERT_EQ( array.size( 0 ), numI );
   ASSERT_EQ( array.size( 1 ), numJ );
@@ -140,7 +146,8 @@ template< typename T, int N >
 void testTensorWellFormed( string const & input, Tensor< T, N > const expected )
 {
   Tensor< T, N > output;
-  xmlWrapper::stringToInputVariable( output, input );
+  EXPECT_NO_THROW( xmlWrapper::stringToInputVariable( output, input,
+                                                      rtTypes::getTypeRegex< Tensor< T, N > >() ) );
   EXPECT_EQ( output, expected );
 }
 
@@ -148,7 +155,8 @@ template< typename T, int N >
 void testTensorIllFormed( string const & input )
 {
   Tensor< T, N > output;
-  EXPECT_THROW( xmlWrapper::stringToInputVariable( output, input ), InputError );
+  EXPECT_THROW( xmlWrapper::stringToInputVariable( output, input,
+                                                   rtTypes::getTypeRegex< Tensor< T, N > >() ), InputError );
 }
 
 TEST( testXmlWrapper, TensorWellFormed )
@@ -194,7 +202,8 @@ public:
   void parseString()
   {
     SCOPED_TRACE( "Parsing string: " + attributeString );
-    xmlWrapper::stringToInputVariable< T >( parsedValue, attributeString );
+    xmlWrapper::stringToInputVariable< T >( parsedValue, attributeString,
+                                            rtTypes::getTypeRegex< T >() );
     compareValues();
   }
 
@@ -210,7 +219,7 @@ public:
     }
     else
     {
-      parseString();
+      EXPECT_NO_THROW( parseString() );
     }
   }
 };
@@ -319,6 +328,85 @@ INSTANTIATE_TEST_SUITE_P(
                      std::make_tuple( "1 ", 0, true ),
                      std::make_tuple( "1 2", 0, true )));
 
+
+enum class TestEnum { None, Default, Value, Value2 };
+ENUM_STRINGS( TestEnum, "None", "Default", "Value", "Value2" );
+
+class enumAttributeTestFixture : public AttributeReadTestFixture< TestEnum > {};
+
+TEST_P( enumAttributeTestFixture, testParsing )
+{
+  testParams = GetParam();
+  this->test();
+}
+
+INSTANTIATE_TEST_SUITE_P(
+  enumAttributeTests,
+  enumAttributeTestFixture,
+  ::testing::Values( std::make_tuple( "None", TestEnum::None, false ),
+                     std::make_tuple( "Default", TestEnum::Default, false ),
+                     std::make_tuple( "Value", TestEnum::Value, false ),
+                     std::make_tuple( "Value2", TestEnum::Value2, false ),
+                     std::make_tuple( "0", TestEnum( 0 ), true ),
+                     std::make_tuple( "4.", TestEnum( 0 ), true ),
+                     std::make_tuple( "alpha", TestEnum( 0 ), true ),
+                     std::make_tuple( "Val", TestEnum( 0 ), true ),
+                     std::make_tuple( "Def ault", TestEnum( 0 ), true ),
+                     std::make_tuple( "None123", TestEnum( 0 ), true ) ) );
+
+
+TEST( testXmlWrapper, testGroupNamesFormats )
+{
+  struct GroupNameTest
+  {
+    Regex const & m_regex;
+    string m_valueToTest;
+    GroupNameTest( Regex const & regex, string_view valueToTest ):
+      m_regex( regex ), m_valueToTest( valueToTest ) {}
+  };
+
+  Regex const & groupNameRegex = rtTypes::getTypeRegex< string >( rtTypes::CustomTypes::groupName );
+  string groupName;
+
+  {
+    std::vector< GroupNameTest > workingInputs = {
+      GroupNameTest( groupNameRegex, "testname" ),
+      GroupNameTest( groupNameRegex, "testname01" ),
+      GroupNameTest( groupNameRegex, "test_name" ),
+      GroupNameTest( groupNameRegex, "test-name" ),
+      GroupNameTest( groupNameRegex, "test.name" ),
+    };
+    for( GroupNameTest const & input : workingInputs )
+    {
+      EXPECT_NO_THROW( xmlWrapper::stringToInputVariable( groupName, input.m_valueToTest, input.m_regex ) );
+      EXPECT_STREQ( input.m_valueToTest.c_str(), groupName.c_str() );
+    }
+  }
+  {
+    std::vector< GroupNameTest > erroneousInputs = {
+      //empty entries
+      GroupNameTest( groupNameRegex, "" ),
+      GroupNameTest( groupNameRegex, " " ),
+      GroupNameTest( groupNameRegex, "\t" ),
+      //white spaces
+      GroupNameTest( groupNameRegex, "test name" ),
+      GroupNameTest( groupNameRegex, "test\tname" ),
+      GroupNameTest( groupNameRegex, "testname " ),
+      GroupNameTest( groupNameRegex, " testname" ),
+      //fordbiden characters
+      GroupNameTest( groupNameRegex, "test/name" ),
+      GroupNameTest( groupNameRegex, "test:name" ),
+      GroupNameTest( groupNameRegex, "test;name" ),
+      GroupNameTest( groupNameRegex, "test\\name" ),
+    };
+    for( GroupNameTest const & input : erroneousInputs )
+    {
+      EXPECT_THROW( xmlWrapper::stringToInputVariable( groupName, input.m_valueToTest, input.m_regex ),
+                    InputError ) << "Parsing input '"<< input.m_valueToTest
+                                 << "' with regex '" << input.m_regex.m_regexStr << "' didn't throw an InputError as expected.";
+    }
+  }
+}
 
 
 int main( int argc, char * argv[] )

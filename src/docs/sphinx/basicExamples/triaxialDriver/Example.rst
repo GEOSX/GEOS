@@ -1,9 +1,9 @@
 .. _triaxialDriverExample:
 
 
-###########################################################
-Triaxial Driver
-###########################################################
+#############################################################
+Triaxial Driver: Extended Drucker-Prager Elasto-Plastic Model
+#############################################################
 
 
 **Context**
@@ -28,7 +28,7 @@ The XML file for this test case is located at:
 
 .. code-block:: console
 
-  inputFiles/triaxialDriver/triaxialDriver_ExtendedDruckerPrager.xml
+  inputFiles/triaxialDriver/triaxialDriver_ExtendedDruckerPrager_basicExample.xml
 
 
 This example also uses a set of table files located at:
@@ -92,7 +92,7 @@ This stress has a negative value due to the negative sign convention for compres
 Then, ``steps="200"`` defines the number of load steps and ``output="simulationResults.txt"`` specifies an output file to which the simulation results will be written. 
 
 
-.. literalinclude:: ../../../../../inputFiles/triaxialDriver/triaxialDriver_ExtendedDruckerPrager.xml
+.. literalinclude:: ../../../../../inputFiles/triaxialDriver/triaxialDriver_ExtendedDruckerPrager_basicExample.xml
     :language: xml
     :start-after: <!-- SPHINX_TASK -->
     :end-before: <!-- SPHINX_TASK_END -->
@@ -114,7 +114,7 @@ If the residual friction angle is set to be less than the initial one, strain we
 Setting ``defaultDilationRatio="1.0"`` corresponds to an associated flow rule.
 
 
-.. literalinclude:: ../../../../../inputFiles/triaxialDriver/triaxialDriver_ExtendedDruckerPrager.xml
+.. literalinclude:: ../../../../../inputFiles/triaxialDriver/triaxialDriver_ExtendedDruckerPrager_basicExample.xml
     :language: xml
     :start-after: <!-- SPHINX_MATERIAL -->
     :end-before: <!-- SPHINX_MATERIAL_END -->
@@ -133,7 +133,7 @@ In this case, users should define two different time history functions (``strain
 Note that for standard tests with simple loading history, functions can be embedded directly in the XML file without using external tables.
 
 
-.. literalinclude:: ../../../../../inputFiles/triaxialDriver/triaxialDriver_ExtendedDruckerPrager.xml
+.. literalinclude:: ../../../../../inputFiles/triaxialDriver/triaxialDriver_ExtendedDruckerPrager_basicExample.xml
     :language: xml
     :start-after: <!-- SPHINX_FUNCTION -->
     :end-before: <!-- SPHINX_FUNCTION_END -->
@@ -175,7 +175,7 @@ Mesh
 Even if discretization is not required for the ``TriaxialDriver``, a dummy mesh should be defined to pass all the necessary checks when initializing GEOS and running the module. A dummy mesh should be created in the ``Mesh`` section and assigned to the ``cellBlocks`` in the ``ElementRegions`` section. 
 
 
-.. literalinclude:: ../../../../../inputFiles/triaxialDriver/triaxialDriver_ExtendedDruckerPrager.xml
+.. literalinclude:: ../../../../../inputFiles/triaxialDriver/triaxialDriver_ExtendedDruckerPrager_basicExample.xml
     :language: xml
     :start-after: <!-- SPHINX_MESH -->
     :end-before: <!-- SPHINX_MESH_END -->
@@ -192,7 +192,7 @@ The ``TriaxialDriver`` is launched like any other GEOS simulation by using the f
 
 .. code-block:: sh
 
-   path/to/geosx -i triaxialDriver_ExtendedDruckerPrager.xml
+   path/to/geosx -i triaxialDriver_ExtendedDruckerPrager_basicExample.xml
 
 
 The running log appears to the console to indicate if the case can be successfully executed or not:

@@ -1,0 +1,19 @@
+--- a/IO/XML/vtkXMLReader.cxx	2023-02-14 20:03:53.000000000 -0800
++++ b/IO/XML/vtkXMLReader.cxx.patch	2023-05-12 08:52:36.017274000 -0700
+@@ -53,6 +53,7 @@
+ #include <algorithm>
+ #include <cassert>
+ #include <cctype>
++#include <cmath>
+ #include <functional>
+ #include <locale> // C++ locale
+ #include <numeric>
+@@ -1958,7 +1959,7 @@
+   if (!this->AbortExecute)
+   {
+     // Round progress to nearest 100th.
+-    float rounded = static_cast<float>(int((progress * 100) + 0.5f)) / 100.f;
++    float const rounded = std::round(progress * 100) * 0.01;
+     if (this->GetProgress() != rounded)
+     {
+       this->UpdateProgress(rounded);

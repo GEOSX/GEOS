@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -33,7 +34,7 @@
  */
 ///@{
 
-#if defined(__CUDACC__)
+#if defined(GEOS_USE_DEVICE)
 #define GEOS_HOST __host__
 #define GEOS_DEVICE __device__
 #define GEOS_HOST_DEVICE __host__ __device__
@@ -50,6 +51,11 @@
 #define GEOS_FORCE_INLINE inline
 /// Compiler directive specifying to unroll the loop.
 #define PRAGMA_UNROLL
+#endif
+
+#if defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)
+/// Macro defined when currently compiling on device (only defined in the device context).
+#define GEOS_DEVICE_COMPILE
 #endif
 
 ///@}
@@ -82,7 +88,7 @@ void i_g_n_o_r_e( ARGS const & ... ) {}
 
 ///@}
 
-#if defined(GEOSX_USE_OPENMP)
+#if defined(GEOS_USE_OPENMP)
 /// Wrap a pragma clause in the _Pragma statement. We seek to make this include the omp portion of the clause.
 #define PRAGMA_OMP( clause ) _Pragma( clause )
 //  #define PRAGMA_OMP( clause ) _Pragma( STRINGIZE( omp clause ) )
@@ -105,5 +111,26 @@ void i_g_n_o_r_e( ARGS const & ... ) {}
 
 /// Macro to concatenate two tokens (user level)
 #define GEOS_CONCAT( A, B ) GEOS_CONCAT_IMPL( A, B )
+
+/**
+ * @brief [[maybe_unused]] when >= C++17, or compiler-specific implementations
+ *        when < C++17
+ */
+#if __cplusplus >= 201703L
+#define GEOS_MAYBE_UNUSED [[maybe_unused]]
+#else
+// If not C++17 or later, check the compiler.
+    #ifdef _MSC_VER
+// Microsoft Visual Studio
+#define GEOS_MAYBE_UNUSED __pragma(warning(suppress: 4100))
+    #elif defined(__GNUC__) || defined(__clang__)
+// GCC or Clang
+#define GEOS_MAYBE_UNUSED __attribute__((unused))
+    #else
+// If the compiler is unknown, we can't suppress the warning,
+// so we define GEOS_MAYBE_UNUSED as an empty macro.
+#define GEOS_MAYBE_UNUSED
+    #endif
+#endif
 
 #endif // GEOS_COMMON_GEOSXMACROS_HPP_

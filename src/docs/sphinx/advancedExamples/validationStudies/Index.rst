@@ -14,6 +14,10 @@ Validation and Verification Studies
    hydraulicFracture/Index
 
    wellboreProblems/Index
+
+   viscoplasticity/Index
+
+   poromechanics/Index
   
    thermoPoromechanics/Index
 

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -94,6 +95,11 @@ public:
   void setupCommunications( bool use_nonblocking );
 
   /**
+   * @brief Constructs the global information of this DomainPartition, needed to set up ghosting
+   */
+  void setupBaseLevelMeshGlobalInfo();
+
+  /**
    * @brief Recursively builds neighbors if an MPI cartesian topology is used (i.e. not metis).
    * @param idim Dimension index in the cartesian.
    * @param cartcomm Communicator with cartesian structure.
@@ -110,6 +116,12 @@ public:
   void addNeighbors( const unsigned int idim,
                      MPI_Comm & cartcomm,
                      int * ncoords );
+
+  /**
+   * @brief Outputs information about the partitioning of the domain.
+   */
+  void outputPartitionInformation() const;
+
   ///@}
 
 
@@ -248,21 +260,6 @@ public:
     getMeshBodies().forSubGroupsIndex< MeshBody >( std::forward< FUNCTION >( function ) );
   }
 
-
-  /**
-   * @brief Get the metis neighbors indices.  @see DomainPartition#m_metisNeighborList
-   * @return Container of global indices.
-   */
-  std::set< int > & getMetisNeighborList()
-  { return m_metisNeighborList; }
-
-  /**
-   * @brief Get the metis neighbors indices, const version. @see DomainPartition#m_metisNeighborList
-   * @return Container of global indices.
-   */
-  std::set< int > const & getMetisNeighborList() const
-  { return m_metisNeighborList; }
-
   /**
    * @brief Get the neighbor communicators. @see DomainPartition#m_neighbors.
    * @return Container of communicators.
@@ -279,10 +276,6 @@ public:
 
 private:
 
-  /**
-   * @brief Contains the global indices of the metis neighbors in case `metis` is used. Empty otherwise.
-   */
-  std::set< int > m_metisNeighborList;
   /**
    * @brief Contains all the communicators from this DomainPartition to its neighbors.
    */

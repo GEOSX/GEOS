@@ -7,9 +7,8 @@
       name="poroSolver"
       targetRegions="{ Domain, Fracture }"      
       initialDt="1e-3"
-      fracturesSolverName="fractureMechSolver"
+      solidSolverName="fractureMechSolver"
       flowSolverName="flowSolver"
-      solidSolverName="matrixMechSolver"      
       logLevel="1">
       <NonlinearSolverParameters
         newtonTol="1.0e-1"
@@ -22,28 +21,21 @@
     <SolidMechanicsEmbeddedFractures
       name="fractureMechSolver"
       targetRegions="{ Domain, Fracture }"
-      solidSolverName="matrixMechSolver"
-      fractureRegionName="Fracture"
-      contactRelationName="fractureContact"/>
-
-    <SolidMechanicsLagrangianSSLE
-      name="matrixMechSolver"
       timeIntegrationOption="QuasiStatic"
       discretization="FE1"
-      targetRegions="{ Domain }"
-      />
+      contactPenaltyStiffness="2.0e11"/>
 
     <SinglePhaseFVM
       name="flowSolver"
       discretization="singlePhaseTPFA"
-      targetRegions="{ Domain, Fracture }"
-      />
+      targetRegions="{ Domain, Fracture }"/>
 
     <EmbeddedSurfaceGenerator
       name="SurfaceGenerator" 
       discretization="FE1"     
       targetRegions="{ Domain, Fracture }"
       fractureRegion="Fracture"
+      targetObjects="{ FracturePlane }"
       logLevel="2"
       mpiCommOrder="1"/>
   </Solvers>
@@ -65,15 +57,15 @@
   <ElementRegions>
     <CellElementRegion
       name="Domain"
-      cellBlocks="{ cb1 }"
+      cellBlocks="{ * }"
       materialList="{ porousRock, water }"/>
 
     <SurfaceElementRegion
       name="Fracture"
       faceBlock="embeddedSurfaceSubRegion"
       subRegionType="embeddedElement"
-      materialList="{ water, fractureFilling, fractureContact }"
-      defaultAperture="1e-3"/>
+      materialList="{ water, fractureFilling, frictionLaw, hApertureModel }"
+      defaultAperture="1.0e-3"/>
   </ElementRegions>
   
   <Constitutive>
@@ -104,7 +96,7 @@
 
     <BiotPorosity
       name="rockPorosity"
-      grainBulkModulus="1.0e27"
+      defaultGrainBulkModulus="1.0e27"
       defaultReferencePorosity="0.2"/>
 
     <CompressibleSolidExponentialDecayPermeability
@@ -128,16 +120,18 @@
       initialPermeability="{1.0e-12, 1.0e-12, 1.0e-12}"/>
       
     <FrictionlessContact
-      name="fractureContact"
-      penaltyStiffness="2.0e11"
-      apertureTableName="aperTable"/>
+      name="frictionLaw"/>
+
+    <HydraulicApertureTable
+      name="hApertureModel"
+      apertureTableName="aperTable"/>  
   </Constitutive>
   
   <Functions>
     <TableFunction
         name="aperTable"
         coordinates="{ -1.0e-3, 0.0 }"
-        values="{ 1.0e-6, 1.0e-4 }"/>    
+        values="{ 1.0e-6, 1.0e-3 }"/>    
   </Functions>
 
   <FieldSpecifications>

@@ -2,11 +2,12 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
@@ -80,7 +81,7 @@ void exportArray( HYPRE_MemoryLocation const location,
 {
   if( location == HYPRE_MEMORY_HOST )
   {
-    dst.move( LvArray::MemorySpace::host, true );
+    dst.move( hostMemorySpace, true );
     std::transform( src, src + dst.size(), dst.begin(),
                     []( T const v ) { return static_cast< U >( v ); } );
   }
@@ -100,7 +101,7 @@ void exportArray( HYPRE_MemoryLocation const location,
 {
   if( location == HYPRE_MEMORY_HOST )
   {
-    src.move( LvArray::MemorySpace::host, false );
+    src.move( hostMemorySpace, false );
     std::transform( src.begin(), src.end(), dst,
                     []( T const v ) { return static_cast< U >( v ); } );
   }
@@ -202,7 +203,7 @@ void HypreExport::importVector( arrayView1d< real64 const > const & values,
     if( MpiWrapper::commRank( vec.comm() ) == m_targetRank )
     {
       GEOS_LAI_ASSERT_EQ( values.size(), vec.globalSize() );
-      values.move( LvArray::MemorySpace::host, false );
+      values.move( hostMemorySpace, false );
 
       // HACK: create a hypre vector that points to local data; we have to use const_cast,
       //       but this is ok because we don't modify the values, only scatter the vector.

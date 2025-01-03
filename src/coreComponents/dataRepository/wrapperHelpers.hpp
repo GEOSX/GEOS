@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -32,8 +33,9 @@
 #include "common/GeosxMacros.hpp"
 #include "common/Span.hpp"
 #include "codingUtilities/traits.hpp"
+#include "LvArray/src/system.hpp"
 
-#if defined(GEOSX_USE_PYGEOSX)
+#if defined(GEOS_USE_PYGEOSX)
 #include "LvArray/src/python/python.hpp"
 #endif
 
@@ -187,18 +189,40 @@ resize( T & GEOS_UNUSED_PARAM( value ),
         localIndex const GEOS_UNUSED_PARAM( newSize ) )
 {}
 
-
-template< typename T, int NDIM, typename PERMUTATION >
-inline std::enable_if_t< DefaultValue< Array< T, NDIM, PERMUTATION > >::has_default_value >
-resizeDefault( Array< T, NDIM, PERMUTATION > & value,
+template< typename T >
+inline std::enable_if_t< traits::HasMemberFunction_resizeDefault< T > &&
+                         DefaultValue< T >::has_default_value >
+resizeDefault( T & value,
                localIndex const newSize,
-               DefaultValue< Array< T, NDIM, PERMUTATION > > const & defaultValue )
+               DefaultValue< T > const & defaultValue,
+               string const & )
 { value.resizeDefault( newSize, defaultValue.value ); }
 
 template< typename T >
-inline void
-resizeDefault( T & value, localIndex const newSize, DefaultValue< T > const & GEOS_UNUSED_PARAM( defaultValue ) )
-{ resize( value, newSize ); }
+inline std::enable_if_t< !( traits::HasMemberFunction_resizeDefault< T > &&
+                            DefaultValue< T >::has_default_value ) >
+resizeDefault( T & value,
+               localIndex const newSize,
+               DefaultValue< T > const & GEOS_UNUSED_PARAM( defaultValue ),
+               string const & name )
+{
+#if !defined(NDEBUG)
+  GEOS_LOG_RANK_0( GEOS_FMT( "Warning: For Wrapper<{}>::name() = {}:\n"
+                             "  wrapperHelpers::resizeDefault<{}>() called, but the SFINAE filter failed:\n"
+                             "    traits::HasMemberFunction_resizeDefault< {} > = {}\n "
+                             "    DefaultValue< {} >::has_default_value = {}",
+                             LvArray::system::demangleType< T >(),
+                             name,
+                             LvArray::system::demangleType< T >(),
+                             LvArray::system::demangleType< T >(),
+                             traits::HasMemberFunction_resizeDefault< T >,
+                             LvArray::system::demangleType< T >(),
+                             DefaultValue< T >::has_default_value ) );
+#else
+  GEOS_UNUSED_VAR( name );
+#endif
+  resize( value, newSize );
+}
 
 
 template< typename T, int NDIM, typename PERMUTATION >
@@ -228,7 +252,7 @@ byteSizeOfElement()
 template< typename T >
 inline size_t
 byteSize( T const & value )
-{ return size( value ) * byteSizeOfElement< T >(); }
+{ return wrapperHelpers::size( value ) * byteSizeOfElement< T >(); }
 
 
 template< typename T >
@@ -259,7 +283,7 @@ capacity( T const & value )
 template< typename T >
 std::enable_if_t< !traits::HasMemberFunction_capacity< T const >, localIndex >
 capacity( T const & value )
-{ return size( value ); }
+{ return wrapperHelpers::size( value ); }
 
 
 
@@ -312,7 +336,7 @@ template< typename T >
 std::enable_if_t< !bufferOps::can_memcpy< typename traits::Pointer< T > > >
 pullDataFromConduitNode( T & var, conduit::Node const & node )
 {
-  conduit::Node const & valuesNode = node.child( "__values__" );
+  conduit::Node const & valuesNode = node.fetch_existing( "__values__" );
 
   // Get the number of bytes in the array and a pointer to the array.
   localIndex const byteSize = valuesNode.dtype().number_of_elements();
@@ -366,7 +390,7 @@ template< typename T >
 std::enable_if_t< bufferOps::can_memcpy< typename traits::Pointer< T > > >
 pullDataFromConduitNode( T & var, conduit::Node const & node )
 {
-  conduit::Node const & valuesNode = node.child( "__values__" );
+  conduit::Node const & valuesNode = node.fetch_existing( "__values__" );
 
   localIndex const byteSize = LvArray::integerConversion< localIndex >( valuesNode.dtype().strided_bytes() );
   localIndex const numElements = numElementsFromByteSize< T >( byteSize );
@@ -381,7 +405,7 @@ template< typename T >
 std::enable_if_t< bufferOps::can_memcpy< T > >
 pullDataFromConduitNode( SortedArray< T > & var, conduit::Node const & node )
 {
-  conduit::Node const & valuesNode = node.child( "__values__" );
+  conduit::Node const & valuesNode = node.fetch_existing( "__values__" );
 
   localIndex const byteSize = LvArray::integerConversion< localIndex >( valuesNode.dtype().strided_bytes() );
   localIndex const numElements = numElementsFromByteSize< T >( byteSize );
@@ -453,7 +477,7 @@ pullDataFromConduitNode( Array< T, NDIM, PERMUTATION > & var,
   constexpr int totalNumDimensions = NDIM + hasImplicitDimension;
 
   // Check that the permutations match.
-  conduit::Node const & permutationNode = node.child( "__permutation__" );
+  conduit::Node const & permutationNode = node.fetch_existing( "__permutation__" );
   GEOS_ERROR_IF_NE( permutationNode.dtype().number_of_elements(), totalNumDimensions );
 
   constexpr std::array< camp::idx_t, NDIM > const perm = RAJA::as_array< PERMUTATION >::get();
@@ -471,7 +495,7 @@ pullDataFromConduitNode( Array< T, NDIM, PERMUTATION > & var,
   }
 
   // Now pull out the dimensions and resize the array.
-  conduit::Node const & dimensionNode = node.child( "__dimensions__" );
+  conduit::Node const & dimensionNode = node.fetch_existing( "__dimensions__" );
   GEOS_ERROR_IF_NE( dimensionNode.dtype().number_of_elements(), totalNumDimensions );
   camp::idx_t const * const dims = dimensionNode.value();
 
@@ -483,11 +507,138 @@ pullDataFromConduitNode( Array< T, NDIM, PERMUTATION > & var,
   var.resize( NDIM, dims );
 
   // Finally memcpy
-  conduit::Node const & valuesNode = node.child( "__values__" );
+  conduit::Node const & valuesNode = node.fetch_existing( "__values__" );
   localIndex numBytesFromArray =  var.size() * sizeof( T );
   GEOS_ERROR_IF_NE( numBytesFromArray, valuesNode.dtype().strided_bytes() );
   std::memcpy( var.data(), valuesNode.data_ptr(), numBytesFromArray );
 }
+
+
+
+template< typename T, typename INDEX_TYPE >
+std::enable_if_t< bufferOps::can_memcpy< T > >
+pushDataToConduitNode( ArrayOfArrays< T, INDEX_TYPE > const & var2,
+                       conduit::Node & node )
+{
+  ArrayOfArraysView< T const, INDEX_TYPE > const & var = var2.toViewConst();
+  internal::logOutputType( LvArray::system::demangleType( var ), "Output array via external pointer: " );
+
+  // ArrayOfArrays::m_numArrays
+  INDEX_TYPE const numArrays = var.size();
+  conduit::DataType const numArraysType( conduitTypeInfo< INDEX_TYPE >::id, 1 );
+  node[ "__numberOfArrays__" ].set( numArraysType, const_cast< void * >( static_cast< void const * >(&numArrays) ) );
+
+  // ArrayOfArrays::m_offsets
+  INDEX_TYPE const * const offsets = var.getOffsets();
+  conduit::DataType const offsetsType( conduitTypeInfo< INDEX_TYPE >::id, numArrays+1 );
+  node[ "__offsets__" ].set_external( offsetsType, const_cast< void * >( static_cast< void const * >( offsets ) ) );
+
+  // ArrayOfArrays::m_sizes
+  INDEX_TYPE const * const sizes = var.getSizes();
+  conduit::DataType const sizesType( conduitTypeInfo< INDEX_TYPE >::id, numArrays );
+  node[ "__sizes__" ].set_external( sizesType, const_cast< void * >( static_cast< void const * >( sizes ) ) );
+
+  // **** WARNING: alters the uninitialized values in the ArrayOfArrays ****
+  T * const values = const_cast< T * >(var.getValues());
+  for( INDEX_TYPE i = 0; i < numArrays; ++i )
+  {
+    INDEX_TYPE const curOffset = offsets[ i ];
+    INDEX_TYPE const nextOffset = offsets[ i + 1 ];
+    for( INDEX_TYPE j = curOffset + var.sizeOfArray( i ); j < nextOffset; ++j )
+    {
+      if constexpr ( std::is_arithmetic< T >::value )
+      {
+        values[ j ] = 0;
+      }
+      else
+      {
+        values[ j ] = T();
+      }
+    }
+  }
+
+  constexpr int conduitTypeID = conduitTypeInfo< T >::id;
+  constexpr int sizeofConduitType = conduitTypeInfo< T >::sizeOfConduitType;
+  conduit::DataType const dtype( conduitTypeID, offsets[numArrays] * sizeof( T ) / sizeofConduitType );
+
+  // Push the data into conduit
+  node[ "__values__" ].set_external( dtype, values );
+}
+
+template< typename T, typename INDEX_TYPE >
+std::enable_if_t< bufferOps::can_memcpy< T > >
+pullDataFromConduitNode( ArrayOfArrays< T, INDEX_TYPE > & var,
+                         conduit::Node const & node )
+{
+
+  // numArrays node
+  conduit::Node const & numArraysNode = node.fetch_existing( "__numberOfArrays__" );
+  INDEX_TYPE const * const numArrays = numArraysNode.value();
+
+  // offsets node
+  conduit::Node const & offsetsNode = node.fetch_existing( "__offsets__" );
+  conduit::DataType const & offsetsDataType = offsetsNode.dtype();
+  INDEX_TYPE const * const offsets = offsetsNode.value();
+  INDEX_TYPE const sizeOffsets = offsetsDataType.number_of_elements();
+
+  // sizes node
+  conduit::Node const & sizesNode = node.fetch_existing( "__sizes__" );
+  conduit::DataType const & sizesDataType = sizesNode.dtype();
+  INDEX_TYPE const * const sizes = sizesNode.value();
+  INDEX_TYPE const sizeSizes = sizesDataType.number_of_elements();
+
+  // Check that the numArrays, sizes and offsets are consistent.
+  GEOS_ERROR_IF_NE( *numArrays, sizeSizes );
+  GEOS_ERROR_IF_NE( *numArrays+1, sizeOffsets );
+
+  // values node
+  conduit::Node const & valuesNode = node.fetch_existing( "__values__" );
+  conduit::DataType const & valuesDataType = valuesNode.dtype();
+  const INDEX_TYPE valuesSize = valuesDataType.number_of_elements();
+
+  // should preallocate var.m_values with estimated sizes
+  INDEX_TYPE const arraySizeEstimate = (*numArrays)==0 ? 0 : valuesSize / (*numArrays);
+  var.resize( *numArrays, arraySizeEstimate );
+  var.reserveValues( valuesSize );
+
+  // correctly set the sizes and capacities of each sub-array
+  localIndex allocatedSize = 0;
+  for( INDEX_TYPE i = 0; i < *numArrays; ++i )
+  {
+    INDEX_TYPE const arrayAllocation = offsets[i+1] - offsets[i];
+    var.setCapacityOfArray( i, arrayAllocation );
+    var.resizeArray( i, sizes[ i ] );
+    allocatedSize += arrayAllocation;
+  }
+
+  // make sure that the allocated size is the same as the number of values read
+  GEOS_ERROR_IF_NE( valuesSize, allocatedSize );
+
+  // make sure the allocatedSize is consistent wit the last offset
+  GEOS_ERROR_IF_NE( allocatedSize, offsets[sizeOffsets-1] );
+
+  // get a view because the ArrayOfArraysView data accessors are protected
+  ArrayOfArraysView< T const, INDEX_TYPE > const & varView = var.toViewConst();
+  INDEX_TYPE const * const varOffsets = varView.getOffsets();
+  INDEX_TYPE const * const varSizes = varView.getSizes();
+
+  // check that the offsets that are read are the same as the ones that were allocated
+  GEOS_ERROR_IF_NE( varOffsets[0], offsets[0] );
+
+  // check each subarray has the identical capacity and size
+  for( INDEX_TYPE i = 0; i<*numArrays; ++i )
+  {
+    GEOS_ERROR_IF_NE( varOffsets[i+1], offsets[i+1] );
+    GEOS_ERROR_IF_NE( varSizes[i], sizes[i] );
+  }
+
+  // copy the values
+  localIndex numBytesFromArray =  allocatedSize * sizeof( T );
+  GEOS_ERROR_IF_NE( numBytesFromArray, valuesDataType.strided_bytes() );
+  std::memcpy( const_cast< T * >(varView.getValues()), valuesNode.data_ptr(), numBytesFromArray );
+}
+
+
 
 template< typename T >
 void pushDataToConduitNode( InterObjectRelation< T > const & var,
@@ -521,7 +672,7 @@ addBlueprintField( ArrayView< T const, NDIM, USD > const & var,
     GEOS_ERROR_IF_NE( localIndex( componentNames.size() ), totalNumberOfComponents );
   }
 
-  var.move( LvArray::MemorySpace::host, false );
+  var.move( hostMemorySpace, false );
 
   conduit::DataType dtype( conduitTypeID, var.size( 0 ) );
   dtype.set_stride( sizeof( ConduitType ) * numComponentsPerValue * var.strides()[ 0 ] );
@@ -570,6 +721,7 @@ void addBlueprintField( T const &,
 {
   GEOS_ERROR( "Cannot create a mcarray out of " << LvArray::system::demangleType< T >() <<
               "\nWas trying to write it to " << fields.path() );
+  GEOS_UNUSED_VAR( fields );
 }
 
 template< typename T, int NDIM, int USD >
@@ -589,7 +741,7 @@ populateMCArray( ArrayView< T const, NDIM, USD > const & var,
     GEOS_ERROR_IF_NE( localIndex( componentNames.size() ), numComponentsPerValue * var.size() / var.size( 0 ) );
   }
 
-  var.move( LvArray::MemorySpace::host, false );
+  var.move( hostMemorySpace, false );
 
   conduit::DataType dtype( conduitTypeID, var.size( 0 ) );
   dtype.set_stride( sizeof( ConduitType ) * numComponentsPerValue * var.strides()[ 0 ] );
@@ -616,6 +768,7 @@ void populateMCArray( T const &,
 {
   GEOS_ERROR( "Cannot create a mcarray out of " << LvArray::system::demangleType< T >() <<
               "\nWas trying to write it to " << node.path() );
+  GEOS_UNUSED_VAR( node );
 }
 
 template< typename T >
@@ -767,12 +920,12 @@ UnpackDevice( buffer_unit_type const * &, T const &, parallelDeviceEvents & )
 
 template< typename T, typename IDX >
 inline std::enable_if_t< bufferOps::is_container< T >, localIndex >
-UnpackByIndexDevice( buffer_unit_type const * & buffer, T const & var, IDX & idx, parallelDeviceEvents & events )
-{ return bufferOps::UnpackByIndexDevice( buffer, var, idx, events ); }
+UnpackByIndexDevice( buffer_unit_type const * & buffer, T const & var, IDX & idx, parallelDeviceEvents & events, MPI_Op op=MPI_REPLACE )
+{ return bufferOps::UnpackByIndexDevice( buffer, var, idx, events, op ); }
 
 template< typename T, typename IDX >
 inline std::enable_if_t< !bufferOps::is_container< T >, localIndex >
-UnpackByIndexDevice( buffer_unit_type const * &, T &, IDX &, parallelDeviceEvents & )
+UnpackByIndexDevice( buffer_unit_type const * &, T &, IDX &, parallelDeviceEvents &, MPI_Op )
 {
   GEOS_ERROR( "Trying to unpack data type (" << LvArray::system::demangleType< T >() << ") by index on device. Operation not supported." );
   return 0;
@@ -812,18 +965,18 @@ UnpackDataDevice( buffer_unit_type const * &, T const &, parallelDeviceEvents & 
 
 template< typename T, typename IDX >
 inline std::enable_if_t< bufferOps::is_container< T >, localIndex >
-UnpackDataByIndexDevice( buffer_unit_type const * & buffer, T const & var, IDX & idx, parallelDeviceEvents & events )
-{ return bufferOps::UnpackDataByIndexDevice( buffer, var, idx, events ); }
+UnpackDataByIndexDevice( buffer_unit_type const * & buffer, T const & var, IDX & idx, parallelDeviceEvents & events, MPI_Op op )
+{ return bufferOps::UnpackDataByIndexDevice( buffer, var, idx, events, op ); }
 
 template< typename T, typename IDX >
 inline std::enable_if_t< !bufferOps::is_container< T >, localIndex >
-UnpackDataByIndexDevice( buffer_unit_type const * &, T const &, IDX &, parallelDeviceEvents & )
+UnpackDataByIndexDevice( buffer_unit_type const * &, T const &, IDX &, parallelDeviceEvents &, MPI_Op )
 {
   GEOS_ERROR( "Trying to unpack data type (" << LvArray::system::demangleType< T >() << ") by index on device. Operation not supported." );
   return 0;
 }
 
-#if defined(GEOSX_USE_PYGEOSX)
+#if defined(GEOS_USE_PYGEOSX)
 
 template< typename T >
 inline std::enable_if_t< LvArray::python::CanCreate< T >, PyObject * >

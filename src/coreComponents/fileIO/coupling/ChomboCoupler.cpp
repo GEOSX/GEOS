@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -104,7 +105,7 @@ void ChomboCoupler::write( double dt )
   writeBoundaryFile( m_comm, m_outputPath.data(), dt, faceMask,
                      m_face_offset, m_n_faces_written, n_faces, connectivity_array, face_fields,
                      m_node_offset, m_n_nodes_written, m_referencePositionCopy.size( 0 ), node_fields );
-
+  GEOS_LOG_RANK_0( "Wrote file: " << m_outputPath );
   delete[] connectivity_array;
   delete[] faceMask;
 }
@@ -114,12 +115,8 @@ void ChomboCoupler::read( bool usePressures )
   GEOS_LOG_RANK_0( "Waiting for file existence: " << m_inputPath );
   waitForFileExistence( m_comm, m_inputPath.data() );
 
-  GEOS_LOG_RANK_0( "File found: " << m_inputPath );
-
   if( usePressures )
   {
-    GEOS_LOG_RANK_0( "Reading pressures..." );
-
     FaceManager & faces = m_mesh.getFaceManager();
     NodeManager & nodes = m_mesh.getNodeManager();
 

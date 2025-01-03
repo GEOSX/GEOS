@@ -8,20 +8,21 @@
       timeIntegrationOption="QuasiStatic"
       discretization="FE1"
       targetRegions="{ Region2 }"
+      surfaceGeneratorName="SurfaceGen"
       >
       <NonlinearSolverParameters
         newtonTol="1.0e-3"
-        maxAllowedResidualNorm="1e10"  
-        newtonMaxIter="8"/>
+        maxAllowedResidualNorm="1e10"
+        newtonMaxIter="8" />
       <LinearSolverParameters
-        directParallel="0"/>
+        directParallel="0" />
     </SolidMechanicsLagrangianSSLE>
 
     <SurfaceGenerator
       name="SurfaceGen"
       targetRegions="{ Region2 }"
       rockToughness="1e6"
-      mpiCommOrder="1"/>
+      mpiCommOrder="1" />
   </Solvers>
 
   <Mesh>
@@ -97,7 +98,7 @@
   <ElementRegions>
     <CellElementRegion
       name="Region2"
-      cellBlocks="{ cb1 }"
+      cellBlocks="{ * }"
       materialList="{ granite }"/>
 
     <SurfaceElementRegion

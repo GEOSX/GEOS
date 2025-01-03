@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<VTKFile type="vtkPartitionedDataSetCollection" version="1.0" byte_order="LittleEndian" header_type="UInt32" compressor="vtkZLibDataCompressor">
+  <vtkPartitionedDataSetCollection>
+    <Partitions index="0" name="Region1">
+      <DataSet index="0" file="synthetic/synthetic_0_0.vtu"/>
+    </Partitions>
+    <Partitions index="1" name="Region2">
+      <DataSet index="0" file="synthetic/synthetic_1_0.vtu"/>
+    </Partitions>
+    <Partitions index="2" name="Region3">
+      <DataSet index="0" file="synthetic/synthetic_2_0.vtu"/>
+    </Partitions>
+    <DataAssembly encoding="base64">
+      PD94bWwgdmVyc2lvbj0iMS4wIj8+CjxSb290IHR5cGU9InZ0a0RhdGFBc3NlbWJseSIgdmVyc2lvbj0iMS4wIiBpZD0iMCIgdnRrX3R5cGU9IjM4IiB2dGtfY2F0ZWdvcnk9Inhmb3JtZWRfaGllcmFyY2h5IiBsYWJlbD0iZGF0YSI+CiAgPE1lc2ggaWQ9IjEiIGxhYmVsPSJTeW50aGV0aWNNZXNoIj4KICAgIDxSZWdpb24xIGlkPSIyIiBsYWJlbD0iUmVnaW9uMSIgbnVtYmVyX29mX3BhcnRpdGlvbnM9IjEiPgogICAgICA8ZGF0YXNldCBpZD0iMCIgLz4KICAgIDwvUmVnaW9uMT4KICAgIDxSZWdpb24yIGlkPSIzIiBsYWJlbD0iUmVnaW9uMiIgbnVtYmVyX29mX3BhcnRpdGlvbnM9IjEiPgogICAgICA8ZGF0YXNldCBpZD0iMSIgLz4KICAgIDwvUmVnaW9uMj4KICAgIDxSZWdpb24zIGlkPSI0IiBsYWJlbD0iUmVnaW9uMyIgbnVtYmVyX29mX3BhcnRpdGlvbnM9IjEiPgogICAgICA8ZGF0YXNldCBpZD0iMiIgLz4KICAgIDwvUmVnaW9uMz4KICA8L01lc2g+CjwvUm9vdD4K
+    </DataAssembly>
+  </vtkPartitionedDataSetCollection>
+</VTKFile>

@@ -1,53 +1,34 @@
-#
 # Specify list of tests
-#
-
 set( gtest_geosx_tests
      testReservoirSinglePhaseMSWells.cpp
-     testWellEnums.cpp
-   )
+     testWellEnums.cpp )
 
-set( dependencyList gtest )
+set( tplDependencyList ${parallelDeps} gtest )
 
-if ( GEOSX_BUILD_SHARED_LIBS )
-  set (dependencyList ${dependencyList} geosx_core )
-else()
-  set (dependencyList ${dependencyList} ${geosx_core_libs} )
-endif()
-
-if ( ENABLE_CUDA )
-  set( dependencyList ${dependencyList} cuda )
-endif()
-
-if( ENABLE_CUDA_NVTOOLSEXT )
-  set( dependencyList ${dependencyList} CUDA::nvToolsExt )
-endif()
-
-if ( ENABLE_OPENMP )
-  set( dependencyList ${dependencyList} openmp )
-endif()
+set( dependencyList mainInterface )
 
 if( ENABLE_PVTPackage )
     list( APPEND gtest_geosx_tests
-          testReservoirCompositionalMultiphaseMSWells.cpp )
-
-    set( dependencyList ${dependencyList} PVTPackage )
+          testReservoirCompositionalMultiphaseMSWells.cpp
+          testIsothermalReservoirCompositionalMultiphaseMSWells.cpp 
+          testIsothermalReservoirCompositionalMultiphaseSSWells.cpp 
+          testThermalReservoirCompositionalMultiphaseSSWells.cpp 
+          testThermalReservoirCompositionalMultiphaseMSWells.cpp )
 endif()
 
-
-#
+geos_decorate_link_dependencies( LIST decoratedDependencies
+                                 DEPENDENCIES ${dependencyList} )
 # Add gtest C++ based tests
-#
 foreach(test ${gtest_geosx_tests})
   get_filename_component( test_name ${test} NAME_WE )
 
   blt_add_executable( NAME ${test_name}
                       SOURCES ${test}
                       OUTPUT_DIR ${TEST_OUTPUT_DIRECTORY}
-                      DEPENDS_ON ${dependencyList} )
+                      DEPENDS_ON ${decoratedDependencies} ${tplDependencyList} )
 
-  blt_add_test( NAME ${test_name}
-                COMMAND ${test_name} )
+  geos_add_test( NAME ${test_name}
+                 COMMAND ${test_name} )
 endforeach()
 
 # For some reason, BLT is not setting CUDA language for these source files

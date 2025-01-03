@@ -1,0 +1,46 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Solvers>
+    <AcousticSEM
+      name="acousticSolver"
+      discretization="FE1"
+      targetRegions="{ Fluid1 }"
+      sourceCoordinates="{ { 1505, 1505, 1205 } }"
+      timeSourceFrequency="10"
+      receiverCoordinates="{ { 2005, 1510, 1305 } }"
+      rickerOrder="3"
+      outputSeismoTrace="1"
+      dtSeismoTrace="1e-3"/>
+    <ElasticSEM
+      name="elasticSolver"
+      discretization="FE1"
+      targetRegions="{ Solid1, Solid2 }"
+      receiverCoordinates="{ { 2005, 1510, 505 } }"
+      outputSeismoTrace="1"
+      dtSeismoTrace="1e-3"/>
+    <AcousticElasticSEM
+      name="acousticelasticSolver"
+      discretization="FE1"
+      targetRegions="{ Solid1, Fluid1, Solid2 }"
+      acousticSolverName="acousticSolver"
+      elasticSolverName="elasticSolver"/>
+  </Solvers>
+
+  <Mesh>
+    <InternalMesh
+      name="mesh"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0, 3000 }"
+      yCoords="{ 0, 3000 }"
+      zCoords="{ 0, 1000, 2000, 3000, 3000 }"
+      nx="{ 150 }"
+      ny="{ 100 }"
+      nz="{ 50, 50, 50, 0 }"
+      cellBlockNames="{ solid1, fluid1, solid2, fluid2 }"/>
+  </Mesh>
+
+  <Included>
+    <File name="./acouselas3D_layers_base.xml"/>
+  </Included>
+</Problem>

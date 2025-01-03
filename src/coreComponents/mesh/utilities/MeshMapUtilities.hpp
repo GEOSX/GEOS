@@ -2,11 +2,12 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
@@ -210,6 +211,179 @@ void transformCellBlockToRegionMap( arrayView2d< localIndex const > const & bloc
 }
 
 } // namespace meshMapUtilities
+
+/**
+ * @brief Strucure used to hash interpolation arrays representing high-order nodes.
+ * @tparam T type of node index, usually a local or global index
+ */
+template< typename T >
+struct NodeKeyHasher
+{
+  /**
+   * @brief @return the hash of an interpolation array representing a high-order node.
+   * @param arr the array corresponding to the node to be hashed
+   */
+  std::size_t operator()( const std::array< T, 6 > & arr ) const
+  {
+    std::size_t hash = 0;
+    // use a boost-style hash function
+    for( auto v : arr )
+    {
+      hash ^= std::hash< T >{} ( v )  + 0x9e3779b9 + ( hash << 6 ) + ( hash >> 2 );
+    }
+    return hash;
+  }
+};
+
+/**
+ * @brief @return a unique interpolation array representing a high-order node coincident with a mesh vertex.
+ * @tparam T type of node index, usually a local or global index
+ * @param v the mesh vertex on which the high-order node lies.
+ */
+template< typename T >
+static std::array< T, 6 > createNodeKey( T v )
+{
+  return std::array< T, 6 > { v, -1, -1, -1, -1, -1 };
+}
+
+/**
+ * @brief @return a unique interpolation array representing a high-order node on an edge.
+ * @tparam T type of node index, usually a local or global index
+ * @param v1 the first mesh vertex defining the edge.
+ * @param v2 the second mesh vertex defining the edge.
+ * @param a the interpolation parameter, meaning that the node is 'a' steps away from v1 towards v2
+ * @param order the order of the discretization
+ */
+template< typename T >
+static std::array< T, 6 > createNodeKey( T v1, T v2, int a, int order )
+{
+  if( a == 0 )
+    return createNodeKey( v1 );
+  if( a == order )
+    return createNodeKey( v2 );
+  if( v1 < v2 )
+  {
+    return std::array< T, 6 > { v1, v2, -1, -1, a, -1 };
+  }
+  else
+  {
+    return std::array< T, 6 > { v2, v1, -1, -1, order - a, -1 };
+  }
+}
+
+/**
+ * @brief @return a unique interpolation array representing a high-order node on an face.
+ * @tparam T type of node index, usually a local or global index
+ * @param v1 the first mesh vertex defining the face.
+ * @param v2 the second mesh vertex defining the face.
+ * @param v3 the third mesh vertex defining the face.
+ * @param v4 the fourth mesh vertex defining the face.
+ * @param a the first interpolation parameter, meaning that the node is 'a' steps away from v1 towards v2 (and v3 towards v4)
+ * @param b the second interpolation parameter, meaning that the node is 'b' steps away from v1 towards v2 (and v3 towards v4)
+ * @param order the order of the discretization
+ */
+template< typename T >
+static std::array< T, 6 > createNodeKey( T v1, T v2, T v3, T v4, int a, int b, int order )
+{
+  if( a == 0 )
+    return createNodeKey( v1, v3, b, order );
+  if( a == order )
+    return createNodeKey( v2, v4, b, order );
+  if( b == 0 )
+    return createNodeKey( v1, v2, a, order );
+  if( b == order )
+    return createNodeKey( v3, v4, a, order );
+  // arrange the vertices of the face such that v1 is the lowest value, and v2 is lower than v3
+  // this ensures a coherent orientation of all face nodes
+  while( v1 > v2 || v1 > v3 || v1 > v4 || v2 > v3 )
+  {
+    if( v1 > v2 )
+    {
+      std::swap( v1, v2 );
+      std::swap( v3, v4 );
+      a = order - a;
+    }
+    if( v1 > v3 )
+    {
+      std::swap( v1, v3 );
+      std::swap( v2, v4 );
+      b = order - b;
+    }
+    if( v1 > v4 )
+    {
+      std::swap( v1, v4 );
+      std::swap( a, b );
+      a = order - a;
+      b = order - b;
+    }
+    if( v2 > v3 )
+    {
+      std::swap( v2, v3 );
+      std::swap( a, b );
+    }
+  }
+  return std::array< T, 6 > { v1, v2, v3, v4, a, b };
+}
+
+/**
+ * @brief @return the unique interpolation array representing a Gauss-Lobatto node inside an element.
+ * @tparam T type of node index, usually a local or global index
+ * @param elemNodes indices of the nodes defining the element
+ * @param q1 first interpolation parameter
+ * @param q2 second interpolation parameter
+ * @param q3 third interpolation parameter
+ * @param order the order of the discretization
+ */
+template< typename T >
+static std::array< T, 6 > createNodeKey( T const (&elemNodes)[ 8 ], int q1, int q2, int q3, int order )
+{
+  bool extremal1 = q1 == 0 || q1 == order;
+  bool extremal2 = q2 == 0 || q2 == order;
+  bool extremal3 = q3 == 0 || q3 == order;
+  int v1 = q1/order;
+  int v2 = q2/order;
+  int v3 = q3/order;
+  if( extremal1 && extremal2 && extremal3 )
+  {
+    // vertex node
+    return createNodeKey( elemNodes[ v1 + 2*v2 + 4*v3 ] );
+  }
+  else if( extremal1 && extremal2 )
+  {
+    // edge node on v1, v2
+    return createNodeKey( elemNodes[ v1 + 2*v2 ], elemNodes[ v1 + 2*v2 + 4 ], q3, order );
+  }
+  else if( extremal1 && extremal3 )
+  {
+    // edge node on v1, v3
+    return createNodeKey( elemNodes[ v1 + 4*v3 ], elemNodes[ v1 + 2 + 4*v3 ], q2, order );
+  }
+  else if( extremal2 && extremal3 )
+  {
+    // edge node on v2, v3
+    return createNodeKey( elemNodes[ 2*v2 + 4*v3 ], elemNodes[ 1 + 2*v2 + 4*v3 ], q1, order );
+  }
+  else if( extremal1 )
+  {
+    // face node on the face of type 1
+    return createNodeKey( elemNodes[ v1 ], elemNodes[ v1 + 2 ], elemNodes[ v1 + 4 ], elemNodes[ v1 + 2 + 4 ], q2, q3, order );
+  }
+  else if( extremal2 )
+  {
+    // face node on the face of type 2
+    return createNodeKey( elemNodes[ 2*v2 ], elemNodes[ 1 + 2*v2 ], elemNodes[ 2*v2 + 4 ], elemNodes[ 1 + 2*v2 + 4 ], q1, q3, order );
+  }
+  else if( extremal3 )
+  {
+    // face node on the face of type 3
+    return createNodeKey( elemNodes[ 4*v3 ], elemNodes[ 1 + 4*v3 ], elemNodes[ 2 + 4*v3 ], elemNodes[ 1 + 2 + 4*v3 ], q1, q2, order );
+  }
+  else
+  {
+    // node internal to the cell -- no need for key, it will be created
+    return createNodeKey( -1 );
+  }
+}
 
 } // namespace geos
 

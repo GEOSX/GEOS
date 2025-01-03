@@ -2,11 +2,12 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2019 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2019 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2019 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
- * All right reserved
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
  * ------------------------------------------------------------------------------------------------------------
@@ -121,7 +122,7 @@ template< int NUM_SUPPORT_POINTS,
           typename BASIS_GRADIENT,
           typename CBF >
 GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
+inline
 void SolidModelDiscretizationOps::BTDB( BASIS_GRADIENT const & gradN,
                                         real64 (& elementStiffness)[NUM_SUPPORT_POINTS*3][NUM_SUPPORT_POINTS*3],
                                         CBF && callbackFunction )
@@ -145,7 +146,7 @@ template< int NUM_SUPPORT_POINTS,
           typename BASIS_GRADIENT,
           typename CBF >
 GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
+inline
 void SolidModelDiscretizationOps::upperBTDB( BASIS_GRADIENT const & gradN,
                                              real64 (& elementStiffness)[NUM_SUPPORT_POINTS*3][NUM_SUPPORT_POINTS*3],
                                              CBF && callbackFunction )
@@ -167,7 +168,7 @@ void SolidModelDiscretizationOps::upperBTDB( BASIS_GRADIENT const & gradN,
 /// @copydoc SolidModelDiscretizationOps::fillLowerBTDB
 template< int NUM_SUPPORT_POINTS >
 GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
+inline
 void SolidModelDiscretizationOps::fillLowerBTDB( real64 ( & elementStiffness )[NUM_SUPPORT_POINTS*3][NUM_SUPPORT_POINTS*3] )
 {
   for( int row=1; row<NUM_SUPPORT_POINTS*3; ++row )
@@ -185,7 +186,7 @@ template< int NUM_SUPPORT_POINTS,
           typename BASIS_GRADIENT,
           typename CBF >
 GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
+inline
 void SolidModelDiscretizationOps::diagBTDB( BASIS_GRADIENT const & gradN,
                                             real64 (& diagElementStiffness)[NUM_SUPPORT_POINTS*3],
                                             CBF && callbackFunction )
@@ -204,7 +205,7 @@ template< int NUM_SUPPORT_POINTS,
           typename BASIS_GRADIENT,
           typename CBF >
 GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
+inline
 void SolidModelDiscretizationOps::diagRowSumBTDB( BASIS_GRADIENT const & gradN,
                                                   real64 ( & diagSumElementStiffness )[NUM_SUPPORT_POINTS*3],
                                                   CBF && callbackFunction )

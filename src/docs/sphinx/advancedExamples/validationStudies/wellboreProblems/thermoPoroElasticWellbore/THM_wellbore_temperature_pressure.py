@@ -10,12 +10,12 @@ def main():
 
 	# Plot GEOSX results
 	hf = h5py.File("temperatureHistory_rock.hdf5", 'r')
-	time = np.array( hf.get('temperature Time') )
-	center = np.array( hf.get('temperature elementCenter') )
-	temperature = np.array( hf.get('temperature') )
+	time = np.asarray( hf.get('temperature Time') )
+	center = np.asarray( hf.get('temperature elementCenter') )
+	temperature = np.asarray( hf.get('temperature') )
 
 	hf = h5py.File("pressureHistory_rock.hdf5", 'r')
-	pressure = np.array( hf.get('pressure') )
+	pressure = np.asarray( hf.get('pressure') )
 	
 	nElements = center.shape[1]
 	xCoord = center[0, 0:nElements, 0]
@@ -27,23 +27,23 @@ def main():
 	plt.subplot(1,2,1)
 
 	plt.plot( rCoord,
-			  temperature[9, 0:nElements], # index of the time step at 60s is 9       
+			  temperature[10, 0:nElements], # index of the time step at 60s is 10       
 			  'r+',
-			  label='GEOSX: t = 1 (min)')
+			  label='GEOS: t = 1 (min)')
 
 	plt.plot( rCoord,
-			  temperature[23, 0:nElements], # index of the time step at 3600s is 23       
+			  temperature[24, 0:nElements], # index of the time step at 3600s is 24       
 			  'b+',
-			  label='GEOSX: t = 1 (hour)')
+			  label='GEOS: t = 1 (hour)')
 	
 	plt.subplot(1,2,2)
 
 	plt.plot( rCoord,
-			  pressure[9, 0:nElements],        
+			  pressure[10, 0:nElements],        
 			  'r+')
 
 	plt.plot( rCoord,
-			  pressure[23, 0:nElements],        
+			  pressure[24, 0:nElements],        
 			  'b+')
 	
 	# Plot analytical results at one minute
@@ -54,7 +54,7 @@ def main():
 	plt.plot( r_anal,
 			  T_anal,        
 			  'r-',
-			  label='Analytic: t = 1 (min)')
+			  label='Analytical: t = 1 (min)')
 
 	plt.subplot(1,2,2)
 	plt.plot( r_anal,
@@ -69,7 +69,7 @@ def main():
 	plt.plot( r_anal,
 			  T_anal,        
 			  'b-',
-			  label='Analytic: t = 1 (hour)')
+			  label='Analytical: t = 1 (hour)')
 
 	plt.subplot(1,2,2)
 	plt.plot( r_anal,

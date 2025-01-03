@@ -1,31 +1,23 @@
-#
 # Specify list of tests
-#
-
 set( testSources
      testGeosxTraits.cpp
-     testStringUtilities.cpp
      testParsing.cpp
-     )
+     testUtilities.cpp )
 
-set( dependencyList gtest codingUtilities )
+set( dependencyList codingUtilities ${parallelDeps} )
 
-if( ENABLE_CUDA )
-  set( dependencyList ${dependencyList} cuda )
-endif()
-
-#
+geos_decorate_link_dependencies( LIST decoratedDependencies
+                                 DEPENDENCIES ${dependencyList} )
 # Add gtest C++ based tests
-#
 foreach( test ${testSources} )
+
   get_filename_component( test_name ${test} NAME_WE )
   blt_add_executable( NAME ${test_name}
                       SOURCES ${test}
                       OUTPUT_DIR ${TEST_OUTPUT_DIRECTORY}
-                      DEPENDS_ON ${dependencyList} )
+                      DEPENDS_ON ${decoratedDependencies} gtest )
 
-  blt_add_test( NAME ${test_name}
-                COMMAND ${test_name}
-                )
+  geos_add_test( NAME ${test_name}
+                 COMMAND ${test_name} )
 
 endforeach()
