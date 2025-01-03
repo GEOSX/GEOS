@@ -30,18 +30,18 @@ using namespace dataRepository;
 template< typename FLOW_SOLVER >
 OneWayCoupledFractureFlowContactMechanics< FLOW_SOLVER >::OneWayCoupledFractureFlowContactMechanics( const string & name,
                                                                                                      Group * const parent )
-: Base( name, parent )
+  : Base( name, parent )
 {}
 
 template< typename FLOW_SOLVER >
-void OneWayCoupledFractureFlowContactMechanics< FLOW_SOLVER >::postInputInitialization() 
+void OneWayCoupledFractureFlowContactMechanics< FLOW_SOLVER >::postInputInitialization()
 {
   bool const isSequential = this->getNonlinearSolverParameters().couplingType() == NonlinearSolverParameters::CouplingType::Sequential;
-  GEOS_THROW_IF( !isSequential ,
-                  "Only sequential coupling is allowed for this solver.",
-                  InputError );
+  GEOS_THROW_IF( !isSequential,
+                 "Only sequential coupling is allowed for this solver.",
+                 InputError );
 
-  Base::postInputInitialization();                 
+  Base::postInputInitialization();
 }
 
 
@@ -55,7 +55,7 @@ real64 OneWayCoupledFractureFlowContactMechanics< FLOW_SOLVER >::sequentiallyCou
   {
     solver->solverStep( time_n, dt, cycleNumber, domain );
   } );
-  
+
   this->forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
                                                                      MeshLevel & mesh,
                                                                      arrayView1d< string const > const & regionNames )
@@ -66,7 +66,7 @@ real64 OneWayCoupledFractureFlowContactMechanics< FLOW_SOLVER >::sequentiallyCou
     {
       arrayView2d< real64 > const traction = subRegion.getField< fields::contact::traction >();
       arrayView1d< real64 > const pressure = subRegion.getField< fields::flow::pressure >();
-      
+
       forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
       {
         traction( k, 0 ) = traction( k, 0 ) + pressure[k];

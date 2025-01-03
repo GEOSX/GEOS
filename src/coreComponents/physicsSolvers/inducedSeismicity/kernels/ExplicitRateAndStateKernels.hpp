@@ -72,7 +72,7 @@ public:
   {
     GEOS_UNUSED_VAR( dt );
     real64 const normalTraction = m_normalTraction[k];
-    real64 const shearTractionMagnitude = LvArray::tensorOps::l2Norm<2>( m_shearTraction[k]);
+    real64 const shearTractionMagnitude = LvArray::tensorOps::l2Norm< 2 >( m_shearTraction[k] );
 
     // Slip rate is bracketed between [0, shear traction magnitude / shear impedance]
     // If slip rate is outside the bracket, re-initialize to the middle value
@@ -91,7 +91,7 @@ public:
 
     // Slip rate is bracketed between [0, shear traction magnitude / shear impedance]
     // Check that the update did not end outside of the bracket.
-    real64 const shearTractionMagnitude = LvArray::tensorOps::l2Norm<2>( m_shearTraction[k]);
+    real64 const shearTractionMagnitude = LvArray::tensorOps::l2Norm< 2 >( m_shearTraction[k] );
     real64 const upperBound = shearTractionMagnitude/m_shearImpedance;
     if( m_slipRate[k] > upperBound ) m_slipRate[k] = 0.5*upperBound;
 

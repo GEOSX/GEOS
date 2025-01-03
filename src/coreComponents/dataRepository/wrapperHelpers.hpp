@@ -206,7 +206,7 @@ resizeDefault( T & value,
                DefaultValue< T > const & GEOS_UNUSED_PARAM( defaultValue ),
                string const & name )
 {
-#if 0 
+#if 0
   GEOS_LOG_RANK_0( GEOS_FMT( "Warning: For Wrapper<{}>::name() = {}:\n"
                              "  wrapperHelpers::resizeDefault<{}>() called, but the SFINAE filter failed:\n"
                              "    traits::HasMemberFunction_resizeDefault< {} > = {}\n "

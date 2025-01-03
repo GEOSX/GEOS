@@ -51,6 +51,8 @@ public:
    */
   void saveState( DomainPartition & domain ) const;
 
+  void enforceRateAndVelocityConsistency( SurfaceElementSubRegion & subRegion ) const;
+
 protected:
 
   virtual real64 updateStresses( real64 const & time_n,

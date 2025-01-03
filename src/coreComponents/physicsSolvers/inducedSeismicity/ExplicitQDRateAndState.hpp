@@ -59,7 +59,7 @@ public:
    * @brief Evaluates whether an adaptive time step was successful
    * @param domain
    */
-  void evalTimestep(DomainPartition & domain );
+  void evalTimestep( DomainPartition & domain );
 
   /**
    * @brief Computes stage rates for the initial Runge-Kutta substage and updates slip and state

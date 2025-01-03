@@ -118,7 +118,7 @@ real64 ExplicitQDRateAndState::solverStep( real64 const & time_n,
     else
     {
       // Retry with updated time step
-      dtAdaptive = setNextDt(dtAdaptive, domain);
+      dtAdaptive = setNextDt( dtAdaptive, domain );
     }
   }
   // return last successful adaptive time step (passed along to setNextDt)
@@ -256,7 +256,7 @@ void ExplicitQDRateAndState::updateSlipVelocity( real64 const & time_n,
   } );
 }
 
-void ExplicitQDRateAndState::evalTimestep(DomainPartition & domain )
+void ExplicitQDRateAndState::evalTimestep( DomainPartition & domain )
 {
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
                                                                MeshLevel const & mesh,
@@ -292,7 +292,7 @@ void ExplicitQDRateAndState::evalTimestep(DomainPartition & domain )
 
 real64 ExplicitQDRateAndState::setNextDt( real64 const & currentDt, DomainPartition & domain )
 {
-  GEOS_UNUSED_VAR(domain);
+  GEOS_UNUSED_VAR( domain );
   real64 const nextDt = m_stepUpdateFactor*currentDt;
   if( m_successfulStep )
   {

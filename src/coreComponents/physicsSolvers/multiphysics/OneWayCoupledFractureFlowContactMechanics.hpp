@@ -52,7 +52,7 @@ public:
    * @param parent the parent group of this instantiation of OneWayCoupledFractureFlowContactMechanics
    */
   OneWayCoupledFractureFlowContactMechanics( const string & name,
-                                            dataRepository::Group * const parent );
+                                             dataRepository::Group * const parent );
 
   /// Destructor for the class
   ~OneWayCoupledFractureFlowContactMechanics() override {}
