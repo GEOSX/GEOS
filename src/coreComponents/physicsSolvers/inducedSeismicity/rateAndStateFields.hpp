@@ -35,7 +35,7 @@ namespace rateAndState
 DECLARE_FIELD( slipRate,
                "slipRate",
                array1d< real64 >,
-               1.0e-6,
+               0.0,
                LEVEL_0,
                WRITE_AND_READ,
                "Slip rate" );
@@ -43,7 +43,7 @@ DECLARE_FIELD( slipRate,
 DECLARE_FIELD( slipRate_n,
                "slipRate_n",
                array1d< real64 >,
-               1.0e-6,
+               0.0,
                NOPLOT,
                WRITE_AND_READ,
                "Slip rate at timestep n." );

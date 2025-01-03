@@ -79,46 +79,6 @@ static bool newtonSolve( SurfaceElementSubRegion & subRegion,
   return allConverged;
 }
 
-// template< typename POLICY, typename KERNEL_TYPE >
-// static real64 solveRateAndStateEquation( SurfaceElementSubRegion & subRegion,
-//                                          KERNEL_TYPE & kernel,
-//                                          real64 dt,
-//                                          integer const maxNewtonIter,
-//                                          real64 const newtonTol )
-// {
-//   bool converged = false;
-//   for( integer attempt = 0; attempt < 5; attempt++ )
-//   {
-//     if( attempt > 0 )
-//     {
-//       forAll< POLICY >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
-//       {
-//         kernel.resetState( k );
-//       } );
-//     }
-//     GEOS_LOG_RANK_0( GEOS_FMT( "  Attempt {} ", attempt ) );
-//     converged = newtonSolve< POLICY >( subRegion, kernel, dt, maxNewtonIter, newtonTol );
-//     if( converged )
-//     {
-//       forAll< POLICY >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
-//       {
-//         kernel.udpateVariables( k );
-//       } );
-//       return dt;
-//     }
-//     else
-//     {
-//       GEOS_LOG_RANK_0( GEOS_FMT( "  Attempt {} failed. Halving dt and retrying.", attempt ) );
-//       dt *= 0.5;
-//     }
-//   }
-//   if( !converged )
-//   {
-//     GEOS_ERROR( "Maximum number of attempts reached without convergence." );
-//   }
-//   return dt;
-// }
-
 /**
  * @brief Performs the kernel launch
  * @tparam POLICY the policy used in the RAJA kernels
