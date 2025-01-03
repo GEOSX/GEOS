@@ -514,30 +514,11 @@ real64 SurfaceGenerator::solverStep( real64 const & time_n,
       FluxApproximationBase * const fluxApprox = fvManager.getGroupPointer< FluxApproximationBase >( a );
       if( fluxApprox!=nullptr )
       {
-<<<<<<< HEAD
-        // fluxApprox->addToFractureStencil( meshLevel, this->m_fractureRegionName );
-        // FaceElementSubRegion & subRegion = fractureRegion.getSubRegion< FaceElementSubRegion >( 0 );
-        // subRegion.m_recalculateFractureConnectorEdges.clear();
-        // if( time_n == 0.0 )
-        // {
-        //   subRegion.m_newFaceElements.clear();
-        // }
-=======
->>>>>>> origin/develop
         fluxApprox->addToFractureStencil( meshLevel, this->m_fractureRegionName );
       }
     }
 
     FaceElementSubRegion & fractureSubRegion = fractureRegion.getUniqueSubRegion< FaceElementSubRegion >();
-<<<<<<< HEAD
-    fractureSubRegion.m_recalculateFractureConnectorEdges.clear();
-    if (time_n <= 1.0e-10) // we want to clear this only at initialization
-    {
-      fractureSubRegion.m_newFaceElements.clear();
-    }
-=======
-
->>>>>>> origin/develop
     // Recreate geometric sets
     meshLevel.getNodeManager().buildGeometricSets( GeometricObjectManager::getInstance() );
 
