@@ -257,7 +257,7 @@ void TractionBoundaryCondition::reinitScaleSet( FaceManager const & faceManager,
       faceScale  += nodalScaleSet[ faceToNodeMap( kf, a ) ];
     }
 
-    m_scaleSet[i] = std::min( 1.0, (1.0 - faceScale/numNodes)*(1.0 - faceScale/numNodes) );
+    m_scaleSet[i] = LvArray::math::min( 1.0, (1.0 - faceScale/numNodes)*(1.0 - faceScale/numNodes) );
   } );
 }
 

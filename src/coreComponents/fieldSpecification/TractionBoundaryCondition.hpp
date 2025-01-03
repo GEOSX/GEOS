@@ -81,6 +81,13 @@ public:
                SortedArrayView< localIndex const > const & targetSet,
                arrayView1d< real64 > const & localRhs ) const;
 
+  /**
+   * @brief Reinitialize the nodal set of scaling variable on traction magnitude.
+   *        One use is to reduce the nodal traction magnitude when there is damage on the boundary.
+   * @param faceManager Reference to the face manager (Tractions are applied on faces)
+   * @param targetSet The set of faces to apply the BC to.
+   * @param nodalScaleSet The nodal set of scaling variable (damage).
+   */
   void reinitScaleSet( FaceManager const & faceManager,
                        SortedArrayView< localIndex const > const & targetSet,
                        arrayView1d< real64 const > const nodalScaleSet );
