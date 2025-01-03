@@ -13,23 +13,7 @@
       initialDt="1e-5"
       logLevel="1"
       discretization="FE1">
-    </ExplicitSpringSlider> 
-  </Solvers>
-    <ExplicitSpringSlider
-      name="SpringSlider"
-      targetRegions="{ Fault }"
-      shearImpedance="4.41"
-      initialDt="1e-5"
-      logLevel="1"
-      discretization="FE1">
     </ExplicitSpringSlider>
-    
-    <SurfaceGenerator
-      name="SurfaceGen"
-      targetRegions="{ Domain }"
-      rockToughness="1.0"
-      mpiCommOrder="1"
-      fractureRegion="Fault"/>  
   </Solvers>
 
   <Events
