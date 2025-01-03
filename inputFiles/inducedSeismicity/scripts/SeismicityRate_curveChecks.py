@@ -55,7 +55,7 @@ def curve_check_solution(**kwargs):
     return np.array(analytical_rates)   
 
 
-def debug( xmlFilePath, hdf5FilePath ):
+def debug( xmlFilePath, hdf5FilePath, write_tables ):
     #-------- Extract info from XML
     parameters = getParametersFromXML( xmlFilePath )
 
@@ -70,28 +70,28 @@ def debug( xmlFilePath, hdf5FilePath ):
     while time < final_time:
         tau = analytical_solution.compute_shear_stress(time, dt)
         analytical_rate = analytical_solution.compute_seismic_rate(time, dt, tau)
-        time += dt
         times.append(time)
         analytical_rates.append(analytical_rate)
         tau_plot.append(tau)
+        time += dt
+    
+    if write_tables:
+       import csv
 
-    import csv
-
-    # Write times to a CSV file without headers
-    with open('shearStress_time.csv', 'w', newline='') as file:
+       # Write times to a CSV file without headers
+       with open('shearStress_time.csv', 'w', newline='') as file:
         writer = csv.writer(file)
         for time in times:
             writer.writerow([time])
 
-    # Write tau_plot to a CSV file without headers
-    with open('shearStress_values.csv', 'w', newline='') as file:
+        # Write tau_plot to a CSV file without headers
+       with open('shearStress_values.csv', 'w', newline='') as file:
         writer = csv.writer(file)
         for tau in tau_plot:
-            writer.writerow([tau])
+        writer.writerow([tau])
 
     import h5py            
     with h5py.File(hdf5FilePath, 'r') as file:
-
         # Get the data
         time = np.squeeze(file['seismicityRate Time'][:])
         seismicityRate = np.squeeze(file['seismicityRate'][:])
@@ -113,6 +113,7 @@ def debug( xmlFilePath, hdf5FilePath ):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-f', '--xml-file', type=str, required=True, help='Path to XML file')
-    parser.add_argument('-h5', '--hdf5-file', type=str, required=True, help='Path to dhf5 file')
+    parser.add_argument('-h5', '--hdf5-file', type=str, required=True, help='Path to hdf5 file')
+    parser.add_argument('-wt', '--write-tables', action='store_true', help='Write the input tables.')
     args = parser.parse_args()
-    debug( args.xml_file, args.hdf5_file )
+    debug( args.xml_file, args.hdf5_file, args.write_tables )
