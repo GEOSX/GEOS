@@ -88,7 +88,7 @@ def debug( xmlFilePath, hdf5FilePath, write_tables ):
        with open('shearStress_values.csv', 'w', newline='') as file:
         writer = csv.writer(file)
         for tau in tau_plot:
-        writer.writerow([tau])
+            writer.writerow([tau])
 
     import h5py            
     with h5py.File(hdf5FilePath, 'r') as file:
