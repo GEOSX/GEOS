@@ -1,7 +1,7 @@
 .. _ValidationStudiesHydraulicFracture:
 
 
-Hydraulic Fracture
+Hydraulic Fracturing
 ===================================
 
 .. toctree::
