@@ -5,7 +5,16 @@
       name="./SpringSlider_base.xml"/>
   </Included>
   
-  <Solvers>
+   <Solvers>
+    <ExplicitSpringSlider
+      name="SpringSlider"
+      targetRegions="{ Fault }"
+      shearImpedance="4.41"
+      initialDt="1e-5"
+      logLevel="1"
+      discretization="FE1">
+    </ExplicitSpringSlider> 
+  </Solvers>
     <ExplicitSpringSlider
       name="SpringSlider"
       targetRegions="{ Fault }"

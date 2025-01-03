@@ -73,7 +73,7 @@ public:
               StackVariables & stack ) const
   {
     real64 const normalTraction = m_normalTraction[k];
-    real64 const shearTractionMagnitude = LvArray::math::sqrt( m_shearTraction[k][0] * m_shearTraction[k][0] + m_shearTraction[k][1] * m_shearTraction[k][1] );
+    real64 const shearTractionMagnitude = LvArray::tensorOps::l2Norm<2>( m_shearTraction[k]);
 
     // Eq 1: Scalar force balance for slipRate and shear traction magnitude
     stack.rhs[0] = shearTractionMagnitude - m_shearImpedance * m_slipRate[k]
@@ -104,7 +104,7 @@ public:
 
     // Slip rate is bracketed between [0, shear traction magnitude / shear impedance]
     // Check that the update did not end outside of the bracket.
-    real64 const shearTractionMagnitude = LvArray::math::sqrt( m_shearTraction[k][0] * m_shearTraction[k][0] + m_shearTraction[k][1] * m_shearTraction[k][1] );
+    real64 const shearTractionMagnitude = LvArray::tensorOps::l2Norm<2>( m_shearTraction[k]);
     real64 const upperBound = shearTractionMagnitude / m_shearImpedance - m_slipRate[k];
     real64 const lowerBound = -m_slipRate[k];
 
