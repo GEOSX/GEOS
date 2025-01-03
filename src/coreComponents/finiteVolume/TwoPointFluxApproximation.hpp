@@ -73,7 +73,8 @@ private:
   virtual void registerFractureStencil( Group & stencilGroup ) const override;
 
   virtual void addToFractureStencil( MeshLevel & mesh,
-                                     string const & faceElementRegionName ) const override;
+                                     string const & faceElementRegionName,
+                                     bool const initFields ) const override;
 
   virtual void registerBoundaryStencil( Group & stencilGroup,
                                         string const & setName ) const override;
@@ -133,6 +134,17 @@ private:
    */
   void cleanMatrixMatrixConnectionsDFM( MeshLevel & mesh,
                                         string const & faceElementRegionName ) const;
+
+  /**
+   * @brief Initialize fields on the newly created elements of the fracture.
+   * @param mesh The mesh object.
+   * @param faceElementRegionName Name of the DFM fracture region.
+   * @deprecated All of this initialization should be performed elsewhere.
+   * It is just here because it was convenient, but it is not appropriate
+   * to have physics based initialization in the flux approximator.
+   */
+  void initNewFractureFieldsDFM( MeshLevel & mesh,
+                                 string const & faceElementRegionName ) const;
 
   /// mean permeability coefficient
   real64 m_meanPermCoefficient;

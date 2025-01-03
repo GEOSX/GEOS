@@ -228,7 +228,6 @@ public:
   arrayView2d< real64 const > dDensity_dTemperature() const { return m_dDensity_dTemperature; }
 
   arrayView2d< real64 const > density_n() const { return m_density_n; }
-  arrayView2d< real64 > density_n() { return m_density_n; }
 
   arrayView2d< real64 const > viscosity() const { return m_viscosity; }
 
