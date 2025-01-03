@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -350,17 +350,17 @@ void PhysicsSolverBase::logEndOfCycleInformation( integer const cycleNumber,
                                                   std::vector< real64 > const & subStepDt ) const
 {
   // The formating here is a work in progress.
-  GEOS_LOG_RANK_0( "\n------------------------- TIMESTEP END -------------------------" );
-  GEOS_LOG_RANK_0( GEOS_FMT( "    - Cycle:      {}", cycleNumber ) );
-  GEOS_LOG_RANK_0( GEOS_FMT( "    - N substeps: {}", numOfSubSteps ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, "\n------------------------- TIMESTEP END -------------------------" );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "    - Cycle:      {}", cycleNumber ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "    - N substeps: {}", numOfSubSteps ) );
   std::string logMessage = "    - dt:";
   for( integer i = 0; i < numOfSubSteps; ++i )
   {
     logMessage += "  " + units::TimeFormatInfo::fromSeconds( subStepDt[i] ).toString();
   }
   // Log the complete message once
-  GEOS_LOG_RANK_0( logMessage );
-  GEOS_LOG_RANK_0( "------------------------------------------------------------------\n" );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, logMessage );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, "------------------------------------------------------------------\n" );
 }
 
 real64 PhysicsSolverBase::setNextDt( real64 const & currentDt,

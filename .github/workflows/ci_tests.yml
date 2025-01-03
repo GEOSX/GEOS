@@ -330,7 +330,7 @@ jobs:
             DOCKER_CERTS_DIR: "/etc/pki/ca-trust/source/anchors"
             DOCKER_CERTS_UPDATE_COMMAND: "update-ca-trust"
 
-          - name: Pangea 3 (AlmaLinux 8.8, gcc 9.4.0, open-mpi 4.1.2, cuda 11.5.0, openblas 0.3.10)
+          - name: Pangea 3 CUDA (AlmaLinux 8.8, gcc 9.4.0, open-mpi 4.1.2, cuda 11.5.0, openblas 0.3.10)
             BUILD_AND_TEST_CLI_ARGS: "--build-exe-only --no-install-schema"
             CMAKE_BUILD_TYPE: Release
             BUILD_GENERATOR: "--makefile"

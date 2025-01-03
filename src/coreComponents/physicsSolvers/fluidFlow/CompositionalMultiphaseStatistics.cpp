@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -427,7 +427,7 @@ void CompositionalMultiphaseStatistics::computeRegionStatistics( real64 const ti
                                 GEOS_FMT( "{} Phase mass: {} {}",
                                           statPrefix, regionStatistics.phaseMass, massUnit ) );
 
-    // metric 1: trapping computed with the Land trapping coefficient (similar to Eclipse)
+    // metric 1: trapping computed with the Land trapping coefficient
     GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Statistics,
                                 GEOS_FMT( "{} Trapped phase mass (metric 1): {} {}",
                                           statPrefix, regionStatistics.trappedPhaseMass, massUnit ) );
