@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -121,7 +121,7 @@ Damage< BASE >::Damage( string const & name, Group * const parent ):
     setApplyDefaultValue( 0.0 ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "Default compressive strength from the uniaxial compression test" );
-  
+
   this->registerWrapper( viewKeyStruct::compressStrengthString(), &m_compressStrength ).
     setApplyDefaultValue( 0.0 ).
     setPlotLevel( PlotLevel::LEVEL_0 ).
@@ -176,7 +176,7 @@ void Damage< BASE >::postInputInitialization()
 
   this->template getWrapper< array1d< real64 > >( viewKeyStruct::compressStrengthString() ).
     setApplyDefaultValue( m_defaultCompressStrength );
-  
+
   this->template getWrapper< array1d< real64 > >( viewKeyStruct::deltaCoefficientString() ).
     setApplyDefaultValue( m_defaultDeltaCoefficient );
 }

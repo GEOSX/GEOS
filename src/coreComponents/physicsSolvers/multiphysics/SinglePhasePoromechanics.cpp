@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -34,6 +34,7 @@
 #include "physicsSolvers/solidMechanics/kernels/ImplicitSmallStrainQuasiStatic.hpp"
 #include "physicsSolvers/contact/SolidMechanicsLagrangeContact.hpp"
 #include "physicsSolvers/contact/SolidMechanicsEmbeddedFractures.hpp"
+#include "physicsSolvers/fluidFlow/SinglePhaseHybridFVM.hpp"
 
 namespace geos
 {
@@ -49,11 +50,6 @@ SinglePhasePoromechanics< FLOW_SOLVER, MECHANICS_SOLVER >::SinglePhasePoromechan
   : Base( name, parent ),
   m_damageFlag()
 {
-  LinearSolverParameters & linearSolverParameters = this->m_linearSolverParameters.get();
-  linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::singlePhasePoromechanics;
-  linearSolverParameters.mgr.separateComponents = true;
-  linearSolverParameters.dofsPerNode = 3;
-
   this->registerWrapper( viewKeyStruct::damageFlagString(), &m_damageFlag ).
     setApplyDefaultValue( 0 ).
     setInputFlag( InputFlags::OPTIONAL ).
@@ -65,12 +61,7 @@ void SinglePhasePoromechanics< FLOW_SOLVER, MECHANICS_SOLVER >::postInputInitial
 {
   Base::postInputInitialization();
 
-  GEOS_ERROR_IF( this->flowSolver()->getCatalogName() == "SinglePhaseReservoir" &&
-                 this->getNonlinearSolverParameters().couplingType() != NonlinearSolverParameters::CouplingType::Sequential,
-                 GEOS_FMT( "{}: {} solver is only designed to work for {} = {}",
-                           this->getName(), catalogName(), NonlinearSolverParameters::viewKeysStruct::couplingTypeString(),
-                           EnumStrings< NonlinearSolverParameters::CouplingType >::toString( NonlinearSolverParameters::CouplingType::Sequential )
-                           ));
+  setMGRStrategy();
 }
 
 template< typename FLOW_SOLVER, typename MECHANICS_SOLVER >
@@ -121,18 +112,70 @@ void SinglePhasePoromechanics< FLOW_SOLVER, MECHANICS_SOLVER >::initializePostIn
                              getCatalogName(), this->getDataContext(), poromechanicsTargetRegionNames[i], this->flowSolver()->getDataContext() ),
                    InputError );
   }
+}
 
-  if( this->m_isThermal )
+template<>
+void SinglePhasePoromechanics<>::setMGRStrategy()
+{
+  LinearSolverParameters & linearSolverParameters = this->m_linearSolverParameters.get();
+
+  if( linearSolverParameters.preconditionerType != LinearSolverParameters::PreconditionerType::mgr )
+    return;
+
+  linearSolverParameters.mgr.separateComponents = true;
+  linearSolverParameters.dofsPerNode = 3;
+
+  if( dynamic_cast< SinglePhaseHybridFVM * >( this->flowSolver() ) )
   {
-    this->m_linearSolverParameters.get().mgr.strategy = LinearSolverParameters::MGR::StrategyType::thermalSinglePhasePoromechanics;
+    if( this->m_isThermal )
+    {
+      GEOS_ERROR( GEOS_FMT( "{}: MGR strategy is not implemented for thermal {}/{}",
+                            this->getName(), this->getCatalogName(), this->flowSolver()->getCatalogName() ));
+    }
+    else
+    {
+      linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::hybridSinglePhasePoromechanics;
+    }
   }
   else
   {
-    if( this->flowSolver()->getLinearSolverParameters().mgr.strategy == LinearSolverParameters::MGR::StrategyType::singlePhaseHybridFVM )
+    if( this->m_isThermal )
     {
-      this->m_linearSolverParameters.get().mgr.strategy = LinearSolverParameters::MGR::StrategyType::hybridSinglePhasePoromechanics;
+      linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::thermalSinglePhasePoromechanics;
+    }
+    else
+    {
+      linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::singlePhasePoromechanics;
     }
   }
+  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: MGR strategy set to {}", getName(),
+                                      EnumStrings< LinearSolverParameters::MGR::StrategyType >::toString( linearSolverParameters.mgr.strategy )));
+}
+
+template<>
+void SinglePhasePoromechanics< SinglePhaseReservoirAndWells<>, SolidMechanicsLagrangianFEM >::setMGRStrategy()
+{
+  // same as SinglePhaseReservoirAndWells< SinglePhasePoromechanics<> >::setMGRStrategy
+
+  LinearSolverParameters & linearSolverParameters = m_linearSolverParameters.get();
+
+  if( linearSolverParameters.preconditionerType != LinearSolverParameters::PreconditionerType::mgr )
+    return;
+
+  linearSolverParameters.mgr.separateComponents = true;
+  linearSolverParameters.dofsPerNode = 3;
+
+  if( dynamic_cast< SinglePhaseHybridFVM * >( this->flowSolver() ) )
+  {
+    GEOS_ERROR( GEOS_FMT( "{}: MGR strategy is not implemented for poromechanics {}/{}",
+                          this->getName(), this->getCatalogName(), this->flowSolver()->getCatalogName()));
+  }
+  else
+  {
+    linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::singlePhasePoromechanicsReservoirFVM;
+  }
+  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: MGR strategy set to {}", this->getName(),
+                                      EnumStrings< LinearSolverParameters::MGR::StrategyType >::toString( linearSolverParameters.mgr.strategy )));
 }
 
 template< typename FLOW_SOLVER, typename MECHANICS_SOLVER >
@@ -170,7 +213,48 @@ void SinglePhasePoromechanics< FLOW_SOLVER, MECHANICS_SOLVER >::assembleSystem( 
                                            localMatrix,
                                            localRhs );
   }
+}
 
+template<>
+void SinglePhasePoromechanics< SinglePhaseReservoirAndWells<>, SolidMechanicsLagrangianFEM >::assembleSystem( real64 const time_n,
+                                                                                                              real64 const dt,
+                                                                                                              DomainPartition & domain,
+                                                                                                              DofManager const & dofManager,
+                                                                                                              CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                                                                                                              arrayView1d< real64 > const & localRhs )
+{
+  GEOS_MARK_FUNCTION;
+
+  // Steps 1 and 2: compute element-based terms (mechanics and local flow terms)
+  assembleElementBasedTerms( time_n,
+                             dt,
+                             domain,
+                             dofManager,
+                             localMatrix,
+                             localRhs );
+
+  // Step 3: compute the fluxes (face-based contributions)
+  if( m_stabilizationType == StabilizationType::Global || m_stabilizationType == StabilizationType::Local )
+  {
+    this->flowSolver()->assembleStabilizedFluxTerms( dt,
+                                                     domain,
+                                                     dofManager,
+                                                     localMatrix,
+                                                     localRhs );
+  }
+  else
+  {
+    this->flowSolver()->assembleFluxTerms( dt,
+                                           domain,
+                                           dofManager,
+                                           localMatrix,
+                                           localRhs );
+  }
+
+  // step 4: assemble well contributions
+
+  this->flowSolver()->wellSolver()->assembleSystem( time_n, dt, domain, dofManager, localMatrix, localRhs );
+  this->flowSolver()->assembleCouplingTerms( time_n, dt, domain, dofManager, localMatrix, localRhs );
 }
 
 template< typename FLOW_SOLVER, typename MECHANICS_SOLVER >
@@ -202,46 +286,46 @@ void SinglePhasePoromechanics< FLOW_SOLVER, MECHANICS_SOLVER >::assembleElementB
     if( m_damageFlag )
     {
       poromechanicsMaxForce =
-        assemblyLaunch< constitutive::PorousDamageSolidBase,
-                        poromechanicsDamageKernels::SinglePhasePoromechanicsDamageKernelFactory >( mesh,
-                                                                                                   dofManager,
-                                                                                                   regionNames,
-                                                                                                   viewKeyStruct::porousMaterialNamesString(),
-                                                                                                   localMatrix,
-                                                                                                   localRhs,
-                                                                                                   dt,
-                                                                                                   flowDofKey,
-                                                                                                   FlowSolverBase::viewKeyStruct::fluidNamesString() );
+        this->template assemblyLaunch< constitutive::PorousDamageSolidBase,
+                                       poromechanicsDamageKernels::SinglePhasePoromechanicsDamageKernelFactory >( mesh,
+                                                                                                                  dofManager,
+                                                                                                                  regionNames,
+                                                                                                                  viewKeyStruct::porousMaterialNamesString(),
+                                                                                                                  localMatrix,
+                                                                                                                  localRhs,
+                                                                                                                  dt,
+                                                                                                                  flowDofKey,
+                                                                                                                  FlowSolverBase::viewKeyStruct::fluidNamesString() );
     }
     else if( this->m_isThermal )
     {
       poromechanicsMaxForce =
-        assemblyLaunch< constitutive::PorousSolidBase,
-                        thermalPoromechanicsKernels::ThermalSinglePhasePoromechanicsKernelFactory >( mesh,
-                                                                                                     dofManager,
-                                                                                                     regionNames,
-                                                                                                     viewKeyStruct::porousMaterialNamesString(),
-                                                                                                     localMatrix,
-                                                                                                     localRhs,
-                                                                                                     dt,
-                                                                                                     flowDofKey,
-                                                                                                     this->m_performStressInitialization,
-                                                                                                     FlowSolverBase::viewKeyStruct::fluidNamesString() );
+        this->template assemblyLaunch< constitutive::PorousSolidBase,
+                                       thermalPoromechanicsKernels::ThermalSinglePhasePoromechanicsKernelFactory >( mesh,
+                                                                                                                    dofManager,
+                                                                                                                    regionNames,
+                                                                                                                    viewKeyStruct::porousMaterialNamesString(),
+                                                                                                                    localMatrix,
+                                                                                                                    localRhs,
+                                                                                                                    dt,
+                                                                                                                    flowDofKey,
+                                                                                                                    this->m_performStressInitialization,
+                                                                                                                    FlowSolverBase::viewKeyStruct::fluidNamesString() );
     }
     else
     {
       poromechanicsMaxForce =
-        assemblyLaunch< constitutive::PorousSolidBase,
-                        poromechanicsKernels::SinglePhasePoromechanicsKernelFactory >( mesh,
-                                                                                       dofManager,
-                                                                                       regionNames,
-                                                                                       viewKeyStruct::porousMaterialNamesString(),
-                                                                                       localMatrix,
-                                                                                       localRhs,
-                                                                                       dt,
-                                                                                       flowDofKey,
-                                                                                       this->m_performStressInitialization,
-                                                                                       FlowSolverBase::viewKeyStruct::fluidNamesString() );
+        this->template assemblyLaunch< constitutive::PorousSolidBase,
+                                       poromechanicsKernels::SinglePhasePoromechanicsKernelFactory >( mesh,
+                                                                                                      dofManager,
+                                                                                                      regionNames,
+                                                                                                      viewKeyStruct::porousMaterialNamesString(),
+                                                                                                      localMatrix,
+                                                                                                      localRhs,
+                                                                                                      dt,
+                                                                                                      flowDofKey,
+                                                                                                      this->m_performStressInitialization,
+                                                                                                      FlowSolverBase::viewKeyStruct::fluidNamesString() );
     }
   } );
 
@@ -270,14 +354,14 @@ void SinglePhasePoromechanics< FLOW_SOLVER, MECHANICS_SOLVER >::assembleElementB
     }
 
     mechanicsMaxForce =
-      assemblyLaunch< constitutive::SolidBase,
-                      solidMechanicsLagrangianFEMKernels::QuasiStaticFactory >( mesh,
-                                                                                dofManager,
-                                                                                filteredRegionNames.toViewConst(),
-                                                                                SolidMechanicsLagrangianFEM::viewKeyStruct::solidMaterialNamesString(),
-                                                                                localMatrix,
-                                                                                localRhs,
-                                                                                dt );
+      this->template assemblyLaunch< constitutive::SolidBase,
+                                     solidMechanicsLagrangianFEMKernels::QuasiStaticFactory >( mesh,
+                                                                                               dofManager,
+                                                                                               filteredRegionNames.toViewConst(),
+                                                                                               SolidMechanicsLagrangianFEM::viewKeyStruct::solidMaterialNamesString(),
+                                                                                               localMatrix,
+                                                                                               localRhs,
+                                                                                               dt );
   } );
 
   this->solidMechanicsSolver()->applyContactConstraint( dofManager, domain, localMatrix, localRhs );
