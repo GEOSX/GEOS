@@ -220,7 +220,6 @@ bool SourceFluxStatsAggregator::execute( real64 const GEOS_UNUSED_PARAM( time_n 
                                          real64 const GEOS_UNUSED_PARAM( eventProgress ),
                                          DomainPartition & domain )
 {
-  bool const allStats = isLogLevelActive< logInfo::sourceFluxRegionsStatistics >( getLogLevel() );
   bool const fluxesStats = isLogLevelActive< logInfo::sourceFluxStatistics >( getLogLevel() );
   bool const fluxMeshesStats = isLogLevelActive< logInfo::sourceFluxMeshStatistics >( getLogLevel() );
   bool const regionsStats = isLogLevelActive< logInfo::sourceFluxRegionsStatistics >( getLogLevel() );
@@ -249,7 +248,7 @@ bool SourceFluxStatsAggregator::execute( real64 const GEOS_UNUSED_PARAM( time_n 
         } );
         fluxStats.stats().combine( regionStats.stats() );
 
-        gatherStatsForLog( allStats, region.getName(), tableRegionsData, regionStats );
+        gatherStatsForLog( regionsStats, region.getName(), tableRegionsData, regionStats );
         gatherStatsForCSV( csvData, regionStats );
       } );
 

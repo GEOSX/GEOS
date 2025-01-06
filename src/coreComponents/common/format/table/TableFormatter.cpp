@@ -297,7 +297,7 @@ void TableTextFormatter::populateHeaderCellsLayout( TableLayout & tableLayout,
   size_t idxLayer = 0;
   for( auto & lines: cellsHeaderLayout )
   {
-    size_t nbLinesInLayer = sublineHeaderCounts[idxLayer];
+    size_t const nbLinesInLayer = sublineHeaderCounts[idxLayer];
 
     if( nbLinesInLayer != 1 )
     {
@@ -398,7 +398,7 @@ void TableTextFormatter::updateColumnMaxLength( TableLayout & tableLayout,
 
   size_t const numColumns = cellsHeaderLayout[0].size();
   //each idx per row
-  std::vector< size_t > accMaxStringColumn( cellsDataLayout.size(), 0 );
+  std::vector< size_t > const accMaxStringColumn( cellsDataLayout.size(), 0 );
   for( size_t idxColumn = 0; idxColumn < numColumns; ++idxColumn )
   {
     size_t maxColumnSize = 1;
@@ -438,7 +438,7 @@ void TableTextFormatter::updateColumnMaxLength( TableLayout & tableLayout,
           previousDataCell->m_cellType == CellType::MergeNext && dataCell.m_cellType != CellType::MergeNext )
       {
         // root header cells know the maximum string size in the column
-        size_t sumOfMergingCell = accMaxStringColumn[rowIdx] + cellsHeaderLayout[0][idxColumn].m_cellWidth;
+        size_t const sumOfMergingCell = accMaxStringColumn[rowIdx] + cellsHeaderLayout[0][idxColumn].m_cellWidth;
         if( sumOfMergingCell <  dataCell.m_cellWidth )
         {
           maxColumnSize -= dataCell.m_cellWidth - sumOfMergingCell;
@@ -500,7 +500,7 @@ void TableTextFormatter::adjustTableWidth( TableLayout & tableLayout,
   size_t const horizontalBar = 2;
 
   size_t sectionlineLength = 0;
-  size_t nbColumns = 0;
+  size_t nbTotalColumn = 0;
   size_t nbHiddenColumns = 0;
 
   for( auto const & column : cellsHeaderLayout[0] )
@@ -516,11 +516,11 @@ void TableTextFormatter::adjustTableWidth( TableLayout & tableLayout,
     if( column.m_cellType == CellType::Value || column.m_cellType == CellType::Header )
     {
       sectionlineLength += column.m_cellWidth;
-      nbColumns++;
+      nbTotalColumn++;
     }
   }
 
-  size_t const spacingBetweenColumns = (nbColumns - 1) * (size_t) tableLayout.getColumnMargin();
+  size_t const spacingBetweenColumns = (nbTotalColumn - 1) * (size_t) tableLayout.getColumnMargin();
   sectionlineLength += spacingBetweenColumns + margins + horizontalBar;
 
   size_t const titleRowLength = tableTitle.length() + margins + horizontalBar;
@@ -542,8 +542,8 @@ void TableTextFormatter::adjustColumnWidth( CellLayoutRows & cells,
 {
   size_t const numRows = cells.size();
   size_t const nbColumns = cells[0].size();
-  size_t remainingPaddingForLastColumn = paddingCharacters % (nbColumns - nbHiddenColumns);
-  size_t paddingPerColumn = paddingCharacters / (nbColumns - nbHiddenColumns);
+  size_t const remainingPaddingForLastColumn = paddingCharacters % (nbColumns - nbHiddenColumns);
+  size_t const paddingPerColumn = paddingCharacters / (nbColumns - nbHiddenColumns);
   for( size_t idxRow = 0; idxRow < numRows; ++idxRow )
   {
     for( size_t idxColumn = 0; idxColumn < nbColumns; ++idxColumn )
