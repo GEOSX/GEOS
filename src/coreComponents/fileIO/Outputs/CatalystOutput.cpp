@@ -250,6 +250,9 @@ bool DispatchFieldToContainers(const std::set<std::uint64_t>& nodeMapping,
 
 void SanitizeMultiNodeInTransit(conduit::Node& channel,
                                 ScopedDataContainer& dataContainer) {
+
+  GEOS_MARK_FUNCTION;
+
   auto& blueprintNode = channel["data"];
   for (conduit::index_t iTopo = 0;
        iTopo < blueprintNode["topologies"].number_of_children(); ++iTopo) {
