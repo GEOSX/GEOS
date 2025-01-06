@@ -62,7 +62,7 @@ string TableCSVFormatter::headerToString() const
     std::ostringstream strValue;
     for( auto const & str :  m_tableLayout.getColumns()[idxColumn].m_header.m_lines )
     {
-        result.append( str );
+      result.append( str );
     }
 
     if( idxColumn < m_tableLayout.getColumns().size() - 1 )
@@ -500,11 +500,12 @@ void TableTextFormatter::adjustTableWidth( TableLayout & tableLayout,
   size_t const horizontalBar = 2;
 
   size_t sectionlineLength = 0;
-  size_t nbTotalColumn = 0;
   size_t nbHiddenColumns = 0;
+  size_t nbParentColumn = 0;
 
   for( auto const & column : cellsHeaderLayout[0] )
   {
+    std::cout << column.m_lines[0] << std::endl;
     if( column.m_cellType == CellType::Hidden ||  column.m_cellType == CellType::Disabled )
     {
       nbHiddenColumns++;
@@ -516,11 +517,15 @@ void TableTextFormatter::adjustTableWidth( TableLayout & tableLayout,
     if( column.m_cellType == CellType::Value || column.m_cellType == CellType::Header )
     {
       sectionlineLength += column.m_cellWidth;
-      nbTotalColumn++;
+      //parent column has the max string size
+      nbParentColumn++;
     }
   }
 
-  size_t const spacingBetweenColumns = (nbTotalColumn - 1) * (size_t) tableLayout.getColumnMargin();
+
+  size_t const spacingBetweenColumns = nbParentColumn == 0 ? (size_t) tableLayout.getColumnMargin():
+                                       (nbParentColumn - 1) * (size_t) tableLayout.getColumnMargin();
+
   sectionlineLength += spacingBetweenColumns + margins + horizontalBar;
 
   size_t const titleRowLength = tableTitle.length() + margins + horizontalBar;
