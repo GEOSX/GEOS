@@ -205,7 +205,7 @@ public:
    * @tparam KEYS_CONTAINER_T A container type holding the allowed keys.
    */
   template< typename KEYS_CONTAINER_T >
-  static string unknownTypeError( std::string const & objectTypeName, DataContext const & context,
+  static string unknownTypeError( string const & objectTypeName, DataContext const & context,
                                   KEYS_CONTAINER_T const & allowedKeys )
   {
     return GEOS_FMT( "The tag \"{}\" is invalid within {}. Please verify the keywords spelling and that "

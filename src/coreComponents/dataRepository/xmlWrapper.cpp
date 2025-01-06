@@ -32,7 +32,7 @@ using namespace dataRepository;
 namespace xmlWrapper
 {
 
-void validateString( std::string const & value, const Regex & regex )
+void validateString( string const & value, const Regex & regex )
 {
   std::regex regexInstance{ regex.m_regexStr };
   // if validation fails, let's try to find the error start & end to underline it. If it fails, underline the whole message.
@@ -49,7 +49,7 @@ void validateString( std::string const & value, const Regex & regex )
         break;
     }
 
-    std::string const underline = std::string( errorStart, ' ' ) + std::string( errorLength, '^' );
+    string const underline = string( errorStart, ' ' ) + string( errorLength, '^' );
     GEOS_THROW( GEOS_FMT( "Input string validation failed at:\n"
                           "  \"{}\"\n"
                           "   {}\n"
