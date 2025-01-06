@@ -501,7 +501,7 @@ void TableTextFormatter::adjustTableWidth( TableLayout & tableLayout,
 
   size_t sectionlineLength = 0;
   size_t nbHiddenColumns = 0;
-  size_t nbParentColumn = 0;
+  size_t headerColumnCount = 0;
 
   for( auto const & column : cellsHeaderLayout[0] )
   {
@@ -517,14 +517,13 @@ void TableTextFormatter::adjustTableWidth( TableLayout & tableLayout,
     if( column.m_cellType == CellType::Value || column.m_cellType == CellType::Header )
     {
       sectionlineLength += column.m_cellWidth;
-      //parent column has the max string size
-      nbParentColumn++;
+      headerColumnCount++;
     }
   }
 
 
-  size_t const spacingBetweenColumns = nbParentColumn == 0 ? (size_t) tableLayout.getColumnMargin():
-                                       (nbParentColumn - 1) * (size_t) tableLayout.getColumnMargin();
+  size_t const spacingBetweenColumns = headerColumnCount == 0 ? (size_t) tableLayout.getColumnMargin():
+                                       (headerColumnCount - 1) * (size_t) tableLayout.getColumnMargin();
 
   sectionlineLength += spacingBetweenColumns + margins + horizontalBar;
 
