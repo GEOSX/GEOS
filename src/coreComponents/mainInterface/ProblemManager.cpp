@@ -460,7 +460,7 @@ void ProblemManager::parseXMLDocument( xmlWrapper::xmlDocument & xmlDocument )
 
     auto parseRegions = [&]( string_view regionManagerKey, bool const hasParticles )
     {
-      xmlWrapper::xmlNode regionsNode = xmlProblemNode.child( regionManagerKey );
+      xmlWrapper::xmlNode regionsNode = xmlProblemNode.child( regionManagerKey.data() );
       xmlWrapper::xmlNodePos regionsNodePos = xmlDocument.getNodePosition( regionsNode );
       std::set< string > regionNames;
 
@@ -480,8 +480,8 @@ void ProblemManager::parseXMLDocument( xmlWrapper::xmlDocument & xmlDocument )
           meshBody.forMeshLevels( [&]( MeshLevel & meshLevel )
           {
             ObjectManagerBase & elementManager = hasParticles ?
-                                                 meshLevel.getElemManager() :
-                                                 meshLevel.getParticleManager();
+                                                 static_cast< ObjectManagerBase & >( meshLevel.getElemManager() ):
+                                                 static_cast< ObjectManagerBase & >( meshLevel.getParticleManager() );
             Group * newRegion = elementManager.createChild( regionNode.name(), regionName );
             newRegion->processInputFileRecursive( xmlDocument, regionNode );
           } );
