@@ -398,7 +398,7 @@ void TableTextFormatter::updateColumnMaxLength( TableLayout & tableLayout,
 
   size_t const numColumns = cellsHeaderLayout[0].size();
   //each idx per row
-  std::vector< size_t > const accMaxStringColumn( cellsDataLayout.size(), 0 );
+  std::vector< size_t > accMaxStringColumn( cellsDataLayout.size(), 0 );
   for( size_t idxColumn = 0; idxColumn < numColumns; ++idxColumn )
   {
     size_t maxColumnSize = 1;
