@@ -193,22 +193,22 @@ void FieldSpecificationManager::validateBoundaryConditions( MeshLevel & mesh ) c
 
     if( isFieldNameFound == 0 )
     {
-      char const fieldNameNotFoundMessage[] =
-        "\n{}: there is no {} named `{}` under the {} `{}`.\n";
-      string errorMsg = GEOS_FMT( fieldNameNotFoundMessage,
-                                  fs.getWrapperDataContext( FieldSpecificationBase::viewKeyStruct::fieldNameString() ),
-                                  FieldSpecificationBase::viewKeyStruct::fieldNameString(),
-                                  fs.getFieldName(), FieldSpecificationBase::viewKeyStruct::objectPathString(), fs.getObjectPath());
+      std::ostringstream fieldNameNotFoundMessage;
+      std::string fieldNamePath =
+        GEOS_FMT( "\n{}: there is no {} named `{}` under the {} `{}`.\n",
+                  fs.getWrapperDataContext( FieldSpecificationBase::viewKeyStruct::fieldNameString() ),
+                  FieldSpecificationBase::viewKeyStruct::fieldNameString(),
+                  fs.getFieldName(), FieldSpecificationBase::viewKeyStruct::objectPathString(), fs.getObjectPath());
 
+      fieldNameNotFoundMessage << fieldNamePath;
       if( areAllSetsEmpty )
       {
-        GEOS_LOG_RANK_0( errorMsg );
+        GEOS_LOG_RANK_0( fieldNameNotFoundMessage.str() );
       }
       else
       {
-        std::ostringstream listFieldsName;
+        fieldNameNotFoundMessage << GEOS_FMT( "Available fields in {} are:\n", fs.getObjectPath());
         bool stopIteration = false;
-
         ElementRegionManager const & elemRegionGroup = mesh.getElemManager();
         elemRegionGroup.forElementRegions( [&]( ElementRegionBase const & elemRegion )
         {
@@ -221,14 +221,12 @@ void FieldSpecificationManager::validateBoundaryConditions( MeshLevel & mesh ) c
             for( auto const & wrapperIter : subCellRegion.wrappers() )
             {
               auto const & wrapper = wrapperIter.second;
-              listFieldsName<<  wrapper->getName() <<  " ";
+              fieldNameNotFoundMessage << wrapper->getName() <<  " ";
             }
           }
         } );
 
-        string fieldAvailable = GEOS_FMT( "The fields ame available are :\n{}", listFieldsName.str());
-        errorMsg.append( listFieldsName.str());
-        GEOS_THROW( errorMsg, InputError );
+        GEOS_THROW( fieldNameNotFoundMessage.str(), InputError );
       }
     }
   } );
