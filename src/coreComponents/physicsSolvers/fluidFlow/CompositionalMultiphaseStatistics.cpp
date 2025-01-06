@@ -550,7 +550,7 @@ void CompositionalMultiphaseStatistics::computeRegionStatistics( real64 const ti
                                           statPrefix, mobilePhaseMass, massUnit ));
 
     GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Statistics,
-                                GEOS_FMT( "{} Component mass: {} {}",
+                                GEOS_FMT( "{} Dissolved component mass: {} {}",
                                           statPrefix, stats.m_dissolvedComponentMass, massUnit ));
 
     if( m_writeCSV > 0 && MpiWrapper::commRank() == 0 )
