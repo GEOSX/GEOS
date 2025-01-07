@@ -111,7 +111,7 @@
 
     <PeriodicEvent
       name="restarts"
-      timeFrequency="7.5e5"
+      timeFrequency="2.5e4"
       target="/Outputs/sidreRestart"/>
   </Events>
 
