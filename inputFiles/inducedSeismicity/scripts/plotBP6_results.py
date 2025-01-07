@@ -1,6 +1,6 @@
 import argparse
 import numpy as np
-import hdf5_wrapper
+from geos.hdf5_wrapper import hdf5_wrapper
 import matplotlib.pyplot as plt
 import os
 
@@ -14,7 +14,7 @@ def remove_padding(data):
 
 def getDataFromHDF5( hdf5FilePath, var_name ):
     # Read HDF5
-    data = hdf5_wrapper.hdf5_wrapper(f'{hdf5FilePath}').get_copy()
+    data = hdf5_wrapper(f'{hdf5FilePath}').get_copy()
     var = data[f'{var_name} source']
     var = np.asarray(var)
     time = data[f'{var_name} Time']
