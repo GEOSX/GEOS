@@ -86,7 +86,7 @@ struct ConstitutivePassThru< ElasticIsotropic >
 };
 
 /**
- * Specialization for models that derive from CoulombFriction.
+ * Specialization for models that derive from FrictionBase.
  */
 template<>
 struct ConstitutivePassThru< FrictionBase >
@@ -101,7 +101,9 @@ struct ConstitutivePassThru< FrictionBase >
   }
 };
 
-
+/**
+ * Specialization for models that derive from CoulombFriction.
+ */
 template<>
 struct ConstitutivePassThru< CoulombFriction >
 {
