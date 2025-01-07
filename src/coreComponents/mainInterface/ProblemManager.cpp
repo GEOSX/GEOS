@@ -480,8 +480,8 @@ void ProblemManager::parseXMLDocument( xmlWrapper::xmlDocument & xmlDocument )
           meshBody.forMeshLevels( [&]( MeshLevel & meshLevel )
           {
             ObjectManagerBase & elementManager = hasParticles ?
-                                                 static_cast< ObjectManagerBase & >( meshLevel.getElemManager() ):
-                                                 static_cast< ObjectManagerBase & >( meshLevel.getParticleManager() );
+                                                 static_cast< ObjectManagerBase & >( meshLevel.getParticleManager() ):
+                                                 static_cast< ObjectManagerBase & >( meshLevel.getElemManager() );
             Group * newRegion = elementManager.createChild( regionNode.name(), regionName );
             newRegion->processInputFileRecursive( xmlDocument, regionNode );
           } );
@@ -493,6 +493,7 @@ void ProblemManager::parseXMLDocument( xmlWrapper::xmlDocument & xmlDocument )
         }
       }
     };
+
     parseRegions( MeshLevel::groupStructKeys::elemManagerString(), false );
     parseRegions( MeshLevel::groupStructKeys::particleManagerString(), true );
   }
