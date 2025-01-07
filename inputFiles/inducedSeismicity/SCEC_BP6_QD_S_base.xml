@@ -165,14 +165,6 @@
       setNames="{ zpos, zneg }"/>
 
     <FieldSpecification
-      name="initialSlipRate"
-      objectPath="ElementRegions/Fault"
-      fieldName="slipRate"
-      scale="1.0e-12"
-      setNames="{ all }"
-      initialCondition="1"/>
-
-    <FieldSpecification
       name="initialStateVariable"
       objectPath="ElementRegions/Fault"
       fieldName="stateVariable"
