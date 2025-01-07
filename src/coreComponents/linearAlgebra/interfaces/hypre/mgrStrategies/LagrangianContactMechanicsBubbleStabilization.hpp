@@ -46,12 +46,18 @@ namespace mgr
  * dofLabel: 7 = face-centered lagrange multiplier (tt1)
  * dofLabel: 8 = face-centered lagrange multiplier (tt2)
  *
- * Ingredients:
- * 1. F-points displacement (0,1,2,3,4,5), C-points  (6,7,8)
- * 2. F-points smoother: AMG, single V-cycle, separate displacemente components
- * 3. C-points coarse-grid/Schur complement solver: boomer AMG
- * 4. Global smoother: none
- *
+ * 2-level MGR strategy:
+ * Level 0:
+ * 1. F-points: bubbles (3,4,5), C-points: displacements + multipliers (0,1,2,6,7,8)
+ * 2. F-points smoother: l1jacobi
+ * 3. Global smoother: none
+ * Level 1:
+ * 1. F-points: multipliers (6,7,8), C-points: displacements (0,1,2)
+ * 2. F-points smoother: l1jacobi
+ * 3. Global smoother: none
+ * 
+ * C-points coarse-grid/Schur complement solver: boomer AMG
+ 
  */
 class LagrangianContactMechanicsBubbleStabilization : public MGRStrategyBase< 2 >
 {
@@ -71,7 +77,7 @@ public:
     setupLabels();
 
     // Level 0
-    m_levelFRelaxType[0]          = MGRFRelaxationType::gsElimWInverse;
+    m_levelFRelaxType[0]          = MGRFRelaxationType::l1jacobi;
     m_levelFRelaxIters[0]         = 1;
     m_levelInterpType[0]          = MGRInterpolationType::blockJacobi;
     m_levelRestrictType[0]        = MGRRestrictionType::injection;
@@ -79,7 +85,7 @@ public:
     m_levelGlobalSmootherType[0]  = MGRGlobalSmootherType::none;
 
     // Level 1
-    m_levelFRelaxType[1]          = MGRFRelaxationType::gsElimWInverse;
+    m_levelFRelaxType[1]          = MGRFRelaxationType::l1jacobi;
     m_levelFRelaxIters[1]         = 1;
     m_levelInterpType[1]          = MGRInterpolationType::blockJacobi;
     m_levelRestrictType[1]        = MGRRestrictionType::injection;
@@ -98,12 +104,6 @@ public:
               HypreMGRData & mgrData )
   {
     setReduction( precond, mgrData );
-
-    // // Configure the BoomerAMG solver used as F-relaxation for the first level
-    // setMechanicsFSolver( precond, mgrData, mgrParams.separateComponents );
-
-    // // Configure ILU) as a coarse solver
-    // setILUCoarseSolver( mgrData.coarseSolver );
 
     // Configure the BoomerAMG solver used as mgr coarse solver for the displacement reduced system
     setDisplacementAMG( mgrData.coarseSolver, mgrParams.separateComponents );
