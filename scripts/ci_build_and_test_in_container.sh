@@ -304,8 +304,7 @@ if [[ "${RUN_INTEGRATED_TESTS}" = true ]]; then
 
   echo "Running integrated tests..."
   integratedTests/geos_ats.sh --baselineCacheDirectory /tmp/geos/baselines
-  tar -czf ${DATA_EXCHANGE_DIR}/test_logs_${DATA_BASENAME_WE}.tar.gz integratedTests/TestResults
-
+  
   echo "Checking results..."
   bin/geos_ats_log_check integratedTests/TestResults/test_results.ini -y ${GEOS_SRC_DIR}/.integrated_tests.yaml &> $tempdir/log_check.txt
   cat $tempdir/log_check.txt
@@ -316,6 +315,10 @@ if [[ "${RUN_INTEGRATED_TESTS}" = true ]]; then
   else
     echo "IntegratedTests failed. Rebaseline is required."
 
+    # process integratedTests failures
+    echo "Processing logs..."
+    python3 ../scripts/processIntegratedTestCheckFailures --directory integratedTests/TestResults &> integratedTests/TestResults/processedTestsLogs.txt
+   
     # Rebaseline and pack into an archive
     echo "Rebaselining..."
     integratedTests/geos_ats.sh -a rebaselinefailed
@@ -324,6 +327,9 @@ if [[ "${RUN_INTEGRATED_TESTS}" = true ]]; then
     integratedTests/geos_ats.sh -a pack_baselines --baselineArchiveName ${DATA_EXCHANGE_DIR}/baseline_${DATA_BASENAME_WE}.tar.gz --baselineCacheDirectory /tmp/geos/baselines
     INTEGRATED_TEST_EXIT_STATUS=1
   fi
+
+  echo "Packing logs..."
+  tar -czf ${DATA_EXCHANGE_DIR}/test_logs_${DATA_BASENAME_WE}.tar.gz integratedTests/TestResults
 
   echo "Done!"
 
