@@ -81,7 +81,7 @@ decks = [
         name="isothm_mass_inj_table",
         description=
         "Isothermal mass injection constraint testing control switching",
-        partitions=[(1, 1, 1), (2, 1, 1)],
+        partitions=[(1, 1, 1), (1, 2, 1)],
         restart_step=24,
         check_step=28,
         restartcheck_params=RestartcheckParameters(**restartcheck_params)),
@@ -89,7 +89,7 @@ decks = [
         name="isothm_vol_inj_table",
         description=
         "Isothermal vol injection constraint testing control switching, should have same results as isothm_mass_inj_table.xml",
-        partitions=[(1, 1, 1), (2, 1, 1)],
+        partitions=[(1, 1, 1), (1, 2, 1)],
         restart_step=24,
         check_step=28,
         restartcheck_params=RestartcheckParameters(**restartcheck_params))
