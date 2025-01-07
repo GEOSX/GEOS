@@ -116,6 +116,9 @@ public:
                        real64 const & creepA,
                        real64 const & creepB,
                        real64 const & creepC,
+                       real64 const & creepD,
+                       real64 const & creepE,
+                       real64 const & creepF,
                        real64 const & strainHardeningN,
                        real64 const & strainHardeningK,
                        real64 const & plasticStrainTolerance,
@@ -173,6 +176,9 @@ public:
     m_creepA( creepA ),
     m_creepB( creepB ),
     m_creepC( creepC ),
+    m_creepD( creepD ),
+    m_creepE( creepE ),
+    m_creepF( creepF ),
     m_strainHardeningN( strainHardeningN ),
     m_strainHardeningK( strainHardeningK ),
     m_plasticStrainTolerance(plasticStrainTolerance),
@@ -468,6 +474,9 @@ private:
   real64 const & m_creepA;
   real64 const & m_creepB;
   real64 const & m_creepC;
+  real64 const & m_creepD;
+  real64 const & m_creepE;
+  real64 const & m_creepF;
   real64 const & m_strainHardeningN;
   real64 const & m_strainHardeningK;
   real64 const & m_plasticStrainTolerance;
@@ -905,6 +914,9 @@ int GeomechanicsUpdates::computeStep( real64 const ( & D )[6],               // 
     real64 A = m_creepA;  // volumetric creep rate parameter
     real64 B = m_creepB;  // volumetric creep rate parameter
     real64 C = m_creepC;  // volumetric creep rate parameter
+    real64 equilibriumPorosityPressureExponent = m_creepD;  // volumetric creep rate parameter
+    real64 equilibriumPorosityOffset = m_creepE;  // volumetric creep rate parameter
+    real64 compactionRatePressureExponent = m_creepF;  // volumetric creep rate parameter
 
     real64 stress_iso[6] = { 0 };
     real64 stress_dev[6] = { 0 };
@@ -981,7 +993,7 @@ int GeomechanicsUpdates::computeStep( real64 const ( & D )[6],               // 
     // unloaded porosity at the start of the step.
     real64 phi_p = std::max( 1.e-10 , 1.0 + exp(-evp)*( phi_i - 1 ) ); 
     // equilibrium porosity at the start of the step.
-		real64 phi_e = std::max(1.e-10 , A*exp(-p/B));    
+		real64 phi_e = std::max(1.e-10 , A * exp( -std::pow(p,equilibriumPorosityPressureExponent) / B ) + equilibriumPorosityOffset );    
 
     // uncomment for debugging:
     //std::cout<<"pn = "<<p<<", evp_n = "<<evp<<", phi_p_n = "<<phi_p<<", phi_e_n = "<<phi_e<<", X_n = "<<X_old<<std::endl;
@@ -990,7 +1002,7 @@ int GeomechanicsUpdates::computeStep( real64 const ( & D )[6],               // 
 
     if ( (phi_p - phi_e > 1.e-10) && (p > 1.e-12) && (C > 0) && ( evp + m_p3 > 1.e-10 ) )
  		  {  // creep compaction
- 			  real64 dphidt = -1.0*p*C*( phi_p - phi_e );  // creep compaction rate:
+ 			  real64 dphidt = -1.0*std::pow(p,compactionRatePressureExponent)*C*( phi_p - phi_e );  // creep compaction rate:
  			  real64 phi_c = std::max( phi_e, phi_p + dphidt*dt ); // unloaded porosity after creep, don't let it go below equilibrium level
  			  real64 evp_c = log( (phi_i - 1. ) / ( phi_c - 1. ) ); // vol. strain after creep.
  			  evp_c = std::max( evp_c, - m_p3 ); // don't let porosity go negative.
@@ -2659,6 +2671,15 @@ public:
     /// string/key for creep C parameter
     static constexpr char const * creepCString() { return "creepC"; }
 
+    /// string/key for creep C parameter
+    static constexpr char const * creepDString() { return "creepD"; }
+
+    /// string/key for creep C parameter
+    static constexpr char const * creepEString() { return "creepE"; }
+
+    /// string/key for creep C parameter
+    static constexpr char const * creepFString() { return "creepF"; }
+
     /// string/key for strain-hardening N parameter
     static constexpr char const * strainHardeningNString() { return "strainHardeningN"; }
 
@@ -2737,6 +2758,9 @@ public:
                                 m_creepA,
                                 m_creepB,
                                 m_creepC,
+                                m_creepD,
+                                m_creepE,
+                                m_creepF,
                                 m_strainHardeningN,
                                 m_strainHardeningK,
                                 m_plasticStrainTolerance,
@@ -2801,6 +2825,9 @@ public:
                           m_creepA,
                           m_creepB,
                           m_creepC,
+                          m_creepD,
+                          m_creepE,
+                          m_creepF,
                           m_strainHardeningN,
                           m_strainHardeningK,
                           m_plasticStrainTolerance,
@@ -2950,6 +2977,9 @@ protected:
   real64 m_creepA;
   real64 m_creepB;
   real64 m_creepC;
+  real64 m_creepD;
+  real64 m_creepE;
+  real64 m_creepF;
 
   // strain-hardening parameters
   real64 m_strainHardeningN;
