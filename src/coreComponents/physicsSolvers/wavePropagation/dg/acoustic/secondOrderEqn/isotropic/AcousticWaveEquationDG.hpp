@@ -173,10 +173,10 @@ private:
   array1d< localIndex > m_receiverRegion;
 
   /// Inverse of the mass matrix in the reference element for each subregion
-  array1d< array2d< real64 > > m_referenceInvMassMatrix;
+  ArrayOfArrays< array2d< real64 > > m_referenceInvMassMatrix;
 
   /// Inverse of the mass plus damping matrix in the reference element for each boundary element
-  array3d< real64 > m_boundaryInvMassPlusDamping;
+  ArrayOfArrays< array3d< real64 > > m_boundaryInvMassPlusDamping;
 
   /// Index for each boundary element to m_boundaryInvMassPlusDamping
   array3d< real64 > m_indexToBoundaryMatrix;

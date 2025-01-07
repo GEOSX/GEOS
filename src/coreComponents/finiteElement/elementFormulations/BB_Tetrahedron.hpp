@@ -561,7 +561,7 @@ public:
    */
   GEOS_HOST_DEVICE
   GEOS_FORCE_INLINE
-  constexpr static real64 computeSuperpositionIntegral( const int i1, const int j1, const int k1, const int l1,
+  static constexpr real64 computeSuperpositionIntegral( const int i1, const int j1, const int k1, const int l1,
                                                         const int i2, const int j2, const int k2, const int l2 )
   {
     return (integralTerm(i1+i2, i1, i2)*
@@ -683,7 +683,7 @@ public:
   GEOS_HOST_DEVICE
   GEOS_FORCE_INLINE
   static constexpr void barycentricCoordinateLoop(FUNC && func) {
-      loop( [&] ( auto const i ) {
+      loop( [&func] ( auto const i ) {
         func( std::integral_constant< int, i >{} );
       }, std::make_integer_sequence< int, 4 >{} );
   }
@@ -794,13 +794,18 @@ public:
   GEOS_FORCE_INLINE
   static
   void
-  computeMassMatrix( real64 (& m)[numNodes][numNodes] )
+  computeReferenceMassMatrix( real64 (& m)[numNodes][numNodes] )
   {
-    basisLoop( [&] ( auto const c1, auto const i1, auto const j1, auto const k1, auto const l1 )
+    basisLoop( [ &m ] ( auto const cc1, auto const ii1, auto const jj1, auto const kk1, auto const ll1 )
     {
-      basisLoop( [&] ( auto const c2, auto const i2, auto const j2, auto const k2, auto const l2 )
+      constexpr int c1 = cc1;
+      constexpr int i1 = ii1;
+      constexpr int j1 = jj1;
+      constexpr int k1 = kk1;
+      constexpr int l1 = ll1;
+      basisLoop( [ &m ] ( auto const c2, auto const i2, auto const j2, auto const k2, auto const l2 )
       {
-        constexpr real64 val = computeSuperpositionIntegral( i1, j1, k1, l1, i2, j2, k2, l2 );
+        constexpr real64 val = BB_Tetrahedron< ORDER >::computeSuperpositionIntegral( i1, j1, k1, l1, i2, j2, k2, l2 );
         m[ c1 ][ c2 ] = val;
       } );
     } );

@@ -31,6 +31,7 @@
 #include "events/EventManager.hpp"
 #include "physicsSolvers/wavePropagation/shared/PrecomputeSourcesAndReceiversKernel.hpp"
 #include "physicsSolvers/wavePropagation/dg/acoustic/secondOrderEqn/isotropic/AcousticWaveEquationDGKernel.hpp"
+#include "denseLinearAlgebra/interfaces/blaslapack/BlasLapackLA.hpp"
 
 namespace geos
 {
@@ -243,70 +244,84 @@ void AcousticWaveEquationDG::initializePostInitialConditionsPreSubGroups()
 
     /// get array of indicators: 1 if face is on the free surface; 0 otherwise
     arrayView1d< localIndex const > const freeSurfaceFaceIndicator = faceManager.getField< acousticfieldsdg::AcousticFreeSurfaceFaceIndicator >();
+ 
 
-    elemManager.forElementSubRegions< CellElementSubRegion >( regionNames, [&]( localIndex const,
-                                                                                CellElementSubRegion & elementSubRegion )
+    m_referenceInvMassMatrix.resize( elemManager.numRegions() );
+    m_boundaryInvMassPlusDamping.resize( elemManager.numRegions() );
+
+    elemManager.forElementRegions( regionNames, [&] ( localIndex const regionIndex, CellElementRegion const & elemRegion )
     {
-      GEOS_THROW_IF( elementSubRegion.getElementType() != ElementType::Tetrahedron,
-                     "Invalid type of element, the acoustic DG solver is designed for tetrahedral meshes only  ",
-                     InputError );
-
-      
-      finiteElement::FiniteElementBase const &
-      fe = elementSubRegion.getReference< finiteElement::FiniteElementBase >( getDiscretizationName() );
-
-      arrayView2d< localIndex const, cells::NODE_MAP_USD > const elemsToNodes = elementSubRegion.nodeList();
-      arrayView2d< localIndex const > const elemsToFaces = elementSubRegion.faceList();
-
-      computeTargetNodeSet( elemsToNodes, elementSubRegion.size(), fe.getNumQuadraturePoints() );
-
-
-      //  arrayView1d< real32 const > const velocity = elementSubRegion.getField< acousticfieldsdgdgdg::AcousticVelocity >();
-      //  arrayView1d< real32 const > const density = elementSubRegion.getField< acousticfieldsdgdgdg::AcousticDensity >();
-
-      arrayView2d< localIndex > const & elemsToOpposite = elementSubRegion.getField< acousticfieldsdg::ElementToOpposite >();
-      arrayView2d< integer > const & elemsToOppositePermutation = elementSubRegion.getField< acousticfieldsdg::ElementToOppositePermutation >();
-
-      /// Partial gradient if gradient as to be computed
-
-      finiteElement::FiniteElementDispatchHandler< DG_FE_TYPES >::dispatch3D( fe, [&] ( auto const finiteElement )
+      m_referenceInvMassMatrix.resizeArray( regionIndex, elemRegion.numSubRegions() );
+      m_boundaryInvMassPlusDamping.resizeArray( regionIndex, elemRegion.numSubRegions() );
+      elemRegion.forElementSubRegionsIndex( [&]( localIndex const subRegionIndex, CellElementSubRegion const & elementSubRegion )
       {
-        using FE_TYPE = TYPEOFREF( finiteElement );
+        GEOS_THROW_IF( elementSubRegion.getElementType() != ElementType::Tetrahedron,
+                       "Invalid type of element, the acoustic DG solver is designed for tetrahedral meshes only  ",
+                       InputError );
 
-        // Compute auxiliary element to neighbor (opposite to vertex) maps
+        
+        finiteElement::FiniteElementBase const &
+        fe = elementSubRegion.getReference< finiteElement::FiniteElementBase >( getDiscretizationName() );
 
-        AcousticWaveEquationDGKernels::
-          PrecomputeNeighborhoodKernel::
-          launch< EXEC_POLICY, FE_TYPE >
-          ( elementSubRegion.size(),
-            elemsToNodes,
-            elemsToFaces,
-            facesToElems,
-            facesToNodes,
-            freeSurfaceFaceIndicator,
-            elemsToOpposite,
-            elemsToOppositePermutation ); 
+        arrayView2d< localIndex const, cells::NODE_MAP_USD > const elemsToNodes = elementSubRegion.nodeList();
+        arrayView2d< localIndex const > const elemsToFaces = elementSubRegion.faceList();
 
-        // AcousticMatricesSEM::MassMatrix< FE_TYPE > kernelM( finiteElement );
-        // kernelM.template computeMassMatrix< EXEC_POLICY, ATOMIC_POLICY >( elementSubRegion.size(),
-        //                                                                   nodeCoords,
-        //                                                                   elemsToNodes,
-        //                                                                   velocity,
-        //                                                                   density,
-        //                                                                   mass );
-
-        // AcousticMatricesSEM::DampingMatrix< FE_TYPE > kernelD( finiteElement );
-        // kernelD.template computeDampingMatrix< EXEC_POLICY, ATOMIC_POLICY >( elementSubRegion.size(),
-        //                                                                      nodeCoords,
-        //                                                                      elemsToFaces,
-        //                                                                      facesToNodes,
-        //                                                                      facesDomainBoundaryIndicator,
-        //                                                                      freeSurfaceFaceIndicator,
-        //                                                                      velocity,
-        //                                                                      density,
-        //                                                                      damping );
+        computeTargetNodeSet( elemsToNodes, elementSubRegion.size(), fe.getNumQuadraturePoints() );
 
 
+        //  arrayView1d< real32 const > const velocity = elementSubRegion.getField< acousticfieldsdgdgdg::AcousticVelocity >();
+        //  arrayView1d< real32 const > const density = elementSubRegion.getField< acousticfieldsdgdgdg::AcousticDensity >();
+
+        arrayView2d< localIndex > const elemsToOpposite = elementSubRegion.getField< acousticfieldsdg::ElementToOpposite >();
+        arrayView2d< integer > const elemsToOppositePermutation = elementSubRegion.getField< acousticfieldsdg::ElementToOppositePermutation >();
+
+        /// Partial gradient if gradient as to be computed
+
+        finiteElement::FiniteElementDispatchHandler< DG_FE_TYPES >::dispatch3D( fe, [&] ( auto const finiteElement )
+        {
+          using FE_TYPE = TYPEOFREF( finiteElement );
+
+          // Compute auxiliary element to neighbor (opposite to vertex) maps
+
+          AcousticWaveEquationDGKernels::
+            PrecomputeNeighborhoodKernel::
+            launch< EXEC_POLICY, FE_TYPE >
+            ( elementSubRegion.size(),
+              elemsToNodes,
+              elemsToFaces,
+              facesToElems,
+              facesToNodes,
+              freeSurfaceFaceIndicator,
+              elemsToOpposite,
+              elemsToOppositePermutation );
+
+          // Precompute reference mass matrix for non-boundary elements
+          m_referenceInvMassMatrix[ regionIndex ][ subRegionIndex ].resizeDimension< 0, 1 >( FE_TYPE::numNodes, FE_TYPE::numNodes );
+          array2d< real64 > massMatrix; 
+          massMatrix.resize( FE_TYPE::numNodes, FE_TYPE::numNodes );
+          massMatrix.zero();
+          FE_TYPE::computeReferenceMassMatrix( massMatrix );
+          BlasLapackLA::matrixInverse( massMatric, m_referenceInvMassMatrix[ regionIndex ][ subRegionIndex ] ); 
+
+          // AcousticMatricesSEM::MassMatrix< FE_TYPE > kernelM( finiteElement );
+          // kernelM.template computeMassMatrix< EXEC_POLICY, ATOMIC_POLICY >( elementSubRegion.size(),
+          //                                                                   nodeCoords,
+          //                                                                   elemsToNodes,
+          //                                                                   velocity,
+          //                                                                   density,
+          //                                                                   mass );
+
+          // AcousticMatricesSEM::DampingMatrix< FE_TYPE > kernelD( finiteElement );
+          // kernelD.template computeDampingMatrix< EXEC_POLICY, ATOMIC_POLICY >( elementSubRegion.size(),
+          //                                                                      nodeCoords,
+          //                                                                      elemsToFaces,
+          //                                                                      facesToNodes,
+          //                                                                      facesDomainBoundaryIndicator,
+          //                                                                      freeSurfaceFaceIndicator,
+          //                                                                      velocity,
+          //                                                                      density,
+          //                                                                      damping );
+        } );
       } );
     } );
   } );
