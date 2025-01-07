@@ -162,7 +162,7 @@ TEST( testTable, tableHiddenColumn )
       .setName( "CoordX" )
       .setValuesAlignment( TableLayout::Alignment::left )
       .setHeaderAlignment( TableLayout::Alignment::right )
-      .setVisibility( CellType::Disabled ),
+      .setVisibility( CellType::Hidden ),
     TableLayout::Column()
       .setName( "C" )
       .setValuesAlignment( TableLayout::Alignment::left )
@@ -173,10 +173,10 @@ TEST( testTable, tableHiddenColumn )
       .setHeaderAlignment( TableLayout::Alignment::left ),
     TableLayout::Column()
       .setName( "Prev\nelement" )
-      .setVisibility( CellType::Disabled ),
+      .setVisibility( CellType::Hidden ),
     TableLayout::Column()
       .setName( "Next\nelement" )
-      .setVisibility( CellType::Disabled )
+      .setVisibility( CellType::Hidden )
   } );
 
   TableData tableData;

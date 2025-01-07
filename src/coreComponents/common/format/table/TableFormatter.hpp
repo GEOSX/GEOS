@@ -161,7 +161,7 @@ private:
                              CellLayoutRows & cellsDataLayout,
                              CellLayoutRows & cellsHeaderLayout,
                              string & separatorLine,
-                             size_t & nbVisibleColumn ) const;
+                             size_t & nbEnabledColumn ) const;
 /**
  * @brief Outputs the formatted table to the provided output stream.
  * @param tableLayout The layout of the table
@@ -175,7 +175,7 @@ private:
                     CellLayoutRows const & cellsHeader,
                     CellLayoutRows const & cellsData,
                     string_view separatorLine,
-                    size_t & nbVisibleColumn ) const;
+                    size_t & nbEnabledColumn ) const;
 
   /**
    * @brief Sets parent-child relationships between columns and sub-columns.
@@ -227,7 +227,7 @@ private:
                          CellLayoutRows & cellsHeaderLayout,
                          CellLayoutRows & cellsDataLayout,
                          string & separatorLine,
-                         size_t & nbVisibleColumn ) const;
+                         size_t & nbEnabledColumn ) const;
 
   /**
    * @brief Increases the size of columns to accommodate extra characters.
@@ -276,7 +276,7 @@ private:
                     std::vector< size_t > const & nbLinesRow,
                     CellType sectionType,
                     string_view separatorLine,
-                    size_t & nbVisibleColumn ) const;
+                    size_t & nbEnabledColumn ) const;
 };
 
 /**
