@@ -117,7 +117,7 @@ void QDRateAndStateBase::enforceRateAndVelocityConsistency( SurfaceElementSubReg
     {
       negativeSlipRate.max( 1 );
     }
-    else if( LvArray::tensorOps::l2Norm< 2 >( slipVelocity[k] ) > 0.0 &&  slipRate[k] > 0.0 )
+    else if( LvArray::tensorOps::l2Norm< 2 >( slipVelocity[k] ) > 0.0 && slipRate[k] > 0.0 )
     {
       bothNonZero.max( 1 );
     }
@@ -140,7 +140,7 @@ void QDRateAndStateBase::enforceRateAndVelocityConsistency( SurfaceElementSubReg
 
 
   GEOS_ERROR_IF( negativeSlipRate.get() > 0, "SlipRate cannot be negative." );
-  GEOS_ERROR_IF( bothNonZero.get() > 0, "Only one between slipRate and slipVelocity can be specified as b.c." );
+  GEOS_ERROR_IF( bothNonZero.get() > 0, "Only one between slipRate and slipVelocity can be specified as i.c." );
 
 }
 
