@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -40,8 +40,8 @@ using namespace dataRepository;
 
 WaveSolverBase::WaveSolverBase( const std::string & name,
                                 Group * const parent ):
-  SolverBase( name,
-              parent )
+  PhysicsSolverBase( name,
+                     parent )
 {
 
   registerWrapper( viewKeyStruct::sourceCoordinatesString(), &m_sourceCoordinates ).
@@ -53,12 +53,6 @@ WaveSolverBase::WaveSolverBase( const std::string & name,
     setInputFlag( InputFlags::OPTIONAL ).
     setSizedFromParent( 0 ).
     setDescription( "Coordinates (x,y,z) of the receivers" );
-
-  registerWrapper( viewKeyStruct::sourceValueString(), &m_sourceValue ).
-    setInputFlag( InputFlags::FALSE ).
-    setRestartFlags( RestartFlags::NO_WRITE ).
-    setSizedFromParent( 0 ).
-    setDescription( "Source Value of the sources" );
 
   registerWrapper( viewKeyStruct::timeSourceDelayString(), &m_timeSourceDelay ).
     setInputFlag( InputFlags::OPTIONAL ).
@@ -191,6 +185,18 @@ WaveSolverBase::WaveSolverBase( const std::string & name,
     setSizedFromParent( 0 ).
     setDescription( "Flag that indicates whether the receiver is local to this MPI rank" );
 
+  registerWrapper( viewKeyStruct::timestepStabilityLimitString(), &m_timestepStabilityLimit ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setApplyDefaultValue( 0 ).
+    setDescription( "Set to 1 to apply a stability limit to the simulation timestep. The timestep used is that given by the CFL condition times the cflFactor parameter." );
+
+  registerWrapper( viewKeyStruct::timeStepString(), &m_timeStep ).
+    setInputFlag( InputFlags::FALSE ).
+    setSizedFromParent( 0 ).
+    setApplyDefaultValue( 1 ).
+    setDescription( "TimeStep computed with the power iteration method (if we don't want to compute it, it is initialized with the XML value" );
+
+
   registerWrapper( viewKeyStruct::receiverRegionString(), &m_receiverRegion ).
     setInputFlag( InputFlags::FALSE ).
     setSizedFromParent( 0 ).
@@ -219,6 +225,11 @@ WaveSolverBase::WaveSolverBase( const std::string & name,
     setInputFlag( InputFlags::OPTIONAL ).
     setApplyDefaultValue( WaveSolverUtils::AttenuationType::none ).
     setDescription( "Flag to indicate which attenuation model to use: \"none\" for no attenuation, \"sls\\" " for the standard-linear-solid (SLS) model (Fichtner, 2014)." );
+
+  registerWrapper( viewKeyStruct::sourceWaveletTableNames(), &m_sourceWaveletTableNames ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Names of the table functions, one for each source, that are used to define the source wavelets. If a list is given, it overrides the Ricker wavelet definitions."
+                    "The default value is an empty list, which means that a Ricker wavelet is used everywhere." );
 
 }
 
@@ -259,7 +270,7 @@ void WaveSolverBase::registerDataOnMesh( Group & meshBodies )
 
 void WaveSolverBase::initializePreSubGroups()
 {
-  SolverBase::initializePreSubGroups();
+  PhysicsSolverBase::initializePreSubGroups();
 
   localIndex const numNodesPerElem = WaveSolverBase::getNumNodesPerElem();
 
@@ -273,11 +284,22 @@ void WaveSolverBase::initializePreSubGroups()
   m_receiverConstants.resize( numReceiversGlobal, numNodesPerElem );
   m_receiverIsLocal.resize( numReceiversGlobal );
 
+  if( m_useSourceWaveletTables )
+  {
+    FunctionManager const & functionManager = FunctionManager::getInstance();
+    m_sourceWaveletTableWrappers.clear();
+    for( integer i = 0; i < m_sourceWaveletTableNames.size(); i++ )
+    {
+      TableFunction const & sourceWaveletTable = functionManager.getGroup< TableFunction >( m_sourceWaveletTableNames[ i ] );
+      m_sourceWaveletTableWrappers.emplace_back( sourceWaveletTable.createKernelWrapper() );
+    }
+  }
+
 }
 
 void WaveSolverBase::postInputInitialization()
 {
-  SolverBase::postInputInitialization();
+  PhysicsSolverBase::postInputInitialization();
 
   /// set flag PML to one if a PML field is specified in the xml
   /// if counter>1, an error will be thrown as one single PML field is allowed
@@ -359,18 +381,6 @@ void WaveSolverBase::postInputInitialization()
 
   EventManager const & event = getGroupByPath< EventManager >( "/Problem/Events" );
   real64 const & maxTime = event.getReference< real64 >( EventManager::viewKeyStruct::maxTimeString() );
-  real64 const & minTime = event.getReference< real64 >( EventManager::viewKeyStruct::minTimeString() );
-  real64 dt = 0;
-  for( localIndex numSubEvent = 0; numSubEvent < event.numSubGroups(); ++numSubEvent )
-  {
-    EventBase const * subEvent = static_cast< EventBase const * >( event.getSubGroups()[numSubEvent] );
-    if( subEvent->getEventName() == "/Solvers/" + this->getName() )
-    {
-      dt = subEvent->getReference< real64 >( EventBase::viewKeyStruct::forceDtString() );
-    }
-  }
-
-  GEOS_THROW_IF( dt < epsilonLoc * maxTime, getDataContext() << ": Value for dt: " << dt <<" is smaller than local threshold: " << epsilonLoc, std::runtime_error );
 
   if( m_dtSeismoTrace > 0 )
   {
@@ -380,10 +390,11 @@ void WaveSolverBase::postInputInitialization()
   {
     m_nsamplesSeismoTrace = 0;
   }
-  localIndex const nsamples = int( (maxTime - minTime) / dt) + 1;
 
-  localIndex const numSourcesGlobal = m_sourceCoordinates.size( 0 );
-  m_sourceValue.resize( nsamples, numSourcesGlobal );
+  GEOS_THROW_IF( m_sourceWaveletTableNames.size() > 0 && m_sourceWaveletTableNames.size() != m_sourceCoordinates.size( 0 ),
+                 "Invalid number of source wavelet table names. The number of table functions must be equal to the number of sources",
+                 InputError );
+  m_useSourceWaveletTables = m_sourceWaveletTableNames.size() > 0;
 
 }
 
@@ -473,9 +484,19 @@ void WaveSolverBase::computeTargetNodeSet( arrayView2d< localIndex const, cells:
 
 void WaveSolverBase::incrementIndexSeismoTrace( real64 const time_n )
 {
-  while( (m_dtSeismoTrace * m_indexSeismoTrace) <= (time_n + epsilonLoc) && m_indexSeismoTrace < m_nsamplesSeismoTrace )
+  if( m_forward )
   {
-    m_indexSeismoTrace++;
+    while( (m_dtSeismoTrace * m_indexSeismoTrace) <= (time_n + epsilonLoc) && m_indexSeismoTrace < m_nsamplesSeismoTrace )
+    {
+      m_indexSeismoTrace++;
+    }
+  }
+  else
+  {
+    while( (m_dtSeismoTrace * m_indexSeismoTrace) >= (time_n - epsilonLoc) && m_indexSeismoTrace > 0 )
+    {
+      m_indexSeismoTrace--;
+    }
   }
 }
 
@@ -504,12 +525,14 @@ void WaveSolverBase::computeAllSeismoTraces( real64 const time_n,
   if( m_nsamplesSeismoTrace == 0 )
     return;
   integer const dir = m_forward ? +1 : -1;
-  for( localIndex iSeismo = m_indexSeismoTrace; iSeismo < m_nsamplesSeismoTrace; iSeismo++ )
+  integer const beginIndex = m_forward ? m_indexSeismoTrace : m_nsamplesSeismoTrace-m_indexSeismoTrace;
+  for( localIndex iSeismo = beginIndex; iSeismo < m_nsamplesSeismoTrace; iSeismo++ )
   {
-    real64 const timeSeismo = m_dtSeismoTrace * (m_forward ? iSeismo : (m_nsamplesSeismoTrace - 1) - iSeismo);
-    if( dir * timeSeismo > dir * (time_n + epsilonLoc) )
+    localIndex seismoIndex = m_forward ? iSeismo : m_nsamplesSeismoTrace-iSeismo;
+    real64 const timeSeismo = m_dtSeismoTrace * seismoIndex;
+    if( dir * timeSeismo > dir * time_n + epsilonLoc )
       break;
-    WaveSolverUtils::computeSeismoTrace( time_n, dir * dt, timeSeismo, iSeismo, m_receiverNodeIds,
+    WaveSolverUtils::computeSeismoTrace( time_n, dir * dt, timeSeismo, seismoIndex, m_receiverNodeIds,
                                          m_receiverConstants, m_receiverIsLocal, var_np1, var_n, varAtReceivers, coeffs, add );
   }
 }
@@ -524,12 +547,14 @@ void WaveSolverBase::compute2dVariableAllSeismoTraces( localIndex const regionIn
   if( m_nsamplesSeismoTrace == 0 )
     return;
   integer const dir = m_forward ? +1 : -1;
-  for( localIndex iSeismo = m_indexSeismoTrace; iSeismo < m_nsamplesSeismoTrace; iSeismo++ )
+  integer const beginIndex = m_forward ? m_indexSeismoTrace : m_nsamplesSeismoTrace-m_indexSeismoTrace;
+  for( localIndex iSeismo = beginIndex; iSeismo < m_nsamplesSeismoTrace; iSeismo++ )
   {
-    real64 const timeSeismo = m_dtSeismoTrace * (m_forward ? iSeismo : (m_nsamplesSeismoTrace - 1) - iSeismo);
-    if( dir * timeSeismo > dir * (time_n + epsilonLoc))
+    localIndex seismoIndex = m_forward ? iSeismo : m_nsamplesSeismoTrace-iSeismo;
+    real64 const timeSeismo = m_dtSeismoTrace * seismoIndex;
+    if( dir * timeSeismo > dir * time_n + epsilonLoc )
       break;
-    WaveSolverUtils::compute2dVariableSeismoTrace( time_n, dir * dt, regionIndex, m_receiverRegion, timeSeismo, iSeismo, m_receiverElem,
+    WaveSolverUtils::compute2dVariableSeismoTrace( time_n, dir * dt, regionIndex, m_receiverRegion, timeSeismo, seismoIndex, m_receiverElem,
                                                    m_receiverConstants, m_receiverIsLocal, var_np1, var_n, varAtReceivers );
   }
 }

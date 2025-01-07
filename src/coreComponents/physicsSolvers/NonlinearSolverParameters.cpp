@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -69,9 +69,9 @@ NonlinearSolverParameters::NonlinearSolverParameters( string const & name,
 
   registerWrapper( viewKeysStruct::normTypeString(), &m_normType ).
     setInputFlag( InputFlags::FALSE ).
-    setApplyDefaultValue( solverBaseKernels::NormType::Linf ).
+    setApplyDefaultValue( physicsSolverBaseKernels::NormType::Linf ).
     setDescription( "Norm used by the flow solver to check nonlinear convergence. "
-                    "Valid options:\n* " + EnumStrings< solverBaseKernels::NormType >::concat( "\n* " ) );
+                    "Valid options:\n* " + EnumStrings< physicsSolverBaseKernels::NormType >::concat( "\n* " ) );
 
   registerWrapper( viewKeysStruct::minNormalizerString(), &m_minNormalizer ).
     setInputFlag( dataRepository::InputFlags::OPTIONAL ).
