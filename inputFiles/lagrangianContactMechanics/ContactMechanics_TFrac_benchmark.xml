@@ -2,60 +2,44 @@
 
 <Problem>
   <Included>
-    <File name="./ContactMechanics_TFrac_base.xml"/>
+    <File name="./TFrac_benchmark.xml"/>
   </Included>
 
   <Solvers
     gravityVector="{0.0, 0.0, 0.0}">
-   <!-- SPHINX_SOLVER -->
-   <SolidMechanicsLagrangeContact
+  <!-- SPHINX_SOLVER -->
+  <SolidMechanicsLagrangeContact
    name="lagrangiancontact"
+   timeIntegrationOption="QuasiStatic"
    stabilizationName="TPFAstabilization"
    logLevel="1"
    discretization="FE1"
-   targetRegions="{ Region, Fracture }"
-   timeIntegrationOption="QuasiStatic">
+   targetRegions="{ Region, Fracture }">
    <NonlinearSolverParameters
-    newtonTol="1.0e-8"
-    logLevel="2"
-    maxNumConfigurationAttempts="10"
-    newtonMaxIter="10"
-    lineSearchAction="Require"
-    lineSearchMaxCuts="2"
-    maxTimeStepCuts="2"/>
+     newtonTol="1.0e-8"
+     logLevel="2"
+     maxNumConfigurationAttempts="10"
+     newtonMaxIter="10"
+     lineSearchAction="Require"
+     lineSearchMaxCuts="2"
+     maxTimeStepCuts="2"/>
    <LinearSolverParameters
-    solverType="gmres"
-    preconditionerType="mgr"
-    logLevel="0"/>
- </SolidMechanicsLagrangeContact>
+     solverType="direct"
+     directParallel="0"
+     logLevel="0"/>
+  </SolidMechanicsLagrangeContact>
+  <!-- SPHINX_SOLVER_END -->
+  </Solvers>
 
- <SurfaceGenerator
-   name="SurfaceGen"
-   logLevel="0"
-   fractureRegion="Fracture"
-   targetRegions="{ Region }"
-   rockToughness="1.0e6"
-   mpiCommOrder="1"/>
-<!-- SPHINX_SOLVER_END -->
-</Solvers>
+  <NumericalMethods>
+    <FiniteVolume>
+      <TwoPointFluxApproximation
+        name="TPFAstabilization"/>
+    </FiniteVolume>
+  </NumericalMethods>
 
-  <!-- SPHINX_MESH -->
-  <Mesh>
-    <InternalMesh
-      name="mesh1"
-      elementTypes="{ C3D8 }"
-      xCoords="{ -1000, -100, 100, 1000 }"
-      yCoords="{ -1000, -100, 100, 1000 }"
-      zCoords="{ 0, 2 }"
-      nx="{ 150, 200, 150 }"
-      ny="{ 150, 200, 150 }"
-      nz="{ 2 }"
-      cellBlockNames="{ cb1 }"/>
-  </Mesh>
-  <!-- SPHINX_MESH_END -->
- 
   <Events
-    maxTime="1.0">
+    maxTime="0.2">
     <SoloEvent
       name="preFracture"
       target="/Solvers/SurfaceGen"/>
@@ -63,7 +47,7 @@
     <PeriodicEvent
       name="solverApplications"
       beginTime="0.0"
-      endTime="1.0"
+      endTime="0.2"
       forceDt="0.2"
       target="/Solvers/lagrangiancontact"/>  
 
@@ -93,6 +77,12 @@
       name="displacementHistoryOutput"
       timeFrequency="0.2"
       targetExactTimestep="0"
-      target="/Outputs/displacementOutput"/>   
+      target="/Outputs/displacementOutput"/>
+      
+    <PeriodicEvent
+      name="restarts"
+      timeFrequency="0.2"
+      targetExactTimestep="0"
+      target="/Outputs/restartOutput"/>     
   </Events>
 </Problem>

@@ -64,8 +64,8 @@ TableFunction
 A table function uses a set of pre-computed values defined at points on a structured grid to represent an arbitrary-dimensional function.
 Typically, the axes of the table will represent time and/or spatial dimensions; however, these can be applied to represent phase diagrams, etc.
 
-.. include:: ../../../coreComponents/schema/docs/TableFunction.rst
-
+.. include:: /docs/sphinx/datastructure/TableFunction.rst
+    :start-line: 3
 
 1D Table
 *************
@@ -157,7 +157,8 @@ SymbolicFunction
 This function leverages the symbolic expression library mathpresso to define and evaluate functions.
 These functions are processed using an x86-64 JIT compiler, so are nearly as efficient as natively compiled C++ expressions.
 
-.. include:: ../../../coreComponents/schema/docs/SymbolicFunction.rst
+.. include:: /docs/sphinx/datastructure/SymbolicFunction.rst
+    :start-line: 3
 
 The ``variableNames`` attribute defines a set of single-character names for the inputs to the symbolic function.
 There should be a definition for each scalar input and for each component of a vector input.
@@ -187,8 +188,8 @@ CompositeFunction
 This function is derived from the symbolic function.
 However, instead of using the time or object as inputs, it is used to combine the outputs of other functions using a symbolic expression.
 
-.. include:: ../../../coreComponents/schema/docs/CompositeFunction.rst
-
+.. include:: /docs/sphinx/datastructure/CompositeFunction.rst
+    :start-line: 3
 
 The ``functionNames`` attribute defines the set of input functions to use (these may be of any type, and may each have any number of inputs).
 The ``variableNames`` attribute defines a set of single-character names for each function.

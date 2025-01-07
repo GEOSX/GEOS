@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -40,6 +41,7 @@ public:
   using Base::m_stabilizationType;
   using Base::m_stabilizationRegionNames;
   using Base::m_stabilizationMultiplier;
+  using Base::getLogLevel;
 
   /**
    * @brief main constructor for MultiphasePoromechanics Objects
@@ -69,7 +71,7 @@ public:
   }
 
   /**
-   * @copydoc SolverBase::getCatalogName()
+   * @copydoc PhysicsSolverBase::getCatalogName()
    */
   string getCatalogName() const override { return catalogName(); }
 
@@ -80,7 +82,7 @@ public:
    */
   /**@{*/
 
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   virtual void setupCoupling( DomainPartition const & domain,
                               DofManager & dofManager ) const override;
@@ -98,8 +100,6 @@ public:
                                   DofManager const & dofManager,
                                   CRSMatrixView< real64, globalIndex const > const & localMatrix,
                                   arrayView1d< real64 > const & localRhs );
-
-  virtual void updateState( DomainPartition & domain ) override;
 
   /**@}*/
 
@@ -152,7 +152,7 @@ real64 MultiphasePoromechanics< FLOW_SOLVER, MECHANICS_SOLVER >::assemblyLaunch(
   string const dofKey = dofManager.getKey( fields::solidMechanics::totalDisplacement::key() );
   arrayView1d< globalIndex const > const & dofNumber = nodeManager.getReference< globalIndex_array >( dofKey );
 
-  real64 const gravityVectorData[3] = LVARRAY_TENSOROPS_INIT_LOCAL_3( SolverBase::gravityVector() );
+  real64 const gravityVectorData[3] = LVARRAY_TENSOROPS_INIT_LOCAL_3( PhysicsSolverBase::gravityVector() );
 
   KERNEL_WRAPPER kernelWrapper( dofNumber,
                                 dofManager.rankOffset(),

@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -29,7 +30,8 @@ namespace constitutive
 ConstitutiveBase::ConstitutiveBase( string const & name,
                                     Group * const parent ):
   Group( name, parent ),
-  m_numQuadraturePoints( 1 )
+  m_numQuadraturePoints( 1 ),
+  m_isClone( false )
 {
   setInputFlags( InputFlags::OPTIONAL_NONUNIQUE );
 }
@@ -71,6 +73,11 @@ void ConstitutiveBase::allocateConstitutiveData( dataRepository::Group & parent,
   this->resize( parent.size() );
 }
 
+void ConstitutiveBase::setIsClone( bool const newState )
+{
+  m_isClone = newState;
+}
+
 std::unique_ptr< ConstitutiveBase >
 ConstitutiveBase::deliverClone( string const & name,
                                 Group * const parent ) const
@@ -82,6 +89,8 @@ ConstitutiveBase::deliverClone( string const & name,
   {
     wrapper.copyWrapper( this->getWrapperBase( wrapper.getName() ) );
   } );
+
+  newModel->setIsClone( true );
 
   return newModel;
 }

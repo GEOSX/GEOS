@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -95,7 +96,8 @@ InternalMeshGenerator::InternalMeshGenerator( string const & name, Group * const
   registerWrapper( viewKeyStruct::elementTypesString(), &m_elementType ).
     setInputFlag( InputFlags::REQUIRED ).
     setSizedFromParent( 0 ).
-    setDescription( "Element types of each mesh block" );
+    setDescription( GEOS_FMT( "Element types of each mesh block. Use \"C3D8\" for linear brick element. Possible values are: {}.",
+                              stringutilities::join( EnumStrings< ElementType >::get(), ", " ) ) );
 
   registerWrapper( viewKeyStruct::trianglePatternString(), &m_trianglePattern ).
     setApplyDefaultValue( 0 ).
@@ -127,7 +129,7 @@ static int getNumElemPerBox( ElementType const elementType )
   }
 }
 
-void InternalMeshGenerator::postProcessInput()
+void InternalMeshGenerator::postInputInitialization()
 {
   m_dim = getElementDim( EnumStrings< ElementType >::fromString( m_elementType[0] ) );
 
@@ -605,7 +607,7 @@ void InternalMeshGenerator::fillCellBlockManager( CellBlockManager & cellBlockMa
                            elemCenterCoords[dim].data(),
                            m_numElemsTotal[dim],
                            MPI_MAX,
-                           MPI_COMM_GEOSX );
+                           MPI_COMM_GEOS );
   }
 
   // Find starting/ending index

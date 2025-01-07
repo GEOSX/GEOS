@@ -1,0 +1,227 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Solvers>
+    <CompositionalMultiphaseFVM
+      name="compflow"
+      logLevel="1"
+      discretization="fluidTPFA"
+      temperature="368.15"
+      useMass="1"
+      targetRegions="{ region }">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-4"
+        newtonMaxIter="100"
+        maxTimeStepCuts="5"
+        lineSearchAction="None"/>
+      <LinearSolverParameters
+        solverType="fgmres"
+        preconditionerType="mgr"
+        krylovTol="1.0e-5"/>
+    </CompositionalMultiphaseFVM>
+  </Solvers>
+
+  <Mesh>
+    <InternalMesh
+      name="mesh"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0, 50.0 }"
+      yCoords="{ -0.5, 0.5 }"
+      zCoords="{ 0, 15.0 }"
+      nx="{ 50 }"
+      ny="{ 1 }"
+      nz="{ 15 }"
+      cellBlockNames="{ cellBlock }"/>
+  </Mesh>
+
+  <Geometry>
+    <Box
+      name="source"
+      xMin="{ -0.01, -0.51, 6.99 }"
+      xMax="{  1.01,  0.51, 8.01 }"/>
+
+    <Box
+      name="rightEnd"
+      xMin="{ 49.99, -0.51, -0.01 }"
+      xMax="{ 50.01,  0.51, 15.01 }"/>
+  </Geometry>
+
+  <Events
+    maxTime="1e6">
+    <PeriodicEvent
+      name="solverApplications"
+      maxEventDt="5e4"
+      target="/Solvers/compflow" />
+
+    <PeriodicEvent
+      name="statistics"
+      timeFrequency="1e5"
+      targetExactTimestep="1"
+      target="/Tasks/compflowStatistics" />
+
+    <PeriodicEvent
+      name="outputs"
+      timeFrequency="1e5"
+      targetExactTimestep="1"
+      target="/Outputs/vtkOutput" />
+
+    <PeriodicEvent
+      name="restarts"
+      timeFrequency="5e5"
+      targetExactTimestep="0"
+      target="/Outputs/sidreRestart"/>
+  </Events>
+
+  <NumericalMethods>
+    <FiniteVolume>
+      <TwoPointFluxApproximation
+        name="fluidTPFA"/>
+    </FiniteVolume>
+  </NumericalMethods>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="region"
+      cellBlocks="{ cellBlock }"
+      materialList="{ fluid, rock, relperm }"/>
+  </ElementRegions>
+
+  <Constitutive>
+    <CO2BrinePhillipsFluid
+      name="fluid"
+      logLevel="1"
+      phaseNames="{ gas, water }"
+      componentNames="{ co2, water }"
+      componentMolarWeight="{ 44e-3, 18e-3 }"
+      phasePVTParaFiles="{ pvtgas.txt, pvtliquid.txt }"
+      flashModelParaFile="co2flash.txt"/>
+
+    <CompressibleSolidConstantPermeability
+      name="rock"
+      solidModelName="nullSolid"
+      porosityModelName="rockPorosity"
+      permeabilityModelName="rockPerm"/>
+    <NullModel
+      name="nullSolid"/>
+    <PressurePorosity
+      name="rockPorosity"
+      defaultReferencePorosity="0.2"
+      referencePressure="1.1e7"
+      compressibility="1.0e-9" />
+    <ConstantPermeability
+      name="rockPerm"
+      permeabilityComponents="{ 1.0e-13, 1.0e-13, 1.0e-14 }"/>
+
+    <TableRelativePermeability
+      name="relperm"
+      phaseNames="{ gas, water }"
+      wettingNonWettingRelPermTableNames="{ waterRelativePermeabilityTable,
+                                            gasRelativePermeabilityTable }"/>
+  </Constitutive>
+
+  <FieldSpecifications>
+    <!-- Initial conditions  -->
+    <FieldSpecification
+      name="initial_pressure"
+      setNames="{ all }"
+      objectPath="ElementRegions/region"
+      fieldName="pressure"
+      initialCondition="1"
+      logLevel="2"
+      scale="1.1e6" />
+    <FieldSpecification
+      name="initial_temperature"
+      setNames="{ all }"
+      objectPath="ElementRegions/region"
+      fieldName="temperature"
+      initialCondition="1"
+      scale="368.15" />
+    <FieldSpecification
+      name="initial_co2"
+      setNames="{ all }"
+      objectPath="ElementRegions/region"
+      fieldName="globalCompFraction"
+      initialCondition="1"
+      component="0"
+      scale="0.0" />
+    <FieldSpecification
+      name="initial_h2o"
+      setNames="{ all }"
+      objectPath="ElementRegions/region"
+      fieldName="globalCompFraction"
+      initialCondition="1"
+      component="1"
+      scale="1.0" />
+
+    <!-- Injection rate: 0.002 kg/s -->
+    <SourceFlux
+      name="sourceTerm"
+      objectPath="ElementRegions/region/cellBlock"
+      component="0"
+      scale="-0.002"
+      setNames="{ source }"/>
+
+    <!-- Boundary conditions at right end  -->
+    <FieldSpecification
+      name="sinkTerm_pressure"
+      setNames="{ rightEnd }"
+      objectPath="faceManager"
+      fieldName="pressure"
+      scale="1.1e6" />
+    <FieldSpecification
+      name="sinkTerm_temperature"
+      setNames="{ rightEnd }"
+      objectPath="faceManager"
+      fieldName="temperature"
+      scale="368.15" />
+    <FieldSpecification
+      name="sinkTerm_co2"
+      setNames="{ rightEnd }"
+      objectPath="faceManager"
+      fieldName="globalCompFraction"
+      component="0"
+      scale="0.0" />
+    <FieldSpecification
+      name="sinkTerm_h2o"
+      setNames="{ rightEnd }"
+      objectPath="faceManager"
+      fieldName="globalCompFraction"
+      component="1"
+      scale="1.0" />
+
+  </FieldSpecifications>
+
+  <Tasks>
+
+    <CompositionalMultiphaseStatistics
+      name="compflowStatistics"
+      flowSolverName="compflow"
+      logLevel="1"
+      writeCSV="1"
+      computeCFLNumbers="1"
+      computeRegionStatistics="1"/>
+    
+  </Tasks>
+  
+  <Functions>
+    <TableFunction
+      name="waterRelativePermeabilityTable"
+      coordinateFiles="{ phaseVolFraction_water.txt }"
+      voxelFile="relPerm_water.txt"/>
+
+    <TableFunction
+      name="gasRelativePermeabilityTable"
+      coordinateFiles="{ phaseVolFraction_gas.txt }"
+      voxelFile="relPerm_gas.txt"/>       
+  </Functions>      
+  
+  <Outputs>
+    <VTK
+      name="vtkOutput"
+      plotFileRoot="co2_flux_dirichlet"/>
+
+    <Restart
+      name="sidreRestart"/>
+  </Outputs>
+  
+</Problem>

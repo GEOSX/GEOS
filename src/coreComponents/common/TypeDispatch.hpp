@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -22,6 +23,7 @@
 #define GEOS_COMMON_TYPEDISPATCH_HPP
 
 #include "common/DataTypes.hpp"
+#include "common/logger/Logger.hpp"
 
 #include <camp/camp.hpp>
 
@@ -154,6 +156,12 @@ using Increment = typename IncrementImpl< T, N >::type;
 } // namespace internal
 
 /**
+ * @brief Generate a sequence of integers from @p Begin up to (and including) @p End.
+ */
+template< integer Begin, integer End >
+using IntegerSequence = internal::Increment< camp::make_idx_seq_t< End - Begin + 1 >, Begin >;
+
+/**
  * @brief Construct a list of types.
  */
 template< typename ... Ts >
@@ -189,10 +197,10 @@ using IntegralTypes = TypeList< integer, localIndex, globalIndex >;
 using RealTypes = TypeList< real32, real64 >;
 
 /**
- * @brief Generate a list of types representing array dimensionalities from M up to (and including) @p N.
+ * @brief Generate a list of types representing array dimensionalities from @p M up to (and including) @p N.
  */
 template< int M, int N >
-using DimsRange = camp::as_list< internal::Increment< camp::make_idx_seq_t< N - M + 1 >, M > >;
+using DimsRange = camp::as_list< IntegerSequence< M, N > >;
 
 /**
  * @brief Generate a list of types representing array dimensionality exactly @p N.

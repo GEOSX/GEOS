@@ -21,7 +21,7 @@ set(ENABLE_HYPRE ON CACHE BOOL "" FORCE )
 set(ENABLE_GTEST_DEATH_TESTS ON CACHE BOOL "" FORCE)
 set(ENABLE_CALIPER ON CACHE BOOL "")
 
-set(ENABLE_GEOSX_PTP ON CACHE BOOL "" FORCE)
+set(ENABLE_GEOS_PTP ON CACHE BOOL "" FORCE)
 
 set(ENABLE_MKL ON CACHE BOOL "")
 set(INTEL_ROOT "/apps/intel/2019/u5/compilers_and_libraries_2019.5.281/linux" )
@@ -33,5 +33,5 @@ set(MKL_LIBRARIES ${MKL_ROOT}/lib/intel64/libmkl_intel_lp64.so
                   ${INTEL_ROOT}/compiler/lib/intel64_lin/libiomp5.so
                   CACHE STRING "")
 
-set(GEOSX_TPL_DIR "$ENV{GEOSX_TPL_DIR}" CACHE PATH "" FORCE)
+set(GEOS_TPL_DIR "$ENV{GEOSX_TPL_DIR}" CACHE PATH "" FORCE)
 include(${CMAKE_CURRENT_LIST_DIR}/../tpls.cmake)

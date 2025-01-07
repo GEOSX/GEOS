@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 Total, S.A
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -26,420 +27,297 @@
 
 namespace geos
 {
-using namespace fields;
+
 /// Namespace to contain the elastic wave kernels.
 namespace elasticVTIWaveEquationSEMKernels
 {
 
-struct PrecomputeSourceAndReceiverKernel
+template< typename FE_TYPE >
+struct ComputeTimeStep
 {
 
+  ComputeTimeStep( FE_TYPE const & finiteElement )
+    : m_finiteElement( finiteElement )
+  {}
+
   /**
-   * @brief Launches the precomputation of the source and receiver terms
-   * @tparam EXEC_POLICY execution policy
-   * @tparam FE_TYPE finite element type
-   * @param[in] size the number of cells in the subRegion
-   * @param[in] numFacesPerElem number of face on an element
-   * @param[in] nodeCoords coordinates of the nodes
-   * @param[in] elemGhostRank array containing the ghost rank
-   * @param[in] elemsToNodes map from element to nodes
-   * @param[in] elemsToFaces map from element to faces
-   * @param[in] elemCenter coordinates of the element centers
-   * @param[in] faceNormal array containing the normal of all faces
-   * @param[in] faceCenter array containing the center of all faces
-   * @param[in] sourceCoordinates coordinates of the source terms
-   * @param[in] receiverCoordinates coordinates of the receiver terms
-   * @param[in] dt time-step
-   * @param[in] timeSourceFrequency Peak frequency of the source
-   * @param[in] sourceForce force vector of the source
-   * @param[in] sourceMoment moment (symmetric rank-2 tensor) of the source
-   * @param[in] useDAS parameter that determines which kind of receiver needs to be modeled (DAS or not, and which type)
-   * @param[in] linearDASSamples parameter that gives the number of integration points to be used when computing the DAS signal via strain
-   * integration
-   * @param[in] linearDASGeometry geometry of the linear DAS receivers, if needed
-   * @param[in] rickerOrder Order of the Ricker wavelet
-   * @param[out] sourceIsAccessible flag indicating whether the source is accessible or not
-   * @param[out] sourceNodeIds indices of the nodes of the element where the source is located
-   * @param[out] sourceConstantsx constant part of the source terms in x-direction
-   * @param[out] sourceConstantsy constant part of the source terms in y-direction
-   * @param[out] sourceConstantsz constant part of the source terms in z-direction
-   * @param[out] receiverIsLocal flag indicating whether the receiver is local or not
-   * @param[out] receiverNodeIds indices of the nodes of the element where the receiver is located
-   * @param[out] receiverNodeConstants constant part of the receiver term
-   * @param[out] sourceValue array containing the value of the time dependent source (Ricker for e.g)
+   * @brief Compute timestep using power iteration method
    */
-  template< typename EXEC_POLICY, typename FE_TYPE >
-  static void
-  launch( localIndex const size,
-          localIndex const numFacesPerElem,
+  template< typename EXEC_POLICY, typename ATOMIC_POLICY >
+  real64
+  launch( localIndex const sizeElem,
+          localIndex const sizeNode,
           arrayView2d< WaveSolverBase::wsCoordType const, nodes::REFERENCE_POSITION_USD > const nodeCoords,
-          arrayView1d< integer const > const elemGhostRank,
+          arrayView1d< real32 const > const density,
+          arrayView1d< real32 const > const Vp,
+          arrayView1d< real32 const > const Vs,
           arrayView2d< localIndex const, cells::NODE_MAP_USD > const & elemsToNodes,
-          arrayView2d< localIndex const > const elemsToFaces,
-          arrayView2d< real64 const > const & elemCenter,
-          arrayView2d< real64 const > const faceNormal,
-          arrayView2d< real64 const > const faceCenter,
-          arrayView2d< real64 const > const sourceCoordinates,
-          arrayView1d< localIndex > const sourceIsAccessible,
-          arrayView2d< localIndex > const sourceNodeIds,
-          arrayView2d< real64 > const sourceConstantsx,
-          arrayView2d< real64 > const sourceConstantsy,
-          arrayView2d< real64 > const sourceConstantsz,
-          arrayView2d< real64 const > const receiverCoordinates,
-          arrayView1d< localIndex > const receiverIsLocal,
-          arrayView2d< localIndex > const receiverNodeIds,
-          arrayView2d< real64 > const receiverConstants,
-          arrayView2d< real32 > const sourceValue,
-          real64 const dt,
-          real32 const timeSourceFrequency,
-          real32 const timeSourceDelay,
-          localIndex const rickerOrder,
-          WaveSolverUtils::DASType useDAS,
-          integer linearDASSamples,
-          arrayView2d< real64 const > const linearDASGeometry,
-          R1Tensor const sourceForce,
-          R2SymTensor const sourceMoment )
-  {
-    constexpr localIndex numNodesPerElem = FE_TYPE::numNodes;
-    integer nSamples = useDAS == WaveSolverUtils::DASType::none ? 1 : linearDASSamples;
-    array1d< real64 > const samplePointLocationsA( nSamples );
-    arrayView1d< real64 > const samplePointLocations = samplePointLocationsA.toView();
-    array1d< real64 > const sampleIntegrationConstantsA( nSamples );
-    arrayView1d< real64 > const sampleIntegrationConstants = sampleIntegrationConstantsA.toView();
-
-    forAll< EXEC_POLICY >( size, [=] GEOS_HOST_DEVICE ( localIndex const k )
-    {
-      real64 const center[3] = { elemCenter[k][0],
-                                 elemCenter[k][1],
-                                 elemCenter[k][2] };
-
-      // Step 1: locate the sources, and precompute the source term
-
-      /// loop over all the source that haven't been found yet
-      for( localIndex isrc = 0; isrc < sourceCoordinates.size( 0 ); ++isrc )
-      {
-        if( sourceIsAccessible[isrc] == 0 )
-        {
-          real64 const coords[3] = { sourceCoordinates[isrc][0],
-                                     sourceCoordinates[isrc][1],
-                                     sourceCoordinates[isrc][2] };
-
-          real64 xLocal[numNodesPerElem][3];
-
-          for( localIndex a=0; a< numNodesPerElem; ++a )
-          {
-            for( localIndex i=0; i<3; ++i )
-            {
-              xLocal[a][i] = nodeCoords( elemsToNodes( k, a ), i );
-            }
-          }
-
-
-          bool const sourceFound =
-            WaveSolverUtils::locateSourceElement( numFacesPerElem,
-                                                  center,
-                                                  faceNormal,
-                                                  faceCenter,
-                                                  elemsToFaces[k],
-                                                  coords );
-
-          if( sourceFound )
-          {
-            real64 coordsOnRefElem[3]{};
-
-
-            WaveSolverUtils::computeCoordinatesOnReferenceElement< FE_TYPE >( coords,
-                                                                              elemsToNodes[k],
-                                                                              nodeCoords,
-                                                                              coordsOnRefElem );
-            sourceIsAccessible[isrc] = 1;
-
-            real64 N[numNodesPerElem];
-            real64 gradN[numNodesPerElem][3];
-            FE_TYPE::calcN( coordsOnRefElem, N );
-            FE_TYPE::calcGradN( coordsOnRefElem, xLocal, gradN );
-            R2SymTensor moment = sourceMoment;
-            for( localIndex q=0; q< numNodesPerElem; ++q )
-            {
-              real64 inc[3] = { 0, 0, 0 };
-              sourceNodeIds[isrc][q] = elemsToNodes( k, q );
-              inc[0] += sourceForce[0] * N[q];
-              inc[1] += sourceForce[1] * N[q];
-              inc[2] += sourceForce[2] * N[q];
-
-              LvArray::tensorOps::Ri_add_symAijBj< 3 >( inc, moment.data, gradN[q] );
-              sourceConstantsx[isrc][q] += inc[0];
-              sourceConstantsy[isrc][q] += inc[1];
-              sourceConstantsz[isrc][q] += inc[2];
-            }
-
-            for( localIndex cycle = 0; cycle < sourceValue.size( 0 ); ++cycle )
-            {
-              sourceValue[cycle][isrc] = WaveSolverUtils::evaluateRicker( cycle * dt, timeSourceFrequency, timeSourceDelay, rickerOrder );
-            }
-
-          }
-        }
-      } // end loop over all sources
-
-      // Step 2: locate the receivers, and precompute the receiver term
-
-      // for geophones, we need only a point per receiver.
-      // for DAS, we need multiple points
-
-      /// compute locations of samples along receiver
-      if( nSamples == 1 )
-      {
-        samplePointLocations[ 0 ] = 0;
-      }
-      else
-      {
-        for( integer i = 0; i < nSamples; ++i )
-        {
-          samplePointLocations[ i ] = -0.5 + (real64) i / ( linearDASSamples - 1 );
-        }
-      }
-
-      /// compute integration constants of samples
-      /// for displacement difference (dipole) DAS, take the discrete derivative of the pair of geophones
-      if( useDAS == WaveSolverUtils::DASType::dipole )
-      {
-        sampleIntegrationConstants[ 0 ] = -1.0;
-        sampleIntegrationConstants[ 1 ] = 1.0;
-      }
-      /// for strain integration DAS, take the average of strains to average strain data
-      else if( nSamples == 1 )
-      {
-        sampleIntegrationConstants[ 0 ] = 1.0;
-      }
-      else
-      {
-        for( integer i = 0; i < linearDASSamples; i++ )
-        {
-          sampleIntegrationConstants[ i ] = 1.0 / nSamples;
-        }
-      }
-
-      /// loop over all the receivers
-      for( localIndex ircv = 0; ircv < receiverCoordinates.size( 0 ); ++ircv )
-      {
-        R1Tensor receiverCenter = { receiverCoordinates[ ircv ][ 0 ], receiverCoordinates[ ircv ][ 1 ], receiverCoordinates[ ircv ][ 2 ] };
-        R1Tensor receiverVector;
-        if( useDAS == WaveSolverUtils::DASType::none )
-        {
-          receiverVector = { 0, 0, 0 };
-        }
-        else
-        {
-          receiverVector =  WaveSolverUtils::computeDASVector( linearDASGeometry[ ircv ][ 0 ], linearDASGeometry[ ircv ][ 1 ] );
-        }
-        real64 receiverLength = useDAS == WaveSolverUtils::DASType::none ? 0 : linearDASGeometry[ ircv ][ 2 ];
-        /// loop over samples
-        for( integer iSample = 0; iSample < nSamples; ++iSample )
-        {
-          /// compute sample coordinates and locate the element containing it
-          real64 const coords[3] = { receiverCenter[ 0 ] + receiverVector[ 0 ] * receiverLength * samplePointLocations[ iSample ],
-                                     receiverCenter[ 1 ] + receiverVector[ 1 ] * receiverLength * samplePointLocations[ iSample ],
-                                     receiverCenter[ 2 ] + receiverVector[ 2 ] * receiverLength * samplePointLocations[ iSample ] };
-          bool const sampleFound =
-            WaveSolverUtils::locateSourceElement( numFacesPerElem,
-                                                  center,
-                                                  faceNormal,
-                                                  faceCenter,
-                                                  elemsToFaces[k],
-                                                  coords );
-          if( sampleFound && elemGhostRank[k] < 0 )
-          {
-            real64 coordsOnRefElem[3]{};
-            real64 xLocal[numNodesPerElem][3];
-
-            for( localIndex a=0; a< numNodesPerElem; ++a )
-            {
-              for( localIndex i=0; i<3; ++i )
-              {
-                xLocal[a][i] = nodeCoords( elemsToNodes( k, a ), i );
-              }
-            }
-
-            WaveSolverUtils::computeCoordinatesOnReferenceElement< FE_TYPE >( coords,
-                                                                              elemsToNodes[k],
-                                                                              nodeCoords,
-                                                                              coordsOnRefElem );
-            real64 N[numNodesPerElem];
-            real64 gradN[numNodesPerElem][3];
-            FE_TYPE::calcN( coordsOnRefElem, N );
-            FE_TYPE::calcGradN( coordsOnRefElem, xLocal, gradN );
-            for( localIndex a = 0; a < numNodesPerElem; ++a )
-            {
-              receiverNodeIds[ircv][iSample * numNodesPerElem + a] = elemsToNodes( k,
-                                                                                   a );
-              if( useDAS == WaveSolverUtils::DASType::strainIntegration )
-              {
-                receiverConstants[ircv][iSample * numNodesPerElem + a] += ( gradN[a][0] * receiverVector[0] + gradN[a][1] * receiverVector[1] + gradN[a][2] * receiverVector[2] ) *
-                                                                          sampleIntegrationConstants[ iSample ];
-              }
-              else
-              {
-                receiverConstants[ircv][iSample * numNodesPerElem + a] += N[a] * sampleIntegrationConstants[ iSample ];
-              }
-            }
-            receiverIsLocal[ ircv ] = 2;
-          }
-        } // end loop over samples
-        // determine if the current rank is the owner of this receiver
-        real64 const coords[3] = { receiverCenter[ 0 ], receiverCenter[ 1 ], receiverCenter[ 2 ] };
-        bool const receiverFound =
-          WaveSolverUtils::locateSourceElement( numFacesPerElem,
-                                                center,
-                                                faceNormal,
-                                                faceCenter,
-                                                elemsToFaces[k],
-                                                coords );
-        if( receiverFound && elemGhostRank[k] < 0 )
-        {
-          receiverIsLocal[ ircv ] = 1;
-        }
-      } // end loop over receivers
-    } );
-
-  }
-};
-
-template< typename FE_TYPE >
-struct MassMatrixKernel
-{
-
-  MassMatrixKernel( FE_TYPE const & finiteElement )
-    : m_finiteElement( finiteElement )
-  {}
-
-  /**
-   * @brief Launches the precomputation of the mass matrices
-   * @tparam EXEC_POLICY the execution policy
-   * @tparam ATOMIC_POLICY the atomic policy
-   * @param[in] size the number of cells in the subRegion
-   * @param[in] numFacesPerElem number of faces per element
-   * @param[in] nodeCoords coordinates of the nodes
-   * @param[in] elemsToNodes map from element to nodes
-   * @param[in] velocity cell-wise velocity
-   * @param[out] mass diagonal of the mass matrix
-   */
-  template< typename EXEC_POLICY, typename ATOMIC_POLICY >
-  //std::enable_if_t< geos::is_sem_formulation< std::remove_cv_t< FE_TYPE_ > >::value, void >
-  void
-  launch( localIndex const size,
-          arrayView2d< WaveSolverBase::wsCoordType const, nodes::REFERENCE_POSITION_USD > const nodeCoords,
-          arrayView2d< localIndex const, cells::NODE_MAP_USD > const elemsToNodes,
-          arrayView1d< real32 const > const density,
           arrayView1d< real32 > const mass )
-
   {
-    forAll< EXEC_POLICY >( size, [=] GEOS_HOST_DEVICE ( localIndex const e )
+
+    constexpr localIndex numNodesPerElem = FE_TYPE::numNodes;
+
+    real64 const epsilon = 0.00001;
+    localIndex const nIterMax = 10000;
+    localIndex numberIter = 0;
+    localIndex counter = 0;
+    real64 lambdaNew = 0.0;
+
+    array1d< real32 > const ux( sizeNode );
+    array1d< real32 > const uy( sizeNode );
+    array1d< real32 > const uz( sizeNode );
+    array1d< real32 > const uxAux( sizeNode );
+    array1d< real32 > const uyAux( sizeNode );
+    array1d< real32 > const uzAux( sizeNode );
+
+
+
+    arrayView1d< real32 > const uxView = ux;
+    arrayView1d< real32 > const uyView = uy;
+    arrayView1d< real32 > const uzView = uz;
+    arrayView1d< real32 > const uxAuxView = uxAux;
+    arrayView1d< real32 > const uyAuxView = uyAux;
+    arrayView1d< real32 > const uzAuxView = uzAux;
+
+    //Randomize p values
+    srand( time( NULL ));
+    for( localIndex a = 0; a < sizeNode; ++a )
     {
+      uxView[a] = (real64)rand()/(real64) RAND_MAX;
+      uyView[a] = (real64)rand()/(real64) RAND_MAX;
+      uzView[a] = (real64)rand()/(real64) RAND_MAX;
+    }
 
-      // only the eight corners of the mesh cell are needed to compute the Jacobian
-      real64 xLocal[ 8 ][ 3 ];
-      for( localIndex a = 0; a < 8; ++a )
-      {
-        localIndex const nodeIndex = elemsToNodes( e, FE_TYPE::meshIndexToLinearIndex3D( a ) );
-        for( localIndex i = 0; i < 3; ++i )
-        {
-          xLocal[a][i] = nodeCoords( nodeIndex, i );
-        }
-      }
+    //Step 1: Normalize randomized pressure
+    real64 normUx= 0.0;
+    real64 normUy= 0.0;
+    real64 normUz= 0.0;
+    WaveSolverUtils::dotProduct( sizeNode, uxView, uxView, normUx );
+    WaveSolverUtils::dotProduct( sizeNode, uyView, uyView, normUy );
+    WaveSolverUtils::dotProduct( sizeNode, uzView, uzView, normUz );
+    real64 normUtot = normUx+normUy+normUz;
 
-      constexpr localIndex numQuadraturePointsPerElem = FE_TYPE::numQuadraturePoints;
-      for( localIndex q = 0; q < numQuadraturePointsPerElem; ++q )
-      {
-        real32 const localIncrement = density[e] * m_finiteElement.computeMassTerm( q, xLocal );
-        RAJA::atomicAdd< ATOMIC_POLICY >( &mass[elemsToNodes( e, q )], localIncrement );
-      }
-    } ); // end loop over element
-  }
 
-  /// The finite element space/discretization object for the element type in the subRegion
-  FE_TYPE const & m_finiteElement;
-
-};
-
-template< typename FE_TYPE >
-struct DampingMatrixKernel
-{
-
-  DampingMatrixKernel( FE_TYPE const & finiteElement )
-    : m_finiteElement( finiteElement )
-  {}
-
-  /**
-   * @brief Launches the precomputation of the damping matrices
-   * @tparam EXEC_POLICY the execution policy
-   * @tparam ATOMIC_POLICY the atomic policy
-   * @param[in] size the number of cells in the subRegion
-   * @param[in] nodeCoords coordinates of the nodes
-   * @param[in] elemsToFaces map from elements to faces
-   * @param[in] facesToNodes map from face to nodes
-   * @param[in] facesDomainBoundaryIndicator flag equal to 1 if the face is on the boundary, and to 0 otherwise
-   * @param[in] freeSurfaceFaceIndicator flag equal to 1 if the face is on the free surface, and to 0 otherwise
-   * @param[in] velocity cell-wise velocity
-   * @param[out] damping diagonal of the damping matrix
-   */
-  template< typename EXEC_POLICY, typename ATOMIC_POLICY >
-  //std::enable_if_t< geos::is_sem_formulation< std::remove_cv_t< FE_TYPE_ > >::value, void >
-  void
-  launch( localIndex const size,
-          arrayView2d< WaveSolverBase::wsCoordType const, nodes::REFERENCE_POSITION_USD > const nodeCoords,
-          arrayView2d< localIndex const > const elemsToFaces,
-          ArrayOfArraysView< localIndex const > const facesToNodes,
-          arrayView1d< integer const > const facesDomainBoundaryIndicator,
-          arrayView1d< localIndex const > const freeSurfaceFaceIndicator,
-          arrayView2d< real64 const > const faceNormal,
-          arrayView1d< real32 const > const density,
-          arrayView1d< real32 const > const velocityVp,
-          arrayView1d< real32 const > const velocityVs,
-          arrayView1d< real32 > const dampingx,
-          arrayView1d< real32 > const dampingy,
-          arrayView1d< real32 > const dampingz )
-  {
-    forAll< EXEC_POLICY >( size, [=] GEOS_HOST_DEVICE ( localIndex const e )
+    forAll< EXEC_POLICY >( sizeNode, [=] GEOS_HOST_DEVICE ( localIndex const a )
     {
-      for( localIndex i = 0; i < elemsToFaces.size( 1 ); ++i )
-      {
-        localIndex const f = elemsToFaces( e, i );
-        // face on the domain boundary and not on free surface
-        if( facesDomainBoundaryIndicator[f] == 1 && freeSurfaceFaceIndicator[f] != 1 )
-        {
-          // only the four corners of the mesh face are needed to compute the Jacobian
-          real64 xLocal[ 4 ][ 3 ];
-          for( localIndex a = 0; a < 4; ++a )
-          {
-            localIndex const nodeIndex = facesToNodes( f, FE_TYPE::meshIndexToLinearIndex2D( a ) );
-            for( localIndex d = 0; d < 3; ++d )
-            {
-              xLocal[a][d] = nodeCoords( nodeIndex, d );
-            }
-          }
-
-          real32 const nx = faceNormal( f, 0 ), ny = faceNormal( f, 1 ), nz = faceNormal( f, 2 );
-          constexpr localIndex numNodesPerFace = FE_TYPE::numNodesPerFace;
-          for( localIndex q = 0; q < numNodesPerFace; ++q )
-          {
-            real32 const aux = density[e] * m_finiteElement.computeDampingTerm( q, xLocal );
-            real32 const localIncrementx = aux * ( velocityVp[e] * LvArray::math::abs( nx ) + velocityVs[e] * LvArray::math::sqrt( pow( ny, 2 ) + pow( nz, 2 ) ) );
-            real32 const localIncrementy = aux * ( velocityVp[e] * LvArray::math::abs( ny ) + velocityVs[e] * LvArray::math::sqrt( pow( nx, 2 ) + pow( nz, 2 ) ) );
-            real32 const localIncrementz = aux * ( velocityVp[e] * LvArray::math::abs( nz ) + velocityVs[e] * LvArray::math::sqrt( pow( nx, 2 ) + pow( ny, 2 ) ) );
-
-            RAJA::atomicAdd< ATOMIC_POLICY >( &dampingx[facesToNodes( f, q )], localIncrementx );
-            RAJA::atomicAdd< ATOMIC_POLICY >( &dampingy[facesToNodes( f, q )], localIncrementy );
-            RAJA::atomicAdd< ATOMIC_POLICY >( &dampingz[facesToNodes( f, q )], localIncrementz );
-          }
-        }
-      }
+      uxView[a]/= sqrt( normUtot );
+      uyView[a]/= sqrt( normUtot );
+      uzView[a]/= sqrt( normUtot );
     } );
+
+    //Step 2: Initial iteration of (M^{-1}K)p
+    uxAuxView.zero();
+    uyAuxView.zero();
+    uzAuxView.zero();
+    forAll< EXEC_POLICY >( sizeElem, [=] GEOS_HOST_DEVICE ( localIndex const k )
+    {
+
+      real64 mu = density[k]*Vs[k]*Vs[k];
+      real64 lambda = density[k]*Vp[k]*Vp[k]-2*mu;
+
+      real64 xLocal[8][3];
+      for( localIndex a=0; a< 8; ++a )
+      {
+        localIndex const nodeIndex = elemsToNodes( k, FE_TYPE::meshIndexToLinearIndex3D( a ) );
+        for( localIndex i=0; i<3; ++i )
+        {
+          xLocal[a][i] = nodeCoords[ nodeIndex ][ i ];
+        }
+      }
+      for( localIndex q = 0; q < numNodesPerElem; ++q )
+      {
+        m_finiteElement.computeFirstOrderStiffnessTerm( q, xLocal, [&] ( int i, int j, real64 val, real64 J[3][3], int p, int r )
+        {
+          real32 const Rxx_ij = val*((lambda+2.0*mu)*J[p][0]*J[r][0]+mu*(J[p][1]*J[r][1]+J[p][2]*J[r][2]));
+          real32 const Ryy_ij = val*((lambda+2.0*mu)*J[p][1]*J[r][1]+mu*(J[p][0]*J[r][0]+J[p][2]*J[r][2]));
+          real32 const Rzz_ij = val*((lambda+2.0*mu)*J[p][2]*J[r][2]+mu*(J[p][0]*J[r][0]+J[p][1]*J[r][1]));
+          real32 const Rxy_ij = val*(lambda*J[p][0]*J[r][1]+mu*J[p][1]*J[r][0]);
+          real32 const Ryx_ij = val*(mu*J[p][0]*J[r][1]+lambda*J[p][1]*J[r][0]);
+          real32 const Rxz_ij = val*(lambda*J[p][0]*J[r][2]+mu*J[p][2]*J[r][0]);
+          real32 const Rzx_ij = val*(mu*J[p][0]*J[r][2]+lambda*J[p][2]*J[r][0]);
+          real32 const Ryz_ij = val*(lambda*J[p][1]*J[r][2]+mu*J[p][2]*J[r][1]);
+          real32 const Rzy_ij = val*(mu*J[p][1]*J[r][2]+lambda*J[p][2]*J[r][1]);
+
+          real32 const localIncrementx = (Rxx_ij * uxView[elemsToNodes[k][j]] + Rxy_ij*uyView[elemsToNodes[k][j]] + Rxz_ij*uzView[elemsToNodes[k][j]]);
+          real32 const localIncrementy = (Ryx_ij * uxView[elemsToNodes[k][j]] + Ryy_ij*uyView[elemsToNodes[k][j]] + Ryz_ij*uzView[elemsToNodes[k][j]]);
+          real32 const localIncrementz = (Rzx_ij * uxView[elemsToNodes[k][j]] + Rzy_ij*uyView[elemsToNodes[k][j]] + Rzz_ij*uzView[elemsToNodes[k][j]]);
+
+          RAJA::atomicAdd< parallelDeviceAtomic >( &uxAuxView[elemsToNodes[k][i]], localIncrementx );
+          RAJA::atomicAdd< parallelDeviceAtomic >( &uyAuxView[elemsToNodes[k][i]], localIncrementy );
+          RAJA::atomicAdd< parallelDeviceAtomic >( &uzAuxView[elemsToNodes[k][i]], localIncrementz );
+        } );
+
+      }
+
+    } );
+
+    forAll< EXEC_POLICY >( sizeNode, [=] GEOS_HOST_DEVICE ( localIndex const a )
+    {
+      uxAuxView[a]/= mass[a];
+      uyAuxView[a]/= mass[a];
+      uzAuxView[a]/= mass[a];
+    } );
+    real64 lambdaOld = lambdaNew;
+
+    //Compute lambdaNew using two dotProducts
+    real64 dotProductUxUxaux = 0.0;
+    real64 dotProductUyUyaux = 0.0;
+    real64 dotProductUzUzaux = 0.0;
+
+    WaveSolverUtils::dotProduct( sizeNode, uxView, uxAuxView, dotProductUxUxaux );
+    WaveSolverUtils::dotProduct( sizeNode, uyView, uyAuxView, dotProductUyUyaux );
+    WaveSolverUtils::dotProduct( sizeNode, uzView, uzAuxView, dotProductUzUzaux );
+    real64 dotProductUtotUtotAux = dotProductUxUxaux+dotProductUyUyaux+dotProductUzUzaux;
+
+    normUx = 0.0;
+    normUy = 0.0;
+    normUz = 0.0;
+
+    WaveSolverUtils::dotProduct( sizeNode, uxView, uxView, normUx );
+    WaveSolverUtils::dotProduct( sizeNode, uyView, uyView, normUy );
+    WaveSolverUtils::dotProduct( sizeNode, uzView, uzView, normUz );
+    normUtot = normUx+normUy+normUz;
+
+
+    lambdaNew = dotProductUtotUtotAux/normUtot;
+
+    real64 normUxaux = 0.0;
+    real64 normUyaux = 0.0;
+    real64 normUzaux = 0.0;
+    WaveSolverUtils::dotProduct( sizeNode, uxAuxView, uxAuxView, normUxaux );
+    WaveSolverUtils::dotProduct( sizeNode, uyAuxView, uyAuxView, normUyaux );
+    WaveSolverUtils::dotProduct( sizeNode, uzAuxView, uzAuxView, normUzaux );
+
+    real64 normUtotAux = normUxaux+normUyaux+normUzaux;
+
+
+    forAll< EXEC_POLICY >( sizeNode, [=] GEOS_HOST_DEVICE ( localIndex const a )
+    {
+      uxView[a]= uxAuxView[a]/sqrt( normUtotAux );
+      uyView[a]= uyAuxView[a]/sqrt( normUtotAux );
+      uzView[a]= uzAuxView[a]/sqrt( normUtotAux );
+    } );
+
+    //Step 3: Do previous algorithm until we found the max eigenvalues
+    do
+    {
+      uxAuxView.zero();
+      uyAuxView.zero();
+      uzAuxView.zero();
+      forAll< EXEC_POLICY >( sizeElem, [=] GEOS_HOST_DEVICE ( localIndex const k )
+      {
+
+        real64 mu = density[k]*Vs[k]*Vs[k];
+        real64 lambda = density[k]*Vp[k]*Vp[k]-2*mu;
+
+        real64 xLocal[8][3];
+        for( localIndex a=0; a< 8; ++a )
+        {
+          localIndex const nodeIndex = elemsToNodes( k, FE_TYPE::meshIndexToLinearIndex3D( a ) );
+          for( localIndex i=0; i<3; ++i )
+          {
+            xLocal[a][i] = nodeCoords[ nodeIndex ][ i ];
+          }
+        }
+        for( localIndex q = 0; q < numNodesPerElem; ++q )
+        {
+          m_finiteElement.computeFirstOrderStiffnessTerm( q, xLocal, [&] ( int i, int j, real64 val, real64 J[3][3], int p, int r )
+          {
+            real32 const Rxx_ij = val*((lambda+2.0*mu)*J[p][0]*J[r][0]+mu*(J[p][1]*J[r][1]+J[p][2]*J[r][2]));
+            real32 const Ryy_ij = val*((lambda+2.0*mu)*J[p][1]*J[r][1]+mu*(J[p][0]*J[r][0]+J[p][2]*J[r][2]));
+            real32 const Rzz_ij = val*((lambda+2.0*mu)*J[p][2]*J[r][2]+mu*(J[p][0]*J[r][0]+J[p][1]*J[r][1]));
+            real32 const Rxy_ij = val*(lambda*J[p][0]*J[r][1]+mu*J[p][1]*J[r][0]);
+            real32 const Ryx_ij = val*(mu*J[p][0]*J[r][1]+lambda*J[p][1]*J[r][0]);
+            real32 const Rxz_ij = val*(lambda*J[p][0]*J[r][2]+mu*J[p][2]*J[r][0]);
+            real32 const Rzx_ij = val*(mu*J[p][0]*J[r][2]+lambda*J[p][2]*J[r][0]);
+            real32 const Ryz_ij = val*(lambda*J[p][1]*J[r][2]+mu*J[p][2]*J[r][1]);
+            real32 const Rzy_ij = val*(mu*J[p][1]*J[r][2]+lambda*J[p][2]*J[r][1]);
+
+            real32 const localIncrementx = (Rxx_ij * uxView[elemsToNodes[k][j]] + Rxy_ij*uyView[elemsToNodes[k][j]] + Rxz_ij*uzView[elemsToNodes[k][j]]);
+            real32 const localIncrementy = (Ryx_ij * uxView[elemsToNodes[k][j]] + Ryy_ij*uyView[elemsToNodes[k][j]] + Ryz_ij*uzView[elemsToNodes[k][j]]);
+            real32 const localIncrementz = (Rzx_ij * uxView[elemsToNodes[k][j]] + Rzy_ij*uyView[elemsToNodes[k][j]] + Rzz_ij*uzView[elemsToNodes[k][j]]);
+
+            RAJA::atomicAdd< parallelDeviceAtomic >( &uxAuxView[elemsToNodes[k][i]], localIncrementx );
+            RAJA::atomicAdd< parallelDeviceAtomic >( &uyAuxView[elemsToNodes[k][i]], localIncrementy );
+            RAJA::atomicAdd< parallelDeviceAtomic >( &uzAuxView[elemsToNodes[k][i]], localIncrementz );
+          } );
+
+        }
+
+      } );
+
+      forAll< EXEC_POLICY >( sizeNode, [=] GEOS_HOST_DEVICE ( localIndex const a )
+      {
+        uxAuxView[a]/= mass[a];
+        uyAuxView[a]/= mass[a];
+        uzAuxView[a]/= mass[a];
+      } );
+      lambdaOld = lambdaNew;
+
+      //Compute lambdaNew using two dotProducts
+      dotProductUxUxaux = 0.0;
+      dotProductUyUyaux = 0.0;
+      dotProductUzUzaux = 0.0;
+
+      WaveSolverUtils::dotProduct( sizeNode, uxView, uxAuxView, dotProductUxUxaux );
+      WaveSolverUtils::dotProduct( sizeNode, uyView, uyAuxView, dotProductUyUyaux );
+      WaveSolverUtils::dotProduct( sizeNode, uzView, uzAuxView, dotProductUzUzaux );
+      dotProductUtotUtotAux = dotProductUxUxaux+dotProductUyUyaux+dotProductUzUzaux;
+
+      normUx = 0.0;
+      normUy = 0.0;
+      normUz = 0.0;
+
+      WaveSolverUtils::dotProduct( sizeNode, uxView, uxView, normUx );
+      WaveSolverUtils::dotProduct( sizeNode, uyView, uyView, normUy );
+      WaveSolverUtils::dotProduct( sizeNode, uzView, uzView, normUz );
+      normUtot = normUx+normUy+normUz;
+
+
+      lambdaNew = dotProductUtotUtotAux/normUtot;
+
+      normUxaux = 0.0;
+      normUyaux = 0.0;
+      normUzaux = 0.0;
+      WaveSolverUtils::dotProduct( sizeNode, uxAuxView, uxAuxView, normUxaux );
+      WaveSolverUtils::dotProduct( sizeNode, uyAuxView, uyAuxView, normUyaux );
+      WaveSolverUtils::dotProduct( sizeNode, uzAuxView, uzAuxView, normUzaux );
+
+      normUtotAux = normUxaux+normUyaux+normUzaux;
+
+
+      forAll< EXEC_POLICY >( sizeNode, [=] GEOS_HOST_DEVICE ( localIndex const a )
+      {
+        uxView[a]= uxAuxView[a]/sqrt( normUtotAux );
+        uyView[a]= uyAuxView[a]/sqrt( normUtotAux );
+        uzView[a]= uzAuxView[a]/sqrt( normUtotAux );
+      } );
+
+      if( LvArray::math::abs( lambdaNew-lambdaOld )/LvArray::math::abs( lambdaNew )<= epsilon )
+      {
+        counter++;
+      }
+      else
+      {
+        counter=0;
+      }
+
+      numberIter++;
+
+
+    }
+    while (counter < 10 && numberIter < nIterMax);
+
+    GEOS_THROW_IF( numberIter> nIterMax, "Power Iteration algorithm does not converge", std::runtime_error );
+
+    real64 dt = 1.99/sqrt( LvArray::math::abs( lambdaNew ));
+
+    return dt;
+
   }
 
   /// The finite element space/discretization object for the element type in the subRegion
   FE_TYPE const & m_finiteElement;
-
 };
 
 /**
@@ -510,18 +388,18 @@ public:
           finiteElementSpace,
           inputConstitutiveType ),
     m_nodeCoords( nodeManager.getField< fields::referencePosition32 >() ),
-    m_ux_n( nodeManager.getField< elasticfields::Displacementx_n >() ),
-    m_uy_n( nodeManager.getField< elasticfields::Displacementy_n >() ),
-    m_uz_n( nodeManager.getField< elasticfields::Displacementz_n >() ),
-    m_stiffnessVectorx( nodeManager.getField< elasticfields::StiffnessVectorx >() ),
-    m_stiffnessVectory( nodeManager.getField< elasticfields::StiffnessVectory >() ),
-    m_stiffnessVectorz( nodeManager.getField< elasticfields::StiffnessVectorz >() ),
-    m_density( elementSubRegion.template getField< elasticfields::ElasticDensity >() ),
-    m_velocityVp( elementSubRegion.template getField< elasticfields::ElasticVelocityVp >() ),
-    m_velocityVs( elementSubRegion.template getField< elasticfields::ElasticVelocityVs >() ),
-    m_gamma( elementSubRegion.template getField< elasticvtifields::Gamma >()),
-    m_epsilon( elementSubRegion.template getField< elasticvtifields::Epsilon >()),
-    m_delta( elementSubRegion.template getField< elasticvtifields::Delta >()),
+    m_ux_n( nodeManager.getField< fields::elasticfields::Displacementx_n >() ),
+    m_uy_n( nodeManager.getField< fields::elasticfields::Displacementy_n >() ),
+    m_uz_n( nodeManager.getField< fields::elasticfields::Displacementz_n >() ),
+    m_stiffnessVectorx( nodeManager.getField< fields::elasticfields::StiffnessVectorx >() ),
+    m_stiffnessVectory( nodeManager.getField< fields::elasticfields::StiffnessVectory >() ),
+    m_stiffnessVectorz( nodeManager.getField< fields::elasticfields::StiffnessVectorz >() ),
+    m_density( elementSubRegion.template getField< fields::elasticfields::ElasticDensity >() ),
+    m_velocityVp( elementSubRegion.template getField< fields::elasticfields::ElasticVelocityVp >() ),
+    m_velocityVs( elementSubRegion.template getField< fields::elasticfields::ElasticVelocityVs >() ),
+    m_gamma( elementSubRegion.template getField< fields::elasticvtifields::Gamma >()),
+    m_epsilon( elementSubRegion.template getField< fields::elasticvtifields::Epsilon >()),
+    m_delta( elementSubRegion.template getField< fields::elasticvtifields::Delta >()),
     m_dt( dt )
   {
     GEOS_UNUSED_VAR( edgeManager );

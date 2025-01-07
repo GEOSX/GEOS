@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -19,7 +20,7 @@
 #define GEOS_PHYSICSSOLVERS_SURFACEGENERATION_SURFACEGENERATOR_HPP_
 
 #include "mesh/mpiCommunications/NeighborCommunicator.hpp"
-#include "physicsSolvers/SolverBase.hpp"
+#include "physicsSolvers/PhysicsSolverBase.hpp"
 #include "mesh/DomainPartition.hpp"
 
 namespace geos
@@ -56,7 +57,7 @@ class ElementRegionBase;
  * This solver manages the mesh topology splitting methods.
  *
  */
-class SurfaceGenerator : public SolverBase
+class SurfaceGenerator : public PhysicsSolverBase
 {
 public:
   SurfaceGenerator( const string & name,
@@ -66,7 +67,7 @@ public:
 
   static string catalogName() { return "SurfaceGenerator"; }
   /**
-   * @copydoc SolverBase::getCatalogName()
+   * @copydoc PhysicsSolverBase::getCatalogName()
    */
   string getCatalogName() const override { return catalogName(); }
 
@@ -99,7 +100,7 @@ public:
 
   inline string const getFractureRegionName() const { return m_fractureRegionName; }
 
-  void postProcessInput() override final;
+  void postInputInitialization() override final;
 
 protected:
 
@@ -505,7 +506,7 @@ private:
   /**
    * @struct viewKeyStruct holds char strings and viewKeys for fast lookup
    */
-  struct viewKeyStruct : SolverBase::viewKeyStruct
+  struct viewKeyStruct : PhysicsSolverBase::viewKeyStruct
   {
     constexpr static char const * failCriterionString() { return "failCriterion"; }
     constexpr static char const * solidMaterialNameString() { return "solidMaterialNames"; }

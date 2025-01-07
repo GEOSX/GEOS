@@ -14,14 +14,14 @@ Any physics solver relying on standard finite element and finite volume techniqu
 
   \mathsf{A} \mathsf{x} = \mathsf{b}
 
-with a :math:`\mathsf{A}` a square sparse matrix, :math:`\mathsf{x}` the solution vector, and :math:`\mathsf{b}` the right-hand side.
+where :math:`\mathsf{A}` is the square sparse matrix, :math:`\mathsf{x}` the solution vector, and :math:`\mathsf{b}` the right-hand side.
 For example, in a classical linear elastostatics problem :math:`\mathsf{A}` is the stiffness matrix, and :math:`\mathsf{x}` and :math:`\mathsf{b}` are the displacement and nodal force vectors, respectively.
 
 
 This solution stage represents the most computationally expensive portion of a typical simulation.
 Solution algorithms generally belong to two families of methods: direct methods and iterative methods.
 In GEOS both options are made available wrapping around well-established open-source linear algebra libraries, namely
-`HYPRE <https://computation.llnl.gov/projects/hypre-scalable-linear-solvers-multigrid-methods>`__,
+`HYPRE <https://computing.llnl.gov/projects/hypre-scalable-linear-solvers-multigrid-methods>`__,
 `PETSc <https://www.mcs.anl.gov/petsc/>`__,
 `SuperLU <http://crd-legacy.lbl.gov/~xiaoye/SuperLU/>`__, and
 `Trilinos <https://trilinos.github.io/>`__.
@@ -38,7 +38,7 @@ Irrespective of the selected direct solver implementation, three stages can be i
 (#) **Solve Stage**: the solution to the linear systems involving the factorized matrix is computed
 (#) **Finalize Stage**: the systems involving the factorized matrix have been solved and the direct solver lifetime ends
 
-The default option in GEOS relies on `SuperLU <http://crd-legacy.lbl.gov/~xiaoye/SuperLU/>`__, a general purpose library for the direct solution of large, sparse, nonsymmetric systems of linear equations, that is called taking advantage of the interface provided in `HYPRE <https://computation.llnl.gov/projects/hypre-scalable-linear-solvers-multigrid-methods>`__.
+The default option in GEOS relies on `SuperLU <http://crd-legacy.lbl.gov/~xiaoye/SuperLU/>`__, a general purpose library for the direct solution of large, sparse, nonsymmetric systems of linear equations, that is called taking advantage of the interface provided in `HYPRE <https://computing.llnl.gov/projects/hypre-scalable-linear-solvers-multigrid-methods>`__.
 
 ******************
 Iterative  methods
@@ -66,7 +66,7 @@ Summary
 
 The following table summarizes the available input parameters for the linear solver.
 
-.. include:: ../../schema/docs/LinearSolverParameters.rst
+.. include:: /docs/sphinx/datastructure/LinearSolverParameters.rst
 
 ***************************
 Preconditioner descriptions
@@ -110,8 +110,8 @@ This section provides a brief description of the available preconditioners.
   - `PETSc documentation <https://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/PC/PCGAMG.html>`__,
   - `Trilinos documentation <https://docs.trilinos.org/dev/packages/ml/doc/html/index.html>`__.
 
-* **MGR**: multigrid reduction. Available through *hypre* interface only. Specific documentation coming soon.
-  Further details can be found in `MGR documentation <https://hypre.readthedocs.io/en/latest/solvers-mgr.html>`__.
+* **MGR**: multigrid reduction. Available through *hypre* interface only.
+  Further details can be found in `MGR documentation <https://hypre.readthedocs.io/en/latest/solvers-mgr.html>`__, also see section below.
 
 * **Block**: custom preconditioner designed for a 2 x 2 block matrix.
 
@@ -119,7 +119,7 @@ This section provides a brief description of the available preconditioners.
 HYPRE MGR Preconditioner
 ************************
 
-MGR stands for multigrid reduction, a multigrid method that uses the interpolation, restriction operators, and the Galerkin triple product, to reduce a linear system to a smaller one, similar to a Schur complement approach. As such, it is designed to target block linear systems resulting from discretizations of multiphysics problems. GEOS uses MGR through an implementation in `HYPRE <https://computation.llnl.gov/projects/hypre-scalable-linear-solvers-multigrid-methods>`__. More information regarding MGR can be found `here <https://hypre.readthedocs.io/en/latest/solvers-mgr.html>`__. Currently, MGR strategies are implemented for hydraulic fracturing, poroelastic, compositional flow with and without wells. More multiphysics solvers with MGR will be enabled in the future.
+MGR stands for multigrid reduction, a multigrid method that uses the interpolation, restriction operators, and the Galerkin triple product, to reduce a linear system to a smaller one, similar to a Schur complement approach. As such, it is designed to target block linear systems resulting from discretizations of multiphysics problems. GEOS uses MGR through an implementation in `HYPRE <https://computing.llnl.gov/projects/hypre-scalable-linear-solvers-multigrid-methods>`__. More information regarding MGR can be found `here <https://hypre.readthedocs.io/en/latest/solvers-mgr.html>`__. Currently, MGR strategies are implemented for hydraulic fracturing, singlephase and multiphase poromechanics, singlephase poromechanics with fractures, compositional flow with and without wells. More multiphysics solvers with MGR will be enabled in the future.
 
 To use MGR for a specific block system, several components need to be specified.
 
@@ -157,3 +157,16 @@ Moreover, a block scaling is available. Feasible options are:
 * none: keep the original scaling;
 * Frobenius norm: equilibrate Frobenius norm of the diagonal blocks;
 * user provided.
+
+********************
+Adaptive tolerance
+********************
+
+This feature is available for iterative solvers and can be enabled using `krylovAdaptiveTol` flag in `LinearSolverParameters`. It follows the Eisenstat-Walker inexact Newton approach described in [Eisenstat and Walker 1996]. The key idea is to relax the linear solver tolerance at the beginning of the nonlinear iterations loop and tighten it when getting closer to the final solution. The initial tolerance is defined by `krylovWeakestTol` and starting from second nonlinear iteration the tolerance is chosen using the following steps:
+
+- compute the current to previous nonlinear norm ratio: :math:`\mathsf{nr} = \mathsf{min}( \mathsf{norm}^{curr} / \mathsf{norm}^{prev}, 1.0 )`
+- estimate the new linear solver tolerance: :math:`\mathsf{tol}_{new} = \mathsf{\gamma} \cdot \mathsf{nr}^{ax}`
+- compute a safeguard to avoid too sharp tolerance reduction: :math:`\mathsf{tol}_{alt} = \mathsf{tol}_{old}^{2}` (the bound is the quadratic reduction with respect to the previous tolerance value)
+- apply safeguards and compute the final tolerance: :math:`\mathsf{tol} = \mathsf{max}( \mathsf{tol}_{new}, \mathsf{tol}_{alt} )`, :math:`\mathsf{tol} = \mathsf{min}( \mathsf{tol}_{max}, \mathsf{max}( \mathsf{tol}_{min}, \mathsf{tol} ) )`
+
+Here :math:`\mathsf{\gamma}` is the forcing term, :math:`ax` is the adaptivity exponent, :math:`\mathsf{tol}_{min}` and :math:`\mathsf{tol}_{max}` are prescribed tolerance bounds (defined by `krylovStrongestTol` and `krylovWeakestTol`, respectively).

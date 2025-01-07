@@ -44,6 +44,10 @@ Usage: $0
       The host-config. Path is relative to the root of the repository.
   --install-dir-basename GEOS-e42ffc1
       GEOS installation basename.
+  --makefile
+      Use "Unix Makefiles" as build system generator.
+  --ninja
+      Use "Ninja" as build system generator.
   --no-install-schema
       Do not install the xsd schema.
   --no-run-unit-tests
@@ -68,11 +72,12 @@ exit 1
 or_die cd $(dirname $0)/..
 
 # Parsing using getopt
-args=$(or_die getopt -a -o h --long build-exe-only,cmake-build-type:,code-coverage,data-basename:,exchange-dir:,host-config:,install-dir-basename:,no-install-schema,no-run-unit-tests,nproc:,repository:,run-integrated-tests,sccache-credentials:,test-code-style,test-documentation,help -- "$@")
+args=$(or_die getopt -a -o h --long build-exe-only,cmake-build-type:,code-coverage,data-basename:,exchange-dir:,host-config:,install-dir-basename:,makefile,ninja,no-install-schema,no-run-unit-tests,nproc:,repository:,run-integrated-tests,sccache-credentials:,test-code-style,test-documentation,help -- "$@")
 
 # Variables with default values
 BUILD_EXE_ONLY=false
-GEOSX_INSTALL_SCHEMA=true
+BUILD_GENERATOR=""
+GEOS_INSTALL_SCHEMA=true
 HOST_CONFIG="host-configs/environment.cmake"
 RUN_UNIT_TESTS=true
 RUN_INTEGRATED_TESTS=false
@@ -91,6 +96,9 @@ do
       RUN_UNIT_TESTS=false
       shift;;
     --cmake-build-type)      CMAKE_BUILD_TYPE=$2;        shift 2;;
+    --ninja)
+        BUILD_GENERATOR=$1;
+        shift;;
     --data-basename)
       DATA_BASENAME=$2
       DATA_BASENAME_WE=${DATA_BASENAME%%.*}
@@ -103,8 +111,9 @@ do
       shift 2;;
     --exchange-dir)          DATA_EXCHANGE_DIR=$2;       shift 2;;
     --host-config)           HOST_CONFIG=$2;             shift 2;;
-    --install-dir-basename)  GEOSX_DIR=${GEOSX_TPL_DIR}/../$2; shift 2;;
-    --no-install-schema)     GEOSX_INSTALL_SCHEMA=false; shift;;
+    --install-dir-basename)  GEOS_DIR=${GEOSX_TPL_DIR}/../$2; shift 2;;
+    --makefile)              BUILD_GENERATOR="";         shift;;
+    --no-install-schema)     GEOS_INSTALL_SCHEMA=false; shift;;
     --no-run-unit-tests)     RUN_UNIT_TESTS=false;       shift;;
     --nproc)                 NPROC=$2;                   shift 2;;
     --repository)            GEOS_SRC_DIR=$2;            shift 2;;
@@ -127,9 +136,9 @@ if [[ -z "${GEOS_SRC_DIR}" ]]; then
   exit 1
 fi
 
-if [[ -z "${GEOSX_DIR}" ]]; then
+if [[ -z "${GEOS_DIR}" ]]; then
   echo "Installation folder undefined. Set to default value '/dev/null'. You can define it using '--install-dir-basename'."
-  GEOSX_DIR=/dev/null
+  GEOS_DIR=/dev/null
 fi
 
 if [[ ! -z "${SCCACHE_CREDS}" ]]; then
@@ -211,25 +220,25 @@ fi
 # The option `--oversubscribe` tells OpenMPI to allow more MPI ranks than the node has cores.
 # This is needed because our unit test `blt_mpi_smoke` is run in parallel with _hard coded_ 4 ranks.
 # While some of our ci nodes may have less cores available.
-# 
+#
 # In case we have more powerful nodes, consider removing `--oversubscribe` and use `--use-hwthread-cpus` instead.
 # This will tells OpenMPI to discover the number of hardware threads on the node,
 # and use that as the number of slots available. (There is a distinction between threads and cores).
-GEOSX_BUILD_DIR=/tmp/geos-build
+GEOS_BUILD_DIR=/tmp/geos-build
 or_die python3 scripts/config-build.py \
                -hc ${HOST_CONFIG} \
                -bt ${CMAKE_BUILD_TYPE} \
-               -bp ${GEOSX_BUILD_DIR} \
-               -ip ${GEOSX_DIR} \
-               --ninja \
+               -bp ${GEOS_BUILD_DIR} \
+               -ip ${GEOS_DIR} \
+               ${BUILD_GENERATOR} \
                -DBLT_MPI_COMMAND_APPEND='"--allow-run-as-root;--oversubscribe"' \
-               -DGEOSX_INSTALL_SCHEMA=${GEOSX_INSTALL_SCHEMA} \
+               -DGEOS_INSTALL_SCHEMA=${GEOS_INSTALL_SCHEMA} \
                -DENABLE_COVERAGE=$([[ "${CODE_COVERAGE}" = true ]] && echo 1 || echo 0) \
                ${SCCACHE_CMAKE_ARGS} \
                ${ATS_CMAKE_ARGS}
 
 # The configuration step is now over, we can now move to the build directory for the build!
-or_die cd ${GEOSX_BUILD_DIR}
+or_die cd ${GEOS_BUILD_DIR}
 
 # Code style check
 if [[ "${TEST_CODE_STYLE}" = true ]]; then
@@ -245,15 +254,21 @@ fi
 
 # Performing the requested build.
 if [[ "${BUILD_EXE_ONLY}" = true ]]; then
-  or_die ninja -j $NPROC geosx
+  or_die cmake --build . -j $NPROC --target geosx
 else
-  or_die ninja -j $NPROC
-  or_die ninja install
+  or_die cmake --build . -j $NPROC
+  or_die cmake --install .
 
   if [[ ! -z "${DATA_BASENAME_WE}" ]]; then
     # Here we pack the installation.
     # The `--transform` parameter provides consistency between the tarball name and the unpacked folder.
-    or_die tar czf ${DATA_EXCHANGE_DIR}/${DATA_BASENAME_WE}.tar.gz --directory=${GEOSX_TPL_DIR}/.. --transform "s|^./|${DATA_BASENAME_WE}/|" .
+    echo "DATA_EXCHANGE_DIR=${DATA_EXCHANGE_DIR}"
+    echo "DATA_BASENAME_WE=${DATA_BASENAME_WE}"
+    echo "GEOS_TPL_DIR=${GEOS_TPL_DIR}"
+    echo "GEOSX_TPL_DIR=${GEOSX_TPL_DIR}"
+    GEOS_TPL_DIR=${GEOSX_TPL_DIR}
+    echo tar czf ${DATA_EXCHANGE_DIR}/${DATA_BASENAME_WE}.tar.gz --directory=${GEOS_TPL_DIR}/.. --transform "s|^./|${DATA_BASENAME_WE}/|" .
+    or_die tar czf ${DATA_EXCHANGE_DIR}/${DATA_BASENAME_WE}.tar.gz --directory=${GEOS_TPL_DIR}/.. --transform "s|^./|${DATA_BASENAME_WE}/|" .
   fi
 fi
 
@@ -263,8 +278,8 @@ if [[ ! -z "${SCCACHE_CREDS}" ]]; then
 fi
 
 if [[ "${CODE_COVERAGE}" = true ]]; then
-  or_die ninja coreComponents_coverage
-  cp -r ${GEOSX_BUILD_DIR}/coreComponents_coverage.info.cleaned ${GEOS_SRC_DIR}/geos_coverage.info.cleaned
+  or_die cmake --build . --target coreComponents_coverage
+  cp -r ${GEOS_BUILD_DIR}/coreComponents_coverage.info.cleaned ${GEOS_SRC_DIR}/geos_coverage.info.cleaned
 fi
 
 # Run the unit tests (excluding previously ran checks).
@@ -278,9 +293,11 @@ fi
 
 if [[ "${RUN_INTEGRATED_TESTS}" = true ]]; then
   # We split the process in two steps. First installing the environment, then running the tests.
-  or_die ninja ats_environment
-  
-  # The tests are not run using ninja (`ninja --verbose ats_run`) because it swallows the output while all the simulations are running.
+  or_die cmake --build . --target ats_environment
+
+  # The tests are not run using cmake (`cmake --build . --verbose  --target ats_run`)
+  # because with ninja it swallows the output while all the
+  # simulations are running.
   # We directly use the script instead...
   echo "Available baselines:"
   ls -lR /tmp/geos/baselines
@@ -315,7 +332,7 @@ if [[ "${RUN_INTEGRATED_TESTS}" = true ]]; then
 fi
 
 # Cleaning the build directory.
-or_die ninja clean
+or_die cmake --build . --target clean
 
 
 # Clean the repository

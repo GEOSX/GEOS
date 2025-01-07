@@ -32,7 +32,7 @@ DOXYFILE_ENCODING      = UTF-8
 # title of most generated pages and in a few other places.
 # The default value is: My Project.
 
-PROJECT_NAME           = "GEOSX"
+PROJECT_NAME           = "GEOS"
 
 # The PROJECT_NUMBER tag can be used to enter a project or revision number. This
 # could be handy for archiving the generated documentation or if some version
@@ -767,6 +767,7 @@ INPUT = @PROJECT_SOURCE_DIR@/coreComponents/common \
         @PROJECT_SOURCE_DIR@/coreComponents/finiteElement/elementFormulations \
         @PROJECT_SOURCE_DIR@/coreComponents/finiteElement/kernelInterface \
         @PROJECT_SOURCE_DIR@/coreComponents/mesh/MeshFields.hpp \
+        @PROJECT_SOURCE_DIR@/coreComponents/physicsSolvers/PhysicsSolverBase.hpp \
         @PROJECT_SOURCE_DIR@/coreComponents/physicsSolvers/simplePDE/LaplaceFEMKernels.hpp \
         @PROJECT_SOURCE_DIR@/coreComponents/physicsSolvers/solidMechanics/kernels/ExplicitFiniteStrain.hpp \
         @PROJECT_SOURCE_DIR@/coreComponents/physicsSolvers/solidMechanics/kernels/ExplicitSmallStrain.hpp \

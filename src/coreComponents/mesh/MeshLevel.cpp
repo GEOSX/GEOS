@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -203,8 +204,8 @@ MeshLevel::MeshLevel( string const & name,
     // create element region with the same name as source element region "Region"
     CellElementRegion & region = *(dynamic_cast< CellElementRegion * >( m_elementManager->createChild( sourceRegion.getCatalogName(),
                                                                                                        sourceRegion.getName() ) ) );
-    // add cell block to the new element region with the same name as cell block name from source element region
-    region.addCellBlockNames( sourceRegion.getCellBlockNames() );
+    // set cell block to the new element region with the same name as cell block name from source element region
+    region.setCellBlockNames( sourceRegion.getCellBlockNames() );
 
     sourceRegion.forElementSubRegions< CellElementSubRegion >( [&]( CellElementSubRegion const & sourceSubRegion )
     {
@@ -338,7 +339,7 @@ void MeshLevel::generateAdjacencyLists( arrayView1d< localIndex const > const & 
   {
     ArrayOfArraysView< localIndex const > const elems2dToNodes = subRegion.nodeList().toViewConst();
     ArrayOfArraysView< localIndex const > const elem2dToEdges = subRegion.edgeList().toViewConst();
-    ArrayOfArraysView< localIndex const > const elems2dToFaces = subRegion.faceList().toViewConst();
+    arrayView2d< localIndex const > const elems2dToFaces = subRegion.faceList().toViewConst();
 
     for( localIndex const ei: elementAdjacencySet[er][esr] )
     {
@@ -352,7 +353,10 @@ void MeshLevel::generateAdjacencyLists( arrayView1d< localIndex const > const & 
       }
       for( localIndex const & fi: elems2dToFaces[ei] )
       {
-        faceAdjacencySet.insert( fi );
+        if( fi != -1 )
+        {
+          faceAdjacencySet.insert( fi );
+        }
       }
     }
   };

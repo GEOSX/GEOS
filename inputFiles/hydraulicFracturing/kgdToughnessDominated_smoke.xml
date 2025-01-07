@@ -38,7 +38,7 @@
   </Geometry>
 
   <Events
-    maxTime="40.0">
+    maxTime="10.0">
     <SoloEvent
       name="preFracture"
       target="/Solvers/SurfaceGen"/>
@@ -64,7 +64,7 @@
 
     <PeriodicEvent
       name="curveOutput"
-      timeFrequency="20.0"
+      timeFrequency="0.5"
       targetExactTimestep="0"
       beginTime="2.0"
       target="/Outputs/curveOutput"/>
@@ -75,8 +75,7 @@
 
     <PeriodicEvent
       name="restarts"
-      timeFrequency="20.0"
-      targetExactTimestep="1"
+      cycleFrequency="5"
       target="/Outputs/restartOutput"/>
   </Events> 
 </Problem>

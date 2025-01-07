@@ -15,7 +15,6 @@
       surfaceGeneratorName="SurfaceGen"
       logLevel="1"
       targetRegions="{ Fracture }"
-      contactRelationName="fractureContact"
       maxNumResolves="1"
       initialDt="0.01">
       <NonlinearSolverParameters
@@ -30,7 +29,8 @@
       timeIntegrationOption="QuasiStatic"
       discretization="FE1"
       targetRegions="{ Domain, Fracture }"
-      contactRelationName="fractureContact">     
+      contactRelationName="fractureContact"
+      contactPenaltyStiffness="1.0e0">     
     </SolidMechanicsLagrangianSSLE>
 
     <SinglePhaseFVM
@@ -51,12 +51,12 @@
     <InternalMesh
       name="mesh1"
       elementTypes="{ C3D8 }"
-      xCoords="{ 0, 20, 40 }"
+      xCoords="{ 0, 15, 25 }"
       yCoords="{ -10, 0, 10 }"
-      zCoords="{ 0, 10, 20 }"
-      nx="{ 20, 10 }"
+      zCoords="{ 0, 10, 15 }"
+      nx="{ 15, 5 }"
       ny="{ 5, 5 }"
-      nz="{ 10, 5 }"
+      nz="{ 10, 3 }"
       xBias="{ 0, -0.5 }"
       yBias="{ 0.5, -0.5 }"
       zBias="{ 0, -0.5 }"
@@ -81,7 +81,8 @@
   </Geometry>
 
   <Events
-   maxTime="4">
+   maxTime="4"
+   maxCycle="10">
     <SoloEvent
       name="preFracture"
       target="/Solvers/SurfaceGen"/>
@@ -107,13 +108,13 @@
       targetExactTimestep="0"
       target="/Outputs/curveOutput"/>
 
-    <PeriodicEvent
+    <!-- <PeriodicEvent
       name="vtk"
-      target="/Outputs/vtkOutput"/>
+      target="/Outputs/vtkOutput"/> -->
 
     <PeriodicEvent 
       name="restarts"
-      timeFrequency="0.75"
+      cycleFrequency="5"
       targetExactTimestep="0"
       target="/Outputs/restartOutput" />
   </Events>

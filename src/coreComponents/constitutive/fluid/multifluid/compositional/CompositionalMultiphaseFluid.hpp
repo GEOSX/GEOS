@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -22,14 +23,14 @@
 #include "constitutive/fluid/multifluid/compositional/CompositionalMultiphaseFluidUpdates.hpp"
 #include "constitutive/fluid/multifluid/compositional/models/ConstantViscosity.hpp"
 #include "constitutive/fluid/multifluid/compositional/models/CompositionalDensity.hpp"
+#include "constitutive/fluid/multifluid/compositional/models/ImmiscibleWaterDensity.hpp"
+#include "constitutive/fluid/multifluid/compositional/models/ImmiscibleWaterFlashModel.hpp"
+#include "constitutive/fluid/multifluid/compositional/models/ImmiscibleWaterViscosity.hpp"
 #include "constitutive/fluid/multifluid/compositional/models/LohrenzBrayClarkViscosity.hpp"
 #include "constitutive/fluid/multifluid/compositional/models/NegativeTwoPhaseFlashModel.hpp"
 #include "constitutive/fluid/multifluid/compositional/models/ModelParameters.hpp"
 #include "constitutive/fluid/multifluid/compositional/models/NullModel.hpp"
 #include "constitutive/fluid/multifluid/compositional/models/PhaseModel.hpp"
-
-#include "constitutive/fluid/multifluid/MultiFluidBase.hpp"
-#include "constitutive/fluid/multifluid/MultiFluidUtils.hpp"
 
 namespace geos
 {
@@ -70,6 +71,8 @@ public:
 
   virtual string getCatalogName() const override { return catalogName(); }
 
+  static constexpr bool isThermalType(){ return false; }
+
   // TODO: This method should be implemented if an incorrect extrapolation of the pressure and temperature is encountered in the kernel
   /**
    * @copydoc MultiFluidBase::checkTablesParameters( real64 pressure, real64 temperature )
@@ -104,20 +107,32 @@ public:
 
 protected:
 
-  virtual void postProcessInput() override;
+  virtual void postInputInitialization() override;
 
   virtual void initializePostSubGroups() override;
 
   virtual void resizeFields( localIndex const size, localIndex const numPts ) override;
 
+  enum PhaseType : integer
+  {
+    LIQUID = 0,
+    VAPOUR = 1,
+    AQUEOUS = 2,
+  };
+
 private:
   // Create the fluid models
   void createModels();
+
+  integer findPhaseIndex( string names ) const;
 
   static std::unique_ptr< compositional::ModelParameters > createModelParameters();
 
   // Flash model
   std::unique_ptr< FLASH > m_flash{};
+
+  // Phase ordering
+  array1d< integer > m_phaseOrder;
 
   // Phase models
   std::unique_ptr< PHASE1 > m_phase1{};
@@ -134,22 +149,19 @@ private:
   PhaseComp::ValueType m_kValues;
 };
 
-using CompositionalTwoPhasePengRobinsonConstantViscosity = CompositionalMultiphaseFluid<
-  compositional::NegativeTwoPhaseFlashPRPR,
-  compositional::PhaseModel< compositional::CompositionalDensity< compositional::CubicEOSPR >, compositional::ConstantViscosity, compositional::NullModel >,
-  compositional::PhaseModel< compositional::CompositionalDensity< compositional::CubicEOSPR >, compositional::ConstantViscosity, compositional::NullModel > >;
-using CompositionalTwoPhaseSoaveRedlichKwongConstantViscosity = CompositionalMultiphaseFluid<
-  compositional::NegativeTwoPhaseFlashSRKSRK,
-  compositional::PhaseModel< compositional::CompositionalDensity< compositional::CubicEOSSRK >, compositional::ConstantViscosity, compositional::NullModel >,
-  compositional::PhaseModel< compositional::CompositionalDensity< compositional::CubicEOSSRK >, compositional::ConstantViscosity, compositional::NullModel > >;
-using CompositionalTwoPhasePengRobinsonLBCViscosity = CompositionalMultiphaseFluid<
-  compositional::NegativeTwoPhaseFlashPRPR,
-  compositional::PhaseModel< compositional::CompositionalDensity< compositional::CubicEOSPR >, compositional::LohrenzBrayClarkViscosity, compositional::NullModel >,
-  compositional::PhaseModel< compositional::CompositionalDensity< compositional::CubicEOSPR >, compositional::LohrenzBrayClarkViscosity, compositional::NullModel > >;
-using CompositionalTwoPhaseSoaveRedlichKwongLBCViscosity = CompositionalMultiphaseFluid<
-  compositional::NegativeTwoPhaseFlashSRKSRK,
-  compositional::PhaseModel< compositional::CompositionalDensity< compositional::CubicEOSSRK >, compositional::LohrenzBrayClarkViscosity, compositional::NullModel >,
-  compositional::PhaseModel< compositional::CompositionalDensity< compositional::CubicEOSSRK >, compositional::LohrenzBrayClarkViscosity, compositional::NullModel > >;
+using CompositionalTwoPhaseConstantViscosity = CompositionalMultiphaseFluid<
+  compositional::NegativeTwoPhaseFlashModel,
+  compositional::PhaseModel< compositional::CompositionalDensity, compositional::ConstantViscosity, compositional::NullModel >,
+  compositional::PhaseModel< compositional::CompositionalDensity, compositional::ConstantViscosity, compositional::NullModel > >;
+using CompositionalTwoPhaseLohrenzBrayClarkViscosity = CompositionalMultiphaseFluid<
+  compositional::NegativeTwoPhaseFlashModel,
+  compositional::PhaseModel< compositional::CompositionalDensity, compositional::LohrenzBrayClarkViscosity, compositional::NullModel >,
+  compositional::PhaseModel< compositional::CompositionalDensity, compositional::LohrenzBrayClarkViscosity, compositional::NullModel > >;
+using CompositionalThreePhaseLohrenzBrayClarkViscosity = CompositionalMultiphaseFluid<
+  compositional::ImmiscibleWaterFlashModel,
+  compositional::PhaseModel< compositional::CompositionalDensity, compositional::LohrenzBrayClarkViscosity, compositional::NullModel >,
+  compositional::PhaseModel< compositional::CompositionalDensity, compositional::LohrenzBrayClarkViscosity, compositional::NullModel >,
+  compositional::PhaseModel< compositional::ImmiscibleWaterDensity, compositional::ImmiscibleWaterViscosity, compositional::NullModel > >;
 
 } /* namespace constitutive */
 

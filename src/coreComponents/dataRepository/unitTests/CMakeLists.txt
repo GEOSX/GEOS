@@ -1,6 +1,7 @@
 # Specify list of tests
 set( dataRepository_tests
      testDefaultValue.cpp
+     testPacking.cpp
      testWrapper.cpp
      testXmlWrapper.cpp
      testBufferOps.cpp )
