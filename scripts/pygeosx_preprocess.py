@@ -21,6 +21,5 @@ def run_problem():
     while pygeosx.run() != pygeosx.COMPLETED:
         pass
 
-
 if __name__ == '__main__':
     run_problem()

@@ -317,7 +317,7 @@ if [[ "${RUN_INTEGRATED_TESTS}" = true ]]; then
 
     # process integratedTests failures
     echo "Processing logs..."
-    python3 ../scripts/processIntegratedTestCheckFailures --directory integratedTests/TestResults &> integratedTests/TestResults/processedTestsLogs.txt
+    bin/geos_ats_process_tests_fails --directory integratedTests/TestResults &> integratedTests/TestResults/processedTestsLogs.txt
    
     # Rebaseline and pack into an archive
     echo "Rebaselining..."
