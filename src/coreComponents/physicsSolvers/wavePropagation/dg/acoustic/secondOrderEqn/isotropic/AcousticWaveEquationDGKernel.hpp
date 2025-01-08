@@ -207,7 +207,7 @@ struct PrecomputeNeighborhoodKernel
    */
   template< typename EXEC_POLICY, typename FE_TYPE >
   static void
-  launch( localIndex const size, 
+  launch( localIndex const size,
           arrayView2d< localIndex const, cells::NODE_MAP_USD > const & elemsToNodes,
           arrayView2d< localIndex const > const & elemsToFaces,
           arrayView2d< localIndex const > const & facesToElems,
@@ -219,7 +219,7 @@ struct PrecomputeNeighborhoodKernel
     forAll< EXEC_POLICY >( size, [=] GEOS_HOST_DEVICE ( localIndex const k1 )
     {
       localIndex vertices[ 4 ] = { elemsToNodes( k1, 0 ), elemsToNodes( k1, 1 ), elemsToNodes( k1, 2 ), elemsToNodes( k1, 3 ) };
- 
+
       for( int i = 0; i < 4; i++ )
       {
         localIndex  k1OrderedVertices[ 3 ];
@@ -242,7 +242,7 @@ struct PrecomputeNeighborhoodKernel
             {
               found = true;
               break;
-            } 
+            }
           }
           if( !found )
           {
@@ -257,7 +257,7 @@ struct PrecomputeNeighborhoodKernel
         if( k2 < 0 )
         {
           // boundary element, either free surface, or absorbing boundary
-          elemsToOpposite( k1, o1 ) = freeSurfaceFaceIndicator( f ) == 1 ? -2 : -1;  
+          elemsToOpposite( k1, o1 ) = freeSurfaceFaceIndicator( f ) == 1 ? -2 : -1;
           elemsToOppositePermutation( k1, o1 ) = 0;
         }
         else
@@ -276,7 +276,7 @@ struct PrecomputeNeighborhoodKernel
               {
                 found = true;
                 break;
-              } 
+              }
             }
             if( !found )
             {
@@ -311,144 +311,199 @@ struct PrecomputeNeighborhoodKernel
   }
 };
 
-//emplate< typename FE_TYPE >
-//truct PressureComputation
-//
-//
-// PressureComputation( FE_TYPE const & finiteElement )
-//   : m_finiteElement( finiteElement )
-// {}
-//
-// /**
-//  * @brief Launches the computation of the pressure for one iteration
-//  * @tparam EXEC_POLICY the execution policy
-//  * @tparam ATOMIC_POLICY the atomic policy
-//  * @param[in] size the number of cells in the subRegion
-//  * @param[in] X coordinates of the nodes
-//  * @param[in] p_nm1 pressure  array at time n-1 (only used here)
-//  * @param[in] p_n pressure array at time n (only used here)
-//  * @param[in] sourceConstants constant part of the source terms
-//  * @param[in] sourceValue value of the temporal source (eg. Ricker)
-//  * @param[in] sourceIsAccessible flag indicating whether the source is accessible or not
-//  * @param[in] sourceElem element where a source is located
-//  * @param[in] cycleNumber the number of cycle
-//  * @param[in] dt time-step
-//  * @param[out] p_np1 pressure array at time n+1 (updated here)
-//  */
-// //List is not complete, it will need several GEOS maps to add
-// template< typename EXEC_POLICY, typename ATOMIC_POLICY >
-// void
-// launch( localIndex const size,
-//         localIndex const numFacesPerElem,
-//         arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const X,
-//         arrayView2d< real32 const > const p_n,
-//         arrayView2d< real32 const > const p_nm1,
-//         arrayView2d< real64 const > const sourceConstants,
-//         arrayView2d< real32 const > const sourceValue,
-//         arrayView1d< localIndex const > const sourceIsAccessible,
-//         arrayView1d< localIndex const > const sourceElem,
-//         real64 const dt,
-//         integer const cycleNumber,
-//         arrayView2d< real32 > const p_np1 )
-//
-// {
-//
-//   //For now lots of comments with ideas  + needed array to add to the method prototype
-//   forAll< EXEC_POLICY >( size, [=] GEOS_HOST_DEVICE ( localIndex const k )
-//   {
-//     constexpr localIndex numNodesPerElem = FE_TYPE::numNodes;
-//     constexpr localIndex numQuadraturePointsPerElem = FE_TYPE::numQuadraturePoints;
-//
-//     real64 xLocal[numNodesPerElem][3];
-//     for( localIndex a=0; a< numNodesPerElem; ++a )
-//     {
-//       for( localIndex i=0; i<3; ++i )
-//       {
-//         xLocal[a][i] = X( elemsToNodes( k, a ), i );
-//       }
-//     }
-//
-//     real32 flow[numNodesPerElem]  = {0.0};
-//
-//
-//     // Volume  + fluxes computation integration
-//     for( localIndex q=0; q<numQuadraturePointsPerElem; ++q )
-//     {
-//
-//
-//       //Stiffness terms
-//       m_finiteElement.template computeStiffnessTerm( q, xLocal, [&] ( int i, int j, real64 val )
-//       {
-//         //Maybe reverse j and i
-//         flow[i] += val * p_n[k][j];
-//       } );
-//
-//       //Fluxes
-//       for( localIndex f = 0; f < numFacesPerElem; ++f )
-//       {
-//         //Possible way:
-//         //Get the global number of face using elemeToFaces :
-//         localIndex face_glob = elemToFaces[k][f];
-//         //Use faceToElemIndex map to know which element shared this global face: faceToElemIndex is a 2d array which knowing a face and a
-//         // index between 0 and 1 can give you the two
-//         // element which share the face and if you get -1 it means that the element will be in the boundary.
-//         // Initialize the storage value for contributions: 
-//         real32 fp = 0.0;
-//         for( localIndex m = 0; m < 2; ++m )
-//         {
-//           localIndex elem = faceToElemIndex[face_glob][m];
-//           //We start by the test on the boundaries to skip it directly:
-//           if( elem == -1 )
-//           {
-//             //Nothing we continue the loop
-//           }
-//           else if( elem == k )
-//           {
-//             //Here we compute the fluxes part corresponding to the element itself (the (K,K) part seen in the latex document). We can both
-//             // compute the "classical" flux part + the penalization one:
-//             //PS: Not sure about how to include the normals so I'll just put "normals" (surely missing something with the gradient inside
-//             // the flux matrix)
-//             // Inside the matrix computation: we need the volumic Jacobian (its inverse) and the surface determinant. Due to the
-//             // fact that we take the inverse of the jacobian
-//             // we will have the ratio surface/volume.
-//
-//             m_finiteElement.template computeKKFluxMatrix(q,xLocal,f [&] (int i, int j, real64 val)
-//             {
-//               fp += 0.5* val *  p_n[k][i] + gamma[k]* val * p_n[k][i];
-//             //Needs normals at some point 
-//             //flow[j] += fp*faceNormal
-//             } );
-//           }
-//           else
-//           {
-//             //It remains the case where we look at the neighbour element and we need to add the (K,L) contribution.
-//             //It will be transparent here, but inside the mathematical computation we need to be careful on which degrees of freedom we
-//             // send back for the pressure as we get the contribution
-//             //of the neighbour so we need to get the correct dof (can be taken in account inside the math stuff)
-//             m_finiteElement.template computeKLFluxMatrix(q, xLocal,f [&] (int i, int j, real32 val)
-//             {
-//               fp += 0.5* val * p_n[k][i] - gamma[k]* val * p_n[elem][j];
-//               //Again, needs normals at some point
-//               //flow[j] += fp*normals
-//             } );
-//           }
-//         }
-//
-//       }
-//
-//
-//
-//     }
-//
-//   } );
-//
-//
-// }
-//
-// /// The finite element space/discretization object for the element type in the subRegion
-// FE_TYPE const & m_finiteElement;
-//
-//;
+template< typename FE_TYPE >
+struct PressureComputation
+{
+ PressureComputation( FE_TYPE const & finiteElement )
+   : m_finiteElement( finiteElement )
+ {}
+
+ /**
+  * @brief Launches the computation of the pressure for one iteration
+  * @tparam EXEC_POLICY the execution policy
+  * @tparam ATOMIC_POLICY the atomic policy
+  * @param[in] size the number of cells in the subRegion
+  * @param[in] X coordinates of the nodes
+  * @param[in] p_nm1 pressure  array at time n-1 (only used here)
+  * @param[in] p_n pressure array at time n (only used here)
+  * @param[in] sourceConstants constant part of the source terms
+  * @param[in] sourceValue value of the temporal source (eg. Ricker)
+  * @param[in] sourceIsAccessible flag indicating whether the source is accessible or not
+  * @param[in] sourceElem element where a source is located
+  * @param[in] cycleNumber the number of cycle
+  * @param[in] dt time-step
+  * @param[out] p_np1 pressure array at time n+1 (updated here)
+  */
+ //List is not complete, it will need several GEOS maps to add
+ template< typename EXEC_POLICY, typename ATOMIC_POLICY >
+ void
+ launch( localIndex const size,
+         arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const X,
+         arrayView2d< localIndex const, cells::NODE_MAP_USD > const & elemsToNodes,
+         arrayView2d< real32 const > const p_n,
+         arrayView2d< real32 const > const p_nm1,
+         real64 const dt,
+         arrayView2d< real32 > const p_np1 )
+
+ {
+
+
+
+  //  //For now lots of comments with ideas  + needed array to add to the method prototype
+    forAll< EXEC_POLICY >( size, [=] GEOS_HOST_DEVICE ( localIndex const k )
+    {
+
+      real64 const dt2 = pow(dt,2);
+
+      constexpr localIndex numNodesPerElem = FE_TYPE::numNodes;
+      constexpr localIndex numQuadraturePointsPerElem = FE_TYPE::numQuadraturePoints;
+
+      real32 flowx[numNodesPerElem] = {0.0};
+
+      real64 xLocal[numNodesPerElem][3];
+      for( localIndex a=0; a< numNodesPerElem; ++a )
+      {
+        for( localIndex i=0; i<3; ++i )
+        {
+          xLocal[a][i] = X( elemsToNodes( k, a ), i );
+        }
+      }
+
+      //Mass matrix declaration and computation
+      real32 mass[numNodesPerElem][numNodesPerElem];
+
+      m_finiteElement.computeMassMatrix(mass);
+
+      //Start of the time scheme
+      for (localIndex i = 0; i < numNodesPerElem; ++i)
+      {
+        p_np1[k][i]=p_n[k][i];
+      }
+
+      //Multiply by p_{n+1 } by 2*Mass
+      m_finiteElement.template computeMassTerm(xLocal, [&] (const int i, const int j, const real64 val)
+      {
+         flowx[j] = 2.0*val*p_np1[k][i];
+      } );
+
+
+      //First stiffness part (volume)
+      m_finiteElement.template computeStiffnessTerm(xLocal, [&] (const int i, const int j, real64 val)
+      {
+         flowx[j] -= dt2*val*p_n[k][i];
+      } );
+
+
+      for (localIndex f = 0; f < 4; ++f)
+      {
+        //Surface terms computation
+      }
+
+
+
+
+    } );
+
+  //    //Mass and Damping matrix declaration
+  //    real64 mass[numNodesPerelem][numNodesPerElem];
+  //    //real64 damping[numNodesPerelem][numNodesPerElem];
+
+
+  //    //Computation of the mass and damping matrix
+  //    computeMassMatrix(mass);
+
+  //    //First steps for time scheme
+  //    for (localindex i = 0; i < numNodesPerElem; ++i)
+  //    {
+  //     p_np1[]
+  //    }
+
+
+
+
+
+  //    real32 flow[numNodesPerElem]  = {0.0};
+
+
+  //    // Volume  + fluxes computation integration
+  //    for( localIndex q=0; q<numQuadraturePointsPerElem; ++q )
+  //    {
+
+
+  //      //Stiffness terms
+  //      m_finiteElement.template computeStiffnessTerm( q, xLocal, [&] ( int i, int j, real64 val )
+  //      {
+  //        //Maybe reverse j and i
+  //        flow[i] += val * p_n[k][j];
+  //      } );
+
+  //      //Fluxes
+  //      for( localIndex f = 0; f < numFacesPerElem; ++f )
+  //      {
+  //        //Possible way:
+  //        //Get the global number of face using elemeToFaces :
+  //        localIndex face_glob = elemToFaces[k][f];
+  //        //Use faceToElemIndex map to know which element shared this global face: faceToElemIndex is a 2d array which knowing a face and a
+  //        // index between 0 and 1 can give you the two
+  //        // element which share the face and if you get -1 it means that the element will be in the boundary.
+  //        // Initialize the storage value for contributions:
+  //        real32 fp = 0.0;
+  //        for( localIndex m = 0; m < 2; ++m )
+  //        {
+  //          localIndex elem = faceToElemIndex[face_glob][m];
+  //          //We start by the test on the boundaries to skip it directly:
+  //          if( elem == -1 )
+  //          {
+  //            //Nothing we continue the loop
+  //          }
+  //          else if( elem == k )
+  //          {
+  //            //Here we compute the fluxes part corresponding to the element itself (the (K,K) part seen in the latex document). We can both
+  //            // compute the "classical" flux part + the penalization one:
+  //            //PS: Not sure about how to include the normals so I'll just put "normals" (surely missing something with the gradient inside
+  //            // the flux matrix)
+  //            // Inside the matrix computation: we need the volumic Jacobian (its inverse) and the surface determinant. Due to the
+  //            // fact that we take the inverse of the jacobian
+  //            // we will have the ratio surface/volume.
+
+  //            m_finiteElement.template computeKKFluxMatrix(q,xLocal,f [&] (int i, int j, real64 val)
+  //            {
+  //              fp += 0.5* val *  p_n[k][i] + gamma[k]* val * p_n[k][i];
+  //            //Needs normals at some point
+  //            //flow[j] += fp*faceNormal
+  //            } );
+  //          }
+  //          else
+  //          {
+  //            //It remains the case where we look at the neighbour element and we need to add the (K,L) contribution.
+  //            //It will be transparent here, but inside the mathematical computation we need to be careful on which degrees of freedom we
+  //            // send back for the pressure as we get the contribution
+  //            //of the neighbour so we need to get the correct dof (can be taken in account inside the math stuff)
+  //            m_finiteElement.template computeKLFluxMatrix(q, xLocal,f [&] (int i, int j, real32 val)
+  //            {
+  //              fp += 0.5* val * p_n[k][i] - gamma[k]* val * p_n[elem][j];
+  //              //Again, needs normals at some point
+  //              //flow[j] += fp*normals
+  //            } );
+  //          }
+  //        }
+
+  //      }
+
+
+
+  //    }
+
+  //  } );
+
+
+ }
+
+ /// The finite element space/discretization object for the element type in the subRegion
+ FE_TYPE const & m_finiteElement;
+
+
+};
 
 } // namespace AcousticWaveEquationDGKernels
 
