@@ -68,6 +68,8 @@ public:
 
   virtual void registerDataOnMesh( Group & meshBodies ) override;
 
+  virtual void registerDataForCFL( Group & meshBodies ) { GEOS_UNUSED_VAR( meshBodies ); }
+
   /**
    * @defgroup Solver Interface Functions
    *
@@ -272,7 +274,6 @@ public:
     static constexpr char const * allowLocalCompDensChoppingString() { return "allowLocalCompDensityChopping"; }
     static constexpr char const * useTotalMassEquationString() { return "useTotalMassEquation"; }
     static constexpr char const * useSimpleAccumulationString() { return "useSimpleAccumulation"; }
-    static constexpr char const * useNewGravityString() { return "useNewGravity"; }
     static constexpr char const * minCompDensString() { return "minCompDens"; }
     static constexpr char const * minCompFracString() { return "minCompFrac"; }
     static constexpr char const * maxSequentialCompDensChangeString() { return "maxSequentialCompDensChange"; }
@@ -380,19 +381,12 @@ public:
   virtual real64 setNextDtBasedOnStateChange( real64 const & currentDt,
                                               DomainPartition & domain ) override;
 
-  void computeCFLNumbers( DomainPartition & domain, real64 const & dt, real64 & maxPhaseCFL, real64 & maxCompCFL );
 
-  /**
-   * @brief function to set the next time step size
-   * @param[in] currentDt the current time step size
-   * @param[in] domain the domain object
-   * @return the prescribed time step size
-   */
-  real64 setNextDt( real64 const & currentDt,
-                    DomainPartition & domain ) override;
-
-  virtual real64 setNextDtBasedOnCFL( real64 const & currentDt,
-                                      DomainPartition & domain ) override;
+  virtual void computeCFLNumbers( DomainPartition & domain, real64 const & dt, real64 & maxPhaseCFL, real64 & maxCompCFL )
+  {
+    GEOS_UNUSED_VAR( domain, dt, maxPhaseCFL, maxCompCFL );
+    GEOS_ERROR( GEOS_FMT( "{}: computeCFLNumbers is not implemented for {}", getDataContext(), getCatalogName() ) );
+  }
 
   virtual void initializePostInitialConditionsPreSubGroups() override;
 
@@ -503,9 +497,6 @@ protected:
   /// flag indicating whether simple accumulation form is used
   integer m_useSimpleAccumulation;
 
-  /// flag indicating whether new gravity treatment is used
-  integer m_useNewGravity;
-
   /// minimum allowed global component density
   real64 m_minCompDens;
 
@@ -518,9 +509,6 @@ protected:
   /// maximum (absolute) component density change in a sequential iteration
   real64 m_sequentialCompDensChange;
   real64 m_maxSequentialCompDensChange;
-
-  /// the targeted CFL for timestep
-  real64 m_targetFlowCFL;
 
 private:
 

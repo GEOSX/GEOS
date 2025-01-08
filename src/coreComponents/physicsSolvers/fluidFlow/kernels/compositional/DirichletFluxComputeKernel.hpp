@@ -508,7 +508,7 @@ public:
   createAndLaunch( integer const numComps,
                    integer const numPhases,
                    globalIndex const rankOffset,
-                   integer const useTotalMassEquation,
+                   BitFlags< KernelFlags > kernelFlags,
                    string const & dofKey,
                    string const & solverName,
                    FaceManager const & faceManager,
@@ -530,11 +530,6 @@ public:
       ElementRegionManager::ElementViewAccessor< arrayView1d< globalIndex const > > dofNumberAccessor =
         elemManager.constructArrayViewAccessor< globalIndex, 1 >( dofKey );
       dofNumberAccessor.setName( solverName + "/accessors/" + dofKey );
-
-      // for now, we neglect capillary pressure in the kernel
-      BitFlags< KernelFlags > kernelFlags;
-      if( useTotalMassEquation )
-        kernelFlags.set( KernelFlags::TotalMassEquation );
 
       using kernelType = DirichletFluxComputeKernel< NUM_COMP, NUM_DOF, typename FluidType::KernelWrapper >;
       typename kernelType::CompFlowAccessors compFlowAccessors( elemManager, solverName );

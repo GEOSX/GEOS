@@ -276,7 +276,7 @@ public:
             ( m_numPhases,
             ip,
             m_kernelFlags.isSet( KernelFlags::CapPressure ),
-            m_kernelFlags.isSet( KernelFlags::NewGravity ),
+            m_kernelFlags.isSet( KernelFlags::CheckPhasePresenceInGravity ),
             seri, sesri, sei,
             trans,
             dTrans_dPres,
@@ -469,10 +469,7 @@ public:
                    integer const numPhases,
                    globalIndex const rankOffset,
                    string const & dofKey,
-                   integer const hasCapPressure,
-                   integer const useTotalMassEquation,
-                   integer const useNewGravity,
-                   UpwindingParameters upwindingParams,
+                   BitFlags< KernelFlags > kernelFlags,
                    string const & solverName,
                    ElementRegionManager const & elemManager,
                    STENCILWRAPPER const & stencilWrapper,
@@ -488,24 +485,6 @@ public:
       ElementRegionManager::ElementViewAccessor< arrayView1d< globalIndex const > > dofNumberAccessor =
         elemManager.constructArrayViewAccessor< globalIndex, 1 >( dofKey );
       dofNumberAccessor.setName( solverName + "/accessors/" + dofKey );
-
-      BitFlags< KernelFlags > kernelFlags;
-      if( hasCapPressure )
-        kernelFlags.set( KernelFlags::CapPressure );
-      if( useTotalMassEquation )
-        kernelFlags.set( KernelFlags::TotalMassEquation );
-      if( useNewGravity )
-        kernelFlags.set( KernelFlags::NewGravity );
-      if( upwindingParams.upwindingScheme == UpwindingScheme::C1PPU &&
-          isothermalCompositionalMultiphaseFVMKernelUtilities::epsC1PPU > 0 )
-      {
-        GEOS_ERROR( "Z Formulation is currently not available for C1PPU" );
-      }
-      else if( upwindingParams.upwindingScheme == UpwindingScheme::IHU )
-      {
-        GEOS_ERROR( "Z Formulation is currently not available for IHU" );
-      }
-
 
       using kernelType = FluxComputeZFormulationKernel< NUM_COMP, NUM_DOF, STENCILWRAPPER >;
       typename kernelType::CompFlowAccessors compFlowAccessors( elemManager, solverName );

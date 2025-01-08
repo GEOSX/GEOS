@@ -381,8 +381,7 @@ public:
   createAndLaunch( integer const numComps,
                    integer const numPhases,
                    globalIndex const rankOffset,
-                   integer const useTotalMassEquation,
-                   integer const useSimpleAccumulation,
+                   BitFlags< KernelFlags > kernelFlags,
                    string const dofKey,
                    ElementSubRegionBase const & subRegion,
                    constitutive::MultiFluidBase const & fluid,
@@ -395,14 +394,8 @@ public:
       integer constexpr NUM_COMP = NC();
       integer constexpr NUM_DOF = NC()+1;
 
-      BitFlags< KernelFlags > KernelFlags;
-      if( useTotalMassEquation )
-        KernelFlags.set( KernelFlags::TotalMassEquation );
-      if( useSimpleAccumulation )
-        KernelFlags.set( KernelFlags::SimpleAccumulation );
-
       AccumulationZFormulationKernel< NUM_COMP, NUM_DOF > kernel( numPhases, rankOffset, dofKey, subRegion,
-                                                                  fluid, solid, localMatrix, localRhs, KernelFlags );
+                                                                  fluid, solid, localMatrix, localRhs, kernelFlags );
       AccumulationZFormulationKernel< NUM_COMP, NUM_DOF >::template launch< POLICY >( subRegion.size(), kernel );
     } );
   }
