@@ -322,7 +322,7 @@ public:
               ( m_numPhases,
               ip,
               m_kernelFlags.isSet( KernelFlags::CapPressure ),
-              m_kernelFlags.isSet( KernelFlags::NewGravity ),
+              m_kernelFlags.isSet( KernelFlags::CheckPhasePresenceInGravity ),
               seri, sesri, sei,
               trans,
               dTrans_dPres,
