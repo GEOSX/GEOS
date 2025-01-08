@@ -16,17 +16,27 @@ The numerical flux is obtained using the following expression for the mass flux 
 .. math::
   F_{KL} = \Upsilon_{KL} \frac{\rho^{upw}}{\mu^{upw}} \big( p_K - p_L - \rho^{avg} g ( d_K - d_L ) \big),
 
-where :math:`p_K` is the pressure of cell :math:`K`, :math:`d_K` is the depth of cell :math:`K`, and :math:`\Upsilon_{KL}` is the standard TPFA transmissibility coefficient at the interface.
+
+where :math:`p_K` is the pressure of cell :math:`K`, :math:`\rho^{avg}` is the average fluid density, :math:`d_K` is the depth of cell :math:`K`, and :math:`\Upsilon_{KL}` is the standard TPFA transmissibility coefficient at the interface.
 The fluid density, :math:`\rho^{upw}`, and the fluid viscosity, :math:`\mu^{upw}`, are upwinded using the sign of the potential difference at the interface. 
 
-This is currently the only available discretization in the :ref:`CompositionalMultiphaseFlow`. 
+For :ref:`CompositionalMultiphaseFlow` there are two options to compute the average density, :math:`\rho^{avg}`. The desired option can be selected using the `gravityDensityScheme` parameter:
+
+#. `ArithmeticAverage`: :math:`\rho^{avg}` is computed using simple arithmetic average: :math:`\rho^{avg} = 0.5 \cdot (rho_K + rho_L)`, where :math:`rho_K` and :math:`rho_K` are densities in the two cells.
+
+#. `PhasePresence`: average phase density is computed using checking for phase presence:
+
+    * :math:`\rho^{avg} = 0.5 \cdot (\rho_K + \rho_L)` if phase is present in both cells :math:`K` and :math:`L`
+
+    * :math:`\rho^{avg} = \rho_K` if phase is present only in cell :math:`K`
+
+    * :math:`\rho^{avg} = \rho_L` if phase is present only in cell :math:`L`
 
 Hybrid FVM
 ~~~~~~~~~~
 
 This discretization scheme overcomes the limitations of the standard TPFA on non K-orthogonal meshes.
 The hybrid finite-volume scheme--equivalent to the well-known hybrid Mimetic Finite Difference (MFD) scheme--remains consistent with the pressure equation even when the mesh does not satisfy the K-orthogonality condition.
-This numerical scheme is currently implemented in the `SinglePhaseHybridFVM` solver.
 
 The hybrid FVM scheme uses both cell-centered and face-centered pressure degrees of freedom.
 The one-sided face flux, :math:`F_{K,f}`, at face :math:`f` of cell :math:`K` is computed as:
@@ -60,5 +70,3 @@ For a given interior face :math:`f` between two neighboring cells :math:`K` and 
 We obtain a numerical scheme with :math:`n_{\textit{cells}}` cell-centered degrees of freedom and :math:`n_{\textit{faces}}` face-centered pressure degrees of freedom.
 The system involves :math:`n_{\textit{cells}}` mass conservation equations and :math:`n_{\textit{faces}}` face-based constraints.
 The linear systems can be efficiently solved using the MultiGrid Reduction (MGR) preconditioner implemented in the Hypre linear algebra package.  
-
-The implementation of the hybrid FVM scheme for :ref:`CompositionalMultiphaseFlow` is in progress.

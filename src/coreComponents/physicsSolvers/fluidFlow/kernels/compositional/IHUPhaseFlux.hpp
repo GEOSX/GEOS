@@ -256,7 +256,7 @@ upwindMobilityGravity( localIndex const numPhase,
                        ElementViewConst< arrayView3d< real64 const, constitutive::cappres::USD_CAPPRES > > const & phaseCapPressure,
                        ElementViewConst< arrayView4d< real64 const, constitutive::cappres::USD_CAPPRES_DS > > const & dPhaseCapPressure_dPhaseVolFrac,
                        integer const hasCapPressure,
-                       integer const useNewGravity,
+                       integer const checkPhasePresenceInGravity,
                        localIndex & upwindDir,
                        real64 & mobility,
                        real64 ( &dMobility_dP ),
@@ -282,7 +282,7 @@ upwindMobilityGravity( localIndex const numPhase,
                                                                                       phaseCapPressure,
                                                                                       dPhaseCapPressure_dPhaseVolFrac,
                                                                                       hasCapPressure,
-                                                                                      useNewGravity,
+                                                                                      checkPhasePresenceInGravity,
                                                                                       upwindDir );
 
   //reinit
@@ -434,7 +434,7 @@ computeFractionalFlowGravity( localIndex const numPhase,
                               ElementViewConst< arrayView3d< real64 const, constitutive::cappres::USD_CAPPRES > > const & phaseCapPressure,
                               ElementViewConst< arrayView4d< real64 const, constitutive::cappres::USD_CAPPRES_DS > > const & dPhaseCapPressure_dPhaseVolFrac,
                               integer const hasCapPressure,
-                              integer const useNewGravity,
+                              integer const checkPhasePresenceInGravity,
                               real64 & fractionalFlow,
                               real64 (& dFractionalFlow_dP)[numFluxSupportPoints],
                               real64 (& dFractionalFlow_dC)[numFluxSupportPoints][numComp] )
@@ -464,7 +464,7 @@ computeFractionalFlowGravity( localIndex const numPhase,
                                                                   phaseCapPressure,
                                                                   dPhaseCapPressure_dPhaseVolFrac,
                                                                   hasCapPressure,
-                                                                  useNewGravity,
+                                                                  checkPhasePresenceInGravity,
                                                                   k_up,
                                                                   mob,
                                                                   dMob_dP,
@@ -597,7 +597,7 @@ struct computePotentialGravity
   GEOS_HOST_DEVICE
   static void compute( localIndex const GEOS_UNUSED_PARAM( numPhase ),
                        localIndex const ip,
-                       integer const useNewGravity,
+                       integer const checkPhasePresenceInGravity,
                        localIndex const (&seri)[numFluxSupportPoints],
                        localIndex const (&sesri)[numFluxSupportPoints],
                        localIndex const (&sei)[numFluxSupportPoints],
@@ -635,7 +635,9 @@ struct computePotentialGravity
       }
     }
 
-    calculateMeanDensity( useNewGravity, ip, seri, sesri, sei, phaseVolFrac, dCompFrac_dCompDens, phaseMassDens, dPhaseMassDens, dProp_dComp,
+    calculateMeanDensity( checkPhasePresenceInGravity, ip, seri, sesri, sei,
+                          phaseVolFrac, dCompFrac_dCompDens,
+                          phaseMassDens, dPhaseMassDens, dProp_dComp,
                           densMean, dDensMean_dPres, dDensMean_dComp );
 
     // compute potential difference MPFA-style
@@ -657,7 +659,7 @@ struct computePotentialGravity
 
   template< localIndex numComp, localIndex numFluxSupportPoints >
   GEOS_HOST_DEVICE
-  static void calculateMeanDensity( integer const useNewGravity,
+  static void calculateMeanDensity( integer const checkPhasePresenceInGravity,
                                     localIndex const ip,
                                     localIndex const (&seri)[numFluxSupportPoints],
                                     localIndex const (&sesri)[numFluxSupportPoints],
@@ -677,7 +679,7 @@ struct computePotentialGravity
       localIndex const ei = sei[i];
 
       bool const phaseExists = (phaseVolFrac[er][esr][ei][ip] > 0);
-      if( useNewGravity && !phaseExists )
+      if( checkPhasePresenceInGravity && !phaseExists )
       {
         continue;
       }
@@ -807,7 +809,7 @@ static void computePotentialFluxesGravity( localIndex const numPhase,
                                            ElementViewConst< arrayView3d< real64 const, constitutive::cappres::USD_CAPPRES > > const & phaseCapPressure,
                                            ElementViewConst< arrayView4d< real64 const, constitutive::cappres::USD_CAPPRES_DS > > const & dPhaseCapPressure_dPhaseVolFrac,
                                            localIndex const hasCapPressure,
-                                           integer const useNewGravity,
+                                           integer const checkPhasePresenceInGravity,
                                            real64 & phaseFlux,
                                            real64 (& dPhaseFlux_dP)[numFluxSupportPoints],
                                            real64 ( & dPhaseFlux_dC)[numFluxSupportPoints][numComp] )
@@ -825,7 +827,7 @@ static void computePotentialFluxesGravity( localIndex const numPhase,
   //
   UpwindHelpers::computePotentialGravity::compute< numComp, numFluxSupportPoints >( numPhase,
                                                                                     ip,
-                                                                                    useNewGravity,
+                                                                                    checkPhasePresenceInGravity,
                                                                                     seri,
                                                                                     sesri,
                                                                                     sei,
@@ -870,7 +872,7 @@ static void computePotentialFluxesGravity( localIndex const numPhase,
                                                                                         phaseCapPressure,
                                                                                         dPhaseCapPressure_dPhaseVolFrac,
                                                                                         hasCapPressure,
-                                                                                        useNewGravity,
+                                                                                        checkPhasePresenceInGravity,
                                                                                         fflow,
                                                                                         dFflow_dP,
                                                                                         dFflow_dC );
@@ -889,7 +891,7 @@ static void computePotentialFluxesGravity( localIndex const numPhase,
       //Fetch pot for phase j!=i defined as \rho_j g dz/dx
       UpwindHelpers::computePotentialGravity::compute< numComp, numFluxSupportPoints >( numPhase,
                                                                                         jp,
-                                                                                        useNewGravity,
+                                                                                        checkPhasePresenceInGravity,
                                                                                         seri,
                                                                                         sesri,
                                                                                         sei,
@@ -938,7 +940,7 @@ static void computePotentialFluxesGravity( localIndex const numPhase,
                                                                                      phaseCapPressure,
                                                                                      dPhaseCapPressure_dPhaseVolFrac,
                                                                                      hasCapPressure,
-                                                                                     useNewGravity,
+                                                                                     checkPhasePresenceInGravity,
                                                                                      k_up_o,
                                                                                      mobOther,
                                                                                      dMobOther_dP,
@@ -1229,7 +1231,7 @@ public:
                                   ElementViewConst< arrayView3d< real64 const, constitutive::cappres::USD_CAPPRES > > const & phaseCapPressure,
                                   ElementViewConst< arrayView4d< real64 const, constitutive::cappres::USD_CAPPRES_DS > > const & dPhaseCapPressure_dPhaseVolFrac,
                                   integer const hasCapPressure,
-                                  integer const useNewGravity,
+                                  integer const checkPhasePresenceInGravity,
                                   localIndex & upwindDir
                                   )
   {
@@ -1256,7 +1258,7 @@ public:
                                                                                phaseCapPressure,
                                                                                dPhaseCapPressure_dPhaseVolFrac,
                                                                                hasCapPressure,
-                                                                               useNewGravity,
+                                                                               checkPhasePresenceInGravity,
                                                                                pot );
 
     //all definition has been changed to fit pot>0 => first cell is upstream
@@ -1452,9 +1454,8 @@ public:
                                 ElementViewConst< arrayView3d< real64 const, constitutive::cappres::USD_CAPPRES > > const & phaseCapPressure,
                                 ElementViewConst< arrayView4d< real64 const, constitutive::cappres::USD_CAPPRES_DS > > const & dPhaseCapPressure_dPhaseVolFrac,
                                 integer const GEOS_UNUSED_PARAM( hasCapPressure ),
-                                integer const useNewGravity,
-                                real64 & potential
-                                )
+                                integer const checkPhasePresenceInGravity,
+                                real64 & potential )
   {
 
     //Form total velocity
@@ -1472,7 +1473,7 @@ public:
       UpwindHelpers::computePotentialGravity::compute< numComp, numFluxSupportPoints >(
         numPhase,
         ipp,
-        useNewGravity,
+        checkPhasePresenceInGravity,
         seri,
         sesri,
         sei,
@@ -1601,7 +1602,7 @@ struct IHUPhaseFlux
   compute( integer const numPhase,
            integer const ip,
            integer const hasCapPressure,
-           integer const useNewGravity,
+           integer const checkPhasePresenceInGravity,
            localIndex const ( &seri )[numFluxSupportPoints],
            localIndex const ( &sesri )[numFluxSupportPoints],
            localIndex const ( &sei )[numFluxSupportPoints],
@@ -1636,7 +1637,8 @@ struct IHUPhaseFlux
 
     for( integer jp = 0; jp < numPhase; ++jp )
     {
-      PPUPhaseFlux::compute( numPhase, jp, hasCapPressure, useNewGravity,
+      PPUPhaseFlux::compute( numPhase, jp,
+                             hasCapPressure, checkPhasePresenceInGravity,
                              seri, sesri, sei,
                              trans, dTrans_dPres,
                              pres, gravCoef,
@@ -1767,7 +1769,7 @@ struct IHUPhaseFlux
       phaseCapPressure,
       dPhaseCapPressure_dPhaseVolFrac,
       hasCapPressure,
-      useNewGravity,
+      checkPhasePresenceInGravity,
       gravitationalPhaseFlux,
       gravitationalPhaseFlux_dP,
       gravitationalPhaseFlux_dC );
