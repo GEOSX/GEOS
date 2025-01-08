@@ -134,6 +134,7 @@ struct ControlEquationHelper
   static
   void
   switchControl( bool const isProducer,
+                 WellControls::Control const & inputControl,
                  WellControls::Control const & currentControl,
                  integer const phasePhaseIndex,
                  real64 const & targetBHP,
@@ -143,6 +144,7 @@ struct ControlEquationHelper
                  real64 const & currentBHP,
                  arrayView1d< real64 const > const & currentPhaseVolRate,
                  real64 const & currentTotalVolRate,
+                 real64 const & currentMassRate,
                  WellControls::Control & newControl );
 
   template< integer NC, integer IS_THERMAL >
