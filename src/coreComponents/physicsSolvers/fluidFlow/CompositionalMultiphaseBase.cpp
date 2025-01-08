@@ -277,7 +277,7 @@ void CompositionalMultiphaseBase::postInputInitialization()
     {
       GEOS_ERROR( GEOS_FMT( "{}: {} is not available for {}",
                             getDataContext(),
-                            EnumStrings<UpwindingScheme>::toString(upwindingParams.upwindingScheme),
+                            EnumStrings< UpwindingScheme >::toString( upwindingParams.upwindingScheme ),
                             viewKeyStruct::useZFormulationFlagString() ) );
     }
   }
