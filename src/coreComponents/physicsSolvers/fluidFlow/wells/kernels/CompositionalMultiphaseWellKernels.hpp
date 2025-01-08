@@ -849,7 +849,6 @@ public:
   using ROFFSET = compositionalMultiphaseWellKernels::RowOffset;
 
   // Well jacobian column and row indicies
-  // tjb  - change NUM_DOF to IS_THERMAL
   using FLUID_PROP_COFFSET = constitutive::multifluid::DerivativeOffsetC< NUM_COMP, IS_THERMAL >;
   using WJ_COFFSET = compositionalMultiphaseWellKernels::ColOffset_WellJac< NUM_COMP, IS_THERMAL >;
   using WJ_ROFFSET = compositionalMultiphaseWellKernels::RowOffset_WellJac< NUM_COMP, IS_THERMAL >;
@@ -1037,7 +1036,7 @@ public:
     {
       real64 const phaseAmount = stack.volume * phaseVolFrac[ip] * phaseDens[ip];
       real64 const phaseAmount_n = stack.volume * phaseVolFrac_n[ip] * phaseDens_n[ip];
-      //remove tjb
+      //remove tjb 
       real64 const dPhaseAmount_dP = stack.volume * ( dPhaseVolFrac[ip][Deriv::dP] * phaseDens[ip]
                                                       + phaseVolFrac[ip] * dPhaseDens[ip][Deriv::dP] );
       dPhaseAmount[FLUID_PROP_COFFSET::dP]=stack.volume * ( dPhaseVolFrac[ip][Deriv::dP] * phaseDens[ip]

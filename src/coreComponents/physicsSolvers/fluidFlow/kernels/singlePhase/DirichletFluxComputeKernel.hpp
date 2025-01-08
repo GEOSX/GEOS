@@ -63,7 +63,7 @@ public:
   using AbstractBase::m_mob;
   using AbstractBase::m_dMob_dPres;
   using AbstractBase::m_dens;
-  using AbstractBase::m_dDens_dPres;
+  using AbstractBase::m_dDens;
   using AbstractBase::m_permeability;
   using AbstractBase::m_dPerm_dPres;
   using AbstractBase::m_localMatrix;
@@ -204,7 +204,8 @@ public:
 
     // Compute average density
     real64 const densMean = 0.5 * ( m_dens[er][esr][ei][0] + faceDens );
-    real64 const dDens_dP = 0.5 * m_dDens_dPres[er][esr][ei][0];
+    //real64 const dDens_dP = 0.5 * m_dDens_dPres[er][esr][ei][0];
+    real64 const dDens_dP = 0.5 * m_dDens[er][esr][ei][0][0]; // tjb
 
     // Evaluate potential difference
     real64 const potDif = (m_pres[er][esr][ei] - m_facePres[kf])

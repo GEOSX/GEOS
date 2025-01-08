@@ -136,7 +136,7 @@ void CompressibleSinglePhaseFluid::postInputInitialization()
   {
     m_density.derivs[0][i][DerivOffset::dP] = dRho_dP;
   }
-  getField< fields::singlefluid::dDensity_dPressure >().setDefaultValue( dRho_dP );
+  //getField< fields::singlefluid::dDensity_dPressure >().setDefaultValue( dRho_dP );
   getField< fields::singlefluid::dViscosity_dPressure >().setDefaultValue( dVisc_dP );
 }
 
@@ -147,7 +147,6 @@ CompressibleSinglePhaseFluid::createKernelWrapper()
                         KernelWrapper::ViscRelationType( m_referencePressure, m_referenceViscosity, m_viscosibility ),
                         m_density.value,
                         m_density.derivs,
-                        m_dDensity_dPressure,
                         m_viscosity.value,
                         m_viscosity.derivs,
                         m_dViscosity_dPressure );

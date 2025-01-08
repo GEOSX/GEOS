@@ -47,13 +47,11 @@ public:
                                  ViscRelationType const & viscRelation,
                                  arrayView2d< real64 > const & density,
                                  arrayView3d< real64 > const & dDensity,
-                                 arrayView2d< real64 > const & dDens_dPres,
                                  arrayView2d< real64 > const & viscosity,
                                  arrayView3d< real64 > const & dViscosity,
                                  arrayView2d< real64 > const & dVisc_dPres )
     : SingleFluidBaseUpdate( density,
                              dDensity,
-                             dDens_dPres,
                              viscosity,
                              dViscosity,
                              dVisc_dPres ),
@@ -115,11 +113,6 @@ public:
   {
     compute( pressure,
              m_density[k][q],
-             m_dDens_dPres[k][q],
-             m_viscosity[k][q],
-             m_dVisc_dPres[k][q] );
-    compute( pressure,
-             m_density[k][q],
              m_dDensity[k][q][DerivOffset::dP],
              m_viscosity[k][q],
              m_dVisc_dPres[k][q] );
@@ -135,17 +128,13 @@ public:
                        real64 const pressure,
                        real64 const GEOS_UNUSED_PARAM( temperature ) ) const override
   {
-    compute( pressure,
-             m_density[k][q],
-             m_dDens_dPres[k][q],
-             m_viscosity[k][q],
-             m_dVisc_dPres[k][q] );
     // tjb same same
     compute( pressure,
              m_density[k][q],
              m_dDensity[k][q][DerivOffset::dP],
              m_viscosity[k][q],
              m_dViscosity[k][q][DerivOffset::dP] );
+     m_dVisc_dPres[k][q] = m_dViscosity[k][q][DerivOffset::dP] ;  // tjb delete
     // tjb   std::cout << m_dDens_dPres[k][q]<< " " <<  m_density_c.derivs[k][q][DerivOffset::dP] << std::endl;
     //    std::cout.flush();
     //     assert(fabs(m_dDens_dPres[k][q]-m_density_c.derivs[k][q][DerivOffset::dP])<FLT_EPSILON);

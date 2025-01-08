@@ -50,7 +50,7 @@ DECLARE_FIELD( dDensity,
                LEVEL_0,
                WRITE_AND_READ,
                "dDensity" );
-
+#if 0
 DECLARE_FIELD( dDensity_dPressure,
                "dDensity_dPressure",
                array2d< real64 >,
@@ -58,6 +58,7 @@ DECLARE_FIELD( dDensity_dPressure,
                NOPLOT,
                WRITE_AND_READ,
                "Derivative of density with respect to pressure" );
+#endif
 
 DECLARE_FIELD( dDensity_dTemperature,
                "dDensity_dTemperature",

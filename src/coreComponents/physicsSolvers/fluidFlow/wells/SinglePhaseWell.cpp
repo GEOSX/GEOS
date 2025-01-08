@@ -648,7 +648,7 @@ void SinglePhaseWell::computePerforationRates( real64 const & time_n,
       // get well constitutive data
       string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
       SingleFluidBase const & fluid = subRegion.getConstitutiveModel< SingleFluidBase >( fluidName );  arrayView2d< real64 const > const wellElemDensity = fluid.density();
-      arrayView2d< real64 const > const dWellElemDensity_dPres = fluid.dDensity_dPressure();
+      arrayView3d< real64 const > const dWellElemDensity  = fluid.dDensity();
       arrayView2d< real64 const > const wellElemViscosity = fluid.viscosity();
       arrayView2d< real64 const > const dWellElemViscosity_dPres = fluid.dViscosity_dPressure();
 
@@ -676,13 +676,13 @@ void SinglePhaseWell::computePerforationRates( real64 const & time_n,
       PerforationKernel::launch( perforationData->size(),
                                  resSinglePhaseFlowAccessors.get( fields::flow::pressure{} ),
                                  resSingleFluidAccessors.get( fields::singlefluid::density{} ),
-                                 resSingleFluidAccessors.get( fields::singlefluid::dDensity_dPressure{} ),
+                                 resSingleFluidAccessors.get( fields::singlefluid::dDensity{} ),
                                  resSingleFluidAccessors.get( fields::singlefluid::viscosity{} ),
                                  resSingleFluidAccessors.get( fields::singlefluid::dViscosity_dPressure{} ),
                                  wellElemGravCoef,
                                  wellElemPressure,
                                  wellElemDensity,
-                                 dWellElemDensity_dPres,
+                                 dWellElemDensity,
                                  wellElemViscosity,
                                  dWellElemViscosity_dPres,
                                  perfGravCoef,

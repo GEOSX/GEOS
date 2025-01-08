@@ -62,14 +62,12 @@ protected:
    */
   SingleFluidBaseUpdate( arrayView2d< real64 >  const & density,
                          arrayView3d< real64 >  const & dDensity,
-                         arrayView2d< real64 > const & dDens_dPres,
                          arrayView2d< real64 > const & viscosity,
                          arrayView3d< real64 >  const & dViscosity,
                          arrayView2d< real64 > const & dVisc_dPres )
     :
     m_density( density ),
     m_dDensity( dDensity ),
-    m_dDens_dPres( dDens_dPres ),
     m_viscosity( viscosity ),
     m_dViscosity( dViscosity ),
     m_dVisc_dPres( dVisc_dPres )
@@ -103,7 +101,7 @@ protected:
   arrayView3d< real64 >  m_dDensity;
 
   /// Derivative of density w.r.t. pressure
-  arrayView2d< real64 > m_dDens_dPres;
+  //arrayView2d< real64 > m_dDens_dPres;
 
   /// Fluid viscosity
   arrayView2d< real64 > m_viscosity;

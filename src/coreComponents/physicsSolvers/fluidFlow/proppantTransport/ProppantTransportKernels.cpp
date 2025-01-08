@@ -170,7 +170,7 @@ FluxKernel::
                    arrayView4d< real64 const > const & dComponentDens_dComponentConc,
                    arrayView1d< real64 const > const & gravDepth,
                    arrayView2d< real64 const > const & dens,
-                   arrayView2d< real64 const > const & dDens_dPres,
+                   arrayView3d< real64 const > const & dDens,
                    arrayView2d< real64 const > const & dDens_dProppantConc,
                    arrayView3d< real64 const > const & dDens_dComponentConc,
                    arrayView2d< real64 const > const & visc,
@@ -247,7 +247,7 @@ FluxKernel::
     localIndex const ei  = stencilElementIndices[i];
 
     edgeDensity += geometricWeight[i] * dens[ei][0];
-    dEdgeDens_dP[i] = geometricWeight[i] * dDens_dPres[ei][0];
+    dEdgeDens_dP[i] = geometricWeight[i] * dDens[ei][0][0];  // tjb
     dEdgeDens_dProppantC[i] = geometricWeight[i] * dDens_dProppantConc[ei][0];
 
     edgeViscosity += geometricWeight[i] * visc[ei][0];
@@ -748,7 +748,7 @@ void FluxKernel::
           ElementViewConst< arrayView4d< real64 const > > const & dComponentDens_dComponentConc,
           ElementViewConst< arrayView1d< real64 const > > const & gravDepth,
           ElementViewConst< arrayView2d< real64 const > > const & dens,
-          ElementViewConst< arrayView2d< real64 const > > const & dDens_dPres,
+          ElementViewConst< arrayView3d< real64 const > > const & dDens,
           ElementViewConst< arrayView2d< real64 const > > const & dDens_dProppantConc,
           ElementViewConst< arrayView3d< real64 const > > const & dDens_dComponentConc,
           ElementViewConst< arrayView2d< real64 const > > const & visc,
@@ -822,7 +822,7 @@ void FluxKernel::
                        dComponentDens_dComponentConc[er][esr],
                        gravDepth[er][esr],
                        dens[er][esr],
-                       dDens_dPres[er][esr],
+                       dDens[er][esr],  // tjb tag
                        dDens_dProppantConc[er][esr],
                        dDens_dComponentConc[er][esr],
                        visc[er][esr],

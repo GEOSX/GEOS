@@ -51,7 +51,6 @@ void computeSinglePhaseFlux( localIndex const ( &seri )[2],
                              ElementViewConst< arrayView1d< real64 const > > const & gravCoef,
                              ElementViewConst< arrayView2d< real64 const > > const & dens,
                              ElementViewConst< arrayView3d< real64 const > > const & dDens,
-                             ElementViewConst< arrayView2d< real64 const > > const & dDens_dPres,
                              ElementViewConst< arrayView1d< real64 const > > const & mob,
                              ElementViewConst< arrayView2d< real64 const > > const & dMob,
                              ElementViewConst< arrayView1d< real64 const > > const & dMob_dPres,
@@ -70,10 +69,10 @@ void computeSinglePhaseFlux( localIndex const ( &seri )[2],
   for( localIndex ke = 0; ke < 2; ++ke )
   {
     densMean        += 0.5 * dens[seri[ke]][sesri[ke]][sei[ke]][0];
-    dDensMean_dP[ke] = 0.5 * dDens_dPres[seri[ke]][sesri[ke]][sei[ke]][0];
+    //dDensMean_dP[ke] = 0.5 * dDens_dPres[seri[ke]][sesri[ke]][sei[ke]][0];
     // tjb - add derivid
     dDensMean_dP[ke] = 0.5 * dDens[seri[ke]][sesri[ke]][sei[ke]][0][DerivOffset::dP];
-    assert( fabs( dDens_dPres[seri[ke]][sesri[ke]][sei[ke]][0]-dDens[seri[ke]][sesri[ke]][sei[ke]][0][DerivOffset::dP] )<FLT_EPSILON );
+    //assert( fabs( dDens_dPres[seri[ke]][sesri[ke]][sei[ke]][0]-dDens[seri[ke]][sesri[ke]][sei[ke]][0][DerivOffset::dP] )<FLT_EPSILON );
   }
 
   // compute potential difference
@@ -114,8 +113,8 @@ void computeSinglePhaseFlux( localIndex const ( &seri )[2],
     mobility = mob[seri[ke]][sesri[ke]][sei[ke]];
     dMobility_dP[ke] = dMob[seri[ke]][sesri[ke]][sei[ke]][DerivOffset::dP];
     //tjb remove
-    dMobility_dP[ke] = dMob_dPres[seri[ke]][sesri[ke]][sei[ke]];
-    assert( fabs( dMob[seri[ke]][sesri[ke]][sei[ke]][DerivOffset::dP]-dMob_dPres[seri[ke]][sesri[ke]][sei[ke]] )<FLT_EPSILON );
+    //dMobility_dP[ke] = dMob_dPres[seri[ke]][sesri[ke]][sei[ke]];
+    //assert( fabs( dMob[seri[ke]][sesri[ke]][sei[ke]][DerivOffset::dP]-dMob_dPres[seri[ke]][sesri[ke]][sei[ke]] )<FLT_EPSILON );
   }
   else
   {
@@ -126,8 +125,8 @@ void computeSinglePhaseFlux( localIndex const ( &seri )[2],
       mobility += mobWeights[ke] * mob[seri[ke]][sesri[ke]][sei[ke]];
       dMobility_dP[ke] = mobWeights[ke] * dMob[seri[ke]][sesri[ke]][sei[ke]][DerivOffset::dP];
       //tjb remove
-      dMobility_dP[ke] = mobWeights[ke] * dMob_dPres[seri[ke]][sesri[ke]][sei[ke]];
-      assert( fabs( dMob[seri[ke]][sesri[ke]][sei[ke]][DerivOffset::dP]-dMob_dPres[seri[ke]][sesri[ke]][sei[ke]] )<FLT_EPSILON );
+      //dMobility_dP[ke] = mobWeights[ke] * dMob_dPres[seri[ke]][sesri[ke]][sei[ke]];
+      //assert( fabs( dMob[seri[ke]][sesri[ke]][sei[ke]][DerivOffset::dP]-dMob_dPres[seri[ke]][sesri[ke]][sei[ke]] )<FLT_EPSILON );
     }
   }
 

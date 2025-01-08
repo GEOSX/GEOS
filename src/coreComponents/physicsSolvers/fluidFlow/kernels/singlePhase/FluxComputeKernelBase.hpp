@@ -63,7 +63,7 @@ public:
   using DofNumberAccessor = ElementRegionManager::ElementViewAccessor< arrayView1d< globalIndex const > >;
 
   using SingleFluidProp = constitutive::SingleFluidVar< real64, 2, constitutive::singlefluid::LAYOUT_FLUID, constitutive::singlefluid::LAYOUT_FLUID_DC >;
-
+  using DerivOffset = constitutive::singlefluid::DerivativeOffset; // tjb why no tp
   using SinglePhaseFlowAccessors =
     StencilAccessors< fields::ghostRank,
                       fields::flow::pressure,
@@ -76,14 +76,12 @@ public:
   using SinglePhaseFluidAccessors =
     StencilMaterialAccessors< constitutive::SingleFluidBase,
                               fields::singlefluid::density,
-                              fields::singlefluid::dDensity,
-                              fields::singlefluid::dDensity_dPressure >;
+                              fields::singlefluid::dDensity >;
 
   using SlurryFluidAccessors =
     StencilMaterialAccessors< constitutive::SlurryFluidBase,
                               fields::singlefluid::density,
-                              fields::singlefluid::dDensity,
-                              fields::singlefluid::dDensity_dPressure >;
+                              fields::singlefluid::dDensity >;
 
   using PermeabilityAccessors =
     StencilMaterialAccessors< constitutive::PermeabilityBase,
@@ -129,7 +127,6 @@ public:
     m_dMob_dPres( singlePhaseFlowAccessors.get( fields::flow::dMobility_dPressure {} ) ),
     m_dens( singlePhaseFluidAccessors.get( fields::singlefluid::density {} ) ),
     m_dDens( singlePhaseFluidAccessors.get( fields::singlefluid::dDensity {} ) ),
-    m_dDens_dPres( singlePhaseFluidAccessors.get( fields::singlefluid::dDensity_dPressure {} ) ),
     m_localMatrix( localMatrix ),
     m_localRhs( localRhs )
   {}
@@ -165,7 +162,6 @@ protected:
   /// Views on fluid density
   ElementViewConst< arrayView2d< real64 const > > const m_dens;
   ElementViewConst< arrayView3d< real64 const > > const m_dDens;
-  ElementViewConst< arrayView2d< real64 const > > const m_dDens_dPres;
 
   // Residual and jacobian
 

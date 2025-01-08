@@ -171,7 +171,7 @@ struct PerforationKernel
   using SingleFluidAccessors =
     StencilMaterialAccessors< constitutive::SingleFluidBase,
                               fields::singlefluid::density,
-                              fields::singlefluid::dDensity_dPressure,
+                              fields::singlefluid::dDensity,
                               fields::singlefluid::viscosity,
                               fields::singlefluid::dViscosity_dPressure >;
 
@@ -209,13 +209,13 @@ struct PerforationKernel
   launch( localIndex const size,
           ElementViewConst< arrayView1d< real64 const > > const & resPressure,
           ElementViewConst< arrayView2d< real64 const > > const & resDensity,
-          ElementViewConst< arrayView2d< real64 const > > const & dResDensity_dPres,
+          ElementViewConst< arrayView3d< real64 const > > const & dResDensity,
           ElementViewConst< arrayView2d< real64 const > > const & resViscosity,
           ElementViewConst< arrayView2d< real64 const > > const & dResViscosity_dPres,
           arrayView1d< real64 const > const & wellElemGravCoef,
           arrayView1d< real64 const > const & wellElemPressure,
           arrayView2d< real64 const > const & wellElemDensity,
-          arrayView2d< real64 const > const & dWellElemDensity_dPres,
+          arrayView3d< real64 const > const & dWellElemDensity,
           arrayView2d< real64 const > const & wellElemViscosity,
           arrayView2d< real64 const > const & dWellElemViscosity_dPres,
           arrayView1d< real64 const > const & perfGravCoef,

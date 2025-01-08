@@ -105,7 +105,6 @@ ThermalCompressibleSinglePhaseFluid::createKernelWrapper()
                         KernelWrapper::IntEnergyRelationType( m_referenceTemperature, m_referenceInternalEnergy, m_specificHeatCapacity/m_referenceInternalEnergy ),
                         m_density.value,
                         m_density.derivs,
-                        m_dDensity_dPressure,
                         m_dDensity_dTemperature,
                         m_viscosity.value,
                         m_viscosity.derivs,

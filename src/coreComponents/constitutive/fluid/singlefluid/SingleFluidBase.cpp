@@ -34,7 +34,7 @@ SingleFluidBase::SingleFluidBase( string const & name, Group * const parent )
   m_numDOF( 1 )
 {
   //registerField( fields::singlefluid::density{}, &m_density.value );
-  registerField( fields::singlefluid::dDensity_dPressure{}, &m_dDensity_dPressure );
+  //registerField( fields::singlefluid::dDensity_dPressure{}, &m_dDensity_dPressure );
   registerField( fields::singlefluid::dDensity_dTemperature{}, &m_dDensity_dTemperature );
   registerField( fields::singlefluid::density_n{}, &m_density_n );
 
@@ -91,7 +91,7 @@ void SingleFluidBase::allocateConstitutiveData( Group & parent,
 
   resize( parent.size() );
 
-  m_dDensity_dPressure.resize( parent.size(), numConstitutivePointsPerParentIndex );
+  //m_dDensity_dPressure.resize( parent.size(), numConstitutivePointsPerParentIndex );
   m_dDensity_dTemperature.resize( parent.size(), numConstitutivePointsPerParentIndex );
   m_density_n.resize( parent.size(), numConstitutivePointsPerParentIndex );
 
