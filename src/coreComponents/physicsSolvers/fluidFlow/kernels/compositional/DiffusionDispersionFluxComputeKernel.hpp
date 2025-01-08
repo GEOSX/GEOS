@@ -725,9 +725,7 @@ public:
                    integer const numPhases,
                    globalIndex const rankOffset,
                    string const & dofKey,
-                   integer const hasDiffusion,
-                   integer const hasDispersion,
-                   integer const useTotalMassEquation,
+                   BitFlags< KernelFlags > kernelFlags,
                    string const & solverName,
                    ElementRegionManager const & elemManager,
                    STENCILWRAPPER const & stencilWrapper,
@@ -744,10 +742,6 @@ public:
         elemManager.constructArrayViewAccessor< globalIndex, 1 >( dofKey );
       dofNumberAccessor.setName( solverName + "/accessors/" + dofKey );
 
-      BitFlags< KernelFlags > kernelFlags;
-      if( useTotalMassEquation )
-        kernelFlags.set( KernelFlags::TotalMassEquation );
-
       using kernelType = DiffusionDispersionFluxComputeKernel< NUM_COMP, NUM_DOF, STENCILWRAPPER >;
       typename kernelType::CompFlowAccessors compFlowAccessors( elemManager, solverName );
       typename kernelType::MultiFluidAccessors multiFluidAccessors( elemManager, solverName );
@@ -760,7 +754,8 @@ public:
                          diffusionAccessors, dispersionAccessors, porosityAccessors,
                          dt, localMatrix, localRhs, kernelFlags );
       kernelType::template launch< POLICY >( stencilWrapper.size(),
-                                             hasDiffusion, hasDispersion,
+                                             kernelFlags.isSet( KernelFlags::Diffusion ),
+                                             kernelFlags.isSet( KernelFlags::Dispersion ),
                                              kernel );
     } );
   }
