@@ -87,6 +87,14 @@ DECLARE_FIELD( strain,
                WRITE_AND_READ,
                "Average strain in cell" );
 
+DECLARE_FIELD( plasticStrain,
+               "plasticStrain",
+               array2dLayoutStrain,
+               0,
+               LEVEL_0,
+               WRITE_AND_READ,
+               "Average plastic strain in cell" );
+
 DECLARE_FIELD( incrementalBubbleDisplacement,
                "incrementalBubbleDisplacement",
                array2d< real64 >,
