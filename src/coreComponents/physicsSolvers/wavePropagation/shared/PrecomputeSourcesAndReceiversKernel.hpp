@@ -77,7 +77,7 @@ struct PreComputeSourcesAndReceivers
                                        real64 const dt,
                                        real32 const timeSourceFrequency,
                                        real32 const timeSourceDelay,
-                                       localIndex const rickerOrder)
+                                       localIndex const rickerOrder )
   {
     constexpr localIndex numNodesPerElem = FE_TYPE::numNodes;
 
@@ -238,7 +238,7 @@ struct PreComputeSourcesAndReceivers
                                                                    arrayView1d< localIndex > const receiverElem,
                                                                    arrayView2d< localIndex > const receiverNodeIds,
                                                                    arrayView2d< real64 > const receiverConstants,
-                                                                   arrayView1d< localIndex > const receiverRegion)
+                                                                   arrayView1d< localIndex > const receiverRegion )
   {
     constexpr localIndex numNodesPerElem = FE_TYPE::numNodes;
 
