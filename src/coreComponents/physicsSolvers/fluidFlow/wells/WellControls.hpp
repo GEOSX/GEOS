@@ -150,6 +150,12 @@ public:
   Control getControl() const { return m_currentControl; }
 
   /**
+   * @brief Get the input control type for the well.
+   * @return the Control enum enforced at the well
+   */
+  Control getInputControl() const { return m_inputControl; }
+
+  /**
    * @brief Getter for the reference elevation where the BHP control is enforced
    * @return the reference elevation
    */

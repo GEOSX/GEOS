@@ -53,7 +53,6 @@
 #include "physicsSolvers/fluidFlow/kernels/compositional/SolidInternalEnergyUpdateKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/HydrostaticPressureKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/StatisticsKernel.hpp"
-#include "physicsSolvers/fluidFlow/kernels/compositional/CFLKernel.hpp"
 
 #if defined( __INTEL_COMPILER )
 #pragma GCC optimize "O0"
@@ -78,7 +77,6 @@ CompositionalMultiphaseBase::CompositionalMultiphaseBase( const string & name,
   m_allowCompDensChopping( 1 ),
   m_useTotalMassEquation( 1 ),
   m_useSimpleAccumulation( 1 ),
-  m_useNewGravity( 0 ),
   m_minCompDens( isothermalCompositionalMultiphaseBaseKernels::minDensForDivision )
 {
 //START_SPHINX_INCLUDE_00
@@ -147,12 +145,6 @@ CompositionalMultiphaseBase::CompositionalMultiphaseBase( const string & name,
     setApplyDefaultValue( 1 ).
     setDescription( "Flag indicating whether local (cell-wise) chopping of negative compositions is allowed" );
 
-  this->registerWrapper( viewKeyStruct::targetFlowCFLString(), &m_targetFlowCFL ).
-    setApplyDefaultValue( -1. ).
-    setInputFlag( InputFlags::OPTIONAL ).
-    setDescription( "Target CFL condition `CFL condition <http://en.wikipedia.org/wiki/Courant-Friedrichs-Lewy_condition>`_"
-                    " when computing the next timestep." );
-
   this->registerWrapper( viewKeyStruct::useTotalMassEquationString(), &m_useTotalMassEquation ).
     setSizedFromParent( 0 ).
     setInputFlag( InputFlags::OPTIONAL ).
@@ -164,12 +156,6 @@ CompositionalMultiphaseBase::CompositionalMultiphaseBase( const string & name,
     setInputFlag( InputFlags::OPTIONAL ).
     setApplyDefaultValue( 1 ).
     setDescription( "Flag indicating whether simple accumulation form is used" );
-
-  this->registerWrapper( viewKeyStruct::useNewGravityString(), &m_useNewGravity ).
-    setSizedFromParent( 0 ).
-    setInputFlag( InputFlags::OPTIONAL ).
-    setApplyDefaultValue( 0 ).
-    setDescription( "Flag indicating whether new gravity treatment is used" );
 
   this->registerWrapper( viewKeyStruct::minCompDensString(), &m_minCompDens ).
     setSizedFromParent( 0 ).
@@ -357,16 +343,6 @@ void CompositionalMultiphaseBase::registerDataOnMesh( Group & meshBodies )
         GEOS_THROW_IF( dispersionName.empty(),
                        GEOS_FMT( "Dispersion model not found on subregion {}", subRegion.getName() ),
                        InputError );
-      }
-
-      if( m_targetFlowCFL > 0 )
-      {
-        subRegion.registerField< fields::flow::phaseOutflux >( getName() ).
-          reference().resizeDimension< 1 >( m_numPhases );
-        subRegion.registerField< fields::flow::componentOutflux >( getName() ).
-          reference().resizeDimension< 1 >( m_numComponents );
-        subRegion.registerField< fields::flow::phaseCFLNumber >( getName() );
-        subRegion.registerField< fields::flow::componentCFLNumber >( getName() );
       }
 
       string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
@@ -1349,6 +1325,15 @@ void CompositionalMultiphaseBase::assembleAccumulationAndVolumeBalanceTerms( Dom
 {
   GEOS_MARK_FUNCTION;
 
+  using namespace isothermalCompositionalMultiphaseBaseKernels;
+
+  BitFlags< KernelFlags > kernelFlags;
+  if( m_useTotalMassEquation )
+    kernelFlags.set( KernelFlags::TotalMassEquation );
+  if( m_useSimpleAccumulation )
+    kernelFlags.set( KernelFlags::SimpleAccumulation );
+
+
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
                                                                MeshLevel const & mesh,
                                                                arrayView1d< string const > const & regionNames )
@@ -1371,7 +1356,7 @@ void CompositionalMultiphaseBase::assembleAccumulationAndVolumeBalanceTerms( Dom
           createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
                                                      m_numPhases,
                                                      dofManager.rankOffset(),
-                                                     m_useTotalMassEquation,
+                                                     kernelFlags,
                                                      dofKey,
                                                      subRegion,
                                                      fluid,
@@ -1386,8 +1371,7 @@ void CompositionalMultiphaseBase::assembleAccumulationAndVolumeBalanceTerms( Dom
           createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
                                                      m_numPhases,
                                                      dofManager.rankOffset(),
-                                                     m_useTotalMassEquation,
-                                                     m_useSimpleAccumulation,
+                                                     kernelFlags,
                                                      dofKey,
                                                      subRegion,
                                                      fluid,
@@ -2181,172 +2165,6 @@ real64 CompositionalMultiphaseBase::setNextDtBasedOnStateChange( real64 const & 
   return std::min( std::min( nextDtPressure, std::min( nextDtPhaseVolFrac, nextDtCompDens ) ), nextDtTemperature );
 }
 
-real64 CompositionalMultiphaseBase::setNextDtBasedOnCFL( const geos::real64 & currentDt, geos::DomainPartition & domain )
-{
-
-  real64 maxPhaseCFL, maxCompCFL;
-
-  computeCFLNumbers( domain, currentDt, maxPhaseCFL, maxCompCFL );
-
-  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "{}: max phase CFL number = {}", getName(), maxPhaseCFL ) );
-  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "{}: max component CFL number = {} ", getName(), maxCompCFL ) );
-
-  return std::min( m_targetFlowCFL * currentDt / maxCompCFL,
-                   m_targetFlowCFL * currentDt / maxPhaseCFL );
-}
-
-void CompositionalMultiphaseBase::computeCFLNumbers( geos::DomainPartition & domain, const geos::real64 & dt,
-                                                     geos::real64 & maxPhaseCFL, geos::real64 & maxCompCFL )
-{
-  GEOS_MARK_FUNCTION;
-
-  integer const numPhases = numFluidPhases();
-  integer const numComps = numFluidComponents();
-
-  // Step 1: reset the arrays involved in the computation of CFL numbers
-  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
-                                                               MeshLevel & mesh,
-                                                               arrayView1d< string const > const & regionNames )
-  {
-    mesh.getElemManager().forElementSubRegions( regionNames,
-                                                [&]( localIndex const,
-                                                     ElementSubRegionBase & subRegion )
-    {
-      arrayView2d< real64, compflow::USD_PHASE > const & phaseOutflux =
-        subRegion.getField< fields::flow::phaseOutflux >();
-      arrayView2d< real64, compflow::USD_COMP > const & compOutflux =
-        subRegion.getField< fields::flow::componentOutflux >();
-      phaseOutflux.zero();
-      compOutflux.zero();
-    } );
-
-    // Step 2: compute the total volumetric outflux for each reservoir cell by looping over faces
-    NumericalMethodsManager & numericalMethodManager = domain.getNumericalMethodManager();
-    FiniteVolumeManager & fvManager = numericalMethodManager.getFiniteVolumeManager();
-    FluxApproximationBase & fluxApprox = fvManager.getFluxApproximation( getDiscretizationName() );
-
-    isothermalCompositionalMultiphaseFVMKernels::
-      CFLFluxKernel::CompFlowAccessors compFlowAccessors( mesh.getElemManager(), getName() );
-    isothermalCompositionalMultiphaseFVMKernels::
-      CFLFluxKernel::MultiFluidAccessors multiFluidAccessors( mesh.getElemManager(), getName() );
-    isothermalCompositionalMultiphaseFVMKernels::
-      CFLFluxKernel::PermeabilityAccessors permeabilityAccessors( mesh.getElemManager(), getName() );
-    isothermalCompositionalMultiphaseFVMKernels::
-      CFLFluxKernel::RelPermAccessors relPermAccessors( mesh.getElemManager(), getName() );
-
-    // TODO: find a way to compile with this modifiable accessors in CompFlowAccessors, and remove them from here
-    ElementRegionManager::ElementViewAccessor< arrayView2d< real64, compflow::USD_PHASE > > const phaseOutfluxAccessor =
-      mesh.getElemManager().constructViewAccessor< array2d< real64, compflow::LAYOUT_PHASE >,
-                                                   arrayView2d< real64, compflow::USD_PHASE > >( fields::flow::phaseOutflux::key() );
-
-    ElementRegionManager::ElementViewAccessor< arrayView2d< real64, compflow::USD_COMP > > const compOutfluxAccessor =
-      mesh.getElemManager().constructViewAccessor< array2d< real64, compflow::LAYOUT_COMP >,
-                                                   arrayView2d< real64, compflow::USD_COMP > >( fields::flow::componentOutflux::key() );
-
-
-    fluxApprox.forAllStencils( mesh, [&] ( auto & stencil )
-    {
-      typename TYPEOFREF( stencil ) ::KernelWrapper stencilWrapper = stencil.createKernelWrapper();
-
-      // While this kernel is waiting for a factory class, pass all the accessors here
-      isothermalCompositionalMultiphaseBaseKernels::KernelLaunchSelector1
-      < isothermalCompositionalMultiphaseFVMKernels::CFLFluxKernel >( numComps,
-                                                                      numPhases,
-                                                                      m_useNewGravity,
-                                                                      dt,
-                                                                      stencilWrapper,
-                                                                      compFlowAccessors.get( fields::flow::pressure{} ),
-                                                                      compFlowAccessors.get( fields::flow::gravityCoefficient{} ),
-                                                                      compFlowAccessors.get( fields::flow::phaseVolumeFraction{} ),
-                                                                      permeabilityAccessors.get( fields::permeability::permeability{} ),
-                                                                      permeabilityAccessors.get( fields::permeability::dPerm_dPressure{} ),
-                                                                      relPermAccessors.get( fields::relperm::phaseRelPerm{} ),
-                                                                      multiFluidAccessors.get( fields::multifluid::phaseViscosity{} ),
-                                                                      multiFluidAccessors.get( fields::multifluid::phaseDensity{} ),
-                                                                      multiFluidAccessors.get( fields::multifluid::phaseMassDensity{} ),
-                                                                      multiFluidAccessors.get( fields::multifluid::phaseCompFraction{} ),
-                                                                      phaseOutfluxAccessor.toNestedView(),
-                                                                      compOutfluxAccessor.toNestedView() );
-    } );
-  } );
-
-  // Step 3: finalize the (cell-based) computation of the CFL numbers
-  real64 localMaxPhaseCFLNumber = 0.0;
-  real64 localMaxCompCFLNumber = 0.0;
-
-  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
-                                                               MeshLevel & mesh,
-                                                               arrayView1d< string const > const & regionNames )
-  {
-    mesh.getElemManager().forElementSubRegions( regionNames,
-                                                [&]( localIndex const,
-                                                     ElementSubRegionBase & subRegion )
-    {
-      arrayView2d< real64 const, compflow::USD_PHASE > const & phaseOutflux =
-        subRegion.getField< fields::flow::phaseOutflux >();
-      arrayView2d< real64 const, compflow::USD_COMP > const & compOutflux =
-        subRegion.getField< fields::flow::componentOutflux >();
-
-      arrayView1d< real64 > const & phaseCFLNumber = subRegion.getField< fields::flow::phaseCFLNumber >();
-      arrayView1d< real64 > const & compCFLNumber = subRegion.getField< fields::flow::componentCFLNumber >();
-
-      arrayView1d< real64 const > const & volume = subRegion.getElementVolume();
-
-      arrayView2d< real64 const, compflow::USD_COMP > const & compDens =
-        subRegion.getField< fields::flow::globalCompDensity >();
-      arrayView2d< real64 const, compflow::USD_COMP > const compFrac =
-        subRegion.getField< fields::flow::globalCompFraction >();
-      arrayView2d< real64, compflow::USD_PHASE > const phaseVolFrac =
-        subRegion.getField< fields::flow::phaseVolumeFraction >();
-
-      Group const & constitutiveModels = subRegion.getGroup( ElementSubRegionBase::groupKeyStruct::constitutiveModelsString() );
-
-      string const & fluidName = subRegion.getReference< string >( CompositionalMultiphaseBase::viewKeyStruct::fluidNamesString() );
-      MultiFluidBase const & fluid = constitutiveModels.getGroup< MultiFluidBase >( fluidName );
-      arrayView3d< real64 const, multifluid::USD_PHASE > const & phaseVisc = fluid.phaseViscosity();
-
-      string const & relpermName = subRegion.getReference< string >( CompositionalMultiphaseBase::viewKeyStruct::relPermNamesString() );
-      RelativePermeabilityBase const & relperm = constitutiveModels.getGroup< RelativePermeabilityBase >( relpermName );
-      arrayView3d< real64 const, relperm::USD_RELPERM > const & phaseRelPerm = relperm.phaseRelPerm();
-      arrayView4d< real64 const, relperm::USD_RELPERM_DS > const & dPhaseRelPerm_dPhaseVolFrac = relperm.dPhaseRelPerm_dPhaseVolFraction();
-
-      string const & solidName = subRegion.getReference< string >( CompositionalMultiphaseBase::viewKeyStruct::solidNamesString() );
-      CoupledSolidBase const & solid = constitutiveModels.getGroup< CoupledSolidBase >( solidName );
-      arrayView2d< real64 const > const & porosity = solid.getPorosity();
-
-      real64 subRegionMaxPhaseCFLNumber = 0.0;
-      real64 subRegionMaxCompCFLNumber = 0.0;
-
-      isothermalCompositionalMultiphaseBaseKernels::KernelLaunchSelector2
-      < isothermalCompositionalMultiphaseFVMKernels::CFLKernel >( numComps, numPhases,
-                                                                  subRegion.size(),
-                                                                  volume,
-                                                                  porosity,
-                                                                  compDens,
-                                                                  compFrac,
-                                                                  phaseVolFrac,
-                                                                  phaseRelPerm,
-                                                                  dPhaseRelPerm_dPhaseVolFrac,
-                                                                  phaseVisc,
-                                                                  phaseOutflux,
-                                                                  compOutflux,
-                                                                  phaseCFLNumber,
-                                                                  compCFLNumber,
-                                                                  subRegionMaxPhaseCFLNumber,
-                                                                  subRegionMaxCompCFLNumber );
-
-      localMaxPhaseCFLNumber = LvArray::math::max( localMaxPhaseCFLNumber, subRegionMaxPhaseCFLNumber );
-      localMaxCompCFLNumber = LvArray::math::max( localMaxCompCFLNumber, subRegionMaxCompCFLNumber );
-
-    } );
-  } );
-
-  maxPhaseCFL = MpiWrapper::max( localMaxPhaseCFLNumber );
-  maxCompCFL = MpiWrapper::max( localMaxCompCFLNumber );
-
-}
-
-
 void CompositionalMultiphaseBase::resetStateToBeginningOfStep( DomainPartition & domain )
 {
   GEOS_MARK_FUNCTION;
@@ -2604,16 +2422,6 @@ bool CompositionalMultiphaseBase::checkSequentialSolutionIncrements( DomainParti
                                                               getName(), fmt::format( "{:.{}f}", m_sequentialCompDensChange, 3 ), unit ) );
 
   return isConverged && (m_sequentialCompDensChange < m_maxSequentialCompDensChange);
-}
-
-real64 CompositionalMultiphaseBase::setNextDt( real64 const & currentTime,
-                                               const real64 & currentDt,
-                                               DomainPartition & domain )
-{
-  if( m_targetFlowCFL < 0 )
-    return PhysicsSolverBase::setNextDt( currentTime, currentDt, domain );
-  else
-    return setNextDtBasedOnCFL( currentDt, domain );
 }
 
 } // namespace geos
