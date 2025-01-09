@@ -89,7 +89,7 @@ if read_the_docs_build:
 # -- Project information -----------------------------------------------------
 
 project = u'GEOS'
-copyright = u'2016-2024 Lawrence Livermore National Security LLC, 2018-2024 Total, S.A, The Board of Trustees of the Leland Stanford Junior University, 2023-2024 Chevron, 2019- GEOS/GEOSX Contributors'
+copyright = u'2016-2024 Lawrence Livermore National Security LLC, 2018-2024 Total Energies, The Board of Trustees of the Leland Stanford Junior University, 2023-2024 Chevron, 2019- GEOS/GEOSX Contributors'
 author = u'GEOS/GEOSX Contributors'
 
 # The short X.Y version
