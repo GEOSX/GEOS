@@ -794,7 +794,7 @@ public:
   GEOS_FORCE_INLINE
   static
   void
-  computeReferenceMassMatrix( real64 (& m)[numNodes][numNodes] )
+  computeReferenceMassMatrix( arraySlice2d< real64 > const & m )
   {
     basisLoop( [ &m ] ( auto const cc1, auto const ii1, auto const jj1, auto const kk1, auto const ll1 )
     {

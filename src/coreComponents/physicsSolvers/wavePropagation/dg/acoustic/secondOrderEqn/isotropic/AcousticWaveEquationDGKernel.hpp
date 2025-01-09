@@ -264,7 +264,6 @@ struct PrecomputeNeighborhoodKernel
         {
           elemsToOpposite( k1, o1 ) = k2;
           localIndex oppositeElemVertices[ 4 ] = { elemsToNodes( k2, 0 ), elemsToNodes( k2, 1 ), elemsToNodes( k2, 2 ), elemsToNodes( k2, 3 ) };
-          localIndex k2OrderedVertices[ 3 ];
           // find opposite vertex in second element
           int o2 = -1;
           count = 0;
@@ -282,27 +281,24 @@ struct PrecomputeNeighborhoodKernel
             {
               o2 = vertex;
             }
-            else
-            {
-              k2OrderedVertices[ count++ ] = vertex;
-            }
           }
           GEOS_ERROR_IF( o2 < 0, "Topological error in mesh: a face and its adjacent element share all vertices.");
           // compute permutation
           integer permutation = 0;
           int c = 1;
-          for (localIndex k2OrderedVertex : k2OrderedVertices) {
+          for (localIndex k2Vertex : oppositeElemVertices )
+          {
             int position = -1;
             for( int j = 0; j < 3; j++ )
             {
-              if( k1OrderedVertices[ j ] == k2OrderedVertex )
+              if( k1OrderedVertices[ j ] == k2Vertex )
               {
                 position = j;
                 break;
               }
             }
-            permutation = permutation + c * position;
-            c = c * 3;
+            permutation = permutation + c * ( position + 1 );
+            c = c * 4;
           }
           elemsToOppositePermutation( k1, o1 ) = permutation;
         }
