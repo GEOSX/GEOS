@@ -53,6 +53,7 @@
 #include "physicsSolvers/fluidFlow/kernels/compositional/PhaseMobilityKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/ThermalPhaseMobilityKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/AquiferBCKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/CFLKernel.hpp"
 #include "physicsSolvers/multiphysics/poromechanicsKernels/MultiphasePoromechanicsConformingFractures.hpp"
 
 namespace geos
@@ -102,6 +103,18 @@ CompositionalMultiphaseFVM::CompositionalMultiphaseFVM( const string & name,
     setApplyDefaultValue( ScalingType::Global ).
     setDescription( "Solution scaling type."
                     "Valid options:\n* " + EnumStrings< ScalingType >::concat( "\n* " ) );
+
+  this->registerWrapper( viewKeyStruct::gravityDensitySchemeString(), &m_gravityDensityScheme ).
+    setSizedFromParent( 0 ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setApplyDefaultValue( GravityDensityScheme::ArithmeticAverage ).
+    setDescription( "Scheme for density treatment in gravity" );
+
+  this->registerWrapper( viewKeyStruct::targetFlowCFLString(), &m_targetFlowCFL ).
+    setApplyDefaultValue( -1. ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Target CFL condition `CFL condition <http://en.wikipedia.org/wiki/Courant-Friedrichs-Lewy_condition>`_"
+                    " when computing the next timestep." );
 }
 
 void CompositionalMultiphaseFVM::postInputInitialization()
@@ -112,6 +125,36 @@ void CompositionalMultiphaseFVM::postInputInitialization()
   {
     GEOS_ERROR( GEOS_FMT( "{}: line search is not supported for {} = {}", getName(), viewKeyStruct::scalingTypeString(), EnumStrings< ScalingType >::toString( ScalingType::Local )) );
   }
+}
+
+void CompositionalMultiphaseFVM::registerDataOnMesh( Group & meshBodies )
+{
+  using namespace fields::flow;
+
+  CompositionalMultiphaseBase::registerDataOnMesh( meshBodies );
+
+  if( m_targetFlowCFL > 0 )
+  {
+    registerDataForCFL( meshBodies );
+  }
+}
+
+void CompositionalMultiphaseFVM::registerDataForCFL( Group & meshBodies )
+{
+  forDiscretizationOnMeshTargets( meshBodies, [&]( string const &,
+                                                   MeshLevel & mesh,
+                                                   arrayView1d< string const > const & regionNames )
+  {
+    mesh.getElemManager().forElementSubRegions( regionNames,
+                                                [&]( localIndex const,
+                                                     ElementSubRegionBase & subRegion )
+    {
+      subRegion.registerField< fields::flow::phaseOutflux >( getName()).reference().resizeDimension< 1 >( m_numPhases );
+      subRegion.registerField< fields::flow::componentOutflux >( getName()).reference().resizeDimension< 1 >( m_numComponents );
+      subRegion.registerField< fields::flow::phaseCFLNumber >( getName());
+      subRegion.registerField< fields::flow::componentCFLNumber >( getName());
+    } );
+  } );
 }
 
 void CompositionalMultiphaseFVM::initializePreSubGroups()
@@ -166,6 +209,20 @@ void CompositionalMultiphaseFVM::assembleFluxTerms( real64 const dt,
 {
   GEOS_MARK_FUNCTION;
 
+  using namespace isothermalCompositionalMultiphaseFVMKernels;
+
+  BitFlags< KernelFlags > kernelFlags;
+  if( m_hasCapPressure )
+    kernelFlags.set( KernelFlags::CapPressure );
+  if( m_hasDiffusion )
+    kernelFlags.set( KernelFlags::Diffusion );
+  if( m_hasDispersion )
+    kernelFlags.set( KernelFlags::Dispersion );
+  if( m_useTotalMassEquation )
+    kernelFlags.set( KernelFlags::TotalMassEquation );
+  if( m_gravityDensityScheme == GravityDensityScheme::PhasePresence )
+    kernelFlags.set( KernelFlags::CheckPhasePresenceInGravity );
+
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
                                                                MeshLevel const & mesh,
                                                                arrayView1d< string const > const & )
@@ -173,6 +230,13 @@ void CompositionalMultiphaseFVM::assembleFluxTerms( real64 const dt,
     NumericalMethodsManager const & numericalMethodManager = domain.getNumericalMethodManager();
     FiniteVolumeManager const & fvManager = numericalMethodManager.getFiniteVolumeManager();
     FluxApproximationBase const & fluxApprox = fvManager.getFluxApproximation( m_discretizationName );
+
+    auto const & upwindingParams = fluxApprox.upwindingParams();
+    if( upwindingParams.upwindingScheme == UpwindingScheme::C1PPU &&
+        isothermalCompositionalMultiphaseFVMKernelUtilities::epsC1PPU > 0 )
+      kernelFlags.set( KernelFlags::C1PPU );
+    else if( upwindingParams.upwindingScheme == UpwindingScheme::IHU )
+      kernelFlags.set( KernelFlags::IHU );
 
     string const & elemDofKey = dofManager.getKey( viewKeyStruct::elemDofFieldString() );
 
@@ -189,8 +253,7 @@ void CompositionalMultiphaseFVM::assembleFluxTerms( real64 const dt,
                                                      m_numPhases,
                                                      dofManager.rankOffset(),
                                                      elemDofKey,
-                                                     m_hasCapPressure,
-                                                     m_useTotalMassEquation,
+                                                     kernelFlags,
                                                      getName(),
                                                      mesh.getElemManager(),
                                                      stencilWrapper,
@@ -208,8 +271,7 @@ void CompositionalMultiphaseFVM::assembleFluxTerms( real64 const dt,
                                                        m_numPhases,
                                                        dofManager.rankOffset(),
                                                        elemDofKey,
-                                                       m_hasCapPressure,
-                                                       m_useTotalMassEquation,
+                                                       kernelFlags,
                                                        getName(),
                                                        mesh.getElemManager(),
                                                        stencilWrapper,
@@ -231,10 +293,7 @@ void CompositionalMultiphaseFVM::assembleFluxTerms( real64 const dt,
                                                        m_numPhases,
                                                        dofManager.rankOffset(),
                                                        elemDofKey,
-                                                       m_hasCapPressure,
-                                                       m_useTotalMassEquation,
-                                                       m_useNewGravity,
-                                                       fluxApprox.upwindingParams(),
+                                                       kernelFlags,
                                                        getName(),
                                                        mesh.getElemManager(),
                                                        stencilWrapper,
@@ -256,9 +315,7 @@ void CompositionalMultiphaseFVM::assembleFluxTerms( real64 const dt,
                                                        m_numPhases,
                                                        dofManager.rankOffset(),
                                                        elemDofKey,
-                                                       m_hasDiffusion,
-                                                       m_hasDispersion,
-                                                       m_useTotalMassEquation,
+                                                       kernelFlags,
                                                        getName(),
                                                        mesh.getElemManager(),
                                                        stencilWrapper,
@@ -274,9 +331,7 @@ void CompositionalMultiphaseFVM::assembleFluxTerms( real64 const dt,
                                                        m_numPhases,
                                                        dofManager.rankOffset(),
                                                        elemDofKey,
-                                                       m_hasDiffusion,
-                                                       m_hasDispersion,
-                                                       m_useTotalMassEquation,
+                                                       kernelFlags,
                                                        getName(),
                                                        mesh.getElemManager(),
                                                        stencilWrapper,
@@ -297,6 +352,14 @@ void CompositionalMultiphaseFVM::assembleStabilizedFluxTerms( real64 const dt,
                                                               arrayView1d< real64 > const & localRhs ) const
 {
   GEOS_MARK_FUNCTION;
+
+  using namespace isothermalCompositionalMultiphaseFVMKernels;
+
+  BitFlags< KernelFlags > kernelFlags;
+  if( m_hasCapPressure )
+    kernelFlags.set( KernelFlags::CapPressure );
+  if( m_useTotalMassEquation )
+    kernelFlags.set( KernelFlags::TotalMassEquation );
 
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
                                                                MeshLevel const & mesh,
@@ -323,8 +386,7 @@ void CompositionalMultiphaseFVM::assembleStabilizedFluxTerms( real64 const dt,
                                                    m_numPhases,
                                                    dofManager.rankOffset(),
                                                    elemDofKey,
-                                                   m_hasCapPressure,
-                                                   m_useTotalMassEquation,
+                                                   kernelFlags,
                                                    getName(),
                                                    mesh.getElemManager(),
                                                    stencilWrapper,
@@ -1010,6 +1072,12 @@ void CompositionalMultiphaseFVM::applyFaceDirichletBC( real64 const time_n,
     GEOS_ERROR_IF( !bcConsistent, GEOS_FMT( "CompositionalMultiphaseBase {}: inconsistent boundary conditions", getDataContext() ) );
   }
 
+  using namespace isothermalCompositionalMultiphaseFVMKernels;
+
+  BitFlags< KernelFlags > kernelFlags;
+  if( m_useTotalMassEquation )
+    kernelFlags.set( KernelFlags::TotalMassEquation );
+
   FieldSpecificationManager & fsManager = FieldSpecificationManager::getInstance();
 
   NumericalMethodsManager const & numericalMethodManager = domain.getNumericalMethodManager();
@@ -1072,7 +1140,7 @@ void CompositionalMultiphaseFVM::applyFaceDirichletBC( real64 const time_n,
           createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
                                                      m_numPhases,
                                                      dofManager.rankOffset(),
-                                                     m_useTotalMassEquation,
+                                                     kernelFlags,
                                                      elemDofKey,
                                                      getName(),
                                                      faceManager,
@@ -1214,6 +1282,16 @@ void CompositionalMultiphaseFVM::assembleHydrofracFluxTerms( real64 const GEOS_U
 
   string const & elemDofKey = dofManager.getKey( viewKeyStruct::elemDofFieldString() );
 
+  using namespace isothermalCompositionalMultiphaseFVMKernels;
+
+  BitFlags< KernelFlags > kernelFlags;
+  if( m_hasCapPressure )
+    kernelFlags.set( KernelFlags::CapPressure );
+  if( m_useTotalMassEquation )
+    kernelFlags.set( KernelFlags::TotalMassEquation );
+  if( m_gravityDensityScheme == GravityDensityScheme::PhasePresence )
+    kernelFlags.set( KernelFlags::CheckPhasePresenceInGravity );
+
   if( m_isThermal )
   {
     // should not end up here but just in case
@@ -1239,10 +1317,7 @@ void CompositionalMultiphaseFVM::assembleHydrofracFluxTerms( real64 const GEOS_U
                                                    m_numPhases,
                                                    dofManager.rankOffset(),
                                                    elemDofKey,
-                                                   m_hasCapPressure,
-                                                   m_useTotalMassEquation,
-                                                   m_useNewGravity,
-                                                   fluxApprox.upwindingParams(),
+                                                   kernelFlags,
                                                    getName(),
                                                    mesh.getElemManager(),
                                                    stencilWrapper,
@@ -1260,10 +1335,7 @@ void CompositionalMultiphaseFVM::assembleHydrofracFluxTerms( real64 const GEOS_U
                                                                              m_numPhases,
                                                                              dofManager.rankOffset(),
                                                                              elemDofKey,
-                                                                             m_hasCapPressure,
-                                                                             m_useTotalMassEquation,
-                                                                             m_useNewGravity,
-                                                                             fluxApprox.upwindingParams(),
+                                                                             kernelFlags,
                                                                              getName(),
                                                                              mesh.getElemManager(),
                                                                              stencilWrapper,
@@ -1273,6 +1345,179 @@ void CompositionalMultiphaseFVM::assembleHydrofracFluxTerms( real64 const GEOS_U
                                                                              dR_dAper );
     } );
   } );
+}
+
+real64 CompositionalMultiphaseFVM::setNextDt( const geos::real64 & currentDt, geos::DomainPartition & domain )
+{
+  if( m_targetFlowCFL < 0 )
+    return CompositionalMultiphaseBase::setNextDt( currentDt, domain );
+  else
+    return setNextDtBasedOnCFL( currentDt, domain );
+}
+
+real64 CompositionalMultiphaseFVM::setNextDtBasedOnCFL( const geos::real64 & currentDt, geos::DomainPartition & domain )
+{
+
+  real64 maxPhaseCFL, maxCompCFL;
+
+  computeCFLNumbers( domain, currentDt, maxPhaseCFL, maxCompCFL );
+
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "{}: max phase CFL number = {}", getName(), maxPhaseCFL ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "{}: max component CFL number = {} ", getName(), maxCompCFL ) );
+
+  return std::min( m_targetFlowCFL * currentDt / maxCompCFL,
+                   m_targetFlowCFL * currentDt / maxPhaseCFL );
+}
+
+void CompositionalMultiphaseFVM::computeCFLNumbers( geos::DomainPartition & domain, const geos::real64 & dt,
+                                                    geos::real64 & maxPhaseCFL, geos::real64 & maxCompCFL )
+{
+  GEOS_MARK_FUNCTION;
+
+  integer const numPhases = numFluidPhases();
+  integer const numComps = numFluidComponents();
+
+  // Step 1: reset the arrays involved in the computation of CFL numbers
+  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
+                                                               MeshLevel & mesh,
+                                                               arrayView1d< string const > const & regionNames )
+  {
+    mesh.getElemManager().forElementSubRegions( regionNames,
+                                                [&]( localIndex const,
+                                                     ElementSubRegionBase & subRegion )
+    {
+      arrayView2d< real64, compflow::USD_PHASE > const & phaseOutflux =
+        subRegion.getField< fields::flow::phaseOutflux >();
+      arrayView2d< real64, compflow::USD_COMP > const & compOutflux =
+        subRegion.getField< fields::flow::componentOutflux >();
+      phaseOutflux.zero();
+      compOutflux.zero();
+    } );
+
+    // Step 2: compute the total volumetric outflux for each reservoir cell by looping over faces
+    NumericalMethodsManager & numericalMethodManager = domain.getNumericalMethodManager();
+    FiniteVolumeManager & fvManager = numericalMethodManager.getFiniteVolumeManager();
+    FluxApproximationBase & fluxApprox = fvManager.getFluxApproximation( getDiscretizationName() );
+
+    isothermalCompositionalMultiphaseFVMKernels::
+      CFLFluxKernel::CompFlowAccessors compFlowAccessors( mesh.getElemManager(), getName() );
+    isothermalCompositionalMultiphaseFVMKernels::
+      CFLFluxKernel::MultiFluidAccessors multiFluidAccessors( mesh.getElemManager(), getName() );
+    isothermalCompositionalMultiphaseFVMKernels::
+      CFLFluxKernel::PermeabilityAccessors permeabilityAccessors( mesh.getElemManager(), getName() );
+    isothermalCompositionalMultiphaseFVMKernels::
+      CFLFluxKernel::RelPermAccessors relPermAccessors( mesh.getElemManager(), getName() );
+
+    // TODO: find a way to compile with this modifiable accessors in CompFlowAccessors, and remove them from here
+    ElementRegionManager::ElementViewAccessor< arrayView2d< real64, compflow::USD_PHASE > > const phaseOutfluxAccessor =
+      mesh.getElemManager().constructViewAccessor< array2d< real64, compflow::LAYOUT_PHASE >,
+                                                   arrayView2d< real64, compflow::USD_PHASE > >( fields::flow::phaseOutflux::key() );
+
+    ElementRegionManager::ElementViewAccessor< arrayView2d< real64, compflow::USD_COMP > > const compOutfluxAccessor =
+      mesh.getElemManager().constructViewAccessor< array2d< real64, compflow::LAYOUT_COMP >,
+                                                   arrayView2d< real64, compflow::USD_COMP > >( fields::flow::componentOutflux::key() );
+
+
+    fluxApprox.forAllStencils( mesh, [&] ( auto & stencil )
+    {
+      typename TYPEOFREF( stencil ) ::KernelWrapper stencilWrapper = stencil.createKernelWrapper();
+
+      // While this kernel is waiting for a factory class, pass all the accessors here
+      isothermalCompositionalMultiphaseBaseKernels::KernelLaunchSelector1
+      < isothermalCompositionalMultiphaseFVMKernels::CFLFluxKernel >( numComps,
+                                                                      numPhases,
+                                                                      m_gravityDensityScheme == GravityDensityScheme::PhasePresence,
+                                                                      dt,
+                                                                      stencilWrapper,
+                                                                      compFlowAccessors.get( fields::flow::pressure{} ),
+                                                                      compFlowAccessors.get( fields::flow::gravityCoefficient{} ),
+                                                                      compFlowAccessors.get( fields::flow::phaseVolumeFraction{} ),
+                                                                      permeabilityAccessors.get( fields::permeability::permeability{} ),
+                                                                      permeabilityAccessors.get( fields::permeability::dPerm_dPressure{} ),
+                                                                      relPermAccessors.get( fields::relperm::phaseRelPerm{} ),
+                                                                      multiFluidAccessors.get( fields::multifluid::phaseViscosity{} ),
+                                                                      multiFluidAccessors.get( fields::multifluid::phaseDensity{} ),
+                                                                      multiFluidAccessors.get( fields::multifluid::phaseMassDensity{} ),
+                                                                      multiFluidAccessors.get( fields::multifluid::phaseCompFraction{} ),
+                                                                      phaseOutfluxAccessor.toNestedView(),
+                                                                      compOutfluxAccessor.toNestedView() );
+    } );
+  } );
+
+  // Step 3: finalize the (cell-based) computation of the CFL numbers
+  real64 localMaxPhaseCFLNumber = 0.0;
+  real64 localMaxCompCFLNumber = 0.0;
+
+  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
+                                                               MeshLevel & mesh,
+                                                               arrayView1d< string const > const & regionNames )
+  {
+    mesh.getElemManager().forElementSubRegions( regionNames,
+                                                [&]( localIndex const,
+                                                     ElementSubRegionBase & subRegion )
+    {
+      arrayView2d< real64 const, compflow::USD_PHASE > const & phaseOutflux =
+        subRegion.getField< fields::flow::phaseOutflux >();
+      arrayView2d< real64 const, compflow::USD_COMP > const & compOutflux =
+        subRegion.getField< fields::flow::componentOutflux >();
+
+      arrayView1d< real64 > const & phaseCFLNumber = subRegion.getField< fields::flow::phaseCFLNumber >();
+      arrayView1d< real64 > const & compCFLNumber = subRegion.getField< fields::flow::componentCFLNumber >();
+
+      arrayView1d< real64 const > const & volume = subRegion.getElementVolume();
+
+      arrayView2d< real64 const, compflow::USD_COMP > const & compDens =
+        subRegion.getField< fields::flow::globalCompDensity >();
+      arrayView2d< real64 const, compflow::USD_COMP > const compFrac =
+        subRegion.getField< fields::flow::globalCompFraction >();
+      arrayView2d< real64, compflow::USD_PHASE > const phaseVolFrac =
+        subRegion.getField< fields::flow::phaseVolumeFraction >();
+
+      Group const & constitutiveModels = subRegion.getGroup( ElementSubRegionBase::groupKeyStruct::constitutiveModelsString() );
+
+      string const & fluidName = subRegion.getReference< string >( CompositionalMultiphaseBase::viewKeyStruct::fluidNamesString() );
+      MultiFluidBase const & fluid = constitutiveModels.getGroup< MultiFluidBase >( fluidName );
+      arrayView3d< real64 const, multifluid::USD_PHASE > const & phaseVisc = fluid.phaseViscosity();
+
+      string const & relpermName = subRegion.getReference< string >( CompositionalMultiphaseBase::viewKeyStruct::relPermNamesString() );
+      RelativePermeabilityBase const & relperm = constitutiveModels.getGroup< RelativePermeabilityBase >( relpermName );
+      arrayView3d< real64 const, relperm::USD_RELPERM > const & phaseRelPerm = relperm.phaseRelPerm();
+      arrayView4d< real64 const, relperm::USD_RELPERM_DS > const & dPhaseRelPerm_dPhaseVolFrac = relperm.dPhaseRelPerm_dPhaseVolFraction();
+
+      string const & solidName = subRegion.getReference< string >( CompositionalMultiphaseBase::viewKeyStruct::solidNamesString() );
+      CoupledSolidBase const & solid = constitutiveModels.getGroup< CoupledSolidBase >( solidName );
+      arrayView2d< real64 const > const & porosity = solid.getPorosity();
+
+      real64 subRegionMaxPhaseCFLNumber = 0.0;
+      real64 subRegionMaxCompCFLNumber = 0.0;
+
+      isothermalCompositionalMultiphaseBaseKernels::KernelLaunchSelector2
+      < isothermalCompositionalMultiphaseFVMKernels::CFLKernel >( numComps, numPhases,
+                                                                  subRegion.size(),
+                                                                  volume,
+                                                                  porosity,
+                                                                  compDens,
+                                                                  compFrac,
+                                                                  phaseVolFrac,
+                                                                  phaseRelPerm,
+                                                                  dPhaseRelPerm_dPhaseVolFrac,
+                                                                  phaseVisc,
+                                                                  phaseOutflux,
+                                                                  compOutflux,
+                                                                  phaseCFLNumber,
+                                                                  compCFLNumber,
+                                                                  subRegionMaxPhaseCFLNumber,
+                                                                  subRegionMaxCompCFLNumber );
+
+      localMaxPhaseCFLNumber = LvArray::math::max( localMaxPhaseCFLNumber, subRegionMaxPhaseCFLNumber );
+      localMaxCompCFLNumber = LvArray::math::max( localMaxCompCFLNumber, subRegionMaxCompCFLNumber );
+
+    } );
+  } );
+
+  maxPhaseCFL = MpiWrapper::max( localMaxPhaseCFLNumber );
+  maxCompCFL = MpiWrapper::max( localMaxCompCFLNumber );
+
 }
 
 //START_SPHINX_INCLUDE_01

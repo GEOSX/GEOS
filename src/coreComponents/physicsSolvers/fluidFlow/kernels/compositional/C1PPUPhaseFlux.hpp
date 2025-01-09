@@ -79,7 +79,7 @@ struct C1PPUPhaseFlux
   compute( integer const numPhase,
            integer const ip,
            integer const hasCapPressure,
-           integer const useNewGravity,
+           integer const checkPhasePresenceInGravity,
            localIndex const ( &seri )[numFluxSupportPoints],
            localIndex const ( &sesri )[numFluxSupportPoints],
            localIndex const ( &sei )[numFluxSupportPoints],
@@ -112,10 +112,12 @@ struct C1PPUPhaseFlux
     real64 dPresGrad_dC[numFluxSupportPoints][numComp]{};
     real64 dGravHead_dP[numFluxSupportPoints]{};
     real64 dGravHead_dC[numFluxSupportPoints][numComp]{};
-    PotGrad::compute< numComp, numFluxSupportPoints >( numPhase, ip, hasCapPressure, useNewGravity, seri, sesri, sei, trans, dTrans_dPres, pres,
-                                                       gravCoef, phaseVolFrac, dPhaseVolFrac, dCompFrac_dCompDens, phaseMassDens, dPhaseMassDens,
-                                                       phaseCapPressure, dPhaseCapPressure_dPhaseVolFrac, potGrad, dPotGrad_dTrans,
-                                                       dPresGrad_dP, dPresGrad_dC, dGravHead_dP, dGravHead_dC );
+    PotGrad::compute< numComp, numFluxSupportPoints >( numPhase, ip, hasCapPressure, checkPhasePresenceInGravity,
+                                                       seri, sesri, sei, trans, dTrans_dPres, pres, gravCoef,
+                                                       phaseVolFrac, dPhaseVolFrac, dCompFrac_dCompDens, phaseMassDens, dPhaseMassDens,
+                                                       phaseCapPressure, dPhaseCapPressure_dPhaseVolFrac,
+                                                       potGrad, dPotGrad_dTrans, dPresGrad_dP,
+                                                       dPresGrad_dC, dGravHead_dP, dGravHead_dC );
 
     // gravity head
     real64 gravHead = 0.0;

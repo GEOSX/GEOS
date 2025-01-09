@@ -229,7 +229,7 @@ public:
             ( m_numPhases,
             ip,
             m_kernelFlags.isSet( isothermalCompositionalMultiphaseFVMKernels::KernelFlags::CapPressure ),
-            m_kernelFlags.isSet( isothermalCompositionalMultiphaseFVMKernels::KernelFlags::NewGravity ),
+            m_kernelFlags.isSet( isothermalCompositionalMultiphaseFVMKernels::KernelFlags::CheckPhasePresenceInGravity ),
             seri, sesri, sei,
             trans,
             dTrans_dPres,
@@ -369,10 +369,7 @@ public:
                    integer const numPhases,
                    globalIndex const rankOffset,
                    string const & dofKey,
-                   integer const hasCapPressure,
-                   integer const useTotalMassEquation,
-                   integer const useNewGravity,
-                   UpwindingParameters GEOS_UNUSED_PARAM( upwindingParams ),
+                   BitFlags< isothermalCompositionalMultiphaseFVMKernels::KernelFlags > kernelFlags,
                    string const & solverName,
                    ElementRegionManager const & elemManager,
                    SurfaceElementStencilWrapper const & stencilWrapper,
@@ -389,14 +386,6 @@ public:
       ElementRegionManager::ElementViewAccessor< arrayView1d< globalIndex const > > dofNumberAccessor =
         elemManager.constructArrayViewAccessor< globalIndex, 1 >( dofKey );
       dofNumberAccessor.setName( solverName + "/accessors/" + dofKey );
-
-      BitFlags< isothermalCompositionalMultiphaseFVMKernels::KernelFlags > kernelFlags;
-      if( hasCapPressure )
-        kernelFlags.set( isothermalCompositionalMultiphaseFVMKernels::KernelFlags::CapPressure );
-      if( useTotalMassEquation )
-        kernelFlags.set( isothermalCompositionalMultiphaseFVMKernels::KernelFlags::TotalMassEquation );
-      if( useNewGravity )
-        kernelFlags.set( isothermalCompositionalMultiphaseFVMKernels::KernelFlags::NewGravity );
 
       using kernelType = FluxComputeKernel< NUM_COMP, NUM_DOF >;
       typename kernelType::CompFlowAccessors compFlowAccessors( elemManager, solverName );

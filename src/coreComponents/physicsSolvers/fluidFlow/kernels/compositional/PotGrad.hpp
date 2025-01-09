@@ -46,7 +46,7 @@ struct PotGrad
   compute ( integer const numPhase,
             integer const ip,
             integer const hasCapPressure,
-            integer const useNewGravity,
+            integer const checkPhasePresenceInGravity,
             localIndex const ( &seri )[numFluxSupportPoints],
             localIndex const ( &sesri )[numFluxSupportPoints],
             localIndex const ( &sei )[numFluxSupportPoints],
@@ -91,7 +91,11 @@ struct PotGrad
     real64 dGravHead_dTrans = 0.0;
     real64 dCapPressure_dC[numComp]{};
 
-    calculateMeanDensity( useNewGravity, ip, seri, sesri, sei, phaseVolFrac, dCompFrac_dCompDens, phaseMassDens, dPhaseMassDens, densMean, dDensMean_dP, dDensMean_dC );
+    calculateMeanDensity( checkPhasePresenceInGravity, ip,
+                          seri, sesri, sei,
+                          phaseVolFrac, dCompFrac_dCompDens,
+                          phaseMassDens, dPhaseMassDens,
+                          densMean, dDensMean_dP, dDensMean_dC );
 
     /// compute the TPFA potential difference
     for( integer i = 0; i < numFluxSupportPoints; i++ )
@@ -163,7 +167,7 @@ struct PotGrad
   template< integer numComp, integer numFluxSupportPoints >
   GEOS_HOST_DEVICE
   static void
-  calculateMeanDensity( integer const useNewGravity,
+  calculateMeanDensity( integer const checkPhasePresenceInGravity,
                         integer const ip,
                         localIndex const ( &seri )[numFluxSupportPoints],
                         localIndex const ( &sesri )[numFluxSupportPoints],
@@ -184,7 +188,7 @@ struct PotGrad
       localIndex const ei  = sei[i];
 
       bool const phaseExists = (phaseVolFrac[er][esr][ei][ip] > 0);
-      if( useNewGravity && !phaseExists )
+      if( checkPhasePresenceInGravity && !phaseExists )
       {
         continue;
       }

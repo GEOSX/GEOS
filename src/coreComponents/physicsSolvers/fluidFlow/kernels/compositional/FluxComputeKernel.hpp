@@ -278,7 +278,7 @@ public:
               ( m_numPhases,
               ip,
               m_kernelFlags.isSet( KernelFlags::CapPressure ),
-              m_kernelFlags.isSet( KernelFlags::NewGravity ),
+              m_kernelFlags.isSet( KernelFlags::CheckPhasePresenceInGravity ),
               seri, sesri, sei,
               trans,
               dTrans_dPres,
@@ -305,7 +305,7 @@ public:
               ( m_numPhases,
               ip,
               m_kernelFlags.isSet( KernelFlags::CapPressure ),
-              m_kernelFlags.isSet( KernelFlags::NewGravity ),
+              m_kernelFlags.isSet( KernelFlags::CheckPhasePresenceInGravity ),
               seri, sesri, sei,
               trans,
               dTrans_dPres,
@@ -332,7 +332,7 @@ public:
               ( m_numPhases,
               ip,
               m_kernelFlags.isSet( KernelFlags::CapPressure ),
-              m_kernelFlags.isSet( KernelFlags::NewGravity ),
+              m_kernelFlags.isSet( KernelFlags::CheckPhasePresenceInGravity ),
               seri, sesri, sei,
               trans,
               dTrans_dPres,
@@ -357,12 +357,12 @@ public:
 
           // call the lambda in the phase loop to allow the reuse of the phase fluxes and their derivatives
           // possible use: assemble the derivatives wrt temperature, and the flux term of the energy equation for this phase
-          compFluxKernelOp( ip, m_kernelFlags.isSet( KernelFlags::NewGravity ),
+          compFluxKernelOp( ip, m_kernelFlags.isSet( KernelFlags::CheckPhasePresenceInGravity ),
                             k, seri, sesri, sei, connectionIndex,
                             k_up, seri[k_up], sesri[k_up], sei[k_up], potGrad,
                             phaseFlux, dPhaseFlux_dP, dPhaseFlux_dC );
 
-        }                                 // loop over phases
+        }   // loop over phases
 
         /// populate local flux vector and derivatives
         for( integer ic = 0; ic < numComp; ++ic )
@@ -529,10 +529,7 @@ public:
                    integer const numPhases,
                    globalIndex const rankOffset,
                    string const & dofKey,
-                   integer const hasCapPressure,
-                   integer const useTotalMassEquation,
-                   integer const useNewGravity,
-                   UpwindingParameters upwindingParams,
+                   BitFlags< KernelFlags > kernelFlags,
                    string const & solverName,
                    ElementRegionManager const & elemManager,
                    STENCILWRAPPER const & stencilWrapper,
@@ -548,20 +545,6 @@ public:
       ElementRegionManager::ElementViewAccessor< arrayView1d< globalIndex const > > dofNumberAccessor =
         elemManager.constructArrayViewAccessor< globalIndex, 1 >( dofKey );
       dofNumberAccessor.setName( solverName + "/accessors/" + dofKey );
-
-      BitFlags< KernelFlags > kernelFlags;
-      if( hasCapPressure )
-        kernelFlags.set( KernelFlags::CapPressure );
-      if( useTotalMassEquation )
-        kernelFlags.set( KernelFlags::TotalMassEquation );
-      if( useNewGravity )
-        kernelFlags.set( KernelFlags::NewGravity );
-      if( upwindingParams.upwindingScheme == UpwindingScheme::C1PPU &&
-          isothermalCompositionalMultiphaseFVMKernelUtilities::epsC1PPU > 0 )
-        kernelFlags.set( KernelFlags::C1PPU );
-      else if( upwindingParams.upwindingScheme == UpwindingScheme::IHU )
-        kernelFlags.set( KernelFlags::IHU );
-
 
       using kernelType = FluxComputeKernel< NUM_COMP, NUM_DOF, STENCILWRAPPER >;
       typename kernelType::CompFlowAccessors compFlowAccessors( elemManager, solverName );
