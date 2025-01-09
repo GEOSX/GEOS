@@ -165,16 +165,6 @@ public:
       return m_isWetting;
     }
 
-//    /**
-//     * @brief Helper function to know if the class has been initialized or not
-//     * @return true if the phase has been initialized, false otherwise
-//     */
-//    bool isInitialized() const
-//    {
-//      return (m_extremumPhaseVolFraction <= 0.0) &&
-//             (m_criticalImbibitionPhaseVolFraction <= 0.0) &&
-//             (m_criticalDrainagePhaseVolFraction <= 0.0);
-//    }
 
   };
 
