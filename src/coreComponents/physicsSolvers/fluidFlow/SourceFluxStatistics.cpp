@@ -47,9 +47,9 @@ SourceFluxStatsAggregator::SourceFluxStatsAggregator( const string & name,
                               "Use \"*\" to target all {0}.",
                               SourceFluxBoundaryCondition::catalogName() ) );
 
-  addLogLevel< logInfo::DetailedSourceFluxRegionsStats >();
-  addLogLevel< logInfo::AggregatedSourceFluxStats >();
   addLogLevel< logInfo::DetailedSourceFluxStats >();
+  addLogLevel< logInfo::DetailedRegionsSourceFluxStats >();
+  addLogLevel< logInfo::AggregatedSourceFluxStats >();
 }
 
 void SourceFluxStatsAggregator::postInputInitialization()
@@ -220,9 +220,9 @@ bool SourceFluxStatsAggregator::execute( real64 const GEOS_UNUSED_PARAM( time_n 
                                          real64 const GEOS_UNUSED_PARAM( eventProgress ),
                                          DomainPartition & domain )
 {
-  bool const fluxMeshesStats = isLogLevelActive< logInfo::DetailedSourceFluxStats >( getLogLevel() );
-  bool const fluxesStats = isLogLevelActive< logInfo::AggregatedSourceFluxStats >( getLogLevel() );
-  bool const regionsStats = isLogLevelActive< logInfo::DetailedSourceFluxRegionsStats >( getLogLevel() );
+  bool const fluxMeshesStats = isLogLevelActive< logInfo::AggregatedSourceFluxStats >( getLogLevel() );
+  bool const fluxesStats = isLogLevelActive< logInfo::DetailedSourceFluxStats >( getLogLevel() );
+  bool const regionsStats = isLogLevelActive< logInfo::DetailedRegionsSourceFluxStats >( getLogLevel() );
   forMeshLevelStatsWrapper( domain,
                             [&] ( MeshLevel & meshLevel, WrappedStats & meshLevelStats )
   {
