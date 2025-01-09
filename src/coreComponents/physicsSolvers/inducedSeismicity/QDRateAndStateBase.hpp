@@ -46,20 +46,37 @@ public:
   };
 
   /**
-   * @brief save the current state
-   * @param domain
+   * @brief Save the current state of the solver fields
+   * @param domain the domain object
    */
   void saveState( DomainPartition & domain ) const;
-
+  
+  /**
+    * @brief Check that only one of slip rate or slip velocity are specified as initial conditions
+    * and initialize the unspecified field
+    * @param subRegion the element subregion
+  */
   void enforceRateAndVelocityConsistency( SurfaceElementSubRegion & subRegion ) const;
 
 protected:
 
+  /**
+    * @brief Compute stresses and update tractions on the fault
+    * @param time_n the current time
+    * @param dt the time step
+    * @param cycleNumber the current cycle number
+    * @param domain the domain object
+  */
   virtual real64 updateStresses( real64 const & time_n,
                                  real64 const & dt,
                                  const int cycleNumber,
                                  DomainPartition & domain ) const = 0;
 
+  /**
+    * @brief Apply initial conditions to fields on the fault
+    * @param cycleNumber the current cycle number
+    * @param domain the domain object
+  */
   virtual void applyInitialConditionsToFault( int const cycleNumber,
                                               DomainPartition & domain ) const;
 
