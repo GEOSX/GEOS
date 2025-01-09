@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -85,10 +85,17 @@ public:
 
   GEOS_HOST_DEVICE
   inline
-  virtual void updateFractureState( localIndex const k,
-                                    arraySlice1d< real64 const > const & dispJump,
+  virtual void updateFractureState( arraySlice1d< real64 const > const & dispJump,
                                     arraySlice1d< real64 const > const & tractionVector,
                                     integer & fractureState ) const override final;
+
+  GEOS_HOST_DEVICE
+  inline
+  virtual void updateElasticSlip( localIndex const k,
+                                  arraySlice1d< real64 const > const & dispJump,
+                                  arraySlice1d< real64 const > const & oldDispJump,
+                                  arraySlice1d< real64 const > const & tractionVector,
+                                  integer const & fractureState ) const override final;
 
   GEOS_HOST_DEVICE
   inline
@@ -169,20 +176,6 @@ public:
   virtual void allocateConstitutiveData( dataRepository::Group & parent,
                                          localIndex const numConstitutivePointsPerParentIndex ) override final;
 
-  /**
-   * @brief Const accessor for cohesion
-   * @return A const reference to arrayView1d<real64 const> containing the
-   *         cohesions (at every element).
-   */
-  real64 const & cohesion() const { return m_cohesion; }
-
-  /**
-   * @brief Const accessor for friction angle
-   * @return A const reference to arrayView1d<real64 const> containing the
-   *         friction coefficient (at every element).
-   */
-  real64 const & frictionCoefficient() const { return m_frictionCoefficient; }
-
   /// Type of kernel wrapper for in-kernel update
   using KernelWrapper = CoulombFrictionUpdates;
 
@@ -235,7 +228,7 @@ GEOS_HOST_DEVICE
 real64 CoulombFrictionUpdates::computeLimitTangentialTractionNorm( real64 const & normalTraction,
                                                                    real64 & dLimitTangentialTractionNorm_dTraction ) const
 {
-  dLimitTangentialTractionNorm_dTraction = m_frictionCoefficient;
+  dLimitTangentialTractionNorm_dTraction = -m_frictionCoefficient;
   return ( m_cohesion - normalTraction * m_frictionCoefficient );
 }
 
@@ -252,15 +245,15 @@ inline void CoulombFrictionUpdates::computeShearTraction( localIndex const k,
   real64 const slip[2] = { dispJump[1] - oldDispJump[1],
                            dispJump[2] - oldDispJump[2] };
 
-
-  real64 const tau[2] = { m_shearStiffness * ( slip[0] + m_elasticSlip[k][0] ),
-                          m_shearStiffness * ( slip[1] + m_elasticSlip[k][1] ) };
-
   switch( fractureState )
   {
     case fields::contact::FractureState::Stick:
     {
-      // Elastic slip case
+      // Elastic tangential deformation
+
+      real64 const tau[2] = { m_shearStiffness * ( slip[0] + m_elasticSlip[k][0] ),
+                              m_shearStiffness * ( slip[1] + m_elasticSlip[k][1] ) };
+
       // Tangential components of the traction are equal to tau
       tractionVector[1] = tau[0];
       tractionVector[2] = tau[1];
@@ -268,14 +261,12 @@ inline void CoulombFrictionUpdates::computeShearTraction( localIndex const k,
       dTractionVector_dJump[1][1] = m_shearStiffness;
       dTractionVector_dJump[2][2] = m_shearStiffness;
 
-      // The slip is only elastic: we add the full slip to the elastic one
-      LvArray::tensorOps::add< 2 >( m_elasticSlip[k], slip );
-
       break;
     }
     case fields::contact::FractureState::Slip:
     {
-      // Plastic slip case
+      // Plastic tangential deformation
+
       real64 dLimitTau_dNormalTraction;
       real64 const limitTau = computeLimitTangentialTractionNorm( tractionVector[0],
                                                                   dLimitTau_dNormalTraction );
@@ -288,18 +279,11 @@ inline void CoulombFrictionUpdates::computeShearTraction( localIndex const k,
 
       dTractionVector_dJump[1][0] = dTractionVector_dJump[0][0] * dLimitTau_dNormalTraction * slip[0] / slipNorm;
       dTractionVector_dJump[1][1] = limitTau * pow( slip[1], 2 )  / pow( LvArray::tensorOps::l2NormSquared< 2 >( slip ), 1.5 );
-      dTractionVector_dJump[1][2] = limitTau * slip[0] * slip[1] / pow( LvArray::tensorOps::l2NormSquared< 2 >( slip ), 1.5 );
+      dTractionVector_dJump[1][2] = -limitTau * slip[0] * slip[1] / pow( LvArray::tensorOps::l2NormSquared< 2 >( slip ), 1.5 );
 
       dTractionVector_dJump[2][0] = dTractionVector_dJump[0][0] * dLimitTau_dNormalTraction * slip[1] / slipNorm;
-      dTractionVector_dJump[2][1] = limitTau * slip[0] * slip[1] / pow( LvArray::tensorOps::l2NormSquared< 2 >( slip ), 1.5 );
+      dTractionVector_dJump[2][1] = -limitTau * slip[0] * slip[1] / pow( LvArray::tensorOps::l2NormSquared< 2 >( slip ), 1.5 );
       dTractionVector_dJump[2][2] = limitTau * pow( slip[0], 2 )  / pow( LvArray::tensorOps::l2NormSquared< 2 >( slip ), 1.5 );
-
-      // Compute elastic component of the slip for this case
-      real64 const plasticSlip[2] = { tractionVector[1] / m_shearStiffness,
-                                      tractionVector[2] / m_shearStiffness };
-
-      LvArray::tensorOps::copy< 2 >( m_elasticSlip[k], slip );
-      LvArray::tensorOps::subtract< 2 >( m_elasticSlip[k], plasticSlip );
 
       break;
     }
@@ -307,8 +291,7 @@ inline void CoulombFrictionUpdates::computeShearTraction( localIndex const k,
 }
 
 GEOS_HOST_DEVICE
-inline void CoulombFrictionUpdates::updateFractureState( localIndex const k,
-                                                         arraySlice1d< real64 const > const & dispJump,
+inline void CoulombFrictionUpdates::updateFractureState( arraySlice1d< real64 const > const & dispJump,
                                                          arraySlice1d< real64 const > const & tractionVector,
                                                          integer & fractureState ) const
 {
@@ -317,8 +300,6 @@ inline void CoulombFrictionUpdates::updateFractureState( localIndex const k,
   if( dispJump[0] >  -m_displacementJumpThreshold )
   {
     fractureState = FractureState::Open;
-    m_elasticSlip[k][0] = 0.0;
-    m_elasticSlip[k][1] = 0.0;
   }
   else
   {
@@ -333,7 +314,45 @@ inline void CoulombFrictionUpdates::updateFractureState( localIndex const k,
     // Yield function (not necessary but makes it clearer)
     real64 const yield = tauNorm - limitTau;
 
-    fractureState = yield < 0 ? FractureState::Stick : FractureState::Slip;
+    if( yield < 0 )
+    {
+      fractureState = FractureState::Stick;
+    }
+    else
+    {
+      fractureState = FractureState::Slip;
+    }
+  }
+}
+
+GEOS_HOST_DEVICE
+inline void CoulombFrictionUpdates::updateElasticSlip( localIndex const k,
+                                                       arraySlice1d< real64 const > const & dispJump,
+                                                       arraySlice1d< real64 const > const & oldDispJump,
+                                                       arraySlice1d< real64 const > const & tractionVector,
+                                                       integer const & fractureState ) const
+{
+  using namespace fields::contact;
+
+  if( fractureState == FractureState::Open )
+  {
+    m_elasticSlip[k][0] = 0.0;
+    m_elasticSlip[k][1] = 0.0;
+  }
+  else
+  {
+    if( fractureState == FractureState::Stick )
+    {
+      // The slip is only elastic: we add the full slip to the elastic one
+      real64 const slip[2] = { dispJump[1] - oldDispJump[1],
+                               dispJump[2] - oldDispJump[2] };
+      LvArray::tensorOps::add< 2 >( m_elasticSlip[k], slip );
+    }
+    else if( fractureState == FractureState::Slip )
+    {
+      m_elasticSlip[k][0] = tractionVector[1] / m_shearStiffness;
+      m_elasticSlip[k][1] = tractionVector[2] / m_shearStiffness;
+    }
   }
 }
 
@@ -403,7 +422,9 @@ inline void CoulombFrictionUpdates::updateTraction( arraySlice1d< real64 const >
     tractionNew[2] = tractionTrial[2];
 
     if( fractureState != FractureState::Open )
+    {
       fractureState =  FractureState::Stick;
+    }
   }
   else if( limitTau <= tangentialTractionTolerance )
   {
@@ -414,7 +435,9 @@ inline void CoulombFrictionUpdates::updateTraction( arraySlice1d< real64 const >
     tractionNew[2] = (fixedLimitTau) ? tractionTrial[2] : 0.0;
 
     if( fractureState != FractureState::Open )
+    {
       fractureState =  FractureState::Slip;
+    }
   }
   else
   {

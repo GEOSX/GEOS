@@ -202,7 +202,7 @@ Keeping things simple, our element collection has only one type of element: a ``
 
 A mesh can contain several geometrical types of elements.
 For numerical convenience, elements are aggregated by types into ``cellBlocks``.
-Here, we only linear 8-node brick elements, so the entire domain is one object called ``cellBlock``.
+Here, we only have linear 8-node brick elements, so the entire domain is one object called ``cellBlock``.
 
 
 **xCoords, yCoords, zCoords, nx, ny, nz**
@@ -311,7 +311,9 @@ to regions of elements.
 Here, we use only one **CellElementRegion** to represent the entire domain (user name: ``mainRegion``).
 It contains all the blocks called ``cellBlock`` defined in the mesh section.
 We specify the materials contained in that region using a ``materialList``.
-Several materials coexist in ``cellBlock``, and we list them using their user-defined names: ``water``, ``rockPorosity``, and ``rockPerm``, etc. What these names mean, and the physical properties that they are attached to are defined next.
+Several materials coexist in ``cellBlock``, and we list them using their user-defined names: 
+``water`` and ``rock`` in this exemple.
+Each material is a definition of physical properties.
 
 
 .. literalinclude:: ../../../../../inputFiles/singlePhaseFlow/3D_10x10x10_compressible_base.xml
