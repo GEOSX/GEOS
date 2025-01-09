@@ -1,0 +1,234 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Solvers>
+    <CompositionalMultiphaseReservoir
+      name="coupledFlowAndWells"
+      flowSolverName="compflow"
+      wellSolverName="compositionalMultiphaseWell"
+      logLevel="4"
+      initialDt="1e2"
+      targetRegions="{ region, injwell }">
+      <NonlinearSolverParameters
+         logLevel="4"
+        newtonTol="1.0e-3"
+        timeStepDecreaseIterLimit="0.41"
+        newtonMaxIter="40"
+        lineSearchAction="None"/>
+      <LinearSolverParameters
+        logLevel="4"
+        solverType="fgmres"
+        krylovTol="1e-4"/>
+    </CompositionalMultiphaseReservoir>
+
+    <CompositionalMultiphaseFVM
+      name="compflow"
+      logLevel="4"
+      discretization="fluidTPFA"
+      temperature="368.15"
+      useMass="1"
+      initialDt="1e2"
+      maxCompFractionChange="0.5"
+      targetRegions="{ region }">
+    </CompositionalMultiphaseFVM>
+
+    <CompositionalMultiphaseWell
+      name="compositionalMultiphaseWell"
+      targetRegions="{ injwell }"
+      writeCSV="1"
+      logLevel="1"
+      useMass="1">
+      <WellControls
+        name="WC_CO2_INJ"
+        logLevel="2"
+        type="injector"
+        control="totalVolRate"
+        referenceElevation="-0.01"
+        enableCrossflow="0"
+        useSurfaceConditions="1"
+        surfacePressure="1.45e7"
+        surfaceTemperature="300.15"
+        targetBHPTableName="totalBHPTable"
+        targetTotalRateTableName="totalRateTable"
+        injectionTemperature="300.15"
+        injectionStream="{ 1.0, 0.000 }"/>
+     </CompositionalMultiphaseWell>
+  </Solvers>
+
+  <Mesh>
+    <InternalMesh
+      name="mesh1"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0, 2000 }"
+      yCoords="{ 0, 2000 }"
+      zCoords="{ 0, 2000 }"
+      nx="{ 1 }"
+      ny="{ 4 }"
+      nz="{ 1 }"
+      cellBlockNames="{ cb }">
+      <InternalWell
+        name="inj1"
+        wellRegionName="injwell"
+        wellControlsName="WC_CO2_INJ"
+        logLevel="1"
+        polylineNodeCoords="{ { 50.0, 30.0, 51.01 },
+                              { 50.0, 1450.0, 51.00 } }"
+        polylineSegmentConn="{ { 0, 1 } }"
+        radius="0.1"
+        numElementsPerSegment="2">
+        <Perforation
+          name="injector1_perf3"
+          distanceFromHead="171.93"/>
+        <Perforation
+          name="injector1_perf17"
+          distanceFromHead="1334.738"/>
+
+      </InternalWell>
+    </InternalMesh>
+
+  </Mesh>
+
+  <Geometry>
+    <Box
+      name="sink"
+      xMin="{ 89.99, 89.99, -0.01 }"
+      xMax="{ 101.01, 101.01, 1.01 }"/>
+
+    
+  </Geometry>
+
+  <Events
+    maxTime="2.5e5">
+    <PeriodicEvent
+      name="outputs"
+      timeFrequency="2.5e4"
+      target="/Outputs/vtkOutput"/>
+
+    <PeriodicEvent
+      name="solverApplications"
+      maxEventDt="2.5e4"
+      target="/Solvers/coupledFlowAndWells"/>
+
+    <PeriodicEvent
+      name="restarts"
+      timeFrequency="2.5e4"
+      target="/Outputs/sidreRestart"/>
+  </Events>
+
+  <Functions>
+   <TableFunction
+      name="totalBHPTable" 
+      inputVarNames="{time}"
+      coordinates="{  0 , 300, 10000,  50000, 75000, 125000}"
+      values="{       1.45e7,  1.0e7, 1.45e7, 1.45e7,  1.45e7,    1.45e7 }"
+      interpolation="lower"/>
+   <TableFunction
+      name="totalMassRateTable" 
+      inputVarNames="{time}"
+      coordinates="{  0 , 300, 50000, 75000, 100000, 125000}"
+      values="{       0,  900, 940,  980., 800,  1200 }"
+      interpolation="lower"/>
+   <TableFunction
+      name="totalRateTable" 
+      inputVarNames="{time}"
+      coordinates="{  0 , 300, 50000, 75000, 100000, 125000}"
+      values="{       0,  1.04705, 1.09358, 1.14012, 1.14012 , 1.1404 }"
+      interpolation="lower"/>
+  </Functions>
+
+  <NumericalMethods>
+    <FiniteVolume>
+      <TwoPointFluxApproximation
+        name="fluidTPFA"/>
+    </FiniteVolume>
+  </NumericalMethods>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="region"
+      cellBlocks="{ cb }"
+      materialList="{ fluid, rock, relperm }"/>
+    <WellElementRegion
+      name="injwell"
+      materialList="{ fluid, relperm }"/>
+  </ElementRegions>
+
+  <Constitutive>
+
+    <CompressibleSolidConstantPermeability
+      name="rock"
+      solidModelName="nullSolid"
+      porosityModelName="rockPorosity"
+      permeabilityModelName="rockPerm"/>
+    <NullModel
+      name="nullSolid"/>
+    <PressurePorosity
+      name="rockPorosity"
+      defaultReferencePorosity="0.2"
+      referencePressure="0.0"
+      compressibility="1.0e-9"/>
+    <ConstantPermeability
+      name="rockPerm"
+      permeabilityComponents="{ 1.0e-13, 1.0e-13, 1.0e-13 }"/>
+
+    <CO2BrinePhillipsFluid
+      name="fluid"
+      logLevel="1"
+      phaseNames="{ gas, water }"
+      componentNames="{ co2, water }"
+      componentMolarWeight="{ 44e-3, 18e-3 }"
+      phasePVTParaFiles="{ pvtgas.txt, pvtliquid.txt }"
+      flashModelParaFile="co2flash.txt"/>
+
+    <BrooksCoreyRelativePermeability
+      name="relperm"
+      phaseNames="{ gas, water }"
+      phaseMinVolumeFraction="{ 0.0, 0.0 }"
+      phaseRelPermExponent="{ 1.5, 1.5 }"
+      phaseRelPermMaxValue="{ 0.9, 0.9 }"/>
+
+  </Constitutive>
+
+  <FieldSpecifications>
+
+    <FieldSpecification
+      name="initialPressure"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/region/cb"
+      fieldName="pressure"
+      scale="9e6"/>
+    <FieldSpecification
+      name="initialTemperature"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/region/cb"
+      fieldName="temperature"
+      scale="368.15"/>
+    <FieldSpecification
+      name="initialComposition_co2"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/region/cb"
+      fieldName="globalCompFraction"
+      component="0"
+      scale="0.005"/>
+    <FieldSpecification
+      name="initialComposition_water"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/region/cb"
+      fieldName="globalCompFraction"
+      component="1"
+      scale="0.995"/>
+
+  </FieldSpecifications>
+
+  <Outputs>
+    <VTK
+      name="vtkOutput"/>
+
+    <Restart
+      name="sidreRestart"/>
+  </Outputs>
+</Problem>

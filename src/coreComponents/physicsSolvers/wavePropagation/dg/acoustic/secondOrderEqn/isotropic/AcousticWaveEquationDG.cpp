@@ -249,11 +249,11 @@ void AcousticWaveEquationDG::initializePostInitialConditionsPreSubGroups()
     m_referenceInvMassMatrix.resize( elemManager.numRegions() );
     m_boundaryInvMassPlusDamping.resize( elemManager.numRegions() );
 
-    elemManager.forElementRegions( regionNames, [&] ( localIndex const regionIndex, CellElementRegion const & elemRegion )
+    elemManager.forElementRegions< CellElementRegion >( regionNames, [&] ( localIndex const regionIndex, CellElementRegion & elemRegion )
     {
       m_referenceInvMassMatrix.resizeArray( regionIndex, elemRegion.numSubRegions() );
       m_boundaryInvMassPlusDamping.resizeArray( regionIndex, elemRegion.numSubRegions() );
-      elemRegion.forElementSubRegionsIndex( [&]( localIndex const subRegionIndex, CellElementSubRegion const & elementSubRegion )
+      elemRegion.forElementSubRegionsIndex< CellElementSubRegion >( [&]( localIndex const subRegionIndex, CellElementSubRegion & elementSubRegion )
       {
         GEOS_THROW_IF( elementSubRegion.getElementType() != ElementType::Tetrahedron,
                        "Invalid type of element, the acoustic DG solver is designed for tetrahedral meshes only  ",
@@ -301,7 +301,7 @@ void AcousticWaveEquationDG::initializePostInitialConditionsPreSubGroups()
           massMatrix.resize( FE_TYPE::numNodes, FE_TYPE::numNodes );
           massMatrix.zero();
           FE_TYPE::computeReferenceMassMatrix( massMatrix );
-          BlasLapackLA::matrixInverse( massMatric, m_referenceInvMassMatrix[ regionIndex ][ subRegionIndex ] ); 
+          BlasLapackLA::matrixInverse( massMatrix, m_referenceInvMassMatrix[ regionIndex ][ subRegionIndex ] ); 
 
           // AcousticMatricesSEM::MassMatrix< FE_TYPE > kernelM( finiteElement );
           // kernelM.template computeMassMatrix< EXEC_POLICY, ATOMIC_POLICY >( elementSubRegion.size(),
