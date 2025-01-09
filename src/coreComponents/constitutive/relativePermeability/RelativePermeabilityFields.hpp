@@ -20,7 +20,7 @@
 #ifndef GEOS_CONSTITUTIVE_RELATIVEPERMEABILITY_RELATIVEPERMEABILITYFIELDS_HPP_
 #define GEOS_CONSTITUTIVE_RELATIVEPERMEABILITY_RELATIVEPERMEABILITYFIELDS_HPP_
 
-#include "constitutive/relativePermeability/layouts.hpp"
+#include "constitutive/relativePermeability/Layouts.hpp"
 #include "mesh/MeshFields.hpp"
 
 namespace geos

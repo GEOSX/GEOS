@@ -13,14 +13,14 @@
  * ------------------------------------------------------------------------------------------------------------
  */
 
-#include "RelpermDriver.hpp"
-
 #include "common/MpiWrapper.hpp"
 #include "functions/FunctionManager.hpp"
 #include "functions/TableFunction.hpp"
 #include "constitutive/ConstitutiveManager.hpp"
 #include "constitutive/relativePermeability/RelativePermeabilityBase.hpp"
 #include "constitutive/relativePermeability/RelativePermeabilitySelector.hpp"
+
+#include "RelpermDriver.hpp"
 
 namespace geos
 {
@@ -178,20 +178,20 @@ void RelpermDriver::resizeTables()
   real64 minSw = 0., minSnw = 0.;
   if( baseRelperm.numFluidPhases() > 2 )
   {
-    minSw = baseRelperm.getPhaseMinVolumeFraction()[ipWater];
-    minSnw = baseRelperm.getPhaseMinVolumeFraction()[ipGas];
+    minSw = baseRelperm.getWettingPhaseMinVolumeFraction();
+    minSnw = baseRelperm.getNonWettingMinVolumeFraction();
   }
   else
   {
     if( ipWater < 0 )// a.k.a o/g
     {
       minSw = 0;
-      minSnw = baseRelperm.getPhaseMinVolumeFraction()[ipGas];
+      minSnw = baseRelperm.getNonWettingMinVolumeFraction();
     }
     else if( ipGas < 0 || ipOil < 0 )// a.k.a w/o or w/g
     {
       minSnw = 0;
-      minSw = baseRelperm.getPhaseMinVolumeFraction()[ipWater];
+      minSw = baseRelperm.getWettingPhaseMinVolumeFraction();
     }
   }
 

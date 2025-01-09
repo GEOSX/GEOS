@@ -18,7 +18,8 @@
 
 #include "constitutiveDrivers/relativePermeability/RelpermDriver.hpp"
 #include "constitutive/relativePermeability/RelativePermeabilityFields.hpp"
-#include "constitutive/relativePermeability/layouts.hpp"
+#include "constitutive/relativePermeability/Layouts.hpp"
+#include "constitutive/relativePermeability/KilloughHysteresis.hpp"
 
 
 namespace geos
@@ -95,21 +96,25 @@ RelpermDriver::runTest( RELPERM_TYPE & relperm,
   arrayView2d< real64, compflow::USD_PHASE > phaseMaxHistoricalVolFraction = relperm.template getField< fields::relperm::phaseMaxHistoricalVolFraction >().reference();
   arrayView2d< real64, compflow::USD_PHASE >  phaseMinHistoricalVolFraction = relperm.template getField< fields::relperm::phaseMinHistoricalVolFraction >().reference();
 
-  arrayView1d< real64 > const drainagePhaseMinVolFraction = relperm.template getReference< array1d< real64 > >(
-    constitutive::TableRelativePermeabilityHysteresis::viewKeyStruct::drainagePhaseMinVolumeFractionString());
-  arrayView1d< real64 > const drainagePhaseMaxVolFraction = relperm.template getReference< array1d< real64 > >(
-    constitutive::TableRelativePermeabilityHysteresis::viewKeyStruct::drainagePhaseMaxVolumeFractionString());
+//  arrayView1d< real64 > const drainagePhaseMinVolFraction = relperm.template getReference< array1d< real64 > >(
+//    constitutive::TableRelativePermeabilityHysteresis::viewKeyStruct::drainagePhaseMinVolumeFractionString());
+//  arrayView1d< real64 > const drainagePhaseMaxVolFraction = relperm.template getReference< array1d< real64 > >(
+//    constitutive::TableRelativePermeabilityHysteresis::viewKeyStruct::drainagePhaseMaxVolumeFractionString());
+  constitutive::KilloughHysteresis::HysteresisCurve const wettingCurve = relperm.template getReference< constitutive::KilloughHysteresis::HysteresisCurve >(
+    constitutive::TableRelativePermeabilityHysteresis::viewKeyStruct::wettingCurveString());
 
+  constitutive::KilloughHysteresis::HysteresisCurve const nonWettingCurve = relperm.template getReference< constitutive::KilloughHysteresis::HysteresisCurve >(
+    constitutive::TableRelativePermeabilityHysteresis::viewKeyStruct::nonWettingCurveString());
   //setting for drainage
   {
     if( phaseHasHysteresis[ipNonWetting] )
     {
-      phaseMaxHistoricalVolFraction[0][ipNonWetting] = drainagePhaseMaxVolFraction[ipNonWetting];
+      phaseMaxHistoricalVolFraction[0][ipNonWetting] = nonWettingCurve.m_extremumPhaseVolFraction;
       GEOS_LOG( GEOS_FMT( "New max non-wetting phase historical phase volume fraction: {}", phaseMaxHistoricalVolFraction[0][ipNonWetting] ) );
     }
     if( phaseHasHysteresis[ipWetting] )
     {
-      phaseMinHistoricalVolFraction[0][ipWetting] = drainagePhaseMinVolFraction[ipWetting];
+      phaseMinHistoricalVolFraction[0][ipWetting] = wettingCurve.m_extremumPhaseVolFraction;
       GEOS_LOG( GEOS_FMT( "New min wetting phase historical phase volume fraction: {}", phaseMinHistoricalVolFraction[0][ipWetting] ) );
     }
   }
@@ -135,12 +140,13 @@ RelpermDriver::runTest( RELPERM_TYPE & relperm,
   {
     if( phaseHasHysteresis[ipNonWetting] )
     {
-      phaseMaxHistoricalVolFraction[0][ipNonWetting] = drainagePhaseMinVolFraction[ipNonWetting];
+
+      phaseMaxHistoricalVolFraction[0][ipNonWetting] = nonWettingCurve.m_criticalDrainagePhaseVolFraction;
       GEOS_LOG( GEOS_FMT( "New max non-wetting phase historical phase volume fraction: {}", phaseMaxHistoricalVolFraction[0][ipNonWetting] ) );
     }
     if( phaseHasHysteresis[ipWetting] )
     {
-      phaseMinHistoricalVolFraction[0][ipWetting] = drainagePhaseMaxVolFraction[ipWetting];
+      phaseMinHistoricalVolFraction[0][ipWetting] = wettingCurve.m_criticalDrainagePhaseVolFraction;
       GEOS_LOG( GEOS_FMT( "New min wetting phase historical phase volume fraction: {}", phaseMinHistoricalVolFraction[0][ipWetting] ) );
     }
   }

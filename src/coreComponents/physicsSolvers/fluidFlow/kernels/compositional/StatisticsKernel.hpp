@@ -23,7 +23,7 @@
 #include "common/DataLayouts.hpp"
 #include "common/DataTypes.hpp"
 #include "common/GEOS_RAJA_Interface.hpp"
-#include "constitutive/relativePermeability/layouts.hpp"
+#include "constitutive/relativePermeability/Layouts.hpp"
 
 
 namespace geos

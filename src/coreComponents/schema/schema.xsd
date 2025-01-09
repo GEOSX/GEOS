@@ -6470,7 +6470,7 @@ To neglect hysteresis on this phase, just use the same table name for the draina
 		<xsd:attribute name="imbibitionWettingRelPermTableName" type="groupNameRef" default="" />
 		<!--jerauldParameterA => First parameter (modification parameter) introduced by Jerauld in the Land trapping model (see RTD documentation).-->
 		<xsd:attribute name="jerauldParameterA" type="real64" default="0.1" />
-		<!--jerauldParameterB => Second parameter introduced by Jerauld in the Land trapping model (see RTD documentation).-->
+		<!--jerauldParameterB => Second parameter (modification parameter) introduced by Jerauld in the Land trapping model (see RTD documentation).-->
 		<xsd:attribute name="jerauldParameterB" type="real64" default="0" />
 		<!--killoughCurvatureParameter => Curvature parameter introduced by Killough for wetting-phase hysteresis (see RTD documentation).-->
 		<xsd:attribute name="killoughCurvatureParameter" type="real64" default="1" />

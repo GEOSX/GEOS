@@ -22,7 +22,7 @@
 
 #include "common/DataLayouts.hpp"
 #include "constitutive/ConstitutiveBase.hpp"
-#include "constitutive/capillaryPressure/layouts.hpp"
+#include "constitutive/capillaryPressure/Layouts.hpp"
 #include "common/GEOS_RAJA_Interface.hpp"
 
 namespace geos

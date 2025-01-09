@@ -20,7 +20,7 @@
 #ifndef GEOS_CONSTITUTIVE_CAPILLARYPRESSURE_CAPILLARYPRESSUREFIELDS_HPP_
 #define GEOS_CONSTITUTIVE_CAPILLARYPRESSURE_CAPILLARYPRESSUREFIELDS_HPP_
 
-#include "constitutive/capillaryPressure/layouts.hpp"
+#include "constitutive/capillaryPressure/Layouts.hpp"
 #include "mesh/MeshFields.hpp"
 
 namespace geos

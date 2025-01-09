@@ -22,7 +22,7 @@
 
 #include "common/DataLayouts.hpp"
 #include "constitutive/ConstitutiveBase.hpp"
-#include "constitutive/relativePermeability/layouts.hpp"
+#include "constitutive/relativePermeability/Layouts.hpp"
 #include "common/GEOS_RAJA_Interface.hpp"
 #include "common/format/EnumStrings.hpp"
 
@@ -162,8 +162,12 @@ public:
   arrayView3d< real64 const, constitutive::relperm::USD_RELPERM > phaseRelPerm() const { return m_phaseRelPerm; }
   arrayView4d< real64 const, constitutive::relperm::USD_RELPERM_DS > dPhaseRelPerm_dPhaseVolFraction() const { return m_dPhaseRelPerm_dPhaseVolFrac; }
 
+  static std::tuple< integer, integer > phaseIndex( arrayView1d< integer const > const & phaseOrder );
   arrayView1d< integer const > getPhaseOrder() const { return m_phaseOrder; }
+
   virtual arrayView1d< real64 const > getPhaseMinVolumeFraction() const = 0;
+  virtual real64 getWettingPhaseMinVolumeFraction() const = 0;
+  virtual real64 getNonWettingMinVolumeFraction() const = 0;
 
   std::tuple< integer, integer > wettingAndNonWettingPhaseIndices() const;
   /**

@@ -30,9 +30,9 @@ namespace constitutive
 void
 TableRelativePermeabilityHelpers::validateRelativePermeabilityTable( TableFunction const & relPermTable,
                                                                      string const & fullConstitutiveName,
-                                                                     real64 & phaseMinVolFrac,
-                                                                     real64 & phaseMaxVolFrac,
-                                                                     real64 & phaseRelPermEndPoint )
+                                                                     real64 & phaseMinVolFrac, real64 & phaseMaxVolFrac,
+                                                                     real64 & phaseRelPermMinEndPoint,
+                                                                     real64 & phaseRelPermMaxEndPoint )
 {
   ArrayOfArraysView< real64 const > coords = relPermTable.getCoordinates();
 
@@ -51,9 +51,11 @@ TableRelativePermeabilityHelpers::validateRelativePermeabilityTable( TableFuncti
 
   arraySlice1d< real64 const > phaseVolFrac = coords[0];
   arrayView1d< real64 const > const relPerm = relPermTable.getValues();
+
   phaseMinVolFrac = phaseVolFrac[0];
+  phaseRelPermMinEndPoint = relPerm[0];
   phaseMaxVolFrac = phaseVolFrac[phaseVolFrac.size()-1];
-  phaseRelPermEndPoint = relPerm[relPerm.size()-1];
+  phaseRelPermMaxEndPoint = relPerm[relPerm.size() - 1];
 
   // note that the TableFunction class has already checked that coords.sizeOfArray( 0 ) == relPerm.size()
   GEOS_THROW_IF( !isZero( relPerm[0] ),
@@ -79,6 +81,8 @@ TableRelativePermeabilityHelpers::validateRelativePermeabilityTable( TableFuncti
     if( isZero( relPerm[i-1] ) && !isZero( relPerm[i] ) )
     {
       phaseMinVolFrac = phaseVolFrac[i-1];
+      phaseRelPermMinEndPoint = relPerm[i-1];
+
     }
   }
 }
