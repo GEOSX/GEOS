@@ -124,7 +124,7 @@ FlowSolverBase::FlowSolverBase( string const & name,
     setApplyDefaultValue( 0.1 ).
     setDescription( "Maximum (absolute) temperature change in a sequential iteration, used for outer loop convergence check" );
 
-  this->registerWrapper( "testingTheLogs", m_testLog ).
+  this->registerWrapper( "testingTheLogs", &m_testLog ).
     setSizedFromParent( 0 ).
     setApplyDefaultValue( "Testing" ).
     setInputFlag( InputFlags::OPTIONAL ).
