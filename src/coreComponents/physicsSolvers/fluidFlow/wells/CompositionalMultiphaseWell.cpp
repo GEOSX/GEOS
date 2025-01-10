@@ -263,6 +263,8 @@ void CompositionalMultiphaseWell::registerDataOnMesh( Group & meshBodies )
 
       wellControls.registerWrapper< real64 >( viewKeyStruct::massDensityString() );
 
+      wellControls.registerWrapper< real64 >( viewKeyStruct::currentMassRateString() );
+
       // write rates output header
       // the rank that owns the reference well element is responsible
       if( m_writeCSV > 0 && subRegion.isLocallyOwned() )
@@ -455,6 +457,7 @@ void CompositionalMultiphaseWell::validateWellConstraints( real64 const & time_n
   WellControls::Control const currentControl = wellControls.getControl();
   real64 const & targetTotalRate = wellControls.getTargetTotalRate( time_n + dt );
   real64 const & targetPhaseRate = wellControls.getTargetPhaseRate( time_n + dt );
+  real64 const & targetMassRate = wellControls.getTargetMassRate( time_n + dt );
 
   GEOS_THROW_IF( wellControls.isInjector() && currentControl == WellControls::Control::PHASEVOLRATE,
                  "WellControls " << wellControls.getDataContext() <<
@@ -472,6 +475,18 @@ void CompositionalMultiphaseWell::validateWellConstraints( real64 const & time_n
   GEOS_THROW_IF( wellControls.isInjector() && !isZero( targetPhaseRate ),
                  "WellControls " << wellControls.getDataContext() <<
                  ": Target phase rate cannot be used for injectors",
+                 InputError );
+  GEOS_THROW_IF( wellControls.isProducer() && !isZero( targetTotalRate ),
+                 "WellControls " << wellControls.getDataContext() <<
+                 ": Target total rate cannot be used for producers",
+                 InputError );
+  GEOS_THROW_IF( wellControls.isProducer() && !isZero( targetMassRate ),
+                 "WellControls " << wellControls.getDataContext() <<
+                 ": Target mass rate cannot be used for producers",
+                 InputError );
+  GEOS_THROW_IF( !m_useMass && !isZero( targetMassRate ),
+                 "WellControls " << wellControls.getDataContext() <<
+                 ": Target mass rate cannot with useMass=0",
                  InputError );
 
   // The user always provides positive rates, but these rates are later multiplied by -1 internally for producers
@@ -689,6 +704,10 @@ void CompositionalMultiphaseWell::updateVolRatesForConstraint( WellElementSubReg
 
   real64 & currentTotalVolRate =
     wellControls.getReference< real64 >( CompositionalMultiphaseWell::viewKeyStruct::currentTotalVolRateString() );
+
+  real64 & currentMassRate =
+    wellControls.getReference< real64 >( CompositionalMultiphaseWell::viewKeyStruct::currentMassRateString() );
+
   arrayView1d< real64 > const & dCurrentTotalVolRate =
     wellControls.getReference< array1d< real64 > >( CompositionalMultiphaseWell::viewKeyStruct::dCurrentTotalVolRateString() );
 
@@ -724,6 +743,7 @@ void CompositionalMultiphaseWell::updateVolRatesForConstraint( WellElementSubReg
                                   dCurrentTotalVolRate,
                                   currentPhaseVolRate,
                                   dCurrentPhaseVolRate,
+                                  &currentMassRate,
                                   &iwelemRef,
                                   &logLevel,
                                   &wellControlsName,
@@ -760,7 +780,8 @@ void CompositionalMultiphaseWell::updateVolRatesForConstraint( WellElementSubReg
         // Step 2: update the total volume rate
 
         real64 const currentTotalRate = connRate[iwelemRef];
-
+        // Assumes useMass is true
+        currentMassRate = currentTotalRate;
         // Step 2.1: compute the inverse of the total density and derivatives
         massDensity = totalDens[iwelemRef][0];
         real64 const totalDensInv = 1.0 / totalDens[iwelemRef][0];
@@ -1093,6 +1114,9 @@ void CompositionalMultiphaseWell::assembleFluxTerms( real64 const & time,
 {
   GEOS_MARK_FUNCTION;
 
+  BitFlags< isothermalCompositionalMultiphaseBaseKernels::KernelFlags > kernelFlags;
+  if( m_useTotalMassEquation )
+    kernelFlags.set( isothermalCompositionalMultiphaseBaseKernels::KernelFlags::TotalMassEquation );
 
   string const wellDofKey = dofManager.getKey( wellElementDofName());
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
@@ -1117,7 +1141,7 @@ void CompositionalMultiphaseWell::assembleFluxTerms( real64 const & time,
             createAndLaunch< parallelDevicePolicy<> >( numComponents,
                                                        dt,
                                                        dofManager.rankOffset(),
-                                                       m_useTotalMassEquation,
+                                                       kernelFlags,
                                                        wellDofKey,
                                                        well_controls,
                                                        subRegion,
@@ -1132,7 +1156,7 @@ void CompositionalMultiphaseWell::assembleFluxTerms( real64 const & time,
             createAndLaunch< parallelDevicePolicy<> >( numComponents,
                                                        dt,
                                                        dofManager.rankOffset(),
-                                                       m_useTotalMassEquation,
+                                                       kernelFlags,
                                                        wellDofKey,
                                                        well_controls,
                                                        subRegion,
@@ -1155,6 +1179,11 @@ void CompositionalMultiphaseWell::assembleAccumulationTerms( real64 const & time
   GEOS_MARK_FUNCTION;
   GEOS_UNUSED_VAR( time );
   GEOS_UNUSED_VAR( dt );
+
+  BitFlags< isothermalCompositionalMultiphaseBaseKernels::KernelFlags > kernelFlags;
+  if( m_useTotalMassEquation )
+    kernelFlags.set( isothermalCompositionalMultiphaseBaseKernels::KernelFlags::TotalMassEquation );
+
   string const wellDofKey = dofManager.getKey( wellElementDofName() );
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
                                                                MeshLevel & mesh,
@@ -1180,7 +1209,7 @@ void CompositionalMultiphaseWell::assembleAccumulationTerms( real64 const & time
                                                        numPhases,
                                                        wellControls.isProducer(),
                                                        dofManager.rankOffset(),
-                                                       m_useTotalMassEquation,
+                                                       kernelFlags,
                                                        wellDofKey,
                                                        subRegion,
                                                        fluid,
@@ -1195,7 +1224,7 @@ void CompositionalMultiphaseWell::assembleAccumulationTerms( real64 const & time
                                                        numPhases,
                                                        wellControls.isProducer(),
                                                        dofManager.rankOffset(),
-                                                       m_useTotalMassEquation,
+                                                       kernelFlags,
                                                        wellDofKey,
                                                        subRegion,
                                                        fluid,
@@ -1953,6 +1982,12 @@ void CompositionalMultiphaseWell::assemblePressureRelations( real64 const & time
               wellControls.switchToPhaseRateControl( wellControls.getTargetPhaseRate( timeAtEndOfStep ) );
               GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::WellControl,
                                           GEOS_FMT( "Control switch for well {} from BHP constraint to phase volumetric rate constraint", subRegion.getName() ) );
+            }
+            else if( wellControls.getInputControl() == WellControls::Control::MASSRATE )
+            {
+              wellControls.switchToMassRateControl( wellControls.getTargetMassRate( timeAtEndOfStep ) );
+              GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::WellControl,
+                                          GEOS_FMT( "Control switch for well {} from BHP constraint to mass rate constraint", subRegion.getName()) );
             }
             else
             {

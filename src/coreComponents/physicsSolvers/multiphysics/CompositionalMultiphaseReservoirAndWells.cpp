@@ -283,6 +283,10 @@ assembleCouplingTerms( real64 const time_n,
                            this->getCatalogName(), this->getName() ),
                  std::runtime_error );
 
+  BitFlags< isothermalCompositionalMultiphaseBaseKernels::KernelFlags > kernelFlags;
+  if( Base::wellSolver()->useTotalMassEquation() )
+    kernelFlags.set( isothermalCompositionalMultiphaseBaseKernels::KernelFlags::TotalMassEquation );
+
   this->template forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
                                                                                MeshLevel const & mesh,
                                                                                arrayView1d< string const > const & regionNames )
@@ -324,7 +328,6 @@ assembleCouplingTerms( real64 const time_n,
       string const wellDofKey = dofManager.getKey( Base::wellSolver()->wellElementDofName() );
       areWellsShut = 0;
 
-      integer useTotalMassEquation=Base::wellSolver()->useTotalMassEquation();
       integer numCrossflowPerforations=0;
       if( isThermal ( )  )
       {
@@ -339,7 +342,7 @@ assembleCouplingTerms( real64 const time_n,
                                                      resDofNumber,
                                                      perforationData,
                                                      fluid,
-                                                     useTotalMassEquation,
+                                                     kernelFlags,
                                                      detectCrossflow,
                                                      numCrossflowPerforations,
                                                      localRhs,
@@ -357,7 +360,7 @@ assembleCouplingTerms( real64 const time_n,
                                                      resDofNumber,
                                                      perforationData,
                                                      fluid,
-                                                     useTotalMassEquation,
+                                                     kernelFlags,
                                                      detectCrossflow,
                                                      numCrossflowPerforations,
                                                      localRhs,

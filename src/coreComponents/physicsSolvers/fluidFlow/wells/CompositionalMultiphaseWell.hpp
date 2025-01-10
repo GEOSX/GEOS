@@ -296,6 +296,8 @@ public:
     static constexpr char const * currentTotalVolRateString() { return "currentTotalVolumetricRate"; }
     static constexpr char const * dCurrentTotalVolRateString() { return "dCurrentTotalVolumetricRate"; }
 
+    static constexpr char const * currentMassRateString() { return "currentMassRate"; }
+
     static constexpr char const * dCurrentTotalVolRate_dPresString() { return "dCurrentTotalVolumetricRate_dPres"; }
 
     static constexpr char const * dCurrentTotalVolRate_dCompDensString() { return "dCurrentTotalVolumetricRate_dCompDens"; }
