@@ -38,9 +38,9 @@ We consider the following mesh as a numerical support to the simulations in this
 
 This mesh contains three continuous regions:
 
-  - a Top region (overburden, elementary tag = `Overburden`)
-  - a Middle region (reservoir layer, elementary tag = `Reservoir`)
-  - a Bottom region (underburden, elementary tag = `Underburden`)
+  - a Bottom region (underburden, elementary tag = `Underburden`, attribute = ``1``)
+  - a Middle region (reservoir layer, elementary tag = `Reservoir`, attribute = ``2``)
+  - a Top region (overburden, elementary tag = `Overburden`, attribute = ``3``)
 
   .. image:: reservoir_transparent.png
      :width: 600px
@@ -169,31 +169,17 @@ Regions
 Assuming that the overburden and the underburden are impermeable,
 and flow only takes place in the reservoir, we need to define regions.
 
-There are two methods to achieve this regional solve.
+We need to define all the ``CellElementRegions`` according to the ``attribute`` values of the VTK file
+(which are respectively ``1``, ``2`` and ``3`` for each region). As mentioned above, the solvers is only
+applied on the reservoir layer, (on region ``2``). In this case, the **ElementRegions** tag is :
 
-- The first solution is to define a unique ``CellElementRegion`` corresponding to the reservoir.
-
-        .. code-block:: xml
-
-                <ElementRegions>
-                  <CellElementRegion
-                    name="Reservoir"
-                    cellBlocks="{2_tetrahedra}"
-                    materialList="{ water, rock, rockPerm, rockPorosity, nullSolid }"/>
-                </ElementRegions>
-
-- The second solution is to define all the ``CellElementRegions`` as they are in the VTK file, but defining the solvers only on the reservoir layer. In this case, the **ElementRegions** tag is :
-
-        .. literalinclude:: ../../../../../inputFiles/singlePhaseFlow/FieldCaseTutorial3_base.xml
-                :language: xml
-                :start-after: <!-- SPHINX_FIELD_CASE_REGION -->
-                :end-before: <!-- SPHINX_FIELD_CASE_REGION_END -->
-
-We opt for the latest as it allows to visualize over- and underburdens and to change regions handling in their tag without needing to amend the **ElementRegion** tag.
+.. literalinclude:: ../../../../../inputFiles/singlePhaseFlow/FieldCaseTutorial3_base.xml
+  :language: xml
+  :start-after: <!-- SPHINX_FIELD_CASE_REGION -->
+  :end-before: <!-- SPHINX_FIELD_CASE_REGION_END -->
 
 .. note::
-  The material list here was set for a single-phase flow problem. This list is subject
-  to change if the problem is not a single-phase flow problem.
+  This material list here is subject to change if the problem is not a single-phase flow problem.
 
 .. _Constitutive_tag_field_case:
 

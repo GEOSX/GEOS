@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -16,9 +16,9 @@
 #ifndef GEOS_PHYSICSSOLVERS_NONLINEARSOLVERPARAMETERS_HPP_
 #define GEOS_PHYSICSSOLVERS_NONLINEARSOLVERPARAMETERS_HPP_
 
-#include "codingUtilities/EnumStrings.hpp"
+#include "common/format/EnumStrings.hpp"
 #include "dataRepository/Group.hpp"
-#include "physicsSolvers/SolverBaseKernels.hpp"
+#include "physicsSolvers/PhysicsSolverBaseKernels.hpp"
 
 namespace geos
 {
@@ -241,7 +241,7 @@ public:
    * @brief Getter for the norm type used to check convergence in the flow/well solvers
    * @return the norm type
    */
-  solverBaseKernels::NormType normType() const
+  physicsSolverBaseKernels::NormType normType() const
   {
     return m_normType;
   }
@@ -283,7 +283,7 @@ public:
   real64 m_lineSearchResidualFactor;
 
   /// Norm used to check the nonlinear loop convergence
-  solverBaseKernels::NormType m_normType;
+  physicsSolverBaseKernels::NormType m_normType;
 
   /// The tolerance for the nonlinear convergence check.
   real64 m_newtonTol;

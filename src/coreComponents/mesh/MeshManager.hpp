@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -22,10 +22,10 @@
 
 #include "dataRepository/Group.hpp"
 #include "mesh/DomainPartition.hpp"
+#include "generators/MeshGeneratorBase.hpp"
 
 namespace geos
 {
-class SolverBase;
 
 /**
  * @class MeshManager
@@ -74,6 +74,22 @@ public:
    * @param[in] domain a reference to the physical domain
    */
   void importFields( DomainPartition & domain );
+
+  /**
+   * @brief Import fields data
+   * @param[in] generator reference to mesh generator
+   * @param[in] regionName name of the region
+   * @param[in] subRegion reference to the subregion
+   * @param[in] block block type
+   * @param[in] fieldsMapping mapping for fields
+   * @param[out] fieldsToBeSync list of fields to synchronize
+   */
+  static void importFields( MeshGeneratorBase const & generator,
+                            string const & regionName,
+                            ElementSubRegionBase & subRegion,
+                            MeshGeneratorBase::Block block,
+                            std::map< string, string > const & fieldsMapping,
+                            FieldIdentifiers & fieldsToBeSync );
 
 private:
 

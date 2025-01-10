@@ -6,8 +6,8 @@
       name="compflow"
       logLevel="1"
       discretization="fluidTPFA"
-      targetRegions="{ region }"
-      temperature="300">
+      temperature="300"
+      targetRegions="{ region }">
       <NonlinearSolverParameters
         newtonTol="1.0e-10"
         newtonMaxIter="15"
@@ -46,7 +46,7 @@
     maxTime="2e7">
     <PeriodicEvent
       name="outputs"
-      timeFrequency="1e6"
+      timeFrequency="1e7"
       target="/Outputs/siloOutput"/>
 
     <PeriodicEvent
@@ -83,7 +83,7 @@
   <ElementRegions>
     <CellElementRegion
       name="region"
-      cellBlocks="{ block1 }"
+      cellBlocks="{ * }"
       materialList="{ fluid, rock, relperm }"/>
   </ElementRegions>
 
@@ -107,7 +107,7 @@
     <PressurePorosity
       name="rockPorosity"
       defaultReferencePorosity="0.05"
-      referencePressure="0.0"
+      referencePressure="7.5e6"
       compressibility="1.0e-9"/>
 
     <BrooksCoreyStone2RelativePermeability
@@ -125,7 +125,7 @@
   </Constitutive>
 
   <FieldSpecifications>
-    <!-- Initial pressure: ~5 bar -->
+    <!-- Initial pressure: ~75 bar -->
     <FieldSpecification
       name="initialPressure"
       initialCondition="1"

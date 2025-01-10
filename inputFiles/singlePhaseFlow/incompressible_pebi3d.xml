@@ -68,7 +68,7 @@
   <ElementRegions>
     <CellElementRegion
       name="Domain"
-      cellBlocks="{ hexahedra, pentagonalPrisms, hexagonalPrisms, heptagonalPrisms, octagonalPrisms }"
+      cellBlocks="{ * }"
       materialList="{ water, rock }"/>
   </ElementRegions>
 

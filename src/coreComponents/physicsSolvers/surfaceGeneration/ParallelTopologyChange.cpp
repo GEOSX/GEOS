@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -26,7 +26,7 @@
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
 #include "mesh/mpiCommunications/MPI_iCommData.hpp"
 
-
+#if PARALLEL_TOPOLOGY_CHANGE_METHOD==0
 namespace geos
 {
 
@@ -507,7 +507,7 @@ void packNewModifiedObjectsToGhosts( NeighborCommunicator * const neighbor,
     elemRegion.forElementSubRegionsIndex< FaceElementSubRegion >( [&]( localIndex const esr,
                                                                        FaceElementSubRegion & subRegion )
     {
-      ArrayOfArraysView< localIndex const > const faceList = subRegion.faceList().toViewConst();
+      arrayView2d< localIndex const > const faceList = subRegion.faceList().toViewConst();
       localIndex_array & elemGhostsToSend = subRegion.getNeighborData( neighbor->neighborRank() ).ghostsToSend();
       elemGhostsToSend.move( hostMemorySpace );
       for( localIndex const & k : receivedObjects.newElements.at( {er, esr} ) )
@@ -813,7 +813,7 @@ void parallelTopologyChange::synchronizeTopologyChange( MeshLevel * const mesh,
   //   b) the modified objects to the owning ranks.
 
   // pack the buffers, and send the size of the buffers
-  MPI_iCommData commData( CommunicationTools::getInstance().getCommID() );
+  MPI_iCommData commData;
   commData.resize( neighbors.size() );
   for( unsigned int neighborIndex=0; neighborIndex<neighbors.size(); ++neighborIndex )
   {
@@ -905,7 +905,7 @@ void parallelTopologyChange::synchronizeTopologyChange( MeshLevel * const mesh,
 
 
 
-  MPI_iCommData commData2( CommunicationTools::getInstance().getCommID() );
+  MPI_iCommData commData2;
   commData2.resize( neighbors.size());
   for( unsigned int neighborIndex=0; neighborIndex<neighbors.size(); ++neighborIndex )
   {
@@ -1024,3 +1024,4 @@ void parallelTopologyChange::synchronizeTopologyChange( MeshLevel * const mesh,
 
 
 } /* namespace geos */
+#endif // PARALLEL_TOPOLOGY_CHANGE_METHOD==0

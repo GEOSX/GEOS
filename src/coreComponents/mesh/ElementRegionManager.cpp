@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -18,6 +18,7 @@
 
 #include "ElementRegionManager.hpp"
 
+#include "common/DataLayouts.hpp"
 #include "common/TimingMacros.hpp"
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
 #include "SurfaceElementRegion.hpp"
@@ -28,6 +29,8 @@
 #include "mesh/utilities/MeshMapUtilities.hpp"
 #include "schema/schemaUtilities.hpp"
 #include "mesh/generators/LineBlockABC.hpp"
+#include "mesh/CellElementRegionSelector.hpp"
+
 
 namespace geos
 {
@@ -72,12 +75,11 @@ Group * ElementRegionManager::createChild( string const & childKey, string const
 {
   GEOS_ERROR_IF( !(CatalogInterface::hasKeyName( childKey )),
                  "KeyName ("<<childKey<<") not found in ObjectManager::Catalog" );
-  GEOS_LOG_RANK_0( "Adding Object " << childKey<<" named "<< childName<<" from ObjectManager::Catalog." );
+  GEOS_LOG_RANK_0( GEOS_FMT( "{}: adding {} {}", getName(), childKey, childName ) );
 
   Group & elementRegions = this->getGroup( ElementRegionManager::groupKeyStruct::elementRegionsGroup() );
   return &elementRegions.registerGroup( childName,
                                         CatalogInterface::factory( childKey, childName, &elementRegions ) );
-
 }
 
 void ElementRegionManager::expandObjectCatalogs()
@@ -120,12 +122,23 @@ void ElementRegionManager::setSchemaDeviations( xmlWrapper::xmlNode schemaRoot,
   }
 }
 
+
 void ElementRegionManager::generateMesh( CellBlockManagerABC const & cellBlockManager )
 {
-  this->forElementRegions< CellElementRegion >( [&]( CellElementRegion & elemRegion )
-  {
-    elemRegion.generateMesh( cellBlockManager.getCellBlocks() );
-  } );
+  { // cellBlocks loading
+    Group const & cellBlocks = cellBlockManager.getCellBlocks();
+    CellElementRegionSelector cellBlockSelector{ cellBlocks,
+                                                 cellBlockManager.getRegionAttributesCellBlocks() };
+    this->forElementRegions< CellElementRegion >( [&]( CellElementRegion & elemRegion )
+    {
+      elemRegion.setCellBlockNames( cellBlockSelector.buildCellBlocksSelection( elemRegion ) );
+      elemRegion.generateMesh( cellBlocks );
+    } );
+    // selecting all cellblocks is mandatory
+    cellBlockSelector.checkSelectionConsistency();
+  }
+
+
   this->forElementRegions< SurfaceElementRegion >( [&]( SurfaceElementRegion & elemRegion )
   {
     elemRegion.generateMesh( cellBlockManager.getFaceBlocks() );
@@ -138,20 +151,32 @@ void ElementRegionManager::generateMesh( CellBlockManagerABC const & cellBlockMa
   array2d< localIndex > const blockToSubRegion = this->getCellBlockToSubRegionMap( cellBlockManager );
   this->forElementRegions< SurfaceElementRegion >( [&]( SurfaceElementRegion & elemRegion )
   {
-    SurfaceElementSubRegion & subRegion = elemRegion.getUniqueSubRegion< SurfaceElementSubRegion >();
+    SurfaceElementSubRegion & surfaceSubRegion = elemRegion.getUniqueSubRegion< SurfaceElementSubRegion >();
     // While indicated as containing element subregion information,
     // `relation` currently contains cell block information
     // that will be transformed into element subregion information.
     // This is why we copy the information into a temporary,
     // which frees space for the final information (of same size).
-    OrderedVariableToManyElementRelation & relation = subRegion.getToCellRelation();
-    ToCellRelation< ArrayOfArrays< localIndex > > const tmp( relation.m_toElementSubRegion,
-                                                             relation.m_toElementIndex );
-    meshMapUtilities::transformCellBlockToRegionMap< parallelHostPolicy >( blockToSubRegion.toViewConst(),
-                                                                           tmp,
-                                                                           relation );
-  } );
+    if( auto * const faceElementSubRegion = dynamic_cast< FaceElementSubRegion * >( &surfaceSubRegion ) )
+    {
+      FixedToManyElementRelation & relation = faceElementSubRegion->getToCellRelation();
+      ToCellRelation< array2d< localIndex > > const tmp( relation.m_toElementSubRegion,
+                                                         relation.m_toElementIndex );
 
+      meshMapUtilities::transformCellBlockToRegionMap< parallelHostPolicy >( blockToSubRegion.toViewConst(),
+                                                                             tmp,
+                                                                             relation );
+    }
+    else if( auto * const embeddedSurfaceSubRegion = dynamic_cast< EmbeddedSurfaceSubRegion * >( &surfaceSubRegion ) )
+    {
+      OrderedVariableToManyElementRelation & relation = embeddedSurfaceSubRegion->getToCellRelation();
+      ToCellRelation< ArrayOfArrays< localIndex > > const tmp( relation.m_toElementSubRegion,
+                                                               relation.m_toElementIndex );
+      meshMapUtilities::transformCellBlockToRegionMap< parallelHostPolicy >( blockToSubRegion.toViewConst(),
+                                                                             tmp,
+                                                                             relation );
+    }
+  } );
 }
 
 void ElementRegionManager::generateWells( CellBlockManagerABC const & cellBlockManager,
@@ -511,14 +536,6 @@ int ElementRegionManager::packUpDownMapsImpl( buffer_unit_type * & buffer,
   return packedSize;
 }
 
-//template int
-//ElementRegionManager::
-//PackUpDownMapsImpl<true>( buffer_unit_type * & buffer,
-//                             ElementViewAccessor<arrayView1d<localIndex>> const & packList ) const;
-//template int
-//ElementRegionManager::
-//PackUpDownMapsImpl<false>( buffer_unit_type * & buffer,
-//                             ElementViewAccessor<arrayView1d<localIndex>> const & packList ) const;
 
 int
 ElementRegionManager::unpackUpDownMaps( buffer_unit_type const * & buffer,
@@ -553,6 +570,98 @@ ElementRegionManager::unpackUpDownMaps( buffer_unit_type const * & buffer,
 
   return unpackedSize;
 }
+
+int ElementRegionManager::packFaceElementToFaceSize( ElementViewAccessor< arrayView1d< localIndex > > const & packList ) const
+{
+  buffer_unit_type * junk = nullptr;
+  return packFaceElementToFaceImpl< false >( junk, packList );
+}
+
+int ElementRegionManager::packFaceElementToFace( buffer_unit_type * & buffer,
+                                                 ElementViewAccessor< arrayView1d< localIndex > > const & packList ) const
+{
+  return packFaceElementToFaceImpl< true >( buffer, packList );
+}
+
+template< bool DO_PACKING, typename T >
+int ElementRegionManager::packFaceElementToFaceImpl( buffer_unit_type * & buffer,
+                                                     T const & packList ) const
+{
+  int packedSize = 0;
+
+  packedSize += bufferOps::Pack< DO_PACKING >( buffer, numRegions() );
+
+  for( typename dataRepository::indexType kReg=0; kReg<numRegions(); ++kReg )
+  {
+    ElementRegionBase const & elemRegion = getRegion( kReg );
+    packedSize += bufferOps::Pack< DO_PACKING >( buffer, elemRegion.getName() );
+
+
+
+    localIndex numFaceElementSubregions = 0;
+    elemRegion.forElementSubRegionsIndex< FaceElementSubRegion >(
+      [&]( localIndex const, FaceElementSubRegion const & )
+    {
+      ++numFaceElementSubregions;
+    } );
+
+
+    packedSize += bufferOps::Pack< DO_PACKING >( buffer, numFaceElementSubregions );
+
+    elemRegion.forElementSubRegionsIndex< FaceElementSubRegion >(
+      [&]( localIndex const esr, FaceElementSubRegion const & subRegion )
+    {
+      packedSize += bufferOps::Pack< DO_PACKING >( buffer, subRegion.getName() );
+
+      arrayView1d< localIndex > const elemList = packList[kReg][esr];
+      if( DO_PACKING )
+      {
+        packedSize += subRegion.packToFaceRelation( buffer, elemList );
+      }
+      else
+      {
+        packedSize += subRegion.packToFaceRelationSize( elemList );
+      }
+    } );
+  }
+
+  return packedSize;
+}
+
+
+int
+ElementRegionManager::unpackFaceElementToFace( buffer_unit_type const * & buffer,
+                                               ElementReferenceAccessor< localIndex_array > & packList,
+                                               bool const overwriteMap )
+{
+  int unpackedSize = 0;
+
+  localIndex numRegionsRead;
+  unpackedSize += bufferOps::Unpack( buffer, numRegionsRead );
+  for( localIndex kReg=0; kReg<numRegionsRead; ++kReg )
+  {
+    string regionName;
+    unpackedSize += bufferOps::Unpack( buffer, regionName );
+    ElementRegionBase & elemRegion = getRegion( regionName );
+
+    localIndex numSubRegionsRead;
+    unpackedSize += bufferOps::Unpack( buffer, numSubRegionsRead );
+    elemRegion.forElementSubRegionsIndex< FaceElementSubRegion >(
+      [&]( localIndex const kSubReg, FaceElementSubRegion & subRegion )
+    {
+      string subRegionName;
+      unpackedSize += bufferOps::Unpack( buffer, subRegionName );
+      GEOS_ERROR_IF( subRegionName != subRegion.getName(),
+                     "Unpacked subregion name (" << subRegionName << ") does not equal object name (" << subRegion.getName() << ")" );
+
+      localIndex_array & elemList = packList[kReg][kSubReg];
+      unpackedSize += subRegion.unpackToFaceRelation( buffer, elemList, false, overwriteMap );
+    } );
+  }
+
+  return unpackedSize;
+}
+
 
 int ElementRegionManager::packFracturedElementsSize( ElementViewAccessor< arrayView1d< localIndex > > const & packList,
                                                      string const fractureRegionName ) const
@@ -682,6 +791,94 @@ ElementRegionManager::getCellBlockToSubRegionMap( CellBlockManagerABC const & ce
 
   return blockMap;
 }
+
+void ElementRegionManager::outputObjectConnectivity() const
+{
+  int const numRanks = MpiWrapper::commSize();
+  int const thisRank = MpiWrapper::commRank();
+
+  for( int rank=0; rank<numRanks; ++rank )
+  {
+    if( rank==thisRank )
+    {
+      printf( "rank %d\n", rank );
+      printf( "ElementManager: %s\n", this->getName().c_str() );
+
+      forElementRegions< CellElementRegion >( [&]( CellElementRegion const & elemRegion )
+      {
+        elemRegion.forElementSubRegions< CellElementSubRegion >( [&]( CellElementSubRegion const & subRegion )
+        {
+          printf( "  %s\n", subRegion.getName().c_str() );
+
+          CellElementSubRegion::NodeMapType const & elemToNodeRelation = subRegion.nodeList();
+          arrayView2d< localIndex const, cells::NODE_MAP_USD > const elemToNode = elemToNodeRelation;
+          arrayView1d< globalIndex const > const & elemLocalToGlobal = subRegion.localToGlobalMap();
+          auto const & elemGlobalToLocal = subRegion.globalToLocalMap();
+          arrayView1d< globalIndex const > const & nodeLocalToGlobal = elemToNodeRelation.relatedObjectLocalToGlobal();
+          auto const & refCoords = getParent().getGroup< NodeManager >( "nodeManager" ).referencePosition();
+
+          printf( "  ElementToNodes map:\n" );
+          for( localIndex k=0; k<elemToNode.size( 0 ); ++k )
+          {
+            printf( "  %3d( %3lld ): ", k, elemLocalToGlobal( k ) );
+            for( localIndex a=0; a<elemToNode.size( 1 ); ++a )
+            {
+              printf( "%3d", elemToNode( k, a ) );
+              if( a != elemToNode.size( 1 )-1 )
+              {
+                printf( ", " );
+              }
+            }
+            printf( " )\n" );
+          }
+
+          printf( "\n  ElementToNodes map ( global nodes sorted by global elems):\n" );
+          map< globalIndex, localIndex > const sortedGlobalToLocalMap( elemGlobalToLocal.begin(),
+                                                                       elemGlobalToLocal.end());
+          for( auto indexPair : sortedGlobalToLocalMap )
+          {
+            globalIndex const gk = indexPair.first;
+            localIndex const k = indexPair.second;
+
+            printf( "  %3d( %3lld ): ", k, gk );
+            for( localIndex a=0; a<elemToNode.size( 1 ); ++a )
+            {
+              printf( "%3lld", nodeLocalToGlobal( elemToNode( k, a ) ) );
+              if( a != elemToNode.size( 1 )-1 )
+              {
+                printf( ", " );
+              }
+            }
+            printf( " )\n" );
+          }
+
+          printf( "\n  ElementToNodes coords:\n" );
+          for( auto indexPair : sortedGlobalToLocalMap )
+          {
+            globalIndex const gk = indexPair.first;
+            localIndex const k = indexPair.second;
+
+            printf( "  %3d( %3lld ): ", k, gk );
+            for( localIndex a=0; a<elemToNode.size( 1 ); ++a )
+            {
+              localIndex const b = elemToNode( k, a );
+              printf( "( %4.1f, %4.1f, %4.1f )", refCoords( b, 0 ), refCoords( b, 1 ), refCoords( b, 2 ) );
+              if( a != elemToNode.size( 1 )-1 )
+              {
+                printf( ", " );
+              }
+            }
+            printf( " )\n" );
+          }
+
+        } );
+      } );
+      std::cout<<std::endl;
+    }
+    MpiWrapper::barrier();
+  }
+}
+
 
 
 REGISTER_CATALOG_ENTRY( ObjectManagerBase, ElementRegionManager, string const &, Group * const )
