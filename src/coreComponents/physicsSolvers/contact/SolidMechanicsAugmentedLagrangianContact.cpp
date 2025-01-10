@@ -85,7 +85,7 @@ SolidMechanicsAugmentedLagrangianContact::SolidMechanicsAugmentedLagrangianConta
     setInputFlag( InputFlags::OPTIONAL ).
     setApplyDefaultValue( 1.e-05 ).
     setDescription( "Tolerance for the sliding check" );
- 
+
   // Set the default linear solver parameters
   LinearSolverParameters & linSolParams = m_linearSolverParameters.get();
   addLogLevel< logInfo::Configuration >();
@@ -1355,7 +1355,7 @@ void SolidMechanicsAugmentedLagrangianContact::createBubbleCellList( DomainParti
       arrayView2d< real64 const > const elemsCenter = cellElementSubRegion.getElementCenter().toViewConst();
 
       arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const nodePosition = nodeManager.referencePosition();
-*/
+ */
 //////////////////////////////////////////////////////////////////////////////////////////
 
       forAll< parallelDevicePolicy<> >( nBubElems,
@@ -1375,9 +1375,9 @@ void SolidMechanicsAugmentedLagrangianContact::createBubbleCellList( DomainParti
         for (int nod=0; nod<3; ++nod)
         {
           std::cout << faceToNodeMap( faceElemsList_v[k][0], nod) << " ";
-          x +=  nodePosition[faceToNodeMap( faceElemsList_v[k][0], nod)][0]; 
-          y +=  nodePosition[faceToNodeMap( faceElemsList_v[k][0], nod)][1]; 
-          z +=  nodePosition[faceToNodeMap( faceElemsList_v[k][0], nod)][2]; 
+          x +=  nodePosition[faceToNodeMap( faceElemsList_v[k][0], nod)][0];
+          y +=  nodePosition[faceToNodeMap( faceElemsList_v[k][0], nod)][1];
+          z +=  nodePosition[faceToNodeMap( faceElemsList_v[k][0], nod)][2];
         }
         std::cout << std::endl;
         std::cout << "FACE CENTERS: " << std::endl;
@@ -1385,36 +1385,36 @@ void SolidMechanicsAugmentedLagrangianContact::createBubbleCellList( DomainParti
         std::cout << "ELEMENT CENTERS: " << kfe << std::endl;
         std::cout << elemsCenter[kfe][0] << " " << elemsCenter[kfe][1] << " " << elemsCenter[kfe][2] << std::endl;
         std::cout << "ELMENT NODES: " << std::endl;
-        if (faceElemsList_v[k][1] == 0) 
+        if (faceElemsList_v[k][1] == 0)
         {
-          std::cout << elemsToNodeMap(kfe, 0) << " "; 
+          std::cout << elemsToNodeMap(kfe, 0) << " ";
           std::cout << elemsToNodeMap(kfe, 1) << " ";
           std::cout << elemsToNodeMap(kfe, 3) << " ";
           std::cout << std::endl;
         }
-        else if (faceElemsList_v[k][1] == 1) 
+        else if (faceElemsList_v[k][1] == 1)
         {
-          std::cout << elemsToNodeMap(kfe, 0) << " "; 
+          std::cout << elemsToNodeMap(kfe, 0) << " ";
           std::cout << elemsToNodeMap(kfe, 2) << " ";
           std::cout << elemsToNodeMap(kfe, 1) << " ";
           std::cout << std::endl;
         }
-        else if (faceElemsList_v[k][1] == 2) 
+        else if (faceElemsList_v[k][1] == 2)
         {
-          std::cout << elemsToNodeMap(kfe, 0) << " "; 
+          std::cout << elemsToNodeMap(kfe, 0) << " ";
           std::cout << elemsToNodeMap(kfe, 3) << " ";
           std::cout << elemsToNodeMap(kfe, 2) << " ";
           std::cout << std::endl;
         }
-        else if (faceElemsList_v[k][1] == 3) 
+        else if (faceElemsList_v[k][1] == 3)
         {
-          std::cout << elemsToNodeMap(kfe, 1) << " "; 
+          std::cout << elemsToNodeMap(kfe, 1) << " ";
           std::cout << elemsToNodeMap(kfe, 2) << " ";
           std::cout << elemsToNodeMap(kfe, 3) << " ";
           std::cout << std::endl;
         }
         std::cout << std::endl;
-*/
+ */
 //////////////////////////////////////////////////////////////////////////////////////////
       } );
       cellElementSubRegion.setFaceElementsList( faceElemsList.toViewConst());
@@ -1835,8 +1835,8 @@ void SolidMechanicsAugmentedLagrangianContact::computeTolerances( DomainPartitio
                                            (normalDisplacementTolerance[kfe]);
 
             GEOS_LOG_LEVEL( 2,
-                      GEOS_FMT( "kfe: {}, normalDisplacementTolerance: {}, slidingTolerance: {}, normalTractionTolerance: {}",
-                                 kfe, normalDisplacementTolerance[kfe], slidingTolerance[kfe], normalTractionTolerance[kfe]));
+                            GEOS_FMT( "kfe: {}, normalDisplacementTolerance: {}, slidingTolerance: {}, normalTractionTolerance: {}",
+                                      kfe, normalDisplacementTolerance[kfe], slidingTolerance[kfe], normalTractionTolerance[kfe] ));
 
             iterativePenalty[kfe][0] = m_iterPenaltyNFac*averageConstrainedModulus/(averageBoxSize0);
             iterativePenalty[kfe][1] = m_iterPenaltyTFac*averageConstrainedModulus/(averageBoxSize0);

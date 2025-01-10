@@ -210,8 +210,8 @@ public:
 
     N[0] = 4.0 * (1.0 - r - s) * s * LagrangeBasis1::valueBubble( xi );
     N[1] = 4.0 * (1.0 - r - s) * r * LagrangeBasis1::valueBubble( xi );
-    N[2] = (1.0 - r - s) * r * s * LagrangeBasis1::value(0, xi );
-    N[3] = (1.0 - r - s) * r * s * LagrangeBasis1::value(1, xi );
+    N[2] = (1.0 - r - s) * r * s * LagrangeBasis1::value( 0, xi );
+    N[3] = (1.0 - r - s) * r * s * LagrangeBasis1::value( 1, xi );
     N[4] = 4.0 * r * s * LagrangeBasis1::valueBubble( xi );
 
   }
@@ -644,13 +644,13 @@ H1_Wedge_Lagrange1_Gauss6::calcGradFaceBubbleN( localIndex const q,
   dNdXi[1][1] =  -4.0 * r * LagrangeBasis1::valueBubble( xi );                  // dN1/ds
   dNdXi[1][2] =  4.0 * (1 - r - s) * r * LagrangeBasis1::gradientBubble( xi );  // dN1/dxi
 
-  dNdXi[2][0] = (1.0 - 2.0 * r - s) * s * LagrangeBasis1::value(0, xi );  // dN2/dr
-  dNdXi[2][1] = (1.0 - r - 2.0 * s) * r * LagrangeBasis1::value(0, xi );  // dN2/ds
-  dNdXi[2][2] = (1 - r - s) * r * s * LagrangeBasis1::gradient(0, xi );   // dN2/dxi
+  dNdXi[2][0] = (1.0 - 2.0 * r - s) * s * LagrangeBasis1::value( 0, xi );  // dN2/dr
+  dNdXi[2][1] = (1.0 - r - 2.0 * s) * r * LagrangeBasis1::value( 0, xi );  // dN2/ds
+  dNdXi[2][2] = (1 - r - s) * r * s * LagrangeBasis1::gradient( 0, xi );   // dN2/dxi
 
-  dNdXi[3][0] = (1.0 - 2.0 * r - s) * s * LagrangeBasis1::value(1, xi );  // dN3/dr
-  dNdXi[3][1] = (1.0 - r - 2.0 * s) * r * LagrangeBasis1::value(1, xi );  // dN3/ds
-  dNdXi[3][2] = (1 - r - s) * r * s * LagrangeBasis1::gradient(1, xi );   // dN3/dxi
+  dNdXi[3][0] = (1.0 - 2.0 * r - s) * s * LagrangeBasis1::value( 1, xi );  // dN3/dr
+  dNdXi[3][1] = (1.0 - r - 2.0 * s) * r * LagrangeBasis1::value( 1, xi );  // dN3/ds
+  dNdXi[3][2] = (1 - r - s) * r * s * LagrangeBasis1::gradient( 1, xi );   // dN3/dxi
 
   dNdXi[4][0] = 4.0 * s * LagrangeBasis1::valueBubble( xi );                    // dN4/dr
   dNdXi[4][1] = 4.0 * r * LagrangeBasis1::valueBubble( xi );                    // dN4/ds

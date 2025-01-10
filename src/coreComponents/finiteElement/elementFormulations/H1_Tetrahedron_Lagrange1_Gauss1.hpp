@@ -348,10 +348,10 @@ private:
                                             0.073493043116361949544,
                                             0.073493043116361949544,
                                             0.073493043116361949544,
-                                            0.11268792571801585080, 
-                                            0.11268792571801585080, 
-                                            0.11268792571801585080, 
-                                            0.11268792571801585080, 
+                                            0.11268792571801585080,
+                                            0.11268792571801585080,
+                                            0.11268792571801585080,
+                                            0.11268792571801585080,
                                             0.042546020777081466438,
                                             0.042546020777081466438,
                                             0.042546020777081466438,
@@ -422,23 +422,23 @@ private:
   {
 
 #if TETRAHEDRON_QUADRATURE_POINTS == 14
-    real64 const qCoords[numQuadraturePoints] = { 0.092735250310891226402, 
+    real64 const qCoords[numQuadraturePoints] = { 0.092735250310891226402,
                                                   0.72179424906732632079,
-                                                  0.092735250310891226402, 
-                                                  0.092735250310891226402, 
+                                                  0.092735250310891226402,
+                                                  0.092735250310891226402,
                                                   0.31088591926330060980,
                                                   0.067342242210098170608,
                                                   0.31088591926330060980,
                                                   0.31088591926330060980,
-                                                  0.045503704125649649492, 
-                                                  0.45449629587435035051, 
-                                                  0.45449629587435035051, 
-                                                  0.045503704125649649492, 
-                                                  0.045503704125649649492, 
+                                                  0.045503704125649649492,
+                                                  0.45449629587435035051,
+                                                  0.45449629587435035051,
+                                                  0.045503704125649649492,
+                                                  0.045503704125649649492,
                                                   0.45449629587435035051 };
 
 #elif TETRAHEDRON_QUADRATURE_POINTS == 5
-    real64 const qCoords[numQuadraturePoints] = { 1.0/4.0, 1.0/6.0, 1.0/2.0,  1.0/6.0, 1.0/6.0 };
+    real64 const qCoords[numQuadraturePoints] = { 1.0/4.0, 1.0/6.0, 1.0/2.0, 1.0/6.0, 1.0/6.0 };
 
 #elif TETRAHEDRON_QUADRATURE_POINTS == 1
     real64 const qCoords[numQuadraturePoints] = { 1.0/4.0 };
@@ -471,9 +471,9 @@ private:
                                                   0.45449629587435035051,
                                                   0.045503704125649649492,
                                                   0.45449629587435035051,
-                                                  0.045503704125649649492, 
+                                                  0.045503704125649649492,
                                                   0.45449629587435035051,
-                                                  0.045503704125649649492 }; 
+                                                  0.045503704125649649492 };
 
 #elif TETRAHEDRON_QUADRATURE_POINTS == 5
     real64 const qCoords[numQuadraturePoints] = { 1.0/4.0, 1.0/6.0, 1.0/6.0, 1.0/2.0, 1.0/6.0 };
@@ -593,7 +593,7 @@ H1_Tetrahedron_Lagrange1_Gauss1::
     }
   }
 
-  return detJ * weight * quadratureWeight(q);
+  return detJ * weight * quadratureWeight( q );
 }
 
 GEOS_HOST_DEVICE
@@ -662,7 +662,7 @@ H1_Tetrahedron_Lagrange1_Gauss1::calcGradFaceBubbleN( localIndex const q,
     gradN[fi][2] = dNdXi[fi][0] * J[0][2] + dNdXi[fi][1] * J[1][2] + dNdXi[fi][2] * J[2][2];
   }
 
-  return detJ * weight * quadratureWeight(q);
+  return detJ * weight * quadratureWeight( q );
 }
 
 //*************************************************************************************************
@@ -677,7 +677,7 @@ H1_Tetrahedron_Lagrange1_Gauss1::
 
   real64 detJ =  determinantJacobianTransformation( X );
 
-  return detJ * weight * quadratureWeight(q);
+  return detJ * weight * quadratureWeight( q );
 }
 
 /// @endcond

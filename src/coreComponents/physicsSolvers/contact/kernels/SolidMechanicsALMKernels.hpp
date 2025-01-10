@@ -275,7 +275,7 @@ public:
 
     // Divide localPenalty by area
     real64 const fac = 1.0/m_faceArea[k];
-    LvArray::tensorOps::scale< 3, 3 >( stack.localPenalty, fac );                     
+    LvArray::tensorOps::scale< 3, 3 >( stack.localPenalty, fac );
 
     // transp(R) * Atu
     LvArray::tensorOps::Rij_eq_AkiBkj< 3, numUdofs, 3 >( matRRtAtu, stack.localRotationMatrix,

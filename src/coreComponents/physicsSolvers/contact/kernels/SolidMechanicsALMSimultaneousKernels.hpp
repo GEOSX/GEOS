@@ -309,8 +309,8 @@ public:
                                                          matRRtAtb );
 
     real64 const fac = 1.0 / m_faceArea[k];
-    LvArray::tensorOps::scale< 3, numUdofs >( matDRtAtu, fac);
-    LvArray::tensorOps::scale< 3, numBdofs >( matDRtAtb, fac);
+    LvArray::tensorOps::scale< 3, numUdofs >( matDRtAtu, fac );
+    LvArray::tensorOps::scale< 3, numBdofs >( matDRtAtb, fac );
 
     // R*RtAtu
     LvArray::tensorOps::Rij_eq_AikBkj< 3, numUdofs, 3 >( matRRtAtu, stack.localRotationMatrix,

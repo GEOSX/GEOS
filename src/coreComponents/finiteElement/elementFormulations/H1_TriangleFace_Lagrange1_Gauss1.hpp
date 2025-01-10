@@ -182,7 +182,7 @@ public:
                            real64 (& N)[1] )
   {
 
-    real64 const qCoords[2] = {quadratureParentCoords0(q), quadratureParentCoords1(q) };
+    real64 const qCoords[2] = {quadratureParentCoords0( q ), quadratureParentCoords1( q ) };
 
     calcBubbleN( qCoords, N );
   }
@@ -259,9 +259,9 @@ private:
 #elif TRIANGLE_QUADRATURE_POINTS == 4
 
     real64 const w[numQuadraturePoints] = {-0.562500000000000,
-                                            0.520833333333333,
-                                            0.520833333333333,
-                                            0.520833333333333 };
+                                           0.520833333333333,
+                                           0.520833333333333,
+                                           0.520833333333333 };
 
 #elif TRIANGLE_QUADRATURE_POINTS == 1
 
@@ -381,9 +381,9 @@ H1_TriangleFace_Lagrange1_Gauss1::
          real64 (& N)[numNodes] )
 {
 
-  real64 const qCoords[2] = {quadratureParentCoords0(q), quadratureParentCoords1(q) };
+  real64 const qCoords[2] = {quadratureParentCoords0( q ), quadratureParentCoords1( q ) };
 
-  calcN(qCoords, N);
+  calcN( qCoords, N );
 
 }
 
@@ -411,7 +411,7 @@ H1_TriangleFace_Lagrange1_Gauss1::
                   ( X[2][0] - X[0][0] ) * ( X[1][2] - X[0][2] ) - ( X[1][0] - X[0][0] ) * ( X[2][2] - X[0][2] ),
                   ( X[1][0] - X[0][0] ) * ( X[2][1] - X[0][1] ) - ( X[2][0] - X[0][0] ) * ( X[1][1] - X[0][1] )};
 
-  return sqrt( n[0] * n[0] + n[1] * n[1] + n[2] * n[2] ) * weight * quadratureWeight(q);
+  return sqrt( n[0] * n[0] + n[1] * n[1] + n[2] * n[2] ) * weight * quadratureWeight( q );
 }
 
 /// @endcond
