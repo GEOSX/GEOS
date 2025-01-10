@@ -305,6 +305,16 @@ public:
       stack.stiffnessVectorLocal_q[i] += localIncrement_q;
     } );
 
+
+    // Missing dz term with precomputed dz(f)
+    m_finiteElementSpace.template computeMissingzVolumeTerm_precompDzF( q, stack.xLocal, [&] ( int i, int j, real64 val )
+    {
+      real32 GradzsqrtDelta = stack.vti_GradzDelta / stack.vti_sqrtDelta;
+
+      real32 const localIncrement_p = -val * stack.invDensity * GradzsqrtDelta* m_q_n[m_elemsToNodes( k, j )];
+      stack.stiffnessVectorLocal_p[i] += localIncrement_p;
+    } );
+
 #if 0
     // Missing dz term
     m_finiteElementSpace.template computeMissingzVolumeTerm( q, stack.xLocal, [&] ( int iVertice, int j, real64 val )
