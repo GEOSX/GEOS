@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -20,7 +21,6 @@
 #ifndef GEOS_CONSTITUTIVE_SOLID_POROUSDAMAGESOLID_HPP_
 #define GEOS_CONSTITUTIVE_SOLID_POROUSDAMAGESOLID_HPP_
 
-#include "constitutive/fluid/multifluid/Layouts.hpp"
 #include "constitutive/solid/CoupledSolid.hpp"
 #include "constitutive/solid/porosity/BiotPorosity.hpp"
 #include "constitutive/solid/SolidBase.hpp"
@@ -56,33 +56,31 @@ public:
   GEOS_HOST_DEVICE
   void smallStrainUpdatePoromechanics( localIndex const k,
                                        localIndex const q,
+                                       real64 const & timeIncrement,
                                        real64 const & pressure_n,
                                        real64 const & pressure,
-                                       real64 const & timeIncrement,
-                                       real64 const ( &fluidPressureGradient )[3],
-                                       real64 const & deltaTemperatureFromInit,
+                                       real64 const & temperature,
                                        real64 const & deltaTemperatureFromLastStep,
                                        real64 const ( &strainIncrement )[6],
                                        real64 ( & totalStress )[6],
                                        real64 ( & dTotalStress_dPressure )[6],
                                        real64 ( & dTotalStress_dTemperature )[6],
                                        DiscretizationOps & stiffness,
+                                       integer const performStressInitialization,
                                        real64 & porosity,
                                        real64 & porosity_n,
                                        real64 & dPorosity_dVolStrain,
                                        real64 & dPorosity_dPressure,
                                        real64 & dPorosity_dTemperature,
-                                       real64 & dSolidDensity_dPressure,
-                                       real64 ( & fractureFlowTerm )[3],
-                                       real64 ( & dFractureFlowTerm_dPressure )[3] ) const
+                                       real64 & dSolidDensity_dPressure ) const
   {
     // Compute total stress increment and its derivative
     computeTotalStress( k,
                         q,
+                        timeIncrement,
                         pressure_n,
                         pressure,
-                        timeIncrement,
-                        deltaTemperatureFromInit,
+                        temperature,
                         strainIncrement,
                         totalStress,
                         dTotalStress_dPressure,
@@ -104,19 +102,38 @@ public:
                      dPorosity_dPressure,
                      dPorosity_dTemperature );
 
+    // skip porosity update when doing poromechanics initialization
+    if( performStressInitialization )
+    {
+      porosity = porosityInit;
+      dPorosity_dVolStrain = 0.0;
+      dPorosity_dPressure = 0.0;
+      dPorosity_dTemperature = 0.0;
+    }
 
-    // Compute fracture flow term and its derivative w.r.t pressure only
-    computeFractureFlowTerm( k,
-                             q,
-                             pressure,
-                             fluidPressureGradient,
-                             fractureFlowTerm,
-                             dFractureFlowTerm_dPressure );
-
+    // Update the damage-dependent permeability 
     updateMatrixPermeability( k );
 
     // Save the derivative of solid density wrt pressure for the computation of the body force
     dSolidDensity_dPressure = m_porosityUpdate.dGrainDensity_dPressure( k );
+  }
+  
+  GEOS_HOST_DEVICE
+  void computeFractureFlowTerm( localIndex const k,
+                                localIndex const q,
+                                real64 const ( &fluidPressureGradient )[3],
+                                real64 ( & fractureFlowTerm )[3],
+                                real64 ( & dFractureFlowTerm_dPressure )[3] ) const
+  {
+    // Compute fracture flow term and its derivative w.r.t pressure
+    real64 const pressureDamage = m_solidUpdate.pressureDamageFunction( k, q );
+
+    LvArray::tensorOps::scaledCopy< 3 >( fractureFlowTerm, fluidPressureGradient, -pressureDamage );
+
+    for( integer i=0; i<3; ++i )
+    {
+      dFractureFlowTerm_dPressure[i] = 0.0;
+    }
   }
 
   /**
@@ -134,6 +151,32 @@ public:
   void getElasticStiffness( localIndex const k, localIndex const q, real64 ( & stiffness )[6][6] ) const
   {
     m_solidUpdate.getElasticStiffness( k, q, stiffness );
+  }
+
+  /**
+   * @brief Return the stiffness at a given element (small-strain interface)
+   *
+   * @param [in] k the element number
+   * @param [out] biotCefficient the biot-coefficient
+   */
+  GEOS_HOST_DEVICE
+  inline
+  void getBiotCoefficient( localIndex const k, real64 & biotCoefficient ) const
+  {
+    biotCoefficient = m_porosityUpdate.getBiotCoefficient( k );
+  }
+
+  /**
+   * @brief Return the stiffness at a given element (small-strain interface)
+   *
+   * @param [in] k the element number
+   * @param [out] thermalExpansionCoefficient the thermal expansion coefficient
+   */
+  GEOS_HOST_DEVICE
+  inline
+  void getThermalExpansionCoefficient( localIndex const k, real64 & thermalExpansionCoefficient ) const
+  {
+    thermalExpansionCoefficient = m_solidUpdate.getThermalExpansionCoefficient( k );
   }
 
 private:
@@ -156,12 +199,20 @@ private:
     real64 const biotCoefficient = m_porosityUpdate.getBiotCoefficient( k );
 
     m_solidUpdate.updateBiotCoefficient( k, biotCoefficient );
+  }
 
+  GEOS_HOST_DEVICE
+  void updateThermalExpansionCoefficient( localIndex const k ) const
+  {
+    real64 const thermalExpansionCoefficient = m_solidUpdate.getThermalExpansionCoefficient( k );
+
+    m_porosityUpdate.updateThermalExpansionCoefficient( k, thermalExpansionCoefficient );
   }
 
   GEOS_HOST_DEVICE
   void updateMatrixPermeability( localIndex const k ) const
   {
+    // Use the averaged damage value from all quadrature points to get the cell-centered permeability
     integer const quadSize = m_solidUpdate.m_newDamage[k].size();
 
     real64 damageAvg = 0.0;
@@ -203,7 +254,7 @@ private:
 
     porosity = damage + ( 1 - damage ) * m_porosityUpdate.getPorosity( k, q );
     porosity_n = damage_n + ( 1 - damage_n ) * m_porosityUpdate.getPorosity_n( k, q );
-    porosityInit = m_porosityUpdate.getInitialPorosity( k, q );
+    porosityInit = damage + ( 1 - damage ) * m_porosityUpdate.getInitialPorosity( k, q );
 
     dPorosity_dVolStrain *= ( 1 - damage );
     dPorosity_dPressure *= ( 1 - damage );
@@ -212,18 +263,18 @@ private:
   GEOS_HOST_DEVICE
   void computeTotalStress( localIndex const k,
                            localIndex const q,
+                           real64 const & timeIncrement,
                            real64 const & pressure_n,
                            real64 const & pressure,
-                           real64 const & timeIncrement,
-                           real64 const & deltaTemperature,
+                           real64 const & temperature,
                            real64 const ( &strainIncrement )[6],
                            real64 ( & totalStress )[6],
                            real64 ( & dTotalStress_dPressure )[6],
                            real64 ( & dTotalStress_dTemperature )[6],
                            DiscretizationOps & stiffness ) const
   {
-    GEOS_UNUSED_VAR( pressure_n );
-
+    updateBiotCoefficientAndAssignModuli( k );
+    
     // Compute total stress increment and its derivative w.r.t. pressure
     m_solidUpdate.smallStrainUpdate( k,
                                      q,
@@ -232,18 +283,16 @@ private:
                                      totalStress, // first effective stress increment accumulated
                                      stiffness );
 
-    updateBiotCoefficientAndAssignModuli( k );
-
     // Add the contributions of pressure and temperature to the total stress
     real64 const biotCoefficient = m_porosityUpdate.getBiotCoefficient( k );
-    real64 const thermalExpansionCoefficient = 0;//m_solidUpdate.getThermalExpansionCoefficient( k );
+    real64 const thermalExpansionCoefficient = m_solidUpdate.getThermalExpansionCoefficient( k );
     real64 const bulkModulus = m_solidUpdate.getBulkModulus( k );
     real64 const thermalExpansionCoefficientTimesBulkModulus = thermalExpansionCoefficient * bulkModulus;
 
     real64 const pressureDamage = m_solidUpdate.pressureDamageFunction( k, q );
     real64 const damagedBiotCoefficient = pressureDamage * biotCoefficient;
 
-    LvArray::tensorOps::symAddIdentity< 3 >( totalStress, pressureDamage * pressure_n - damagedBiotCoefficient * pressure - 3 * thermalExpansionCoefficientTimesBulkModulus * deltaTemperature );
+    LvArray::tensorOps::symAddIdentity< 3 >( totalStress, pressureDamage * pressure_n - damagedBiotCoefficient * pressure - 3 * thermalExpansionCoefficientTimesBulkModulus * temperature );
 
     dTotalStress_dPressure[0] = -damagedBiotCoefficient;
     dTotalStress_dPressure[1] = -damagedBiotCoefficient;
@@ -258,27 +307,6 @@ private:
     dTotalStress_dTemperature[3] = 0;
     dTotalStress_dTemperature[4] = 0;
     dTotalStress_dTemperature[5] = 0;
-  }
-
-  GEOS_HOST_DEVICE
-  void computeFractureFlowTerm( localIndex const k,
-                                localIndex const q,
-                                real64 const & pressure,
-                                real64 const ( &fluidPressureGradient )[3],
-                                real64 ( & fractureFlowTerm )[3],
-                                real64 ( & dFractureFlowTerm_dPressure )[3] ) const
-  {
-    GEOS_UNUSED_VAR( pressure );
-
-    // Compute fracture flow term and its derivative w.r.t pressure
-    real64 const pressureDamage = m_solidUpdate.pressureDamageFunction( k, q );
-
-    LvArray::tensorOps::scaledCopy< 3 >( fractureFlowTerm, fluidPressureGradient, -pressureDamage );
-
-    for( integer i=0; i<3; ++i )
-    {
-      dFractureFlowTerm_dPressure[i] = 0.0;
-    }
   }
 
 };
@@ -344,6 +372,15 @@ public:
   arrayView2d< real64 const > const getDensity() const
   {
     return getSolidModel().getDensity();
+  }
+
+  /**
+   * @brief Const/non-mutable accessor for biot coefficient
+   * @return Accessor
+   */
+  arrayView1d< real64 const > const getBiotCoefficient() const
+  {
+    return getPorosityModel().getBiotCoefficient();
   }
 
 private:

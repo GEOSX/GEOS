@@ -13,7 +13,6 @@ configure_file( ${CMAKE_SOURCE_DIR}/${kernelPath}/policies.hpp.in
                 ${CMAKE_BINARY_DIR}/generatedSrc/${kernelPath}/policies.hpp )
 
 set( kernelNames PoromechanicsKernels ThermoPoromechanicsKernels )
-set( damageKernelNames PoromechanicsDamageKernels )
 set( subregionList CellElementSubRegion )
 set( porousSolidDispatch PorousSolid<DruckerPragerExtended>
                          PorousSolid<ModifiedCamClay>
@@ -23,16 +22,12 @@ set( porousSolidDispatch PorousSolid<DruckerPragerExtended>
                          PorousSolid<ElasticTransverseIsotropic>
                          PorousSolid<ElasticIsotropicPressureDependent>
                          PorousSolid<ElasticOrthotropic>
-                         PorousSolid<DamageSpectral<ElasticIsotropic>>
-                         PorousSolid<DamageVolDev<ElasticIsotropic>>
-                         PorousSolid<Damage<ElasticIsotropic>> 
                          PorousSolid<DuvautLionsSolid<DruckerPrager>>
                          PorousSolid<DuvautLionsSolid<DruckerPragerExtended>>
-                         PorousSolid<DuvautLionsSolid<ModifiedCamClay>> )
-
-set( porousDamageSolidDispatch PorousDamageSolid<Damage<ElasticIsotropic>>
-                               PorousDamageSolid<DamageSpectral<ElasticIsotropic>>
-                               PorousDamageSolid<DamageVolDev<ElasticIsotropic>> )
+                         PorousSolid<DuvautLionsSolid<ModifiedCamClay>>
+                         PorousDamageSolid<Damage<ElasticIsotropic>>
+                         PorousDamageSolid<DamageSpectral<ElasticIsotropic>>
+                         PorousDamageSolid<DamageVolDev<ElasticIsotropic>> )
 
 set( finiteElementDispatch H1_Hexahedron_Lagrange1_GaussLegendre2
                            H1_Wedge_Lagrange1_Gauss6
@@ -74,7 +69,32 @@ endif( )
     endforeach()
   endforeach()
 
-  foreach( KERNELNAME ${damageKernelNames} )
+set( kernelNames PoromechanicsDamageKernels )
+set( subregionList CellElementSubRegion )
+set( porousDamageSolidDispatch PorousDamageSolid<Damage<ElasticIsotropic>>
+                               PorousDamageSolid<DamageSpectral<ElasticIsotropic>>
+                               PorousDamageSolid<DamageVolDev<ElasticIsotropic>> )
+
+set( finiteElementDispatch H1_Hexahedron_Lagrange1_GaussLegendre2
+                           H1_Wedge_Lagrange1_Gauss6
+                           H1_Tetrahedron_Lagrange1_Gauss1
+                           H1_Pyramid_Lagrange1_Gauss5
+                           H1_Tetrahedron_VEM_Gauss1
+                           H1_Prism5_VEM_Gauss1
+                           H1_Prism6_VEM_Gauss1
+                           H1_Prism7_VEM_Gauss1
+                           H1_Prism8_VEM_Gauss1
+                           H1_Prism9_VEM_Gauss1
+                           H1_Prism10_VEM_Gauss1 )
+
+if ( NOT ${ENABLE_HIP} )
+  list(APPEND finiteElementDispatch
+              H1_Hexahedron_VEM_Gauss1
+              H1_Wedge_VEM_Gauss1
+              H1_Prism11_VEM_Gauss1 )
+endif( )
+
+  foreach( KERNELNAME ${kernelNames} )
     foreach( SUBREGION_TYPE  ${subregionList} )
       foreach( CONSTITUTIVE_TYPE ${porousDamageSolidDispatch} )
         foreach( FE_TYPE ${finiteElementDispatch} )
