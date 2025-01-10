@@ -454,6 +454,26 @@ void SurfaceGenerator::initializePostInitialConditionsPreSubGroups()
             KIC[kf][2] = std::min( std::fabs( k0[2] ), std::fabs( KIC[kf][2] ) );
           }
         }
+
+        if( m_toughnessScalingFactor > 0.0 )
+        {
+          real64 faceCenter[3];
+          faceCenter[0] = faceCenters[kf][0];
+          faceCenter[1] = faceCenters[kf][1];
+          faceCenter[2] = faceCenters[kf][2];
+
+          for( localIndex dim=0; dim<3; ++dim)
+          {
+            real64 const initialRockToughness = KIC[kf][dim];
+
+            real64 scaledToughness = scalingToughness( m_fractureOrigin,
+                                                      faceCenter,
+                                                      initialRockToughness,
+                                                      m_toughnessScalingFactor );
+
+            KIC[kf][dim] = scaledToughness;
+          }
+        }
       }
     }
   } );
