@@ -44,7 +44,7 @@ SingleFluidBase::SingleFluidBase( string const & name, Group * const parent )
   registerField( fields::singlefluid::viscosity{}, &m_viscosity.value );
   registerField( fields::singlefluid::dViscosity{}, &m_viscosity.derivs );
 
-  registerField( fields::singlefluid::dViscosity_dPressure{}, &m_dViscosity_dPressure );
+  //registerField( fields::singlefluid::dViscosity_dPressure{}, &m_dViscosity_dPressure );
   registerField( fields::singlefluid::dViscosity_dTemperature{}, &m_dViscosity_dTemperature );
 
   registerField( fields::singlefluid::internalEnergy{}, &m_internalEnergy.value );
@@ -103,7 +103,7 @@ void SingleFluidBase::allocateConstitutiveData( Group & parent,
   m_viscosity.value.resize( parent.size(), numConstitutivePointsPerParentIndex );
   m_viscosity.derivs.resize( parent.size(), numConstitutivePointsPerParentIndex, m_numDOF );
 
-  m_dViscosity_dPressure.resize( parent.size(), numConstitutivePointsPerParentIndex );
+  //m_dViscosity_dPressure.resize( parent.size(), numConstitutivePointsPerParentIndex );
   m_dViscosity_dTemperature.resize( parent.size(), numConstitutivePointsPerParentIndex );
 
   // tjb new internal energy

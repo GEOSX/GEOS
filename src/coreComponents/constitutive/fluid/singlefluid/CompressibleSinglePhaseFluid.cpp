@@ -136,8 +136,6 @@ void CompressibleSinglePhaseFluid::postInputInitialization()
   {
     m_density.derivs[0][i][DerivOffset::dP] = dRho_dP;
   }
-  //getField< fields::singlefluid::dDensity_dPressure >().setDefaultValue( dRho_dP );
-  getField< fields::singlefluid::dViscosity_dPressure >().setDefaultValue( dVisc_dP );
 }
 
 CompressibleSinglePhaseFluid::KernelWrapper
@@ -148,8 +146,7 @@ CompressibleSinglePhaseFluid::createKernelWrapper()
                         m_density.value,
                         m_density.derivs,
                         m_viscosity.value,
-                        m_viscosity.derivs,
-                        m_dViscosity_dPressure );
+                        m_viscosity.derivs );
 }
 
 REGISTER_CATALOG_ENTRY( ConstitutiveBase, CompressibleSinglePhaseFluid, string const &, Group * const )

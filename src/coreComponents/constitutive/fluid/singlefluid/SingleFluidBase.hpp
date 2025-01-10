@@ -63,14 +63,12 @@ protected:
   SingleFluidBaseUpdate( arrayView2d< real64 >  const & density,
                          arrayView3d< real64 >  const & dDensity,
                          arrayView2d< real64 > const & viscosity,
-                         arrayView3d< real64 >  const & dViscosity,
-                         arrayView2d< real64 > const & dVisc_dPres )
+                         arrayView3d< real64 >  const & dViscosity )
     :
     m_density( density ),
     m_dDensity( dDensity ),
     m_viscosity( viscosity ),
-    m_dViscosity( dViscosity ),
-    m_dVisc_dPres( dVisc_dPres )
+    m_dViscosity( dViscosity )
   {}
 
   /**
@@ -96,19 +94,14 @@ protected:
   SingleFluidBaseUpdate & operator=( SingleFluidBaseUpdate && ) = delete;
 
 
-  /// Fluid density
+  /// Fluid density property and derivatives
   arrayView2d< real64 >  m_density;
   arrayView3d< real64 >  m_dDensity;
 
-  /// Derivative of density w.r.t. pressure
-  //arrayView2d< real64 > m_dDens_dPres;
-
-  /// Fluid viscosity
+  /// Fluid viscosity property and derivatives
   arrayView2d< real64 > m_viscosity;
   arrayView3d< real64 > m_dViscosity;
 
-  /// Derivative of viscosity w.r.t. pressure
-  arrayView2d< real64 > m_dVisc_dPres;
 
 //END_SPHINX_INCLUDE_01
 
@@ -252,8 +245,6 @@ public:
   arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > dDensity() const
   { return m_density.derivs; }
 
-  arrayView2d< real64 const > dDensity_dPressure() const { return m_dDensity_dPressure; }
-
   arrayView2d< real64 > dDensity_dTemperature() { return m_dDensity_dTemperature; }
   arrayView2d< real64 const > dDensity_dTemperature() const { return m_dDensity_dTemperature; }
 
@@ -264,8 +255,6 @@ public:
 
   arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > dViscosity() const
   { return m_viscosity.derivs; }
-
-  arrayView2d< real64 const > dViscosity_dPressure() const { return m_dViscosity_dPressure; }
 
   arrayView2d< real64 > dViscosity_dTemperature() { return m_dViscosity_dTemperature; }
   arrayView2d< real64 const > dViscosity_dTemperature() const { return m_dViscosity_dTemperature; }

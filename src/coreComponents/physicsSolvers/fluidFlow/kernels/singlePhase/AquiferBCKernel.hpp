@@ -121,7 +121,7 @@ struct AquiferBCKernel
                                 dAquiferVolFlux_dPres,
                                 aquiferDens,
                                 dens[er][esr][ei][0],
-                                dDens[er][esr][ei][0][0], // tjb 
+                                dDens[er][esr][ei][0][0], // tjb
                                 dt,
                                 localFlux,
                                 localFluxJacobian );

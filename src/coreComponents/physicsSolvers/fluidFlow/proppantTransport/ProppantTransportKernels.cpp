@@ -174,7 +174,7 @@ FluxKernel::
                    arrayView2d< real64 const > const & dDens_dProppantConc,
                    arrayView3d< real64 const > const & dDens_dComponentConc,
                    arrayView2d< real64 const > const & visc,
-                   arrayView2d< real64 const > const & dVisc_dPres,
+                   arrayView3d< real64 const > const & dVisc,
                    arrayView2d< real64 const > const & dVisc_dProppantConc,
                    arrayView3d< real64 const > const & dVisc_dComponentConc,
                    arrayView2d< real64 const > const & fluidDensity,
@@ -251,7 +251,7 @@ FluxKernel::
     dEdgeDens_dProppantC[i] = geometricWeight[i] * dDens_dProppantConc[ei][0];
 
     edgeViscosity += geometricWeight[i] * visc[ei][0];
-    dEdgeVisc_dP[i] = geometricWeight[i] * dVisc_dPres[ei][0];
+    dEdgeVisc_dP[i] = geometricWeight[i] * dVisc[ei][0][0];
     dEdgeVisc_dProppantC[i] = geometricWeight[i] * dVisc_dProppantConc[ei][0];
 
     proppantC[i] = proppantConc[ei];
@@ -752,7 +752,7 @@ void FluxKernel::
           ElementViewConst< arrayView2d< real64 const > > const & dDens_dProppantConc,
           ElementViewConst< arrayView3d< real64 const > > const & dDens_dComponentConc,
           ElementViewConst< arrayView2d< real64 const > > const & visc,
-          ElementViewConst< arrayView2d< real64 const > > const & dVisc_dPres,
+          ElementViewConst< arrayView3d< real64 const > > const & dVisc,
           ElementViewConst< arrayView2d< real64 const > > const & dVisc_dProppantConc,
           ElementViewConst< arrayView3d< real64 const > > const & dVisc_dComponentConc,
           ElementViewConst< arrayView2d< real64 const > > const & fluidDensity,
@@ -826,7 +826,7 @@ void FluxKernel::
                        dDens_dProppantConc[er][esr],
                        dDens_dComponentConc[er][esr],
                        visc[er][esr],
-                       dVisc_dPres[er][esr],
+                       dVisc[er][esr],
                        dVisc_dProppantConc[er][esr],
                        dVisc_dComponentConc[er][esr],
                        fluidDensity[er][esr],

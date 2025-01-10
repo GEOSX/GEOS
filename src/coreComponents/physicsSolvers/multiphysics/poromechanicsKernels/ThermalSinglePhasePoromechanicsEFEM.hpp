@@ -58,7 +58,7 @@ public:
   using Base::m_wDofNumber;
   using Base::m_fluidDensity;
   using Base::m_fluidDensity_n;
-  using Base::m_dFluidDensity_dPressure;
+  using Base::m_dFluidDensity;
   using Base::m_porosity_n;
   using Base::m_surfaceArea;
   using Base::m_elementVolumeFrac;

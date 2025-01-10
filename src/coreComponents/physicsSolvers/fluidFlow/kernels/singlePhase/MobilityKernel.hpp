@@ -38,16 +38,14 @@ struct MobilityKernel
   inline
   static void
   compute( real64 const & dens,
-           real64 const & dDens_dP,  
+           real64 const & dDens_dP,
            real64 const & visc,
            real64 const & dVisc_dP,  //tjb
-           real64 const & dVisc_dPres,
            real64 & mob,
            real64 & dMob_dPres )
   {
     mob = dens / visc;
     dMob_dPres = dDens_dP / visc - mob / visc * dVisc_dP;  // tjb keep
-    assert( fabs( dVisc_dP -dVisc_dPres ) < FLT_EPSILON );
   }
 
 // Thermal version
@@ -61,15 +59,13 @@ struct MobilityKernel
                real64 const & visc,
                real64 const & dVisc_dP, // tjb
                real64 const & dVisc_dT, // tjb
-               real64 const & dVisc_dPres,
                real64 const & dVisc_dTemp,
                real64 & mob,
                real64 & dMob_dPres,
                real64 & dMob_dTemp )
   {
     mob = dens / visc;
-    dMob_dPres = dDens_dP / visc - mob / visc * dVisc_dP;   
-    assert( fabs( dVisc_dP -dVisc_dPres ) < FLT_EPSILON );
+    dMob_dPres = dDens_dP / visc - mob / visc * dVisc_dP;
     dMob_dTemp = dDens_dTemp / visc - mob / visc * dVisc_dTemp;
     dMob_dTemp = dDens_dT / visc - mob / visc * dVisc_dT;  // tjb keep
     assert( fabs( dDens_dT - dDens_dTemp ) < FLT_EPSILON );
@@ -94,18 +90,16 @@ struct MobilityKernel
                       arrayView3d< real64 const > const & dDens,
                       arrayView2d< real64 const > const & visc,
                       arrayView3d< real64 const > const & dVisc,
-                      arrayView2d< real64 const > const & dVisc_dPres,
                       arrayView1d< real64 > const & mob,
                       arrayView1d< real64 > const & dMob_dPres )
   {
-    using DerivOffset = constitutive::singlefluid::DerivativeOffsetC<0>;
+    using DerivOffset = constitutive::singlefluid::DerivativeOffsetC< 0 >;
     forAll< POLICY >( size, [=] GEOS_HOST_DEVICE ( localIndex const a )
     {
       compute( dens[a][0],
-               dDens[a][0][DerivOffset::dP],   
+               dDens[a][0][DerivOffset::dP],
                visc[a][0],
                dVisc[a][0][DerivOffset::dP],   // tjb use deriv::dp
-               dVisc_dPres[a][0],
                mob[a],
                dMob_dPres[a] );
     } );
@@ -140,13 +134,12 @@ struct MobilityKernel
                       arrayView2d< real64 const > const & dDens_dTemp,
                       arrayView2d< real64 const > const & visc,
                       arrayView3d< real64 const > const & dVisc, // tjb
-                      arrayView2d< real64 const > const & dVisc_dPres,
                       arrayView2d< real64 const > const & dVisc_dTemp,
                       arrayView1d< real64 > const & mob,
                       arrayView1d< real64 > const & dMob_dPres,
                       arrayView1d< real64 > const & dMob_dTemp )
   {
-    using DerivOffset = constitutive::singlefluid::DerivativeOffsetC<1>;
+    using DerivOffset = constitutive::singlefluid::DerivativeOffsetC< 1 >;
     forAll< POLICY >( size, [=] GEOS_HOST_DEVICE ( localIndex const a )
     {
       old_compute( dens[a][0],
@@ -156,7 +149,6 @@ struct MobilityKernel
                    visc[a][0],
                    dVisc[a][0][DerivOffset::dP], // tjb use deriv::dp
                    dVisc[a][0][DerivOffset::dT], // tjb use deriv::dt
-                   dVisc_dPres[a][0],
                    dVisc_dTemp[a][0],
                    mob[a],
                    dMob_dPres[a],

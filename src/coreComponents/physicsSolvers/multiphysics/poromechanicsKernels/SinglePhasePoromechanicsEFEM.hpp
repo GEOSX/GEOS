@@ -251,7 +251,7 @@ protected:
   arrayView2d< real64 const > const m_solidDensity;
   arrayView2d< real64 const > const m_fluidDensity;
   arrayView2d< real64 const > const m_fluidDensity_n;
-  arrayView2d< real64 const > const m_dFluidDensity_dPressure;
+  arrayView3d< real64 const > const m_dFluidDensity;
 
   /// The rank-global fluid pressure array.
   arrayView1d< real64 const > const m_matrixPressure;

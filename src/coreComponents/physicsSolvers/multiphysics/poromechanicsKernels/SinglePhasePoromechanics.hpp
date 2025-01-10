@@ -257,7 +257,7 @@ protected:
   /// Fluid density at the previous converged time step
   arrayView2d< real64 const > const m_fluidDensity_n;
   /// Derivative of fluid density wrt pressure
-  arrayView2d< real64 const > const m_dFluidDensity_dPressure;
+  arrayView3d< real64 const > const m_dFluidDensity;
 
   integer const m_performStressInitialization;
 };

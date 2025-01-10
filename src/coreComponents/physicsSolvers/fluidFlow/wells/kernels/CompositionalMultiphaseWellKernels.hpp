@@ -1036,7 +1036,7 @@ public:
     {
       real64 const phaseAmount = stack.volume * phaseVolFrac[ip] * phaseDens[ip];
       real64 const phaseAmount_n = stack.volume * phaseVolFrac_n[ip] * phaseDens_n[ip];
-      //remove tjb 
+      //remove tjb
       real64 const dPhaseAmount_dP = stack.volume * ( dPhaseVolFrac[ip][Deriv::dP] * phaseDens[ip]
                                                       + phaseVolFrac[ip] * dPhaseDens[ip][Deriv::dP] );
       dPhaseAmount[FLUID_PROP_COFFSET::dP]=stack.volume * ( dPhaseVolFrac[ip][Deriv::dP] * phaseDens[ip]

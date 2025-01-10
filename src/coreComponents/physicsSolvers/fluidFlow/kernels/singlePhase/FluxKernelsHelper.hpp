@@ -61,7 +61,7 @@ void computeSinglePhaseFlux( localIndex const ( &seri )[2],
                              real64 ( & dFlux_dP )[2],
                              real64 & dFlux_dTrans )
 {
-  using DerivOffset = constitutive::singlefluid::DerivativeOffsetC<0>;
+  using DerivOffset = constitutive::singlefluid::DerivativeOffsetC< 0 >;
   // average density
   real64 densMean = 0.0;
   real64 dDensMean_dP[2];

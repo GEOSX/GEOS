@@ -398,10 +398,8 @@ protected:
   {
     arrayView2d< real64 const > const dens;             ///< density
     arrayView3d< real64 const > const dDens;             ///< density derivatives
-    arrayView2d< real64 const > const dDens_dPres;      ///< derivative of density w.r.t. pressure
     arrayView2d< real64 const > const visc;             ///< viscosity
     arrayView3d< real64 const > const dVisc;             ///< viscosity derivatives
-    arrayView2d< real64 const > const dVisc_dPres;      ///< derivative of viscosity w.r.t. pressure
     real64 const defaultDensity;                     ///< default density to use for new elements
     real64 const defaultViscosity;                    ///< default vi to use for new elements
   };

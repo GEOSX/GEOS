@@ -71,7 +71,7 @@ protected:
    * @param Ks
    * @param isNewtonianFluid
    * @param density
-   * @param dDens_dPres
+   * @param dDensity
    * @param dDens_dProppantConc
    * @param dDens_dCompConc
    * @param componentDensity
@@ -84,7 +84,7 @@ protected:
    * @param dFluidVisc_dPres
    * @param dFluidVisc_dCompConc
    * @param viscosity
-   * @param dVisc_dPres
+   * @param dViscosity
    * @param dVisc_dProppantConc
    * @param dVisc_dCompConc
    */
@@ -96,7 +96,6 @@ protected:
                          bool const isNewtonianFluid,
                          arrayView2d< real64 > const & density,
                          arrayView3d< real64 > const & dDensity,
-                         arrayView2d< real64 > const & dDens_dPres,
                          arrayView2d< real64 > const & dDens_dProppantConc,
                          arrayView3d< real64 > const & dDens_dCompConc,
                          arrayView3d< real64 > const & componentDensity,
@@ -110,7 +109,6 @@ protected:
                          arrayView3d< real64 > const & dFluidVisc_dCompConc,
                          arrayView2d< real64 > const & viscosity,
                          arrayView3d< real64 > const & dViscosity,
-                         arrayView2d< real64 > const & dVisc_dPres,
                          arrayView2d< real64 > const & dVisc_dProppantConc,
                          arrayView3d< real64 > const & dVisc_dCompConc )
     : m_defaultComponentDensity( defaultDensity ),
@@ -121,7 +119,6 @@ protected:
     m_isNewtonianFluid( isNewtonianFluid ),
     m_density( density ),
     m_dDensity( dDensity ),
-    m_dDensity_dPressure( dDens_dPres ),
     m_dDensity_dProppantConc( dDens_dProppantConc ),
     m_dDensity_dCompConc( dDens_dCompConc ),
     m_componentDensity( componentDensity ),
@@ -135,7 +132,6 @@ protected:
     m_dFluidVisc_dCompConc( dFluidVisc_dCompConc ),
     m_viscosity( viscosity ),
     m_dViscosity( dViscosity ),
-    m_dViscosity_dPressure( dVisc_dPres ),
     m_dViscosity_dProppantConc( dVisc_dProppantConc ),
     m_dViscosity_dCompConc( dVisc_dCompConc )
   {}
@@ -176,7 +172,6 @@ protected:
   arrayView2d< real64 > m_density;
   arrayView3d< real64 > m_dDensity;
 
-  arrayView2d< real64 > m_dDensity_dPressure;
   arrayView2d< real64 > m_dDensity_dProppantConc;
   arrayView3d< real64 > m_dDensity_dCompConc;
 
@@ -195,7 +190,6 @@ protected:
   arrayView2d< real64 > m_viscosity;
   arrayView3d< real64 > m_dViscosity;
 
-  arrayView2d< real64 > m_dViscosity_dPressure;
   arrayView2d< real64 > m_dViscosity_dProppantConc;
   arrayView3d< real64 > m_dViscosity_dCompConc;
 

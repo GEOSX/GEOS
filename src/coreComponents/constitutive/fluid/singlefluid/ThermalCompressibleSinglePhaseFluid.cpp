@@ -108,7 +108,6 @@ ThermalCompressibleSinglePhaseFluid::createKernelWrapper()
                         m_dDensity_dTemperature,
                         m_viscosity.value,
                         m_viscosity.derivs,
-                        m_dViscosity_dPressure,
                         m_dViscosity_dTemperature,
                         m_internalEnergy.value,
                         m_internalEnergy.derivs,

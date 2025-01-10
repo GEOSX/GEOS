@@ -97,10 +97,8 @@ SinglePhaseBase::FluidPropViews SinglePhaseProppantBase::getFluidProperties( con
   SlurryFluidBase const & slurryFluid = dynamicCast< SlurryFluidBase const & >( fluid );
   return { slurryFluid.density(),
            slurryFluid.dDensity(),
-           slurryFluid.dDensity_dPressure(),
            slurryFluid.viscosity(),
            slurryFluid.dViscosity(),
-           slurryFluid.dViscosity_dPressure(),
            slurryFluid.getField< fields::singlefluid::density >().getDefaultValue(),
            slurryFluid.getField< fields::singlefluid::viscosity >().getDefaultValue() };
 }

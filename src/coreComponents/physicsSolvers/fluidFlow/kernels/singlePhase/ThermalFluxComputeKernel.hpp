@@ -189,7 +189,7 @@ public:
   void computeFlux( localIndex const iconn,
                     StackVariables & stack ) const
   {
-    using DerivOffset = constitutive::singlefluid::DerivativeOffsetC<1>;
+    using DerivOffset = constitutive::singlefluid::DerivativeOffsetC< 1 >;
     // ***********************************************
     // First, we call the base computeFlux to compute:
     //  1) compFlux and its derivatives (including derivatives wrt temperature),

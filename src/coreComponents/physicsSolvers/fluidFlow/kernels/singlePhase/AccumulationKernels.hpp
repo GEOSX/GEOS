@@ -55,9 +55,9 @@ public:
   static constexpr integer numEqn = NUM_DOF;
 
 
-  /// Note: Derivative lineup only supports dP & dT, not component terms 
+  /// Note: Derivative lineup only supports dP & dT, not component terms
   static constexpr integer isThermal = NUM_DOF-1;
-  using DerivOffset = constitutive::singlefluid::DerivativeOffsetC<isThermal>;
+  using DerivOffset = constitutive::singlefluid::DerivativeOffsetC< isThermal >;
 
   /**
    * @brief Constructor
@@ -86,7 +86,6 @@ public:
     m_dPoro_dPres( solid.getDporosity_dPressure() ),
     m_density( fluid.density() ),
     m_dDensity ( fluid.dDensity() ),
-    m_dDensity_dPres( fluid.dDensity_dPressure() ),
     m_mass_n( subRegion.template getField< fields::flow::mass_n >() ),
     m_localMatrix( localMatrix ),
     m_localRhs( localRhs )
@@ -170,14 +169,6 @@ public:
   {
     // Residual contribution is mass conservation in the cell
     stack.localResidual[0] = stack.poreVolume * m_density[ei][0] - m_mass_n[ei];
-    // Derivative of residual wrt to pressure in the cell
-    //std::cout << m_dDensity_dPres[ei][0]<< " " <<  m_dDensity[ei][0][DerivOffset::dP] << std::endl;
-    //tjb  use DerivOffset::dP
-    //    std::cout.flush();
-    //assert( fabs( m_dDensity_dPres[ei][0]-m_dDensity[ei][0][DerivOffset::dP] )<FLT_EPSILON );
-
-
-    //stack.localJacobian[0][0] = stack.dPoreVolume_dPres * m_density[ei][0] + m_dDensity_dPres[ei][0] * stack.poreVolume;
     stack.localJacobian[0][0] = stack.dPoreVolume_dPres * m_density[ei][0] + m_dDensity[ei][0][DerivOffset::dP] * stack.poreVolume;
     // Customize the kernel with this lambda
     kernelOp();
@@ -252,7 +243,6 @@ protected:
   /// Views on density
   arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID >  const m_density;
   arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > const m_dDensity;
-  arrayView2d< real64 const > const m_dDensity_dPres;
 
   /// View on mass
   arrayView1d< real64 const > const m_mass_n;

@@ -151,7 +151,7 @@ struct PressureRelationKernel
           arrayView1d< localIndex const > const & nextWellElemIndex,
           arrayView1d< real64 const > const & wellElemPressure,
           arrayView2d< real64 const > const & wellElemDensity,
-          arrayView2d< real64 const > const & dWellElemDensity_dPres,
+          arrayView3d< real64 const > const & dWellElemDensity,
           CRSMatrixView< real64, globalIndex const > const & localMatrix,
           arrayView1d< real64 > const & localRhs );
 
@@ -173,7 +173,7 @@ struct PerforationKernel
                               fields::singlefluid::density,
                               fields::singlefluid::dDensity,
                               fields::singlefluid::viscosity,
-                              fields::singlefluid::dViscosity_dPressure >;
+                              fields::singlefluid::dViscosity >;
 
   /**
    * @brief The type for element-based non-constitutive data parameters.
@@ -211,13 +211,13 @@ struct PerforationKernel
           ElementViewConst< arrayView2d< real64 const > > const & resDensity,
           ElementViewConst< arrayView3d< real64 const > > const & dResDensity,
           ElementViewConst< arrayView2d< real64 const > > const & resViscosity,
-          ElementViewConst< arrayView2d< real64 const > > const & dResViscosity_dPres,
+          ElementViewConst< arrayView3d< real64 const > > const & dResViscosity,
           arrayView1d< real64 const > const & wellElemGravCoef,
           arrayView1d< real64 const > const & wellElemPressure,
           arrayView2d< real64 const > const & wellElemDensity,
           arrayView3d< real64 const > const & dWellElemDensity,
           arrayView2d< real64 const > const & wellElemViscosity,
-          arrayView2d< real64 const > const & dWellElemViscosity_dPres,
+          arrayView3d< real64 const > const & dWellElemViscosity,
           arrayView1d< real64 const > const & perfGravCoef,
           arrayView1d< localIndex const > const & perfWellElemIndex,
           arrayView1d< real64 const > const & perfTransmissibility,
@@ -244,7 +244,7 @@ struct AccumulationKernel
           arrayView1d< integer const > const & wellElemGhostRank,
           arrayView1d< real64 const > const & wellElemVolume,
           arrayView2d< real64 const > const & wellElemDensity,
-          arrayView2d< real64 const > const & dWellElemDensity_dPres,
+          arrayView3d< real64 const > const & dWellElemDensity,
           arrayView2d< real64 const > const & wellElemDensity_n,
           CRSMatrixView< real64, globalIndex const > const & localMatrix,
           arrayView1d< real64 > const & localRhs );

@@ -45,7 +45,7 @@ public:
   using DensRelationType      = ExponentialRelation< real64, DENS_EAT, 3 >;
   using ViscRelationType      = ExponentialRelation< real64, VISC_EAT >;
   using IntEnergyRelationType = ExponentialRelation< real64, INTENERGY_EAT >;
-  using DerivOffset = constitutive::singlefluid::DerivativeOffsetC<1>;
+  using DerivOffset = constitutive::singlefluid::DerivativeOffsetC< 1 >;
 
   ThermalCompressibleSinglePhaseUpdate( DensRelationType const & densRelation,
                                         ViscRelationType const & viscRelation,
@@ -55,7 +55,6 @@ public:
                                         arrayView2d< real64 > const & dDens_dTemp,
                                         arrayView2d< real64 > const & viscosity,
                                         arrayView3d< real64 > const & dViscosity,
-                                        arrayView2d< real64 > const & dVisc_dPres,
                                         arrayView2d< real64 > const & dVisc_dTemp,
                                         arrayView2d< real64 > const & internalEnergy,
                                         arrayView3d< real64 > const & dInternalEnergy,
@@ -69,8 +68,7 @@ public:
     : SingleFluidBaseUpdate( density,
                              dDensity,
                              viscosity,
-                             dViscosity,
-                             dVisc_dPres ),
+                             dViscosity ),
     m_dDens_dTemp( dDens_dTemp ),
     m_dVisc_dTemp( dVisc_dTemp ),
     m_internalEnergy( internalEnergy ),
@@ -153,10 +151,7 @@ public:
              m_density[k][q],
              m_dDensity[k][q][DerivOffset::dP],
              m_viscosity[k][q],
-             m_dViscosity[k][q][DerivOffset::dP]);
-    // tjb
-
-    m_dVisc_dPres[k][q] = m_dViscosity[k][q][DerivOffset::dP] ;
+             m_dViscosity[k][q][DerivOffset::dP] );
   }
 
   GEOS_HOST_DEVICE
@@ -172,7 +167,7 @@ public:
              m_dDensity[k][q][DerivOffset::dP],
              m_dDens_dTemp[k][q],
              m_viscosity[k][q],
-             m_dVisc_dPres[k][q],
+             m_dViscosity[k][q][DerivOffset::dP],
              m_dVisc_dTemp[k][q],
              m_internalEnergy[k][q],
              m_dIntEnergy_dPres[k][q],
@@ -182,7 +177,6 @@ public:
              m_dEnthalpy_dTemp[k][q] );
     // tjb
     m_dDensity[k][q][1] = m_dDens_dTemp[k][q];
-    m_dViscosity[k][q][0] = m_dVisc_dPres[k][q];
     m_dViscosity[k][q][1] = m_dVisc_dTemp[k][q];
     m_dInternalEnergy[k][q][0] = m_dIntEnergy_dPres[k][q];
     m_dInternalEnergy[k][q][1] = m_dIntEnergy_dTemp[k][q];

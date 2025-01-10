@@ -302,7 +302,7 @@ public:
     m_elemPres( subRegion.getField< fields::flow::pressure >() ),
     m_facePres( faceManager.getField< fields::flow::facePressure >() ),
     m_elemDens ( fluid.density() ),
-    m_dElemDens_dPres( fluid.dDensity_dPressure() ),
+    m_dElemDens( fluid.dDensity()),
     m_mob( flowAccessors.get( fields::flow::mobility {} ) ),
     m_dMob_dPres( flowAccessors.get( fields::flow::dMobility_dPressure {} ) ),
     m_localMatrix( localMatrix ),
@@ -379,7 +379,7 @@ public:
         real64 const fGravCoef = m_faceGravCoef[m_elemToFaces[ei][jFaceLoc]];
 
         real64 const ccDens = m_elemDens[ei][0];
-        real64 const dCcDens_dPres = m_dElemDens_dPres[ei][0];
+        real64 const dCcDens_dPres = m_dElemDens[ei][0][0]; //tjb
         // no density evaluated at the face center
 
         // pressure difference
@@ -660,7 +660,7 @@ protected:
   arrayView1d< real64 const > const m_elemPres;
   arrayView1d< real64 const > const m_facePres;
   arrayView2d< real64 const > const m_elemDens;
-  arrayView2d< real64 const > const m_dElemDens_dPres;
+  arrayView3d< real64 const > const m_dElemDens;
   ElementViewConst< arrayView1d< real64 const > > const m_mob;
   ElementViewConst< arrayView1d< real64 const > > const m_dMob_dPres;
 

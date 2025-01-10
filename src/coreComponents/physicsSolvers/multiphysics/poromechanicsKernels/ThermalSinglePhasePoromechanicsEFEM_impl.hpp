@@ -184,7 +184,10 @@ complete( localIndex const k,
 
   stack.energyIncrement               = fluidEnergy - fluidEnergy_n;
   stack.dEnergyIncrement_dJump        = m_fluidDensity( embSurfIndex, 0 ) * m_fluidInternalEnergy( embSurfIndex, 0 ) * m_surfaceArea[ embSurfIndex ];
-  stack.dEnergyIncrement_dPressure    = m_dFluidDensity_dPressure( embSurfIndex, 0 ) * m_fluidInternalEnergy( embSurfIndex, 0 ) * volume;
+  stack.dEnergyIncrement_dPressure    = m_dFluidDensity( embSurfIndex, 0, 0 ) * m_fluidInternalEnergy( embSurfIndex, 0 ) * volume;  // tjb
+                                                                                                                                    // check
+                                                                                                                                    // add
+                                                                                                                                    // tags
   stack.dEnergyIncrement_dTemperature = ( m_dFluidDensity_dTemperature( embSurfIndex, 0 ) * m_fluidInternalEnergy( embSurfIndex, 0 ) +
                                           m_fluidDensity( embSurfIndex, 0 ) * m_dFluidInternalEnergy_dTemperature( embSurfIndex, 0 )  ) * volume;
 

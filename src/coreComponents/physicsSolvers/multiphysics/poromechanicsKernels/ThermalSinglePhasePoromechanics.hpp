@@ -67,7 +67,7 @@ public:
   using Base::m_pressure_n;
   using Base::m_fluidDensity;
   using Base::m_fluidDensity_n;
-  using Base::m_dFluidDensity_dPressure;
+  using Base::m_dFluidDensity;
   using Base::m_solidDensity;
   using Base::m_flowDofNumber;
   using Base::m_dt;
