@@ -32,7 +32,7 @@ void TableData::addSeparator()
 {
   if( m_rows.empty())
   {
-    GEOS_ERROR( "You must have filled values in TableData before using addSeparator()" );
+    GEOS_ERROR( "Bad use of a Tabledata::addSeparator(). Make sure you have added values in TableData" );
   }
 
   integer rowSize = m_rows[0].size();

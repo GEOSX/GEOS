@@ -379,9 +379,9 @@ void CompositionalMultiphaseStatistics::computeRegionStatistics( real64 const ti
     phaseCompName.reserve( numPhases*numComps );
 
     ConstitutiveManager const & constitutiveManager = this->getGroupByPath< ConstitutiveManager >( "/Problem/domain/Constitutive" );
-    MultiFluidBase const & baseFluid = constitutiveManager.getGroup< MultiFluidBase >( m_solver->referenceFluidModelName() );
-    auto const phaseNames = baseFluid.phaseNames();
-    auto const componentNames = baseFluid.componentNames();
+    MultiFluidBase const & fluid = constitutiveManager.getGroup< MultiFluidBase >( m_solver->referenceFluidModelName() );
+    auto const phaseNames = fluid.phaseNames();
+    auto const componentNames = fluid.componentNames();
     for( integer ip = 0; ip < numPhases; ++ip )
     {
       for( integer ic = 0; ic < numComps; ++ic )
