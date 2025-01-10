@@ -69,9 +69,11 @@
     <!-- SPHINX_FLUID_END -->                
 
     <!-- SPHINX_PERMEABILITY_CONDUCTIVITY -->    
-    <ConstantPermeability
+    <PressurePermeability
       name="rockPerm"
-      permeabilityComponents="{ 4.0e-9, 4.0e-9, 4.0e-9 }"/>
+      referencePermeabilityComponents="{ 4.0e-9, 4.0e-9, 4.0e-9 }"
+      pressureDependenceConstants="{ 0, 0, 0 }"
+      defaultReferencePressure="0.0"/>
     
     <SinglePhaseThermalConductivity
       name="thermalCond"

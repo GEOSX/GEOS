@@ -44,9 +44,11 @@
     defaultGrainBulkModulus="1.0e27"
     defaultReferencePorosity="0.3"
   />    
-  <ConstantPermeability
+  <PressurePermeability
     name="rockPerm"
-    permeabilityComponents="{1.0e-20, 1.0e-20, 1.0e-20}"
+    referencePermeabilityComponents="{1.0e-20, 1.0e-20, 1.0e-20}"
+    pressureDependenceConstants="{ 0, 0, 0 }"
+    defaultReferencePressure="0.0"
   /> 
 </Constitutive>
 <!-- SPHINX_WELLBORE_MATERIAL_END -->

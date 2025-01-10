@@ -156,9 +156,11 @@
       defaultBulkModulus="5.e9"
       defaultPoissonRatio="0.25"
       defaultDrainedLinearTEC="1e-5"/>
-    <ConstantPermeability
+    <PressurePermeability
       name="rockPermChannel"
-      permeabilityComponents="{ 9.8e-13, 9.8e-13, 9.8e-13 }"/>
+      referencePermeabilityComponents="{ 9.8e-13, 9.8e-13, 9.8e-13 }"
+      pressureDependenceConstants="{ 0, 0, 0 }"
+      defaultReferencePressure="0.0"/>
     <BiotPorosity
       name="rockPorosityChannel"
       defaultGrainBulkModulus="1.0e27"
@@ -177,9 +179,11 @@
       defaultBulkModulus="5.e9"
       defaultPoissonRatio="0.25"
       defaultDrainedLinearTEC="1e-5"/>
-    <ConstantPermeability
+    <PressurePermeability
       name="rockPermBarrier"
-      permeabilityComponents="{ 9.8e-16, 9.8e-16, 9.8e-16 }"/>
+      referencePermeabilityComponents="{ 9.8e-16, 9.8e-16, 9.8e-16 }"
+      pressureDependenceConstants="{ 0, 0, 0 }"
+      defaultReferencePressure="0.0"/>
     <BiotPorosity
       name="rockPorosityBarrier"
       defaultGrainBulkModulus="1.0e27"

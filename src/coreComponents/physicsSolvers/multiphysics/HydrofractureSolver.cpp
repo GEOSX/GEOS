@@ -189,6 +189,10 @@ real64 HydrofractureSolver< POROMECHANICS_SOLVER >::fullyCoupledSolverStep( real
                                                                             int const cycleNumber,
                                                                             DomainPartition & domain )
 {
+  if( cycleNumber == 0 && time_n <= 0 )
+  {
+    flowSolver()->initializePostInitialConditionsPreSubGroups();
+  }
   // for initial fracture initialization in case when surface generator was called outside of the solver
   initializeNewFractureFields( domain );
 
@@ -876,6 +880,8 @@ void HydrofractureSolver< POROMECHANICS_SOLVER >::updateState( DomainPartition &
     // update the stencil weights using the updated hydraulic aperture
     flowSolver()->updateStencilWeights( domain );
   }
+
+  flowSolver()->updateState( domain );
 
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
                                                                 MeshLevel & mesh,

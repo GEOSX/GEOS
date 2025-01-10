@@ -41,7 +41,7 @@ namespace constitutive
 
 template< typename SOLID_TYPE >
 PorousSolid< SOLID_TYPE >::PorousSolid( string const & name, Group * const parent ):
-  CoupledSolid< SOLID_TYPE, BiotPorosity, ConstantPermeability >( name, parent )
+  CoupledSolid< SOLID_TYPE, BiotPorosity, PressurePermeability >( name, parent )
 {}
 
 template< typename SOLID_TYPE >
@@ -50,7 +50,7 @@ PorousSolid< SOLID_TYPE >::~PorousSolid() = default;
 template< typename SOLID_TYPE >
 void PorousSolid< SOLID_TYPE >::initializeState() const
 {
-  CoupledSolid< SOLID_TYPE, BiotPorosity, ConstantPermeability >::initializeState();
+  CoupledSolid< SOLID_TYPE, BiotPorosity, PressurePermeability >::initializeState();
 }
 
 // Register all PorousSolid model types.

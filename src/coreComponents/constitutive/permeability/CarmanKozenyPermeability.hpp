@@ -54,9 +54,10 @@ public:
   virtual void updateFromPressureAndPorosity( localIndex const k,
                                               localIndex const q,
                                               real64 const & pressure,
+                                              real64 const & pressure_n,
                                               real64 const & porosity ) const override
   {
-    GEOS_UNUSED_VAR( pressure );
+    GEOS_UNUSED_VAR( pressure, pressure_n );
 
     compute( porosity,
              m_permeability[k][q],

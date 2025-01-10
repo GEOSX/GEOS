@@ -79,9 +79,11 @@
     <!-- SPHINX_HeatCapacityPropertiesEnd -->
 
     <!-- SPHINX_PermeabilityProperties -->
-    <ConstantPermeability
+    <PressurePermeability
       name="rockPerm"
-      permeabilityComponents="{ 1.0e-21, 1.0e-21, 1.0e-21 }"/>
+      referencePermeabilityComponents="{ 1.0e-21, 1.0e-21, 1.0e-21 }"
+      pressureDependenceConstants="{ 0, 0, 0 }"
+      defaultReferencePressure="0.0"/>
     <!-- SPHINX_PermeabilityPropertiesEnd -->
 
     <!-- SPHINX_ThermalProperties -->

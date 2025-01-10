@@ -106,6 +106,8 @@ void SinglePhaseBase::registerDataOnMesh( Group & meshBodies )
       {
         subRegion.registerField< dMobility_dTemperature >( getName() );
       }
+
+      subRegion.registerField< wellBoreVolume >( getName() );
     } );
 
     elemManager.forElementSubRegions< SurfaceElementSubRegion >( regionNames,
@@ -273,6 +275,7 @@ void SinglePhaseBase::updateMass( ElementSubRegionBase & subRegion ) const
 
   arrayView1d< real64 > const mass = subRegion.getField< fields::flow::mass >();
   arrayView1d< real64 > const mass_n = subRegion.getField< fields::flow::mass_n >();
+  arrayView1d< real64 const > const wellBoreVolume = subRegion.getField< fields::flow::wellBoreVolume >();
 
   CoupledSolidBase const & porousSolid =
     getConstitutiveModel< CoupledSolidBase >( subRegion, subRegion.template getReference< string >( viewKeyStruct::solidNamesString() ) );
@@ -289,9 +292,9 @@ void SinglePhaseBase::updateMass( ElementSubRegionBase & subRegion ) const
 
   forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const ei )
   {
-    mass[ei] = porosity[ei][0] * ( volume[ei] + deltaVolume[ei] ) * density[ei][0];
+    mass[ei] = (porosity[ei][0] * ( volume[ei] + deltaVolume[ei] ) + wellBoreVolume[ei]) * density[ei][0];
     if( isZero( mass_n[ei] ) ) // this is a hack for hydrofrac cases
-      mass_n[ei] = porosity_n[ei][0] * volume[ei] * density_n[ei][0]; // initialize newly created element mass
+      mass_n[ei] = (porosity_n[ei][0] * volume[ei] + wellBoreVolume[ei]) * density_n[ei][0]; // initialize newly created element mass
   } );
 }
 

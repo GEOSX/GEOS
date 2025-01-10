@@ -128,17 +128,23 @@
     <!-- SPHINX_HeatCapacityPropertiesEnd -->
 
     <!-- SPHINX_PermeabilityProperties -->
-    <ConstantPermeability
+    <PressurePermeability
       name="casingPerm"
-      permeabilityComponents="{ 1.0e-100, 1.0e-100, 1.0e-100 }"/>
+      referencePermeabilityComponents="{ 1.0e-100, 1.0e-100, 1.0e-100 }"
+      pressureDependenceConstants="{ 0, 0, 0 }"
+      defaultReferencePressure="0.0"/>
 
-    <ConstantPermeability
+    <PressurePermeability
       name="cementPerm"
-      permeabilityComponents="{ 1.0e-100, 1.0e-100, 1.0e-100 }"/>
+      referencePermeabilityComponents="{ 1.0e-100, 1.0e-100, 1.0e-100 }"
+      pressureDependenceConstants="{ 0, 0, 0 }"
+      defaultReferencePressure="0.0"/>
 
-    <ConstantPermeability
+    <PressurePermeability
       name="rockPerm"
-      permeabilityComponents="{ 1.0e-100, 1.0e-100, 1.0e-100 }"/>
+      referencePermeabilityComponents="{ 1.0e-100, 1.0e-100, 1.0e-100 }"
+      pressureDependenceConstants="{ 0, 0, 0 }"
+      defaultReferencePressure="0.0"/>
     <!-- SPHINX_PermeabilityPropertiesEnd -->
 
     <!-- SPHINX_ThermalProperties -->

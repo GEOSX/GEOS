@@ -78,9 +78,11 @@
       defaultGrainBulkModulus="48208109259"
       defaultReferencePorosity="0.3"/>
 
-    <ConstantPermeability
+    <PressurePermeability
       name="rockPerm"
-      permeabilityComponents="{ 1.0e-17, 1.0e-17, 1.0e-17 }"/>
+      referencePermeabilityComponents="{ 1.0e-17, 1.0e-17, 1.0e-17 }"
+      pressureDependenceConstants="{ 0, 0, 0 }"
+      defaultReferencePressure="0.0"/>
 
     <!-- SPHINX_MaterialEnd -->
   </Constitutive>

@@ -59,9 +59,11 @@
       defaultReferencePorosity="0.3"
     />  
   
-    <ConstantPermeability
+    <PressurePermeability
       name="rockPerm"
-      permeabilityComponents="{1.0e-18, 1.0e-18, 1.0e-18}"
+      referencePermeabilityComponents="{1.0e-18, 1.0e-18, 1.0e-18}"
+      pressureDependenceConstants="{ 0, 0, 0 }"
+      defaultReferencePressure="0.0"
     /> 
   </Constitutive>
   <!-- SPHINX_MATERIAL_END -->

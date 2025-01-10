@@ -83,9 +83,11 @@
       defaultGrainBulkModulus="1.0e27"
       defaultReferencePorosity="0.375"/>
 
-    <ConstantPermeability
+    <PressurePermeability
       name="shalePerm"
-      permeabilityComponents="{ 1.0e-12, 1.0e-12, 1.0e-12 }"/>
+      referencePermeabilityComponents="{ 1.0e-12, 1.0e-12, 1.0e-12 }"
+      pressureDependenceConstants="{ 0, 0, 0 }"
+      defaultReferencePressure="0.0"/>
 
     <CompressibleSinglePhaseFluid
       name="water"

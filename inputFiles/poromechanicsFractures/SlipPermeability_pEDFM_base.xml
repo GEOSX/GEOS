@@ -81,9 +81,11 @@
       defaultBulkModulus="16.66666666666666e9"
       defaultShearModulus="1.0e10"/>
 
-    <ConstantPermeability
+    <PressurePermeability
       name="rockPerm"
-      permeabilityComponents="{ 1.0e-12, 1.0e-12, 1.0e-12 }"/>
+      referencePermeabilityComponents="{ 1.0e-12, 1.0e-12, 1.0e-12 }"
+      pressureDependenceConstants="{ 0, 0, 0 }"
+      defaultReferencePressure="0.0"/>
 
     <CompressibleSinglePhaseFluid
       name="water"

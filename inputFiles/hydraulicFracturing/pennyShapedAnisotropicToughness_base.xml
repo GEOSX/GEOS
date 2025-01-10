@@ -5,8 +5,8 @@
   <ElementRegions>
     <CellElementRegion
       name="Domain"
-      cellBlocks="{ * }"
-      materialList="{ water, porousRock }"/>
+      cellBlocks="{ cb1 }"
+      materialList="{ water, rock }"/>
 
     <SurfaceElementRegion
       name="Fracture"      
@@ -26,28 +26,11 @@
       referenceViscosity="1.0e-6"
       viscosibility="0.0"/>
 
-    <PorousElasticIsotropic
-      name="porousRock"
-      solidModelName="rock"
-      porosityModelName="rockPorosity"
-      permeabilityModelName="rockPerm"/>  
-
     <ElasticIsotropic
       name="rock"
       defaultDensity="2700"
       defaultBulkModulus="20.0e9"
       defaultShearModulus="12.0e9"/>
-
-    <BiotPorosity
-      name="rockPorosity"
-      defaultGrainBulkModulus="1.2e11"
-      defaultReferencePorosity="0.3"/>
-
-    <PressurePermeability
-      name="rockPerm"
-      referencePermeabilityComponents="{ 1.0e-18, 1.0e-18, 1.0e-18 }"
-      pressureDependenceConstants="{ 0, 0, 0 }"
-      defaultReferencePressure="0.0"/>  
 
     <CompressibleSolidParallelPlatesPermeability
       name="fractureFilling"
@@ -72,7 +55,8 @@
 
     <HydraulicApertureTable
       name="hApertureModel"
-      apertureTableName="apertureTable"/> 
+      apertureTableName="apertureTable"/>  
+
   </Constitutive>
   <!-- SPHINX_MATERIAL_END -->
   
@@ -86,7 +70,8 @@
 
     <FiniteVolume>
       <TwoPointFluxApproximation
-        name="singlePhaseTPFA"/>
+        name="singlePhaseTPFA"
+        />
     </FiniteVolume>
   </NumericalMethods>
   <!-- SPHINX_NUMERICAL_END -->
@@ -146,6 +131,78 @@
       objectPath="ElementRegions/Fracture"
       scale="-6.625"
       setNames="{ source }"/>
+
+    <FieldSpecification
+      name="KIC_00"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions"
+      fieldName="K_IC_00"
+      scale="3e6"/>
+    
+    <FieldSpecification
+      name="KIC_10"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions"
+      fieldName="K_IC_10"
+      scale="3e6"/>
+    
+    <FieldSpecification
+      name="KIC_20"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions"
+      fieldName="K_IC_20"
+      scale="3e6"/>
+
+    <FieldSpecification
+      name="KIC_01"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions"
+      fieldName="K_IC_01"
+      scale="6e6"/>
+    
+    <FieldSpecification
+      name="KIC_11"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions"
+      fieldName="K_IC_11"
+      scale="6e6"/>
+    
+    <FieldSpecification
+      name="KIC_21"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions"
+      fieldName="K_IC_21"
+      scale="6e6"/>
+    
+    <FieldSpecification
+      name="KIC_02"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions"
+      fieldName="K_IC_02"
+      scale="3e6"/>
+    
+    <FieldSpecification
+      name="KIC_12"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions"
+      fieldName="K_IC_12"
+      scale="3e6"/>
+    
+    <FieldSpecification
+      name="KIC_22"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions"
+      fieldName="K_IC_22"
+      scale="3e6"/>
   </FieldSpecifications>
   <!-- SPHINX_BC_END -->
 
@@ -156,42 +213,13 @@
       values="{ 0.002e-3, 0.02e-3 }"/>
   </Functions>
 
-  <!-- SPHINX_TASKS -->
-  <Tasks>
-    <PackCollection
-      name="pressureCollection"
-      objectPath="ElementRegions/Fracture/FractureSubRegion"
-      fieldName="pressure"/>
-
-    <PackCollection
-      name="apertureCollection"
-      objectPath="ElementRegions/Fracture/FractureSubRegion"
-      fieldName="elementAperture"/> 
-
-    <PackCollection
-      name="hydraulicApertureCollection"
-      objectPath="ElementRegions/Fracture/FractureSubRegion"
-      fieldName="hydraulicAperture"/>  
-
-    <PackCollection
-      name="areaCollection"
-      objectPath="ElementRegions/Fracture/FractureSubRegion"
-      fieldName="elementArea"/> 
-  </Tasks>
-  <!-- SPHINX_TASKS_END -->
-
   <!-- SPHINX_OUTPUT -->    
   <Outputs>
     <VTK
       name="vtkOutput"
-      plotFileRoot="zeroViscosity_poroelastic"
+      plotFileRoot="zeroViscosity"
       plotLevel="3"
       parallelThreads="48"/>
-
-    <TimeHistory
-      name="timeHistoryOutput"
-      sources="{/Tasks/pressureCollection, /Tasks/apertureCollection, /Tasks/hydraulicApertureCollection, /Tasks/areaCollection}"
-      filename="pennyShapedToughnessDominated_output" />  
 
     <Restart
       name="restartOutput"/>

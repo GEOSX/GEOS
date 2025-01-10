@@ -115,9 +115,11 @@
       gasOilRelPermExponent="{ 3, 3 }"
       gasOilRelPermMaxValue="{ 0.4, 0.9 }"/>
 
-    <ConstantPermeability
+    <PressurePermeability
       name="rockPerm"
-      permeabilityComponents="{ 1.0e-16, 1.0e-16, 1.0e-16 }"/>
+      referencePermeabilityComponents="{ 1.0e-16, 1.0e-16, 1.0e-16 }"
+      pressureDependenceConstants="{ 0, 0, 0 }"
+      defaultReferencePressure="0.0"/>
 
     <BiotPorosity
       name="rockPorosity"

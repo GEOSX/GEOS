@@ -97,9 +97,11 @@
       name="rockPorosity"
       defaultGrainBulkModulus="7.1190476190476195e10"
       defaultReferencePorosity="0.15"/>
-    <ConstantPermeability
+    <PressurePermeability
       name="rockPerm"
-      permeabilityComponents="{1.0e-18, 1.0e-18, 1.0e-18}"/>
+      referencePermeabilityComponents="{1.0e-18, 1.0e-18, 1.0e-18}"
+      pressureDependenceConstants="{ 0, 0, 0 }"
+      defaultReferencePressure="0.0"/>
       
       <!-- Material inside the fault -->
     <CompressibleSolidParallelPlatesPermeability

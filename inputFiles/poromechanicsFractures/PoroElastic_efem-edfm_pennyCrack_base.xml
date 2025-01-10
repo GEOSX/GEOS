@@ -55,9 +55,11 @@
       defaultYoungModulus="16e9"
       defaultPoissonRatio="0.18"/>
 
-    <ConstantPermeability
+    <PressurePermeability
       name="rockPerm"
-      permeabilityComponents="{ 1.0e-13, 1.0e-13, 1.0e-13 }"/>
+      referencePermeabilityComponents="{ 1.0e-13, 1.0e-13, 1.0e-13 }"
+      pressureDependenceConstants="{ 0, 0, 0 }"
+      defaultReferencePressure="0.0"/>
 
     <CompressibleSinglePhaseFluid
       name="water"

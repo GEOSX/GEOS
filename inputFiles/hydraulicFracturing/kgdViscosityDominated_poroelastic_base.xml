@@ -38,7 +38,7 @@
       name="SurfaceGen"
       targetRegions="{ Domain }"
       nodeBasedSIF="1"
-      rockToughness="1e4"
+      initialRockToughness="1e4"
       mpiCommOrder="1"
       isPoroelastic="1"/>
   </Solvers>
@@ -95,9 +95,11 @@
       defaultGrainBulkModulus="1.2e11"
       defaultReferencePorosity="0.3"/>
 
-    <ConstantPermeability
+    <PressurePermeability
       name="rockPerm"
-      permeabilityComponents="{ 1.0e-15, 1.0e-15, 1.0e-15 }"/>  
+      referencePermeabilityComponents="{ 1.0e-15, 1.0e-15, 1.0e-15 }"
+      pressureDependenceConstants="{ 0, 0, 0 }"
+      defaultReferencePressure="0.0"/>  
 
     <CompressibleSolidParallelPlatesPermeability
       name="fractureFilling"

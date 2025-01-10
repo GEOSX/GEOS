@@ -113,9 +113,11 @@
       defaultGrainBulkModulus="1.2e11"
       defaultReferencePorosity="0.3"/>
 
-    <ConstantPermeability
+    <PressurePermeability
       name="skeletonPerm"
-      permeabilityComponents="{ 1.0e-4, 1.0e-4, 1.0e-4 }"/>
+      referencePermeabilityComponents="{ 1.0e-4, 1.0e-4, 1.0e-4 }"
+      pressureDependenceConstants="{ 0, 0, 0 }"
+      defaultReferencePressure="0.0"/>
   </Constitutive>
 
   <FieldSpecifications>

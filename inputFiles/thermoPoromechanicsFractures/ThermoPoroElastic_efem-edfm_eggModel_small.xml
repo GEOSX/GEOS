@@ -214,9 +214,11 @@
       defaultBulkModulus="25e9"
       defaultShearModulus="15e9"/>
 
-    <ConstantPermeability
+    <PressurePermeability
       name="rockPermeability"
-      permeabilityComponents="{ 1.0e-12, 1.0e-12, 1.0e-12 }"/>
+      referencePermeabilityComponents="{ 1.0e-12, 1.0e-12, 1.0e-12 }"
+      pressureDependenceConstants="{ 0, 0, 0 }"
+      defaultReferencePressure="0.0"/>
 
     <SolidInternalEnergy
       name="rockInternalEnergy"

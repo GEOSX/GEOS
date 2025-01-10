@@ -53,7 +53,7 @@
       name="SurfaceGen"
       fractureRegion="Fracture"
       targetRegions="{ casing, cement, rock }"
-      rockToughness="1.0e6"
+      initialRockToughness="1.0e6"
       mpiCommOrder="1"/>
     <!-- SPHINX_SolversSurfaceGeneratorEnd -->
   </Solvers>
@@ -188,17 +188,23 @@
     <!-- SPHINX_HeatCapacityPropertiesEnd -->
 
     <!-- SPHINX_PermeabilityProperties -->
-    <ConstantPermeability
+    <PressurePermeability
       name="casingPerm"
-      permeabilityComponents="{ 1.0e-100, 1.0e-100, 1.0e-100 }"/>
+      referencePermeabilityComponents="{ 1.0e-100, 1.0e-100, 1.0e-100 }"
+      pressureDependenceConstants="{ 0, 0, 0 }"
+      defaultReferencePressure="0.0"/>
 
-    <ConstantPermeability
+    <PressurePermeability
       name="cementPerm"
-      permeabilityComponents="{ 1.0e-100, 1.0e-100, 1.0e-100 }"/>
+      referencePermeabilityComponents="{ 1.0e-100, 1.0e-100, 1.0e-100 }"
+      pressureDependenceConstants="{ 0, 0, 0 }"
+      defaultReferencePressure="0.0"/>
 
-    <ConstantPermeability
+    <PressurePermeability
       name="rockPerm"
-      permeabilityComponents="{ 1.0e-100, 1.0e-100, 1.0e-100 }"/>
+      referencePermeabilityComponents="{ 1.0e-100, 1.0e-100, 1.0e-100 }"
+      pressureDependenceConstants="{ 0, 0, 0 }"
+      defaultReferencePressure="0.0"/>
     <!-- SPHINX_PermeabilityPropertiesEnd -->
 
     

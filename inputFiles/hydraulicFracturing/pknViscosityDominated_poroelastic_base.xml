@@ -43,9 +43,11 @@
       defaultGrainBulkModulus="1.2e11"
       defaultReferencePorosity="0.3"/>
 
-    <ConstantPermeability
+    <PressurePermeability
       name="rockPerm"
-      permeabilityComponents="{ 1.0e-14, 1.0e-14, 1.0e-14 }"/>  
+      referencePermeabilityComponents="{ 1.0e-14, 1.0e-14, 1.0e-14 }"
+      pressureDependenceConstants="{ 0, 0, 0 }"
+      defaultReferencePressure="0.0"/>  
 
     <CompressibleSolidParallelPlatesPermeability
       name="fractureFilling"
