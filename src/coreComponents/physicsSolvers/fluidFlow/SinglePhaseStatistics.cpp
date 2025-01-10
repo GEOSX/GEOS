@@ -261,12 +261,12 @@ void SinglePhaseStatistics::computeRegionStatistics( real64 const time,
     singPhaseStatsData.addRow( "Temperature [K]", stats.minTemperature, stats.averageTemperature, stats.maxTemperature );
     singPhaseStatsData.addSeparator();
     singPhaseStatsData.addSeparator();
-    singPhaseStatsData.addRow( "statistics", "phase", CellType::MergeNext, "value" );
+    singPhaseStatsData.addRow( "statistics", CellType::MergeNext, CellType::MergeNext, "value" );
     singPhaseStatsData.addSeparator();
 
-    singPhaseStatsData.addRow( "Total dynamic pore volume [rm^3]", "all", CellType::MergeNext, stats.totalPoreVolume );
+    singPhaseStatsData.addRow( "Total dynamic pore volume [rm^3]", CellType::MergeNext, CellType::MergeNext, stats.totalPoreVolume );
     singPhaseStatsData.addSeparator();
-    singPhaseStatsData.addRow( GEOS_FMT( "Total fluid mass [{}]", massUnit ), "all", CellType::MergeNext, stats.totalMass );
+    singPhaseStatsData.addRow( GEOS_FMT( "Total fluid mass [{}]", massUnit ), CellType::MergeNext, CellType::MergeNext, stats.totalMass );
 
     string const title = GEOS_FMT( "{}, {} (time {} s):", getName(), regionNames[i], time );
     TableLayout const singPhaseStatsLayout( title, { "statistics", "min", "average", "max" } );
