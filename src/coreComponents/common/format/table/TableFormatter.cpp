@@ -504,7 +504,6 @@ void TableTextFormatter::adjustTableWidth( TableLayout & tableLayout,
 
   for( auto const & column : cellsHeaderLayout[0] )
   {
-    std::cout << column.m_lines[0] << std::endl;
     if( column.m_cellType == CellType::Hidden )
     {
       nbHiddenColumns++;
