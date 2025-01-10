@@ -10,6 +10,8 @@
       discretization="fluidTPFA"
       temperature="307.15"
       initialDt="1"
+      targetRelativePressureChangeInTimeStep="1"
+      targetPhaseVolFractionChangeInTimeStep="1"      
       useMass="1"
       targetRegions="{ aquiferTop, aquiferBottom, injectionWell, leakyWell }">
       <NonlinearSolverParameters
@@ -20,34 +22,44 @@
         maxTimeStepCuts="5"
         lineSearchAction="Attempt"/>
       <LinearSolverParameters
-        solverType="fgmres"
-	preconditionerType="mgr"
-	krylovTol="1e-4"/>
+        directParallel="0"/>
     </CompositionalMultiphaseFVM>
   </Solvers>
   <!-- SPHINX_SOLVER_END -->        
 
   <Events
-    maxTime="17.28e7">
+    maxTime="8.64e6">
     <PeriodicEvent
       name="outputs"
       timeFrequency="8.64e6"
       target="/Outputs/vtkOutput"/>
     <PeriodicEvent
-      name="statistics"
-      timeFrequency="1e7"
-      target="/Tasks/compflowStatistics"/>
-    <PeriodicEvent
       name="timeHistoryOutput"
-      timeFrequency="1e7"
+      timeFrequency="4.32e6"
       target="/Outputs/timeHistoryOutput"/>
     <PeriodicEvent
       name="timeHistoryCollection"
-      timeFrequency="1e7"
+      timeFrequency="4.32e6"
       target="/Tasks/compOutfluxCollection"/>
     <PeriodicEvent
-      name="solverApplications"
+      name="solverApplications1"
+      beginTime="0"
+      endTime="1e5"
       target="/Solvers/compflow"/>
+    <PeriodicEvent
+      name="solverApplications2"
+      beginTime="1e5"   
+      forceDt="1e5"
+      target="/Solvers/compflow"/>
+    <PeriodicEvent
+      name="restarts"
+      timeFrequency="4.32e6"
+      targetExactTimestep="0"
+      target="/Outputs/restartOutput"/>
+    <PeriodicEvent
+      name="statistics"
+      forceDt="1e6"
+      target="/Tasks/compflowStatistics"/>
   </Events>
 
   <NumericalMethods>
@@ -160,7 +172,7 @@
       name="sourceTerm"
       objectPath="ElementRegions/injectionWell"
       component="0"
-      scale="-8.87"
+      scale="-0.0887"
       setNames="{ source }"/>
     <!-- SPHINX_SOURCE_BC_END -->                      
     
@@ -334,6 +346,8 @@
       name="timeHistoryOutput"
       sources="{ /Tasks/compOutfluxCollection }"
       filename="compOutfluxHistory"/>
+    <Restart
+      name="restartOutput"/>    
   </Outputs>
 
   <Tasks>
