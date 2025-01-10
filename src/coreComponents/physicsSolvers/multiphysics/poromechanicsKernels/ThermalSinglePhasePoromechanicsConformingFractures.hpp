@@ -56,6 +56,7 @@ public:
   using SinglePhaseFVMAbstractBase::m_gravCoef;
   using SinglePhaseFVMAbstractBase::m_mob;
   using SinglePhaseFVMAbstractBase::m_dens;
+  using SinglePhaseFVMAbstractBase::m_dDens;
 
   using SinglePhaseFVMBase = singlePhaseFVMKernels::FluxComputeKernel< NUM_EQN, NUM_DOF, SurfaceElementStencilWrapper >;
   using SinglePhaseFVMBase::numDof;
@@ -77,7 +78,6 @@ public:
 
   using ThermalSinglePhaseFluidAccessors =
     StencilMaterialAccessors< constitutive::SingleFluidBase,
-                              fields::singlefluid::dDensity_dTemperature,
                               fields::singlefluid::enthalpy,
                               fields::singlefluid::dEnthalpy_dPressure,
                               fields::singlefluid::dEnthalpy_dTemperature >;
@@ -115,7 +115,6 @@ public:
             dR_dAper ),
     m_temp( thermalSinglePhaseFlowAccessors.get( fields::flow::temperature {} ) ),
     m_dMob_dTemp( thermalSinglePhaseFlowAccessors.get( fields::flow::dMobility_dTemperature {} ) ),
-    m_dDens_dTemp( thermalSinglePhaseFluidAccessors.get( fields::singlefluid::dDensity_dTemperature {} ) ),
     m_enthalpy( thermalSinglePhaseFluidAccessors.get( fields::singlefluid::enthalpy {} ) ),
     m_dEnthalpy_dPres( thermalSinglePhaseFluidAccessors.get( fields::singlefluid::dEnthalpy_dPressure {} ) ),
     m_dEnthalpy_dTemp( thermalSinglePhaseFluidAccessors.get( fields::singlefluid::dEnthalpy_dTemperature {} ) ),
@@ -212,7 +211,7 @@ public:
                                                          m_dEnthalpy_dPres,
                                                          m_dEnthalpy_dTemp,
                                                          m_gravCoef,
-                                                         m_dDens_dTemp,
+                                                         m_dDens,
                                                          m_dMob_dTemp,
                                                          alpha,
                                                          mobility,
@@ -315,9 +314,6 @@ private:
 
   /// Views on derivatives of fluid mobilities
   ElementViewConst< arrayView1d< real64 const > > const m_dMob_dTemp;
-
-  /// Views on derivatives of fluid densities
-  ElementViewConst< arrayView2d< real64 const > > const m_dDens_dTemp;
 
   /// Views on enthalpies
   ElementViewConst< arrayView2d< real64 const > > const m_enthalpy;

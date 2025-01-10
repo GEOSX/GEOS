@@ -67,6 +67,7 @@ public:
   using AbstractBase::m_pres;
   using AbstractBase::m_permeability;
   using AbstractBase::m_dPerm_dPres;
+  using AbstractBase::m_dDens;
 
   using AbstractBase::m_localMatrix;
   using AbstractBase::m_localRhs;
@@ -87,7 +88,6 @@ public:
 
   using ThermalSinglePhaseFluidAccessors =
     StencilMaterialAccessors< constitutive::SingleFluidBase,
-                              fields::singlefluid::dDensity_dTemperature,
                               fields::singlefluid::enthalpy,
                               fields::singlefluid::dEnthalpy,
                               fields::singlefluid::dEnthalpy_dPressure,
@@ -144,7 +144,6 @@ public:
     m_temp( thermalSinglePhaseFlowAccessors.get( fields::flow::temperature {} ) ),
     m_faceTemp( faceManager.getField< fields::flow::faceTemperature >() ),
     m_dMob_dTemp( thermalSinglePhaseFlowAccessors.get( fields::flow::dMobility_dTemperature {} ) ),
-    m_dDens_dTemp( thermalSinglePhaseFluidAccessors.get( fields::singlefluid::dDensity_dTemperature {} ) ),
     m_enthalpy( thermalSinglePhaseFluidAccessors.get( fields::singlefluid::enthalpy {} ) ),
     m_dEnthalpy( thermalSinglePhaseFluidAccessors.get( fields::singlefluid::dEnthalpy {} ) ),
     m_dEnthalpy_dPres( thermalSinglePhaseFluidAccessors.get( fields::singlefluid::dEnthalpy_dPressure {} ) ),
@@ -208,8 +207,7 @@ public:
 
       // Compute the derivatives of the density wrt temperature
 
-      real64 const dDens_dT = 0.5 * m_dDens_dTemp[er][esr][ei][0];
-
+      real64 const dDens_dT = 0.5 * m_dDens[er][esr][ei][0][1]; // tjb tag
       // Compute the derivatives of the phase potential difference wrt temperature
 
       real64 const dF_dT = -stack.transmissibility * dDens_dT * ( m_gravCoef[er][esr][ei] - m_faceGravCoef[kf] );

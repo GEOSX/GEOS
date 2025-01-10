@@ -52,10 +52,8 @@ public:
                                         IntEnergyRelationType const & intEnergyRelation,
                                         arrayView2d< real64 > const & density,
                                         arrayView3d< real64 > const & dDensity,
-                                        arrayView2d< real64 > const & dDens_dTemp,
                                         arrayView2d< real64 > const & viscosity,
                                         arrayView3d< real64 > const & dViscosity,
-                                        arrayView2d< real64 > const & dVisc_dTemp,
                                         arrayView2d< real64 > const & internalEnergy,
                                         arrayView3d< real64 > const & dInternalEnergy,
                                         arrayView2d< real64 > const & dIntEnergy_dPres,
@@ -69,8 +67,6 @@ public:
                              dDensity,
                              viscosity,
                              dViscosity ),
-    m_dDens_dTemp( dDens_dTemp ),
-    m_dVisc_dTemp( dVisc_dTemp ),
     m_internalEnergy( internalEnergy ),
     m_dInternalEnergy( dInternalEnergy ),
     m_dIntEnergy_dPres( dIntEnergy_dPres ),
@@ -165,10 +161,10 @@ public:
              temperature,
              m_density[k][q],
              m_dDensity[k][q][DerivOffset::dP],
-             m_dDens_dTemp[k][q],
+             m_dDensity[k][q][DerivOffset::dT],
              m_viscosity[k][q],
              m_dViscosity[k][q][DerivOffset::dP],
-             m_dVisc_dTemp[k][q],
+             m_dViscosity[k][q][DerivOffset::dT],
              m_internalEnergy[k][q],
              m_dIntEnergy_dPres[k][q],
              m_dIntEnergy_dTemp[k][q],
@@ -176,8 +172,6 @@ public:
              m_dEnthalpy_dPres[k][q],
              m_dEnthalpy_dTemp[k][q] );
     // tjb
-    m_dDensity[k][q][1] = m_dDens_dTemp[k][q];
-    m_dViscosity[k][q][1] = m_dVisc_dTemp[k][q];
     m_dInternalEnergy[k][q][0] = m_dIntEnergy_dPres[k][q];
     m_dInternalEnergy[k][q][1] = m_dIntEnergy_dTemp[k][q];
     m_dEnthalpy[k][q][0] = m_dEnthalpy_dPres[k][q];
@@ -186,12 +180,6 @@ public:
   }
 
 private:
-
-  /// Derivative of density w.r.t. temperature
-  arrayView2d< real64 > m_dDens_dTemp;
-
-  /// Derivative of viscosity w.r.t. temperature
-  arrayView2d< real64 > m_dVisc_dTemp;
 
   /// Fluid internal energy
   arrayView2d< real64 > m_internalEnergy;

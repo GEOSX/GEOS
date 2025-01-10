@@ -154,7 +154,7 @@ void computeEnthalpyFlux( localIndex const ( &seri )[2],
                           ElementViewConst< arrayView2d< real64 const > > const & dEnthalpy_dPressure,
                           ElementViewConst< arrayView2d< real64 const > > const & dEnthalpy_dTemperature,
                           ElementViewConst< arrayView1d< real64 const > > const & gravCoef,
-                          ElementViewConst< arrayView2d< real64 const > > const & dDens_dTemp,
+                          ElementViewConst< arrayView3d< real64 const > > const & dDens,
                           ElementViewConst< arrayView1d< real64 const > > const & dMob_dTemp,
                           real64 const & alpha,
                           real64 const & mobility,
@@ -174,7 +174,7 @@ void computeEnthalpyFlux( localIndex const ( &seri )[2],
 
   for( integer ke = 0; ke < 2; ++ke )
   {
-    real64 const dDens_dT = dDens_dTemp[seri[ke]][sesri[ke]][sei[ke]][0];
+    real64 const dDens_dT = dDens[seri[ke]][sesri[ke]][sei[ke]][0][0]; // tjb tag
     dDensMean_dT[ke] = 0.5 * dDens_dT;
   }
 

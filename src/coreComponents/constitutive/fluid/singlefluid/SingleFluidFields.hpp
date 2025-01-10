@@ -51,14 +51,6 @@ DECLARE_FIELD( dDensity,
                WRITE_AND_READ,
                "dDensity" );
 
-DECLARE_FIELD( dDensity_dTemperature,
-               "dDensity_dTemperature",
-               array2d< real64 >,
-               0,
-               NOPLOT,
-               WRITE_AND_READ,
-               "Derivative of density with respect to temperature" );
-
 DECLARE_FIELD( density_n,
                "density_n",
                array2d< real64 >,
@@ -82,15 +74,6 @@ DECLARE_FIELD( dViscosity,
                LEVEL_0,
                WRITE_AND_READ,
                "dViscosity" );
-
-DECLARE_FIELD( dViscosity_dTemperature,
-               "dViscosity_dTemperature",
-               array2d< real64 >,
-               0,
-               NOPLOT,
-               WRITE_AND_READ,
-               "Derivative of viscosity with respect to temperature" );
-
 
 DECLARE_FIELD( internalEnergy,
                "internalEnergy",

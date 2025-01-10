@@ -404,14 +404,6 @@ protected:
     real64 const defaultViscosity;                    ///< default vi to use for new elements
   };
 
-  /**
-   * @brief Structure holding views into thermal fluid properties used by the base solver.
-   */
-  struct ThermalFluidPropViews
-  {
-    arrayView2d< real64 const > const dDens_dTemp;      ///< derivative of density w.r.t. temperature
-    arrayView2d< real64 const > const dVisc_dTemp;      ///< derivative of viscosity w.r.t. temperature
-  };
 
   /**
    * @brief Extract properties from a fluid.
@@ -425,7 +417,6 @@ protected:
    */
   virtual FluidPropViews getFluidProperties( constitutive::ConstitutiveBase const & fluid ) const;
 
-  virtual ThermalFluidPropViews getThermalFluidProperties( constitutive::ConstitutiveBase const & fluid ) const;
 
 private:
   virtual void setConstitutiveNames( ElementSubRegionBase & subRegion ) const override;

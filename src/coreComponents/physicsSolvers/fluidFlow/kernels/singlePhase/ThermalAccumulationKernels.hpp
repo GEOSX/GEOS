@@ -76,7 +76,6 @@ public:
                       CRSMatrixView< real64, globalIndex const > const & localMatrix,
                       arrayView1d< real64 > const & localRhs )
     : Base( rankOffset, dofKey, subRegion, fluid, solid, localMatrix, localRhs ),
-    m_dDensity_dTemp( fluid.dDensity_dTemperature() ),
     m_dPoro_dTemp( solid.getDporosity_dTemperature() ),
     m_internalEnergy( fluid.internalEnergy() ),
     m_dInternalEnergy( fluid.dInternalEnergy() ),
@@ -163,34 +162,20 @@ public:
     Base::computeAccumulation( ei, stack, [&] ()
     {
       // Step 1: assemble the derivatives of the mass balance equation w.r.t temperature
-      stack.localJacobian[0][numDof-1] = stack.poreVolume * m_dDensity_dTemp[ei][0] + stack.dPoreVolume_dTemp * m_density[ei][0];
+      stack.localJacobian[0][numDof-1] = stack.poreVolume * m_dDensity[ei][0][DerivOffset::dT] + stack.dPoreVolume_dTemp * m_density[ei][0];
 
       // Step 2: assemble the fluid part of the accumulation term of the energy equation
       real64 const fluidEnergy = stack.poreVolume * m_density[ei][0] * m_internalEnergy[ei][0];
-      // tjb
-      //assert( fabs( m_dDensity_dPres[ei][0]-m_dDensity[ei][0][DerivOffset::dP] )<FLT_EPSILON );
+
       assert( fabs( m_dInternalEnergy_dPres[ei][0]-m_dInternalEnergy[ei][0][DerivOffset::dP] )<FLT_EPSILON );
       real64 const dFluidEnergy_dP = stack.dPoreVolume_dPres * m_density[ei][0] * m_internalEnergy[ei][0]
                                      + stack.poreVolume * m_dDensity[ei][0][DerivOffset::dP] * m_internalEnergy[ei][0]
                                      + stack.poreVolume * m_density[ei][0] * m_dInternalEnergy[ei][0][DerivOffset::dP];
       // tjb delete
-      //real64 xx = stack.dPoreVolume_dPres * m_density[ei][0] * m_internalEnergy[ei][0]
-      //            + stack.poreVolume * m_dDensity_dPres[ei][0] * m_internalEnergy[ei][0]
-      //            + stack.poreVolume * m_density[ei][0] * m_dInternalEnergy_dPres[ei][0];
-      //GEOS_UNUSED_VAR( xx );
-      //assert( fabs( dFluidEnergy_dP-xx )<FLT_EPSILON );
-      // tjb
-      assert( fabs( m_dDensity_dTemp[ei][0]-m_dDensity[ei][0][DerivOffset::dT] )<FLT_EPSILON );
       assert( fabs( m_dInternalEnergy_dTemp[ei][0]-m_dInternalEnergy[ei][0][DerivOffset::dT] )<FLT_EPSILON );
       real64 const dFluidEnergy_dT = stack.poreVolume * m_dDensity[ei][0][DerivOffset::dT] * m_internalEnergy[ei][0]
                                      + stack.poreVolume * m_density[ei][0] * m_dInternalEnergy[ei][0][DerivOffset::dT]
                                      + stack.dPoreVolume_dTemp * m_density[ei][0] * m_internalEnergy[ei][0];
-      // tjb - delete
-      real64 yy   = stack.poreVolume * m_dDensity_dTemp[ei][0] * m_internalEnergy[ei][0]
-                    + stack.poreVolume * m_density[ei][0] * m_dInternalEnergy_dTemp[ei][0]
-                    + stack.dPoreVolume_dTemp * m_density[ei][0] * m_internalEnergy[ei][0];
-      GEOS_UNUSED_VAR( yy );
-      assert( fabs( dFluidEnergy_dT-yy )<FLT_EPSILON );
       // local accumulation
       stack.localResidual[numEqn-1] += fluidEnergy;
 
@@ -227,8 +212,6 @@ public:
 
 protected:
 
-  /// View on derivative of fluid density w.r.t temperature
-  arrayView2d< real64 const > const m_dDensity_dTemp;
 
   /// View on derivative of porosity w.r.t temperature
   arrayView2d< real64 const > const m_dPoro_dTemp;

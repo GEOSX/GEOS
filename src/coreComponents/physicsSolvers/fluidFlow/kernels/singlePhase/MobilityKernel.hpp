@@ -55,21 +55,16 @@ struct MobilityKernel
   old_compute( real64 const & dens,
                real64 const & dDens_dP, // tjb
                real64 const & dDens_dT, // tjb
-               real64 const & dDens_dTemp,
                real64 const & visc,
                real64 const & dVisc_dP, // tjb
                real64 const & dVisc_dT, // tjb
-               real64 const & dVisc_dTemp,
                real64 & mob,
                real64 & dMob_dPres,
                real64 & dMob_dTemp )
   {
     mob = dens / visc;
     dMob_dPres = dDens_dP / visc - mob / visc * dVisc_dP;
-    dMob_dTemp = dDens_dTemp / visc - mob / visc * dVisc_dTemp;
-    dMob_dTemp = dDens_dT / visc - mob / visc * dVisc_dT;  // tjb keep
-    assert( fabs( dDens_dT - dDens_dTemp ) < FLT_EPSILON );
-    assert( fabs( dVisc_dT - dVisc_dTemp ) < FLT_EPSILON );
+    dMob_dTemp = dDens_dT / visc - mob / visc * dVisc_dT;  
   }
 
 // Value-only (no derivatives) version
@@ -131,10 +126,8 @@ struct MobilityKernel
   static void launch( localIndex const size,
                       arrayView2d< real64 const > const & dens,
                       arrayView3d< real64 const > const & dDens, // tjb
-                      arrayView2d< real64 const > const & dDens_dTemp,
                       arrayView2d< real64 const > const & visc,
                       arrayView3d< real64 const > const & dVisc, // tjb
-                      arrayView2d< real64 const > const & dVisc_dTemp,
                       arrayView1d< real64 > const & mob,
                       arrayView1d< real64 > const & dMob_dPres,
                       arrayView1d< real64 > const & dMob_dTemp )
@@ -145,11 +138,9 @@ struct MobilityKernel
       old_compute( dens[a][0],
                    dDens[a][0][DerivOffset::dP], // tjb use deriv::dp
                    dDens[a][0][DerivOffset::dT], // tjb use deriv::dt
-                   dDens_dTemp[a][0],
                    visc[a][0],
                    dVisc[a][0][DerivOffset::dP], // tjb use deriv::dp
                    dVisc[a][0][DerivOffset::dT], // tjb use deriv::dt
-                   dVisc_dTemp[a][0],
                    mob[a],
                    dMob_dPres[a],
                    dMob_dTemp[a] );

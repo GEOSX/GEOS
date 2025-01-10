@@ -84,7 +84,6 @@ public:
 
   using ThermalSinglePhaseFluidAccessors =
     StencilMaterialAccessors< constitutive::SingleFluidBase,
-                              fields::singlefluid::dDensity_dTemperature,
                               fields::singlefluid::enthalpy,
                               fields::singlefluid::dEnthalpy,
                               fields::singlefluid::dEnthalpy_dPressure,
@@ -134,7 +133,6 @@ public:
             localRhs ),
     m_temp( thermalSinglePhaseFlowAccessors.get( fields::flow::temperature {} ) ),
     m_dMob_dTemp( thermalSinglePhaseFlowAccessors.get( fields::flow::dMobility_dTemperature {} ) ),
-    m_dDens_dTemp( thermalSinglePhaseFluidAccessors.get( fields::singlefluid::dDensity_dTemperature {} ) ),
     m_enthalpy( thermalSinglePhaseFluidAccessors.get( fields::singlefluid::enthalpy {} ) ),
     m_dEnthalpy( thermalSinglePhaseFluidAccessors.get( fields::singlefluid::dEnthalpy {} ) ),
     m_dEnthalpy_dPres( thermalSinglePhaseFluidAccessors.get( fields::singlefluid::dEnthalpy_dPressure {} ) ),
@@ -217,11 +215,7 @@ public:
 
       for( integer ke = 0; ke < 2; ++ke )
       {
-        //real64 const dDens_dT = m_dDens_dTemp[seri[ke]][sesri[ke]][sei[ke]][0];
-        //tjb derivid
-        real64 const dDens_dT = m_dDens[seri[ke]][sesri[ke]][sei[ke]][0][DerivOffset::dT];
-        assert( fabs( m_dDens_dTemp[seri[ke]][sesri[ke]][sei[ke]][0]-m_dDens[seri[ke]][sesri[ke]][sei[ke]][0][DerivOffset::dT] )<FLT_EPSILON );
-        dDensMean_dT[ke] = 0.5 * dDens_dT;
+        dDensMean_dT[ke] = 0.5 * m_dDens[seri[ke]][sesri[ke]][sei[ke]][0][DerivOffset::dT];
       }
 
       // Step 2: compute the derivatives of the potential difference wrt temperature
@@ -267,9 +261,6 @@ public:
       {
         localIndex const k_up = 1 - localIndex( fmax( fmin( alpha, 1.0 ), 0.0 ) );
         dMob_dT[k_up] = m_dMob[seri[k_up]][sesri[k_up]][sei[k_up]][DerivOffset::dT];
-        // tjb remove
-        assert( fabs( m_dMob_dTemp[seri[k_up]][sesri[k_up]][sei[k_up]]-m_dMob[seri[k_up]][sesri[k_up]][sei[k_up]][DerivOffset::dT] )<FLT_EPSILON );
-        dMob_dT[k_up] = m_dMob_dTemp[seri[k_up]][sesri[k_up]][sei[k_up]];
       }
       else
       {
@@ -277,9 +268,6 @@ public:
         for( integer ke = 0; ke < 2; ++ke )
         {
           dMob_dT[ke] = mobWeights[ke] * m_dMob[seri[ke]][sesri[ke]][sei[ke]][DerivOffset::dT];
-          // tjb - remove
-          assert( fabs( m_dMob_dTemp[seri[ke]][sesri[ke]][sei[ke]]-m_dMob[seri[ke]][sesri[ke]][sei[ke]][DerivOffset::dT] )<FLT_EPSILON );
-          dMob_dT[ke] = mobWeights[ke] * m_dMob_dTemp[seri[ke]][sesri[ke]][sei[ke]];
         }
       }
 
@@ -307,9 +295,6 @@ public:
         localIndex const k_up = 1 - localIndex( fmax( fmin( alpha, 1.0 ), 0.0 ) );
 
         enthalpy = m_enthalpy[seri[k_up]][sesri[k_up]][sei[k_up]][0];
-        //tjb
-        assert( fabs( m_dEnthalpy_dPres[seri[k_up]][sesri[k_up]][sei[k_up]][0]-m_dEnthalpy[seri[k_up]][sesri[k_up]][sei[k_up]][0][DerivOffset::dP] )<FLT_EPSILON );
-        assert( fabs( m_dEnthalpy_dTemp[seri[k_up]][sesri[k_up]][sei[k_up]][0]-m_dEnthalpy[seri[k_up]][sesri[k_up]][sei[k_up]][0][DerivOffset::dT] )<FLT_EPSILON );
         dEnthalpy_dP[k_up] = m_dEnthalpy[seri[k_up]][sesri[k_up]][sei[k_up]][0][DerivOffset::dP];
         dEnthalpy_dT[k_up] = m_dEnthalpy[seri[k_up]][sesri[k_up]][sei[k_up]][0][DerivOffset::dT];
       }
@@ -319,9 +304,6 @@ public:
         for( integer ke = 0; ke < 2; ++ke )
         {
           enthalpy += mobWeights[ke] * m_enthalpy[seri[ke]][sesri[ke]][sei[ke]][0];
-          //tjb
-          assert( fabs( m_dEnthalpy_dPres[seri[ke]][sesri[ke]][sei[ke]][0]-m_dEnthalpy[seri[ke]][sesri[ke]][sei[ke]][0][DerivOffset::dP] )<FLT_EPSILON );
-          assert( fabs( m_dEnthalpy_dTemp[seri[ke]][sesri[ke]][sei[ke]][0]-m_dEnthalpy[seri[ke]][sesri[ke]][sei[ke]][0][DerivOffset::dT] )<FLT_EPSILON );
           dEnthalpy_dP[ke] = mobWeights[ke] * m_dEnthalpy[seri[ke]][sesri[ke]][sei[ke]][0][DerivOffset::dP];
           dEnthalpy_dT[ke] = mobWeights[ke] * m_dEnthalpy[seri[ke]][sesri[ke]][sei[ke]][0][DerivOffset::dT];
         }
@@ -433,9 +415,6 @@ protected:
 
   /// Views on derivatives of fluid mobilities
   ElementViewConst< arrayView1d< real64 const > > const m_dMob_dTemp;
-
-  /// Views on derivatives of fluid densities
-  ElementViewConst< arrayView2d< real64 const > > const m_dDens_dTemp;
 
   /// Views on enthalpies
   ElementViewConst< arrayView2d< real64 const > > const m_enthalpy;

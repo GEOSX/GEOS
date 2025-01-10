@@ -225,13 +225,6 @@ SinglePhaseBase::FluidPropViews SinglePhaseBase::getFluidProperties( Constitutiv
            singleFluid.defaultViscosity() };
 }
 
-SinglePhaseBase::ThermalFluidPropViews SinglePhaseBase::getThermalFluidProperties( ConstitutiveBase const & fluid ) const
-{
-  SingleFluidBase const & singleFluid = dynamicCast< SingleFluidBase const & >( fluid );
-  return { singleFluid.dDensity_dTemperature(),
-           singleFluid.dViscosity_dTemperature() };
-}
-
 void SinglePhaseBase::initializePreSubGroups()
 {
   FlowSolverBase::initializePreSubGroups();
@@ -393,15 +386,11 @@ void SinglePhaseBase::updateMobility( ObjectManagerBase & dataGroup ) const
     arrayView1d< real64 > const dMob_dTemp =
       dataGroup.getField< fields::flow::dMobility_dTemperature >();
 
-    ThermalFluidPropViews thermalFluidProps = getThermalFluidProperties( fluid );
-
     singlePhaseBaseKernels::MobilityKernel::launch< parallelDevicePolicy<> >( dataGroup.size(),
                                                                               fluidProps.dens,
                                                                               fluidProps.dDens,
-                                                                              thermalFluidProps.dDens_dTemp,
                                                                               fluidProps.visc,
                                                                               fluidProps.dVisc,
-                                                                              thermalFluidProps.dVisc_dTemp,
                                                                               mob,
                                                                               dMob_dPres,
                                                                               dMob_dTemp );
