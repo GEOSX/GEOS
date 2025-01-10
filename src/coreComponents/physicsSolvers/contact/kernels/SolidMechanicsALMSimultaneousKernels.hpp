@@ -233,19 +233,18 @@ public:
     }
 
     // The minus sign is consistent with the sign of the Jacobian
-    real64 const fac = 1.0 / m_faceArea[k];
-    stack.localPenalty[0][0] = -m_penalty( k, 0 )*fac;
+    stack.localPenalty[0][0] = -m_penalty( k, 0 );
 
-    stack.localPenalty[1][1] = -m_penalty( k, 2 )*fac;
-    stack.localPenalty[2][2] = -m_penalty( k, 3 )*fac;
-    stack.localPenalty[1][2] = -m_penalty( k, 4 )*fac;
-    stack.localPenalty[2][1] = -m_penalty( k, 4 )*fac;
+    stack.localPenalty[1][1] = -m_penalty( k, 2 );
+    stack.localPenalty[2][2] = -m_penalty( k, 3 );
+    stack.localPenalty[1][2] = -m_penalty( k, 4 );
+    stack.localPenalty[2][1] = -m_penalty( k, 4 );
 
     for( int i=0; i<numTdofs; ++i )
     {
       stack.tLocal[i] = m_traction( k, i );
-      stack.dispJumpLocal[i] = m_dispJump( k, i )*m_faceArea[k];
-      stack.oldDispJumpLocal[i] = m_oldDispJump( k, i )*m_faceArea[k];
+      stack.dispJumpLocal[i] = m_dispJump( k, i );
+      stack.oldDispJumpLocal[i] = m_oldDispJump( k, i );
     }
 
     for( int i=0; i<3; ++i )
@@ -309,6 +308,10 @@ public:
     LvArray::tensorOps::Rij_eq_AikBkj< 3, numBdofs, 3 >( matDRtAtb, stack.localPenalty,
                                                          matRRtAtb );
 
+    real64 const fac = 1.0 / m_faceArea[k];
+    LvArray::tensorOps::scale< 3, numUdofs >( matDRtAtu, fac);
+    LvArray::tensorOps::scale< 3, numBdofs >( matDRtAtb, fac);
+
     // R*RtAtu
     LvArray::tensorOps::Rij_eq_AikBkj< 3, numUdofs, 3 >( matRRtAtu, stack.localRotationMatrix,
                                                          matDRtAtu );
@@ -330,6 +333,7 @@ public:
     // transp(Atu)*RRtAtb
     LvArray::tensorOps::Rij_eq_AkiBkj< numUdofs, numBdofs, 3 >( stack.localAutAtb, stack.localAtu,
                                                                 matRRtAtb );
+
 
     // Compute the local residuals
     LvArray::tensorOps::scaledAdd< numUdofs >( stack.localRu, tractionR, 1 );
