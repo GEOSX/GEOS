@@ -504,7 +504,7 @@ private:
    * @param m_header The column name
    */
   void addToColumns( string_view m_header );
-  
+
 private:
 
   /**

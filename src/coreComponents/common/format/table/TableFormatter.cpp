@@ -501,7 +501,7 @@ void TableTextFormatter::adjustTableWidth( TableLayout & tableLayout,
   size_t sectionlineLength = 0;
   size_t nbHiddenColumns = 0;
   size_t headerColumnCount = 0;
-  
+
   for( auto const & column : cellsHeaderLayout[0] )
   {
     std::cout << column.m_lines[0] << std::endl;

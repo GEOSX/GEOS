@@ -450,10 +450,10 @@ void CompositionalMultiphaseStatistics::computeRegionStatistics( real64 const ti
     GEOS_LOG_RANK_0( tableFormatter.toString( compPhaseStatsData ) );
 
     if( m_writeCSV > 0 && MpiWrapper::commRank() == 0 )
-    { 
+    {
       auto addStatsValue = []( std::ostringstream & pstatsLayout, TableLayout & ptableLayout,
-                                string const & description, string_view  pmassUnit,
-                                integer pnumPhases, integer pnumComps = 0 )
+                               string const & description, string_view pmassUnit,
+                               integer pnumPhases, integer pnumComps = 0 )
       {
         for( int ip = 0; ip < pnumPhases; ++ip )
         {
