@@ -71,10 +71,8 @@ void SourceFluxStatsAggregator::postInputInitialization()
   }
   else
   {
-    std::cout << " else  : " << std::endl;
     for( string const & fluxName : m_fluxNames )
     {
-      std::cout << " fluxName  : " << fluxName << std::endl;
       GEOS_ERROR_IF( !fsManager.hasGroup< SourceFluxBoundaryCondition >( fluxName ),
                      GEOS_FMT( "{}: No {} named {} was found in {}.",
                                getDataContext(), SourceFluxBoundaryCondition::catalogName(),

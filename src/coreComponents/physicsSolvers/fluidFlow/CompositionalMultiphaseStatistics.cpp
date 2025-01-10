@@ -400,7 +400,7 @@ void CompositionalMultiphaseStatistics::computeRegionStatistics( real64 const ti
     compPhaseStatsData.addSeparator();
 
     compPhaseStatsData.addSeparator();
-    compPhaseStatsData.addRow( "statistics", "phase", CellType::MergeNext, "value" );
+    compPhaseStatsData.addRow( "statistics", "phase/component", CellType::MergeNext, "value" );
     compPhaseStatsData.addSeparator();
 
     compPhaseStatsData.addRow( "Total dynamic pore volume [rm^3]", "all", CellType::MergeNext, stats.totalPoreVolume );
