@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -311,7 +311,7 @@ public:
   createAndLaunch( localIndex const numComps,
                    localIndex const numPhases,
                    globalIndex const rankOffset,
-                   integer const useTotalMassEquation,
+                   BitFlags< isothermalCompositionalMultiphaseBaseKernels::KernelFlags > kernelFlags,
                    string const dofKey,
                    ElementSubRegionBase const & subRegion,
                    constitutive::MultiFluidBase const & fluid,
@@ -324,10 +324,6 @@ public:
     {
       localIndex constexpr NUM_COMP = NC();
       localIndex constexpr NUM_DOF = NC()+2;
-
-      BitFlags< isothermalCompositionalMultiphaseBaseKernels::KernelFlags > kernelFlags;
-      if( useTotalMassEquation )
-        kernelFlags.set( isothermalCompositionalMultiphaseBaseKernels::KernelFlags::TotalMassEquation );
 
       AccumulationKernel< NUM_COMP, NUM_DOF > kernel( numPhases, rankOffset, dofKey, subRegion,
                                                       fluid, solid, localMatrix, localRhs, kernelFlags );

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -142,22 +142,13 @@ void CompositionalMultiphaseStatistics::registerDataOnMesh( Group & meshBodies )
         }
       }
     }
-
-    // if we have to compute CFL numbers later, we need to register additional variables
-    if( m_computeCFLNumbers )
-    {
-      elemManager.forElementSubRegions( regionNames, [&]( localIndex const,
-                                                          ElementSubRegionBase & subRegion )
-      {
-        subRegion.registerField< fields::flow::phaseOutflux >( getName() ).
-          reference().resizeDimension< 1 >( numPhases );
-        subRegion.registerField< fields::flow::componentOutflux >( getName() ).
-          reference().resizeDimension< 1 >( numComps );
-        subRegion.registerField< fields::flow::phaseCFLNumber >( getName() );
-        subRegion.registerField< fields::flow::componentCFLNumber >( getName() );
-      } );
-    }
   } );
+
+  // if we have to compute CFL numbers later, we need to register additional variables
+  if( m_computeCFLNumbers )
+  {
+    m_solver->registerDataForCFL( meshBodies );
+  }
 }
 
 bool CompositionalMultiphaseStatistics::execute( real64 const time_n,

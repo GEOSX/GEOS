@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -39,7 +39,7 @@ inline
 void
 CFLFluxKernel::
   compute( integer const numPhases,
-           integer const useNewGravity,
+           integer const checkPhasePresenceInGravity,
            localIndex const stencilSize,
            real64 const dt,
            arraySlice1d< localIndex const > const seri,
@@ -69,7 +69,7 @@ CFLFluxKernel::
     real64 gravHead{};
 
     // calculate quantities on primary connected cells
-    calculateMeanDensity( useNewGravity, ip, stencilSize, seri, sesri, sei, phaseVolFrac, phaseMassDens, densMean );
+    calculateMeanDensity( checkPhasePresenceInGravity, ip, stencilSize, seri, sesri, sei, phaseVolFrac, phaseMassDens, densMean );
 
     //***** calculation of phase volumetric flux *****
 
@@ -123,7 +123,7 @@ CFLFluxKernel::
 GEOS_HOST_DEVICE
 inline
 void
-CFLFluxKernel::calculateMeanDensity( integer const useNewGravity, integer const ip, localIndex const stencilSize,
+CFLFluxKernel::calculateMeanDensity( integer const checkPhasePresenceInGravity, integer const ip, localIndex const stencilSize,
                                      arraySlice1d< localIndex const > const seri,
                                      arraySlice1d< localIndex const > const sesri,
                                      arraySlice1d< localIndex const > const sei,
@@ -139,7 +139,7 @@ CFLFluxKernel::calculateMeanDensity( integer const useNewGravity, integer const 
     localIndex const ei = sei[i];
 
     bool const phaseExists = (phaseVolFrac[er][esr][ei][ip] > 0);
-    if( useNewGravity && !phaseExists )
+    if( checkPhasePresenceInGravity && !phaseExists )
     {
       continue;
     }
@@ -156,7 +156,7 @@ CFLFluxKernel::calculateMeanDensity( integer const useNewGravity, integer const 
 template< integer NC, typename STENCILWRAPPER_TYPE >
 void CFLFluxKernel::
   launch( integer const numPhases,
-          integer const useNewGravity,
+          integer const checkPhasePresenceInGravity,
           real64 const dt,
           STENCILWRAPPER_TYPE const & stencilWrapper,
           ElementViewConst< arrayView1d< real64 const > > const & pres,
@@ -189,7 +189,7 @@ void CFLFluxKernel::
                                    dTrans_dPres );
 
     CFLFluxKernel::compute< NC >( numPhases,
-                                  useNewGravity,
+                                  checkPhasePresenceInGravity,
                                   sei[iconn].size(),
                                   dt,
                                   seri[iconn],
@@ -213,7 +213,7 @@ void CFLFluxKernel::
   template \
   void CFLFluxKernel:: \
     launch< NC, STENCILWRAPPER_TYPE >( integer const numPhases, \
-                                       integer const useNewGravity, \
+                                       integer const checkPhasePresenceInGravity, \
                                        real64 const dt, \
                                        STENCILWRAPPER_TYPE const & stencil, \
                                        ElementViewConst< arrayView1d< real64 const > > const & pres, \
