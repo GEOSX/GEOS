@@ -50,7 +50,6 @@ DECLARE_FIELD( Pressure_n,
                WRITE_AND_READ,
                "Scalar pressure at time n." );
 
-
 DECLARE_FIELD( Pressure_np1,
                "pressure_np1",
                array1d< real32 >,

@@ -148,8 +148,12 @@ public:
     real32 stiffnessVectorLocal_q[ numNodesPerElem ]{};
     real32 invDensity;
     //Debug
-    //    real32 vti_epsi; // (1 + 2*epsilon)
-    //    real32 vti_sqrtDelta; // sqrt(1 + 2*delta)
+#if 1
+    real32 vti_epsi;     // (1 + 2*epsilon)
+    real32 vti_sqrtDelta;     // sqrt(1 + 2*delta)
+    real32 vti_GradzDelta;
+#else
+#endif
     //End Debug
   };
   //***************************************************************************
@@ -165,7 +169,7 @@ public:
   void setup( localIndex const k,
               StackVariables & stack ) const
   {
-#if 0
+#if 1
     real32 epsi = std::fabs( m_vti_epsilon[k] );
     real32 delt = std::fabs( m_vti_delta[k] );
     if( std::fabs( epsi ) < 1e-5 )
@@ -176,7 +180,9 @@ public:
       delt = epsi;
     stack.vti_epsi = (1 + 2 * epsi);
     stack.vti_sqrtDelta = sqrt( 1 + 2 * delt );
+    stack.vti_GradzDelta = m_vti_GradzDelta[k];
 #endif
+
     stack.invDensity = 1./m_density[k];
     for( localIndex a=0; a< 8; a++ )
     {
@@ -212,6 +218,46 @@ public:
    * Calculates stiffness vector
    *
    */
+
+#if 0
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
+  void quadraturePointKernel( localIndex const k,
+                              localIndex const q,
+                              StackVariables & stack ) const
+  {
+    // Pseudo Stiffness xy
+    m_finiteElementSpace.template computeStiffnessxyTerm( q, stack.xLocal, [&] ( int i, int j, real64 val )
+    {
+
+      real32 const localIncrement_p = -val * stack.invDensity * stack.vti_epsi * m_p_n[m_elemsToNodes( k, j )];
+      stack.stiffnessVectorLocal_p[i] += localIncrement_p;
+      real32 const localIncrement_q = -val * stack.invDensity * stack.vti_sqrtDelta * m_p_n[m_elemsToNodes( k, j )];
+      stack.stiffnessVectorLocal_q[i] += localIncrement_q;
+    } );
+
+    // Pseudo-Stiffness z
+    m_finiteElementSpace.template computeStiffnesszTerm( q, stack.xLocal, [&] ( int i, int j, real64 val )
+    {
+      real32 const localIncrement_p = -val * stack.invDensity * stack.vti_sqrtDelta* m_q_n[m_elemsToNodes( k, j )];
+      stack.stiffnessVectorLocal_p[i] += localIncrement_p;
+
+      real32 const localIncrement_q = -val * stack.invDensity * m_q_n[m_elemsToNodes( k, j )];
+      stack.stiffnessVectorLocal_q[i] += localIncrement_q;
+    } );
+
+    // Missing dz term
+    m_finiteElementSpace.template computeMissingzVolumeTerm_precompDzF( q, stack.xLocal, [&] ( int i, int j, real64 val )
+    {
+      real32 GradzsqrtDelta = stack.vti_GradzDelta / stack.vti_sqrtDelta;
+
+      real32 const localIncrement_p = -val * stack.invDensity * GradzsqrtDelta* m_q_n[m_elemsToNodes( k, j )];
+      stack.stiffnessVectorLocal_p[i] += localIncrement_p;
+    } );
+  }
+
+
+#else
   GEOS_HOST_DEVICE
   GEOS_FORCE_INLINE
   void quadraturePointKernel( localIndex const k,
@@ -223,6 +269,7 @@ public:
     {
       real32 epsi = std::fabs( m_vti_DofEpsilon[m_elemsToNodes( k, q )] ); // value on control point
       real32 delt = std::fabs( m_vti_DofDelta[m_elemsToNodes( k, q )] ); // value on control point
+
       if( std::fabs( epsi ) < 1e-5 )
         epsi = 0;
       if( std::fabs( delt ) < 1e-5 )
@@ -237,14 +284,12 @@ public:
       stack.stiffnessVectorLocal_q[i] += localIncrement_q;
     } );
 
-
-
     // Pseudo-Stiffness z
-
     m_finiteElementSpace.template computeStiffnesszTerm( q, stack.xLocal, [&] ( int i, int j, real64 val )
     {
       real32 epsi = std::fabs( m_vti_DofEpsilon[m_elemsToNodes( k, q )] ); // value on control point
       real32 delt = std::fabs( m_vti_DofDelta[m_elemsToNodes( k, q )] ); // value on control point
+
       if( std::fabs( epsi ) < 1e-5 )
         epsi = 0;
       if( std::fabs( delt ) < 1e-5 )
@@ -260,24 +305,8 @@ public:
       stack.stiffnessVectorLocal_q[i] += localIncrement_q;
     } );
 
-    // missing dz term
-/* OLD THAT WORKS   m_finiteElementSpace.template computeMissingzVolumeTerm( q, stack.xLocal, [&] ( int i, int j, real64 val )
-    {
-      real32 epsi = std::fabs( m_vti_epsilon[k]); // value on control point
-      real32 delt = std::fabs( m_vti_delta[k]); // value on control point
-      if( std::fabs( epsi ) < 1e-5 )
-        epsi = 0;
-      if( std::fabs( delt ) < 1e-5 )
-        delt = 0;
-      if( delt > epsi )
-        delt = epsi;
-      real32 vti_sqrtDelta = sqrt(1 + 2 *delt);
-      real32 GradzsqrtDelta = m_vti_GradzDelta[k]/vti_sqrtDelta;
-
-      real32 const localIncrement_p = -val * stack.invDensity * GradzsqrtDelta* m_q_n[m_elemsToNodes( k, j )];
-      stack.stiffnessVectorLocal_p[i] += localIncrement_p;
-    } );*/
 #if 0
+    // Missing dz term
     m_finiteElementSpace.template computeMissingzVolumeTerm( q, stack.xLocal, [&] ( int iVertice, int j, real64 val )
     {
       //iVertice is the "Qr" index of the vertice in the element (so 0 < iVertice < (r+1)^3)
@@ -289,14 +318,16 @@ public:
         delt = 0;
       if( delt > epsi )
         delt = epsi;
+
       real32 vti_sqrtDelta = sqrt( 1 + 2 *delt );
 
+      //GEOS_LOG_RANK_0(GEOS_FMT("inside k={}, q={}, iVertice={}, j={}",  k, q, iVertice, j));
       real32 const localIncrement_p = -val * stack.invDensity * vti_sqrtDelta * m_q_n[m_elemsToNodes( k, j )];
       stack.stiffnessVectorLocal_p[iVertice] += localIncrement_p;
     } );
 #endif
-
   }
+#endif
 
 protected:
   /// The array containing the nodal position array.

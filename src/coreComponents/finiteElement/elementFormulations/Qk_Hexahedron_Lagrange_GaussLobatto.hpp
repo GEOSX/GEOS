@@ -691,6 +691,14 @@ public:
                                     real64 const (&X)[8][3],
                                     FUNC && func );
 
+  template< typename FUNC >
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
+  static void computeMissingzVolumeTerm_precompDzF( localIndex const q,
+                                                    real64 const (&X)[8][3],
+                                                    FUNC && func );
+
+
 
   template< typename FUNC >
   GEOS_HOST_DEVICE
@@ -766,10 +774,20 @@ public:
   GEOS_HOST_DEVICE
   GEOS_FORCE_INLINE
   static void
+  computeGradPhiBGradzF_precompDzF( int const qa,
+                                    int const qb,
+                                    int const qc,
+                                    real64 const (&AzJmT)[3][3],
+                                    FUNC && func );
+
+  template< typename FUNC >
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
+  static void
   computeGradPhiBGradzF( int const qa,
                          int const qb,
                          int const qc,
-                         real64 const (&B)[3][3],
+                         real64 const (&B)[6],
                          FUNC && func );
 
   template< typename FUNC >
@@ -1391,15 +1409,17 @@ computeMissingxyTerm( localIndex const q,
   //computeGradPhiBGradPhi( qa, qb, qc, B, func );
 }
 
+
+
 template< typename GL_BASIS >
 template< typename FUNC >
 GEOS_HOST_DEVICE
 GEOS_FORCE_INLINE
 void
 Qk_Hexahedron_Lagrange_GaussLobatto< GL_BASIS >::
-computeMissingzVolumeTerm( localIndex const q,
-                           real64 const (&X)[8][3],
-                           FUNC && func )
+computeMissingzVolumeTerm_precompDzF( localIndex const q,
+                                      real64 const (&X)[8][3],
+                                      FUNC && func )
 {
   int qa, qb, qc;
   GL_BASIS::TensorProduct3D::multiIndex( q, qa, qb, qc );
@@ -1414,9 +1434,8 @@ computeMissingzVolumeTerm( localIndex const q,
   AzInvJT[2][1] = detJ * J[2][1];
   AzInvJT[2][2] = detJ * J[2][2];
 
-  computeGradPhiBGradzF( qa, qb, qc, AzInvJT, func );
+  computeGradPhiBGradzF_precompDzF( qa, qb, qc, AzInvJT, func );
 }
-
 
 template< typename GL_BASIS >
 template< typename FUNC >
@@ -1424,18 +1443,19 @@ GEOS_HOST_DEVICE
 GEOS_FORCE_INLINE
 void
 Qk_Hexahedron_Lagrange_GaussLobatto< GL_BASIS >::
-computeGradPhiBGradzF( int const qa,
-                       int const qb,
-                       int const qc,
-                       real64 const (&AzInvJT)[3][3],
-                       FUNC && func )
+computeGradPhiBGradzF_precompDzF( int const qa,
+                                  int const qb,
+                                  int const qc,
+                                  real64 const (&AzInvJT)[3][3],
+                                  FUNC && func )
 {
   const real64 w = GL_BASIS::weight( qa )*GL_BASIS::weight( qb )*GL_BASIS::weight( qc );
-/*OLD (patch qui fonctionnait)
-   // Ceci fonctionnait mais dans le cas où je pouvais calculer (et donner en input) la dérivée en z de delta
-   // Je le garde pour archive :)
-   for( int j=0; j<num1dNodes; j++ )
-   {
+
+  //OLD (patch qui fonctionnait)
+  // Ceci fonctionnait mais dans le cas où je pouvais calculer (et donner en input) la dérivée en z de delta
+  // Je le garde pour archive :)
+  for( int j=0; j<num1dNodes; j++ )
+  {
     const int i = GL_BASIS::TensorProduct3D::linearIndex( qa, qb, qc ); // i = control point q  =abc
 
     const int jbc = GL_BASIS::TensorProduct3D::linearIndex( j, qb, qc );
@@ -1452,11 +1472,43 @@ computeGradPhiBGradzF( int const qa,
     func( i, jbc, w4 * AzInvJT[2][0] );
     const real64 w3 = w * gjb;
     func( i, ajc, w3 * AzInvJT[2][1] );
-    END OLD
-   }
- */
-// Nouvelle version où delta et epsilon sont Q1
-  ///////const int i = GL_BASIS::TensorProduct3D::linearIndex( qa, qb, qc ); // i = control point q  =abc
+  }
+}
+
+template< typename GL_BASIS >
+template< typename FUNC >
+GEOS_HOST_DEVICE
+GEOS_FORCE_INLINE
+void
+Qk_Hexahedron_Lagrange_GaussLobatto< GL_BASIS >::
+computeMissingzVolumeTerm( localIndex const q,
+                           real64 const (&X)[8][3],
+                           FUNC && func )
+{
+  int qa, qb, qc;
+  GL_BASIS::TensorProduct3D::multiIndex( q, qa, qb, qc );
+  real64 B[6] = {0};
+  real64 J[3][3] = {{0}};
+  computeBzMatrix( qa, qb, qc, X, J, B );
+  computeGradPhiBGradzF( qa, qb, qc, B, func );
+}
+
+template< typename GL_BASIS >
+template< typename FUNC >
+GEOS_HOST_DEVICE
+GEOS_FORCE_INLINE
+void
+Qk_Hexahedron_Lagrange_GaussLobatto< GL_BASIS >::
+computeGradPhiBGradzF( int const qa,
+                       int const qb,
+                       int const qc,
+                       real64 const (&B)[6],
+                       FUNC && func )
+{
+  const real64 w = GL_BASIS::weight( qa )*GL_BASIS::weight( qb )*GL_BASIS::weight( qc );
+
+  // Nouvelle version où delta et epsilon sont Q1
+
   //1D Coord of the nodes
   real64 xa = GL_BASIS::parentSupportCoord( qa );
   real64 xb = GL_BASIS::parentSupportCoord( qb );
@@ -1479,42 +1531,38 @@ computeGradPhiBGradzF( int const qa,
       dphik1 = LagrangeBasis1::gradientAt( k1, 0 ); // Second argument useless
       dphik2 = LagrangeBasis1::gradientAt( k2, 0 ); // Second argument useless
       dphik3 = LagrangeBasis1::gradientAt( k3, 0 ); // Second argument useless
-      if( k1 == 0 )
-        phik1 = LagrangeBasis1::value0( xa );
-      else
-        phik1 = LagrangeBasis1::value1( xa );
-      if( k2 == 0 )
-        phik2 = LagrangeBasis1::value0( xb );
-      else
-        phik2 = LagrangeBasis1::value1( xb );
-      if( k3 == 0 )
-        phik3 = LagrangeBasis1::value0( xc );
-      else
-        phik3 = LagrangeBasis1::value1( xc );
+
+      phik1 = LagrangeBasis1::value( k1, xa );
+      phik2 = LagrangeBasis1::value( k2, xb );
+      phik3 = LagrangeBasis1::value( k3, xc );
+
+      //GEOS_LOG_RANK_0(GEOS_FMT("inside2  j={}, kk={}, phik1={}, phik2={}, phik3={}", j, k, phik1, phik2, phik3));
 
       // diagonal terms
       const real64 w0 = w * gja * dphik1 * phik2 * phik3;
-      func( ik, jbc, w0 * AzInvJT[0][0] );
+      func( ik, jbc, w0 * B[0] );
       const real64 w1 = w * gjb * phik1 * dphik2 * phik3;
-      func( ik, ajc, w1 * AzInvJT[1][1] );
+      func( ik, ajc, w1 * B[1] );
       const real64 w2 = w * gjc * phik1 * phik2 * dphik3;
-      func( ik, abj, w2 * AzInvJT[2][2] );
+      func( ik, abj, w2 * B[2] );
       // off-diagonal terms
       const real64 w3 = w * gjb * dphik1 * phik2 * phik3;
-      func( ik, ajc, w3 * AzInvJT[0][1] );
+      func( ik, ajc, w3 * B[5] );
       const real64 w4 = w * gjc * dphik1 * phik2 * phik3;
-      func( ik, abj, w4 * AzInvJT[0][2] );
+      func( ik, abj, w4 * B[4] );
       const real64 w5 = w * gja * phik1 * dphik2 * phik3;
-      func( ik, jbc, w5 * AzInvJT[0][1] );
+      func( ik, jbc, w5 * B[5] );
       const real64 w6 = w * gjc * phik1 * dphik2 * phik3;
-      func( ik, abj, w6 * AzInvJT[1][2] );
+      func( ik, abj, w6 * B[3] );
       const real64 w7 = w * gja * phik1 * phik2 * dphik3;
-      func( ik, jbc, w7 * AzInvJT[0][2] );
+      func( ik, jbc, w7 * B[4] );
       const real64 w8 = w * gjb * phik1 * phik2 * dphik3;
-      func( ik, ajc, w8 * AzInvJT[1][2] );
+      func( ik, ajc, w8 * B[3] );
     }
   }
 }
+
+
 
 // With the "BIS" : compute the flux term instead (new version)
 template< typename GL_BASIS >
