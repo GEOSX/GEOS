@@ -62,6 +62,11 @@ PressurePermeability::PressurePermeability( string const & name, Group * const p
     setInputFlag( InputFlags::OPTIONAL ).
     setApplyDefaultValue( PressureModelType::Exponential ).
     setDescription( "Type of the pressure dependence model. " );
+
+  registerWrapper( viewKeyStruct::explicitUpdateFlagString(), &m_explicitFlag ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setApplyDefaultValue( 0 ).
+    setDescription( "The flag for explicit update. " );
 }
 
 std::unique_ptr< ConstitutiveBase >

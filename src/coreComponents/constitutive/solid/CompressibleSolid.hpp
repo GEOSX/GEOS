@@ -56,14 +56,14 @@ public:
                                                       localIndex const q,
                                                       real64 const & pressure,
                                                       real64 const & GEOS_UNUSED_PARAM( pressure_k ),
-                                                      real64 const & GEOS_UNUSED_PARAM( pressure_n ),
+                                                      real64 const & pressure_n,
                                                       real64 const & temperature,
                                                       real64 const & GEOS_UNUSED_PARAM( temperature_k ),
                                                       real64 const & GEOS_UNUSED_PARAM( temperature_n ) ) const override final
   {
     m_porosityUpdate.updateFromPressureAndTemperature( k, q, pressure, temperature );
     real64 const porosity = m_porosityUpdate.getPorosity( k, q );
-    m_permUpdate.updateFromPressureAndPorosity( k, q, pressure, porosity );
+    m_permUpdate.updateFromPressureAndPorosity( k, q, pressure, pressure_n, porosity );
   }
 
   GEOS_HOST_DEVICE

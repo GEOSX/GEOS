@@ -48,13 +48,15 @@ public:
                               real64 const & maxPermeability,
                               arrayView3d< real64 > const & referencePermeability,
                               arrayView3d< real64 > const & permeability,
-                              arrayView3d< real64 > const & dPerm_dPressure )
+                              arrayView3d< real64 > const & dPerm_dPressure,
+                              integer const & explicitFlag )
     : PermeabilityBaseUpdate( permeability, dPerm_dPressure ),
     m_presModelType( presModelType ),
     m_pressureDependenceConstants( pressureDependenceConstants ),
     m_referencePressure( referencePressure ),
     m_maxPermeability( maxPermeability ),
-    m_referencePermeability( referencePermeability )
+    m_referencePermeability( referencePermeability ),
+    m_explicitFlag( explicitFlag )
   {}
 
   GEOS_HOST_DEVICE
@@ -76,11 +78,12 @@ public:
   virtual void updateFromPressureAndPorosity( localIndex const k,
                                               localIndex const q,
                                               real64 const & pressure,
+                                              real64 const & pressure_n,
                                               real64 const & porosity ) const override
   {
     GEOS_UNUSED_VAR( q, porosity );
 
-    real64 const deltaPressure = pressure - m_referencePressure[k];
+    real64 const deltaPressure = (m_explicitFlag)? (pressure_n - m_referencePressure[k]):(pressure - m_referencePressure[k]);
 
     real64 referencePermeability[3];
 
@@ -98,6 +101,20 @@ public:
                  m_permeability[k][0],
                  m_dPerm_dPressure[k][0] );
 
+        if( m_explicitFlag )
+        {
+          for( localIndex i=0; i < m_permeability[k][0].size(); i++ )
+          {
+            m_dPerm_dPressure[k][0][i] = 0.0; 
+
+            if( m_maxPermeability < 1.0 )
+            {
+              real64 const perm = m_permeability[k][0][i]; 
+              m_permeability[k][0][i] = (perm > m_maxPermeability)? m_maxPermeability:perm; 
+            }
+          }
+        }
+
         break;
       }
       case PressureModelType::Hyperbolic:
@@ -109,6 +126,13 @@ public:
                  m_permeability[k][0],
                  m_dPerm_dPressure[k][0] );
 
+        if( m_explicitFlag )
+        {
+          for( localIndex i=0; i < m_permeability[k][0].size(); i++ )
+          {
+            m_dPerm_dPressure[k][0][i] = 0.0; 
+          }
+        }
         break;
       }
       default:
@@ -133,6 +157,8 @@ private:
   real64 const m_maxPermeability;
 
   arrayView3d< real64 > m_referencePermeability;
+
+  integer m_explicitFlag; 
 
 };
 
@@ -168,7 +194,8 @@ public:
                           m_maxPermeability,
                           m_referencePermeability,
                           m_permeability,
-                          m_dPerm_dPressure );
+                          m_dPerm_dPressure,
+                          m_explicitFlag );
   }
 
   struct viewKeyStruct : public PermeabilityBase::viewKeyStruct
@@ -180,6 +207,7 @@ public:
     static constexpr char const * referencePermeabilityString() { return "referencePermeability"; }
     static constexpr char const * maxPermeabilityString() { return "maxPermeability"; }
     static constexpr char const * pressureModelTypeString() { return "pressureModelType"; }
+    static constexpr char const * explicitUpdateFlagString() { return "explicitUpdateFlag"; }
   } viewKeys;
 
   virtual void initializeState() const override final;
@@ -207,6 +235,9 @@ private:
 
   /// Pressure dependence model type
   PressureModelType m_presModelType;
+
+  /// Explicit update flag 
+  integer m_explicitFlag; 
 
 };
 
