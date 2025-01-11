@@ -58,7 +58,7 @@
   <ElementRegions>
     <CellElementRegion
       name="Domain"
-      cellBlocks="{ cb1 }"
+      cellBlocks="{ * }"
       materialList="{ water, porousRock }"/>
 
     <SurfaceElementRegion

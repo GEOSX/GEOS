@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -18,7 +18,6 @@
  */
 
 #include "SurfaceGenerator.hpp"
-#include "ParallelTopologyChange.hpp"
 
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
 #include "mesh/mpiCommunications/NeighborCommunicator.hpp"
@@ -32,9 +31,11 @@
 #include "physicsSolvers/solidMechanics/SolidMechanicsLagrangianFEM.hpp"
 #include "physicsSolvers/solidMechanics/kernels/SolidMechanicsLagrangianFEMKernels.hpp"
 #include "physicsSolvers/surfaceGeneration/SurfaceGeneratorFields.hpp"
+#include "physicsSolvers/surfaceGeneration/LogLevelsInfo.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
 #include "kernels/surfaceGenerationKernels.hpp"
 
+#include "ParallelTopologyChange.hpp"
 
 #include <algorithm>
 
@@ -174,7 +175,7 @@ static void CheckForAndRemoveDeadEndPath( const localIndex edgeIndex,
 
 SurfaceGenerator::SurfaceGenerator( const string & name,
                                     Group * const parent ):
-  SolverBase( name, parent ),
+  PhysicsSolverBase( name, parent ),
   m_failCriterion( 1 ),
 //  m_maxTurnAngle(91.0),
   m_nodeBasedSIF( 1 ),
@@ -232,6 +233,10 @@ SurfaceGenerator::SurfaceGenerator( const string & name,
 
   this->getWrapper< string >( viewKeyStruct::discretizationString() ).
     setInputFlag( InputFlags::FALSE );
+
+  addLogLevel< logInfo::SurfaceGenerator >();
+  addLogLevel< logInfo::Mapping >();
+  addLogLevel< logInfo::RuptureRate >();
 }
 
 void SurfaceGenerator::postInputInitialization()
@@ -388,28 +393,9 @@ void SurfaceGenerator::initializePostInitialConditionsPreSubGroups()
     {
       if( m_initialRockToughness >= 0 )
       {
-        if( m_toughnessScalingFactor > 0.0 )
-        {
-          real64 faceCenter[3];
-          faceCenter[0] = faceCenters[kf][0];
-          faceCenter[1] = faceCenters[kf][1];
-          faceCenter[2] = faceCenters[kf][2];
-
-          real64 scaledToughness = scalingToughness( m_fractureOrigin,
-                                                     faceCenter,
-                                                     m_initialRockToughness,
-                                                     m_toughnessScalingFactor );
-
-          KIC[kf][0] = scaledToughness;
-          KIC[kf][1] = scaledToughness;
-          KIC[kf][2] = scaledToughness;
-        }
-        else
-        {
-          KIC[kf][0] = m_initialRockToughness;
-          KIC[kf][1] = m_initialRockToughness;
-          KIC[kf][2] = m_initialRockToughness;
-        }
+        KIC[kf][0] = m_initialRockToughness;
+        KIC[kf][1] = m_initialRockToughness;
+        KIC[kf][2] = m_initialRockToughness;
       }
       else
       {
@@ -452,6 +438,25 @@ void SurfaceGenerator::initializePostInitialConditionsPreSubGroups()
             KIC[kf][1] = std::min( std::fabs( k0[1] ), std::fabs( KIC[kf][1] ) );
             KIC[kf][2] = std::min( std::fabs( k0[2] ), std::fabs( KIC[kf][2] ) );
           }
+        }
+      }
+      if( m_toughnessScalingFactor > 0.0 )
+      {
+        real64 faceCenter[3];
+        faceCenter[0] = faceCenters[kf][0];
+        faceCenter[1] = faceCenters[kf][1];
+        faceCenter[2] = faceCenters[kf][2];
+
+        for( localIndex dim=0; dim<3; ++dim)
+        {
+          real64 const initialRockToughness = KIC[kf][dim];
+
+          real64 const scaledToughness = scalingToughness( m_fractureOrigin,
+                                                           faceCenter,
+                                                           initialRockToughness,
+                                                           m_toughnessScalingFactor );
+
+          KIC[kf][dim] = scaledToughness;
         }
       }
     }
@@ -754,7 +759,7 @@ int SurfaceGenerator::separationDriver( DomainPartition & domain,
     elementManager.forElementSubRegions< FaceElementSubRegion >( [&]( FaceElementSubRegion & subRegion )
     {
       FaceElementSubRegion::NodeMapType & nodeMap = subRegion.nodeList();
-      ArrayOfArraysView< localIndex const > const faceMap = subRegion.faceList().toViewConst();
+      arrayView2d< localIndex const > const faceMap = subRegion.faceList().toViewConst();
 
       for( localIndex kfe=0; kfe<subRegion.size(); ++kfe )
       {
@@ -782,7 +787,7 @@ int SurfaceGenerator::separationDriver( DomainPartition & domain,
 
   real64 ruptureRate = calculateRuptureRate( elementManager.getRegion< SurfaceElementRegion >( this->m_fractureRegionName ) );
 
-  GEOS_LOG_LEVEL_RANK_0( 3, "rupture rate is " << ruptureRate );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::RuptureRate, GEOS_FMT( "Rupture rate = {}", ruptureRate ) );
   if( ruptureRate > 0 )
     m_nextDt = ruptureRate < 1e99 ? m_cflFactor / ruptureRate : 1e99;
 
@@ -1045,9 +1050,9 @@ bool SurfaceGenerator::findFracturePlanes( localIndex const nodeID,
 
   ArrayOfArraysView< localIndex const > const & faceToEdgeMap = faceManager.edgeList().toViewConst();
 
-  arraySlice1d< localIndex const > const & nodeToRegionMap = nodeManager.elementRegionList()[nodeID];
-  arraySlice1d< localIndex const > const & nodeToSubRegionMap = nodeManager.elementSubRegionList()[nodeID];
-  arraySlice1d< localIndex const > const & nodeToElementMap = nodeManager.elementList()[nodeID];
+  arraySlice1d< localIndex const > const nodeToRegionMap = nodeManager.elementRegionList()[nodeID];
+  arraySlice1d< localIndex const > const nodeToSubRegionMap = nodeManager.elementSubRegionList()[nodeID];
+  arraySlice1d< localIndex const > const nodeToElementMap = nodeManager.elementList()[nodeID];
 
   // BACKWARDS COMPATIBILITY HACK!
   //
@@ -1761,14 +1766,13 @@ void SurfaceGenerator::performFracture( const localIndex nodeID,
 
   // Split the node into two, using the original index, and a new one.
   localIndex newNodeIndex;
-  if( getLogLevel() > 0 )
   {
     std::ostringstream s;
     for( std::set< localIndex >::const_iterator i=separationPathFaces.begin(); i!=separationPathFaces.end(); ++i )
     {
       s << *i << " ";
     }
-    GEOS_LOG_RANK( GEOS_FMT( "Splitting node {} along separation plane faces: {}", nodeID, s.str() ) );
+    GEOS_LOG_LEVEL_INFO_BY_RANK( logInfo::SurfaceGenerator, GEOS_FMT( "Splitting node {} along separation plane faces: {}", nodeID, s.str() ) );
   }
 
 
@@ -1807,11 +1811,7 @@ void SurfaceGenerator::performFracture( const localIndex nodeID,
 // >("usedFaces")[newNodeIndex];
 //  usedFacesNew = usedFaces[nodeID];
 
-
-  if( getLogLevel() > 0 )
-  {
-    GEOS_LOG_RANK( GEOS_FMT( "Done splitting node {} into nodes {} and {}", nodeID, nodeID, newNodeIndex ) );
-  }
+  GEOS_LOG_LEVEL_INFO_BY_RANK( logInfo::SurfaceGenerator, GEOS_FMT( "Done splitting node {} into nodes {} and {}", nodeID, nodeID, newNodeIndex ) );
 
   // split edges
   map< localIndex, localIndex > splitEdges;
@@ -1832,10 +1832,7 @@ void SurfaceGenerator::performFracture( const localIndex nodeID,
 
       edgeToFaceMap.clearSet( newEdgeIndex );
 
-      if( getLogLevel() > 0 )
-      {
-        GEOS_LOG_RANK( GEOS_FMT ( "Split edge {} into edges {} and {}", parentEdgeIndex, parentEdgeIndex, newEdgeIndex ) );
-      }
+      GEOS_LOG_LEVEL_INFO_BY_RANK( logInfo::SurfaceGenerator, GEOS_FMT ( "Split edge {} into edges {} and {}", parentEdgeIndex, parentEdgeIndex, newEdgeIndex ) );
 
       splitEdges[parentEdgeIndex] = newEdgeIndex;
       modifiedObjects.newEdges.insert( newEdgeIndex );
@@ -1891,11 +1888,7 @@ void SurfaceGenerator::performFracture( const localIndex nodeID,
 
       if( faceManager.splitObject( faceIndex, rank, newFaceIndex ) )
       {
-
-        if( getLogLevel() > 0 )
-        {
-          GEOS_LOG_RANK( GEOS_FMT ( "Split face {} into faces {} and {}", faceIndex, faceIndex, newFaceIndex ) );
-        }
+        GEOS_LOG_LEVEL_INFO_BY_RANK( logInfo::SurfaceGenerator, GEOS_FMT ( "Split face {} into faces {} and {}", faceIndex, faceIndex, newFaceIndex ) );
 
         splitFaces[faceIndex] = newFaceIndex;
         modifiedObjects.newFaces.insert( newFaceIndex );
@@ -1980,6 +1973,7 @@ void SurfaceGenerator::performFracture( const localIndex nodeID,
                                                                     this->m_originalFaceToEdges.toViewConst(),
                                                                     faceIndices );
           m_faceElemsRupturedThisSolve.insert( newFaceElement );
+          GEOS_LOG_LEVEL_INFO_BY_RANK( logInfo::SurfaceGenerator, GEOS_FMT ( "Created new FaceElement {} when creating face {} from {}", newFaceElement, newFaceIndex, faceIndex ) );
           modifiedObjects.newElements[ {fractureElementRegion.getIndexInParent(), 0} ].insert( newFaceElement );
         }
       } // if( faceManager.SplitObject( faceIndex, newFaceIndex ) )
@@ -2162,23 +2156,19 @@ void SurfaceGenerator::performFracture( const localIndex nodeID,
             faceToElementMap[faceIndex][1] = -1;
           }
 
-          if( getLogLevel() > 1 )
-          {
-            GEOS_LOG( "    faceToRegionMap["<<newFaceIndex<<"][0]    = "<<faceToRegionMap[newFaceIndex][0] );
-            GEOS_LOG( "    faceToSubRegionMap["<<newFaceIndex<<"][0] = "<<faceToSubRegionMap[newFaceIndex][0] );
-            GEOS_LOG( "    faceToElementMap["<<newFaceIndex<<"][0]      = "<<faceToElementMap[newFaceIndex][0] );
-            GEOS_LOG( "    faceToRegionMap["<<newFaceIndex<<"][1]    = "<<faceToRegionMap[newFaceIndex][1] );
-            GEOS_LOG( "    faceToSubRegionMap["<<newFaceIndex<<"][1] = "<<faceToSubRegionMap[newFaceIndex][1] );
-            GEOS_LOG( "    faceToElementMap["<<newFaceIndex<<"][1]      = "<<faceToElementMap[newFaceIndex][1] );
+          GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Mapping, "    faceToRegionMap["<<newFaceIndex<<"][0]    = "<<faceToRegionMap[newFaceIndex][0] );
+          GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Mapping, "    faceToSubRegionMap["<<newFaceIndex<<"][0] = "<<faceToSubRegionMap[newFaceIndex][0] );
+          GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Mapping, "    faceToElementMap["<<newFaceIndex<<"][0]      = "<<faceToElementMap[newFaceIndex][0] );
+          GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Mapping, "    faceToRegionMap["<<newFaceIndex<<"][1]    = "<<faceToRegionMap[newFaceIndex][1] );
+          GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Mapping, "    faceToSubRegionMap["<<newFaceIndex<<"][1] = "<<faceToSubRegionMap[newFaceIndex][1] );
+          GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Mapping, "    faceToElementMap["<<newFaceIndex<<"][1]      = "<<faceToElementMap[newFaceIndex][1] );
 
-            GEOS_LOG( "    faceToRegionMap["<<faceIndex<<"][0]    = "<<faceToRegionMap[faceIndex][0] );
-            GEOS_LOG( "    faceToSubRegionMap["<<faceIndex<<"][0] = "<<faceToSubRegionMap[faceIndex][0] );
-            GEOS_LOG( "    faceToElementMap["<<faceIndex<<"][0]      = "<<faceToElementMap[faceIndex][0] );
-            GEOS_LOG( "    faceToRegionMap["<<faceIndex<<"][1]    = "<<faceToRegionMap[faceIndex][1] );
-            GEOS_LOG( "    faceToSubRegionMap["<<faceIndex<<"][1] = "<<faceToSubRegionMap[faceIndex][1] );
-            GEOS_LOG( "    faceToElementMap["<<faceIndex<<"][1]      = "<<faceToElementMap[faceIndex][1] );
-
-          }
+          GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Mapping, "    faceToRegionMap["<<faceIndex<<"][0]    = "<<faceToRegionMap[faceIndex][0] );
+          GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Mapping, "    faceToSubRegionMap["<<faceIndex<<"][0] = "<<faceToSubRegionMap[faceIndex][0] );
+          GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Mapping, "    faceToElementMap["<<faceIndex<<"][0]      = "<<faceToElementMap[faceIndex][0] );
+          GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Mapping, "    faceToRegionMap["<<faceIndex<<"][1]    = "<<faceToRegionMap[faceIndex][1] );
+          GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Mapping, "    faceToSubRegionMap["<<faceIndex<<"][1] = "<<faceToSubRegionMap[faceIndex][1] );
+          GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Mapping, "    faceToElementMap["<<faceIndex<<"][1]      = "<<faceToElementMap[faceIndex][1] );
 
           for( int i = 0; i < 2; i++ )
           {
@@ -2368,7 +2358,6 @@ void SurfaceGenerator::mapConsistencyCheck( localIndex const GEOS_UNUSED_PARAM( 
   arrayView2d< localIndex const > const & faceToRegionMap = faceManager.elementRegionList();
   arrayView2d< localIndex const > const & faceToSubRegionMap = faceManager.elementSubRegionList();
   arrayView2d< localIndex const > const & faceToElementMap = faceManager.elementList();
-
 
 #if 1
   if( getLogLevel() > 2 )
@@ -4626,7 +4615,7 @@ real64 SurfaceGenerator::scalingToughness( R1Tensor const fractureOrigin,
 
 
 
-REGISTER_CATALOG_ENTRY( SolverBase,
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase,
                         SurfaceGenerator,
                         string const &, dataRepository::Group * const )
 

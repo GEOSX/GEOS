@@ -13,7 +13,10 @@ class TreeBuilderWithComments(etree.TreeBuilder):
         self.end(etree.Comment)
 
 
-def writeTableRST(file_name, values):
+def writeTableRST(type_name, file_name, title_prefix, values):
+
+    element_header = '%s: %s' % (title_prefix, type_name)
+
     L = [[len(x) for x in row] for row in values]
 
     # np isn't in the docker images for our CI
@@ -54,7 +57,9 @@ def writeTableRST(file_name, values):
 
     # Build table
     with open(file_name, 'w') as f:
-        f.write('\n\n')
+        f.write('%s\n' % (element_header))
+        f.write('=' * len(element_header) + '\n')
+        f.write('\n')
         f.write(boundary)
         f.write(formatted_lines[0])
         f.write(boundary)
@@ -269,13 +274,10 @@ def main(schema_name='schema.xsd', output_folder='./', xsd='{http://www.w3.org/2
         for type_name in sorted(input_attribute_map.keys()):
             # Write the individual tables
             table_values = buildTableValues(input_attribute_map[type_name])
-            writeTableRST('%s/%s.rst' % (datastructure_folder, type_name), table_values)
+            writeTableRST( type_name, '%s/%s.rst' % (datastructure_folder, type_name), 'XML Element', table_values)
 
             # Write to the master list
-            element_header = 'Element: %s' % (type_name)
             output_handle.write('\n.. _XML_%s:\n\n' % (type_name))
-            output_handle.write('%s\n' % (element_header))
-            output_handle.write('=' * len(element_header) + '\n')
             output_handle.write('.. include:: %s.rst\n\n' % (type_name))
 
         # Parse the non-input schema definitions
@@ -288,13 +290,10 @@ def main(schema_name='schema.xsd', output_folder='./', xsd='{http://www.w3.org/2
             table_values = buildTableValues(other_attribute_map[type_name],
                                             link_string='DATASTRUCTURE',
                                             include_defaults=False)
-            writeTableRST('%s/%s_other.rst' % (datastructure_folder, type_name), table_values)
+            writeTableRST( type_name, '%s/%s_other.rst' % (datastructure_folder, type_name), 'Datastructure', table_values)
 
             # Write to the master list
-            element_header = 'Datastructure: %s' % (type_name)
             output_handle.write('\n.. _DATASTRUCTURE_%s:\n\n' % (type_name))
-            output_handle.write('%s\n' % (element_header))
-            output_handle.write('=' * len(element_header) + '\n')
             output_handle.write('.. include:: %s_other.rst\n\n' % (type_name))
 
 

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -21,6 +21,7 @@
 
 #include "physicsSolvers/PhysicsSolverManager.hpp"
 #include "physicsSolvers/solidMechanics/SolidMechanicsLagrangianFEM.hpp"
+#include "physicsSolvers/LogLevelsInfo.hpp"
 #include "mesh/DomainPartition.hpp"
 
 namespace geos
@@ -51,6 +52,8 @@ SolidMechanicsStateReset::SolidMechanicsStateReset( const string & name,
     setApplyDefaultValue( false ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "Flag to enable/disable inelastic behavior" );
+
+  addLogLevel< logInfo::Initialization >();
 }
 
 SolidMechanicsStateReset::~SolidMechanicsStateReset()
@@ -83,8 +86,9 @@ bool SolidMechanicsStateReset::execute( real64 const time_n,
     // Option 1: zero out velocity, incremental displacement, and displacement
     if( m_resetDisplacements )
     {
-      GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "Task `{}`: at time {}s, physics solver `{}` is resetting total displacement and velocity to zero",
-                                          getName(), time_n, m_solidSolverName ) );
+      GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Initialization,
+                                  GEOS_FMT( "Task `{}`: at time {}s, physics solver `{}` is resetting total displacement and velocity to zero",
+                                            getName(), time_n, m_solidSolverName ) );
 
       NodeManager & nodeManager = mesh.getNodeManager();
 
@@ -94,6 +98,16 @@ bool SolidMechanicsStateReset::execute( real64 const time_n,
       }
       nodeManager.getField< solidMechanics::totalDisplacement >().zero();
       nodeManager.getField< solidMechanics::incrementalDisplacement >().zero();
+
+      ElementRegionManager & elemManager = mesh.getElemManager();
+      elemManager.forElementSubRegions< CellElementSubRegion >( regionNames,
+                                                                [&]( localIndex const,
+                                                                     ElementSubRegionBase & subRegion )
+      {
+        subRegion.getField< solidMechanics::strain >().zero();
+        subRegion.getField< solidMechanics::plasticStrain >().zero();
+      } );
+
     }
 
     // Option 2: enable / disable inelastic behavior
@@ -105,10 +119,10 @@ bool SolidMechanicsStateReset::execute( real64 const time_n,
       string const & solidMaterialName = subRegion.getReference< string >( SolidMechanicsLagrangianFEM::viewKeyStruct::solidMaterialNamesString() );
       Group & constitutiveModels = subRegion.getGroup( ElementSubRegionBase::groupKeyStruct::constitutiveModelsString() );
 
-      GEOS_LOG_LEVEL_RANK_0( 2, GEOS_FMT( "Task `{}`: at time {}s, solid model `{}` is setting inelastic behavior to `{}` on subRegion `{}`. ",
-                                          getName(), time_n, solidMaterialName,
-                                          m_disableInelasticity ? "OFF" : "ON",
-                                          subRegion.getName() ) );
+      GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Initialization, GEOS_FMT( "Task `{}`: at time {}s, solid model `{}` is setting inelastic behavior to `{}` on subRegion `{}`. ",
+                                                                     getName(), time_n, solidMaterialName,
+                                                                     m_disableInelasticity ? "OFF" : "ON",
+                                                                     subRegion.getName() ) );
 
       SolidBase & constitutiveRelation = constitutiveModels.getGroup< SolidBase >( solidMaterialName );
       constitutiveRelation.disableInelasticity( m_disableInelasticity );

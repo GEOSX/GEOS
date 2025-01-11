@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -67,6 +67,8 @@ public:
 //START_SPHINX_INCLUDE_01
 
   virtual void registerDataOnMesh( Group & meshBodies ) override;
+
+  virtual void registerDataForCFL( Group & meshBodies ) { GEOS_UNUSED_VAR( meshBodies ); }
 
   /**
    * @defgroup Solver Interface Functions
@@ -282,12 +284,14 @@ public:
    * from prescribed intermediate values (i.e. global densities from global fractions)
    * and any applicable hydrostatic equilibration of the domain
    */
-  void initializeFluidState( MeshLevel & mesh, DomainPartition & domain, arrayView1d< string const > const & regionNames );
+  virtual void initializeFluidState( MeshLevel & mesh, arrayView1d< string const > const & regionNames ) override;
+
+  virtual void initializeThermalState( MeshLevel & mesh, arrayView1d< string const > const & regionNames ) override;
 
   /**
    * @brief Compute the hydrostatic equilibrium using the compositions and temperature input tables
    */
-  void computeHydrostaticEquilibrium();
+  virtual void computeHydrostaticEquilibrium( DomainPartition & domain ) override;
 
   /**
    * @brief Function to perform the Application of Dirichlet type BC's
@@ -345,15 +349,15 @@ public:
    * @param[in] domain the domain
    * @param[in] localMatrix local system matrix
    * @param[in] localRhs local system right-hand side vector
-   * @detail This function is meant to be called when the flag m_keepFlowVariablesConstantDuringInitStep is on
+   * @detail This function is meant to be called when the flag m_keepVariablesConstantDuringInitStep is on
    *         The main use case is the initialization step in coupled problems during which we solve an elastic problem for a fixed pressure
    */
-  void keepFlowVariablesConstantDuringInitStep( real64 const time,
-                                                real64 const dt,
-                                                DofManager const & dofManager,
-                                                DomainPartition & domain,
-                                                CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                                                arrayView1d< real64 > const & localRhs ) const;
+  void keepVariablesConstantDuringInitStep( real64 const time,
+                                            real64 const dt,
+                                            DofManager const & dofManager,
+                                            DomainPartition & domain,
+                                            CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                                            arrayView1d< real64 > const & localRhs ) const;
 
 
   /**
@@ -362,22 +366,17 @@ public:
    */
   void chopNegativeDensities( DomainPartition & domain );
 
+  void chopNegativeDensities( ElementSubRegionBase & subRegion );
+
   virtual real64 setNextDtBasedOnStateChange( real64 const & currentDt,
                                               DomainPartition & domain ) override;
 
-  void computeCFLNumbers( DomainPartition & domain, real64 const & dt, real64 & maxPhaseCFL, real64 & maxCompCFL );
 
-  /**
-   * @brief function to set the next time step size
-   * @param[in] currentDt the current time step size
-   * @param[in] domain the domain object
-   * @return the prescribed time step size
-   */
-  real64 setNextDt( real64 const & currentDt,
-                    DomainPartition & domain ) override;
-
-  virtual real64 setNextDtBasedOnCFL( real64 const & currentDt,
-                                      DomainPartition & domain ) override;
+  virtual void computeCFLNumbers( DomainPartition & domain, real64 const & dt, real64 & maxPhaseCFL, real64 & maxCompCFL )
+  {
+    GEOS_UNUSED_VAR( domain, dt, maxPhaseCFL, maxCompCFL );
+    GEOS_ERROR( GEOS_FMT( "{}: computeCFLNumbers is not implemented for {}", getDataContext(), getCatalogName() ) );
+  }
 
   virtual void initializePostInitialConditionsPreSubGroups() override;
 
@@ -491,9 +490,6 @@ protected:
   /// maximum (absolute) component density change in a sequential iteration
   real64 m_sequentialCompDensChange;
   real64 m_maxSequentialCompDensChange;
-
-  /// the targeted CFL for timestep
-  real64 m_targetFlowCFL;
 
 private:
 

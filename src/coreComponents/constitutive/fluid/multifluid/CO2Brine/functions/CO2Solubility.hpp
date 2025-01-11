@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -21,10 +21,10 @@
 #define GEOS_CONSTITUTIVE_FLUID_MULTIFLUID_CO2BRINE_FUNCTIONS_CO2SOLUBILITY_HPP_
 
 #include "FlashModelBase.hpp"
-
 #include "constitutive/fluid/multifluid/CO2Brine/functions/PVTFunctionHelpers.hpp"
 #include "constitutive/fluid/multifluid/Layouts.hpp"
 #include "constitutive/fluid/multifluid/MultiFluidUtils.hpp"
+#include "fileIO/Outputs/OutputBase.hpp"
 #include "functions/TableFunction.hpp"
 
 namespace geos
@@ -117,7 +117,7 @@ public:
                  string_array const & phaseNames,
                  string_array const & componentNames,
                  array1d< real64 > const & componentMolarWeight,
-                 bool const printTable );
+                 TableFunction::OutputOptions const pvtOutputOpts );
 
   static string catalogName() { return "CO2Solubility"; }
 
