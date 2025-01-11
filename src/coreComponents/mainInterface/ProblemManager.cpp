@@ -1045,10 +1045,9 @@ void ProblemManager::setRegionQuadrature( Group & meshBodies,
     string const regionName = std::get< 2 >( key );
     string const subRegionName = std::get< 3 >( key );
 
-    GEOS_LOG_RANK_0( "regionQuadrature: meshBodyName, meshLevelName, regionName, subRegionName = "<<
-                     meshBodyName<<", "<<meshLevelName<<", "<<regionName<<", "<<subRegionName );
-
-
+    GEOS_LOG_RANK_0( GEOS_FMT( "meshBodyName/meshLevelName/regionName/subRegionName = {}/{}/{}/{}, {} quadrature {}",
+                               meshBodyName, meshLevelName, regionName, subRegionName, numQuadraturePoints,
+                               numQuadraturePoints == 1 ? "point" : "points" ) );
 
     MeshBody & meshBody = meshBodies.getGroup< MeshBody >( meshBodyName );
     MeshLevel & meshLevel = meshBody.getMeshLevel( meshLevelName );
@@ -1063,13 +1062,6 @@ void ProblemManager::setRegionQuadrature( Group & meshBodies,
       for( auto & materialName : materialList )
       {
         constitutiveManager.hangConstitutiveRelation( materialName, &particleSubRegion, numQuadraturePoints );
-        GEOS_LOG_RANK_0( GEOS_FMT( "{}/{}/{}/{}/{} allocated {} quadrature points",
-                                   meshBodyName,
-                                   meshLevelName,
-                                   regionName,
-                                   subRegionName,
-                                   materialName,
-                                   numQuadraturePoints ) );
       }
     }
 //    if( meshLevel.isShallowCopy() )
@@ -1083,13 +1075,6 @@ void ProblemManager::setRegionQuadrature( Group & meshBodies,
       for( auto & materialName : materialList )
       {
         constitutiveManager.hangConstitutiveRelation( materialName, &elemSubRegion, numQuadraturePoints );
-        GEOS_LOG_RANK_0( GEOS_FMT( "{}/{}/{}/{}/{} allocated {} quadrature points",
-                                   meshBodyName,
-                                   meshLevelName,
-                                   regionName,
-                                   subRegionName,
-                                   materialName,
-                                   numQuadraturePoints ) );
       }
     }
   }

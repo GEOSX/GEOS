@@ -72,16 +72,10 @@ public:
     return this->getGroup< T >( key );
   }
 
-  // template< typename T >
-  // ViewAccessor< T >
-  // GetConstitutiveData( string const & name,
-  //                      dataRepository::Group * const relationGroup );
-
   template< typename T >
   ViewAccessor< T >
   getConstitutiveData( string const & name,
                        dataRepository::Group const * const relationGroup ) const;
-
 
   struct groupKeyStruct
   {
@@ -109,15 +103,6 @@ ConstitutiveManager::getConstitutiveData( string const & name,
   }
   return rval;
 }
-
-// template< typename T >
-// ViewAccessor< T >
-// ConstitutiveManager::GetConstitutiveData( string const & name,
-//                                           dataRepository::Group * const relationGroup )
-// {
-//   return const_cast< ViewAccessor<T> >(const_cast<ConstitutiveManager const *>(this->
-//                                        GetConstitutiveData<T>( name, relationGroup ) );
-// }
 
 }
 } /* namespace geos */
