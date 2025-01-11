@@ -254,9 +254,6 @@ protected:
   real64 m_sequentialTempChange;
   real64 m_maxSequentialTempChange;
 
-  // MATTEO: testing logs parsing
-  string m_testLog;
-
   /**
    * @brief Class used for displaying boundary warning message
    */
