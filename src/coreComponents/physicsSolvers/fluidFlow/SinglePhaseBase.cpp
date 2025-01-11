@@ -1130,16 +1130,14 @@ void SinglePhaseBase::applySourceFluxBC( real64 const time_n,
           getConstitutiveModel< SingleFluidBase >( subRegion, subRegion.template getReference< string >( viewKeyStruct::fluidNamesString() ) );
 
         arrayView2d< real64 const > const enthalpy = fluid.enthalpy();
-        arrayView2d< real64 const > const dEnthalpy_dTemperature = fluid.dEnthalpy_dTemperature();
-        arrayView2d< real64 const > const dEnthalpy_dPressure    = fluid.dEnthalpy_dPressure();
+        arrayView3d< real64 const > const dEnthalpy = fluid.dEnthalpy();
         forAll< parallelDevicePolicy<> >( targetSet.size(), [sizeScalingFactor,
                                                              targetSet,
                                                              rankOffset,
                                                              ghostRank,
                                                              dofNumber,
                                                              enthalpy,
-                                                             dEnthalpy_dTemperature,
-                                                             dEnthalpy_dPressure,
+                                                             dEnthalpy,
                                                              rhsContributionArrayView,
                                                              localRhs,
                                                              localMatrix,
@@ -1167,7 +1165,7 @@ void SinglePhaseBase::applySourceFluxBC( real64 const time_n,
             localRhs[energyRowIndex] += enthalpy[ei][0] * rhsValue;
 
             globalIndex dofIndices[2]{pressureDofIndex, temperatureDofIndex};
-            real64 jacobian[2]{rhsValue * dEnthalpy_dPressure[ei][0], rhsValue * dEnthalpy_dTemperature[ei][0]};
+            real64 jacobian[2]{rhsValue * dEnthalpy[ei][0][0], rhsValue * dEnthalpy[ei][0][1]};  // add tags
 
             localMatrix.template addToRow< serialAtomic >( energyRowIndex,
                                                            dofIndices,

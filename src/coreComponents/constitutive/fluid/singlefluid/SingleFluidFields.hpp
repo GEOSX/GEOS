@@ -99,22 +99,6 @@ DECLARE_FIELD( internalEnergy_n,
                WRITE_AND_READ,
                "Fluid internal energy at the previous converged step" );
 
-DECLARE_FIELD( dInternalEnergy_dPressure,
-               "dInternalEnergy_dPressure",
-               array2d< real64 >,
-               0,
-               NOPLOT,
-               WRITE_AND_READ,
-               "Derivative of internal energy with respect to pressure" );
-
-DECLARE_FIELD( dInternalEnergy_dTemperature,
-               "dInternalEnergy_dTemperature",
-               array2d< real64 >,
-               0,
-               NOPLOT,
-               WRITE_AND_READ,
-               "Derivative of internal energy with respect to temperature" );
-
 DECLARE_FIELD( enthalpy,
                "enthalpy",
                array2dLayoutFluid,
@@ -130,23 +114,6 @@ DECLARE_FIELD( dEnthalpy,
                LEVEL_0,
                WRITE_AND_READ,
                "dEnthalpy" );
-#if 1
-DECLARE_FIELD( dEnthalpy_dPressure,
-               "dEnthalpy_dPressure",
-               array2d< real64 >,
-               0,
-               NOPLOT,
-               WRITE_AND_READ,
-               "Derivative of enthalpy with respect to pressure" );
-
-DECLARE_FIELD( dEnthalpy_dTemperature,
-               "dEnthalpy_dTemperature",
-               array2d< real64 >,
-               0,
-               NOPLOT,
-               WRITE_AND_READ,
-               "Derivative of enthalpy with respect to temperature" );
-#endif
 }
 
 }

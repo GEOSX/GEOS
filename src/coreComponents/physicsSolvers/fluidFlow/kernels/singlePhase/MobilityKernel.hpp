@@ -64,7 +64,7 @@ struct MobilityKernel
   {
     mob = dens / visc;
     dMob_dPres = dDens_dP / visc - mob / visc * dVisc_dP;
-    dMob_dTemp = dDens_dT / visc - mob / visc * dVisc_dT;  
+    dMob_dTemp = dDens_dT / visc - mob / visc * dVisc_dT;
   }
 
 // Value-only (no derivatives) version

@@ -151,8 +151,7 @@ void computeEnthalpyFlux( localIndex const ( &seri )[2],
                           localIndex const ( &sei )[2],
                           real64 const ( &transmissibility )[2],
                           ElementViewConst< arrayView2d< real64 const > > const & enthalpy,
-                          ElementViewConst< arrayView2d< real64 const > > const & dEnthalpy_dPressure,
-                          ElementViewConst< arrayView2d< real64 const > > const & dEnthalpy_dTemperature,
+                          ElementViewConst< arrayView3d< real64 const > > const & dEnthalpy,
                           ElementViewConst< arrayView1d< real64 const > > const & gravCoef,
                           ElementViewConst< arrayView3d< real64 const > > const & dDens,
                           ElementViewConst< arrayView1d< real64 const > > const & dMob_dTemp,
@@ -246,8 +245,8 @@ void computeEnthalpyFlux( localIndex const ( &seri )[2],
     localIndex const k_up = 1 - localIndex( fmax( fmin( alpha, 1.0 ), 0.0 ) );
 
     enthalpyTimesMobWeight = enthalpy[seri[k_up]][sesri[k_up]][sei[k_up]][0];
-    dEnthalpy_dP[k_up] = dEnthalpy_dPressure[seri[k_up]][sesri[k_up]][sei[k_up]][0];
-    dEnthalpy_dT[k_up] = dEnthalpy_dTemperature[seri[k_up]][sesri[k_up]][sei[k_up]][0];
+    dEnthalpy_dP[k_up] = dEnthalpy[seri[k_up]][sesri[k_up]][sei[k_up]][0][0]; // tjb tag
+    dEnthalpy_dT[k_up] = dEnthalpy[seri[k_up]][sesri[k_up]][sei[k_up]][0][0]; // tjb tag
   }
   else
   {
@@ -255,8 +254,8 @@ void computeEnthalpyFlux( localIndex const ( &seri )[2],
     for( integer ke = 0; ke < 2; ++ke )
     {
       enthalpyTimesMobWeight += mobWeights[ke] * enthalpy[seri[ke]][sesri[ke]][sei[ke]][0];
-      dEnthalpy_dP[ke] = mobWeights[ke] * dEnthalpy_dPressure[seri[ke]][sesri[ke]][sei[ke]][0];
-      dEnthalpy_dT[ke] = mobWeights[ke] * dEnthalpy_dTemperature[seri[ke]][sesri[ke]][sei[ke]][0];
+      dEnthalpy_dP[ke] = mobWeights[ke] * dEnthalpy[seri[ke]][sesri[ke]][sei[ke]][0][0]; // tjb
+      dEnthalpy_dT[ke] = mobWeights[ke] * dEnthalpy[seri[ke]][sesri[ke]][sei[ke]][0][0]; // tjb
     }
   }
 

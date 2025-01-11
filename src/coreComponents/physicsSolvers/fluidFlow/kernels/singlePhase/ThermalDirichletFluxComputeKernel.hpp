@@ -89,9 +89,7 @@ public:
   using ThermalSinglePhaseFluidAccessors =
     StencilMaterialAccessors< constitutive::SingleFluidBase,
                               fields::singlefluid::enthalpy,
-                              fields::singlefluid::dEnthalpy,
-                              fields::singlefluid::dEnthalpy_dPressure,
-                              fields::singlefluid::dEnthalpy_dTemperature >;
+                              fields::singlefluid::dEnthalpy >;
 
   using ThermalConductivityAccessors =
     StencilMaterialAccessors< constitutive::SinglePhaseThermalConductivityBase,
@@ -146,8 +144,6 @@ public:
     m_dMob_dTemp( thermalSinglePhaseFlowAccessors.get( fields::flow::dMobility_dTemperature {} ) ),
     m_enthalpy( thermalSinglePhaseFluidAccessors.get( fields::singlefluid::enthalpy {} ) ),
     m_dEnthalpy( thermalSinglePhaseFluidAccessors.get( fields::singlefluid::dEnthalpy {} ) ),
-    m_dEnthalpy_dPres( thermalSinglePhaseFluidAccessors.get( fields::singlefluid::dEnthalpy_dPressure {} ) ),
-    m_dEnthalpy_dTemp( thermalSinglePhaseFluidAccessors.get( fields::singlefluid::dEnthalpy_dTemperature {} ) ),
     m_thermalConductivity( thermalConductivityAccessors.get( fields::thermalconductivity::effectiveConductivity {} ) ),
     m_dThermalCond_dT( thermalConductivityAccessors.get( fields::thermalconductivity::dEffectiveConductivity_dT {} ) )
   {}
@@ -225,8 +221,8 @@ public:
         real64 const dFlux_dP = mobility_up * dF_dP + dMobility_dP_up * f;
         real64 const dFlux_dT = mobility_up * dF_dT + m_dMob_dTemp[er][esr][ei] * f;
 
-        stack.dEnergyFlux_dP += dFlux_dP * enthalpy + flux * m_dEnthalpy_dPres[er][esr][ei][0];
-        stack.dEnergyFlux_dT += dFlux_dT * enthalpy + flux * m_dEnthalpy_dTemp[er][esr][ei][0];
+        stack.dEnergyFlux_dP += dFlux_dP * enthalpy + flux * m_dEnthalpy[er][esr][ei][0][0];  // tjb add tags
+        stack.dEnergyFlux_dT += dFlux_dT * enthalpy + flux * m_dEnthalpy[er][esr][ei][0][1];  // tjb add tags
       }
       else
       {
@@ -293,15 +289,9 @@ protected:
   /// Views on derivatives of fluid mobilities
   ElementViewConst< arrayView1d< real64 const > > const m_dMob_dTemp;
 
-  /// Views on derivatives of fluid densities
-  ElementViewConst< arrayView2d< real64 const > > const m_dDens_dTemp;
-
   /// Views on enthalpies
   ElementViewConst< arrayView2d< real64 const > > const m_enthalpy;
   ElementViewConst< arrayView3d< real64 const > > const m_dEnthalpy;
-  // tjb remove
-  ElementViewConst< arrayView2d< real64 const > > const m_dEnthalpy_dPres;
-  ElementViewConst< arrayView2d< real64 const > > const m_dEnthalpy_dTemp;
 
   /// View on thermal conductivity
   ElementViewConst< arrayView3d< real64 const > > m_thermalConductivity;

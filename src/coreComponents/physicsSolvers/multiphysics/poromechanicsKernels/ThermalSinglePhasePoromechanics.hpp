@@ -279,14 +279,11 @@ public:
 
 protected:
 
-  /// Views on fluid density derivative wrt temperature
-  arrayView2d< real64 const > const m_dFluidDensity_dTemperature;
-
   /// Views on fluid internal energy
   arrayView2d< real64 const > const m_fluidInternalEnergy_n;
   arrayView2d< real64 const > const m_fluidInternalEnergy;
-  arrayView2d< real64 const > const m_dFluidInternalEnergy_dPressure;
-  arrayView2d< real64 const > const m_dFluidInternalEnergy_dTemperature;
+  arrayView3d< real64 const > const m_dFluidInternalEnergy;
+
 
   /// Views on rock internal energy
   arrayView2d< real64 const > const m_rockInternalEnergy_n;

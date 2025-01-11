@@ -85,9 +85,7 @@ public:
   using ThermalSinglePhaseFluidAccessors =
     StencilMaterialAccessors< constitutive::SingleFluidBase,
                               fields::singlefluid::enthalpy,
-                              fields::singlefluid::dEnthalpy,
-                              fields::singlefluid::dEnthalpy_dPressure,
-                              fields::singlefluid::dEnthalpy_dTemperature >;
+                              fields::singlefluid::dEnthalpy >;
 
   using ThermalConductivityAccessors =
     StencilMaterialAccessors< constitutive::SinglePhaseThermalConductivityBase,
@@ -135,8 +133,6 @@ public:
     m_dMob_dTemp( thermalSinglePhaseFlowAccessors.get( fields::flow::dMobility_dTemperature {} ) ),
     m_enthalpy( thermalSinglePhaseFluidAccessors.get( fields::singlefluid::enthalpy {} ) ),
     m_dEnthalpy( thermalSinglePhaseFluidAccessors.get( fields::singlefluid::dEnthalpy {} ) ),
-    m_dEnthalpy_dPres( thermalSinglePhaseFluidAccessors.get( fields::singlefluid::dEnthalpy_dPressure {} ) ),
-    m_dEnthalpy_dTemp( thermalSinglePhaseFluidAccessors.get( fields::singlefluid::dEnthalpy_dTemperature {} ) ),
     m_thermalConductivity( thermalConductivityAccessors.get( fields::thermalconductivity::effectiveConductivity {} ) ),
     m_dThermalCond_dT( thermalConductivityAccessors.get( fields::thermalconductivity::dEffectiveConductivity_dT {} ) )
   {}
@@ -419,9 +415,6 @@ protected:
   /// Views on enthalpies
   ElementViewConst< arrayView2d< real64 const > > const m_enthalpy;
   ElementViewConst< arrayView3d< real64 const > > const m_dEnthalpy;
-  // tjb remove
-  ElementViewConst< arrayView2d< real64 const > > const m_dEnthalpy_dPres;
-  ElementViewConst< arrayView2d< real64 const > > const m_dEnthalpy_dTemp;
 
   /// View on thermal conductivity
   ElementViewConst< arrayView3d< real64 const > > m_thermalConductivity;

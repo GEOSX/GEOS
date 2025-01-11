@@ -79,8 +79,7 @@ public:
   using ThermalSinglePhaseFluidAccessors =
     StencilMaterialAccessors< constitutive::SingleFluidBase,
                               fields::singlefluid::enthalpy,
-                              fields::singlefluid::dEnthalpy_dPressure,
-                              fields::singlefluid::dEnthalpy_dTemperature >;
+                              fields::singlefluid::dEnthalpy >;
 
   using ThermalConductivityAccessors =
     StencilMaterialAccessors< constitutive::SinglePhaseThermalConductivityBase,
@@ -116,8 +115,7 @@ public:
     m_temp( thermalSinglePhaseFlowAccessors.get( fields::flow::temperature {} ) ),
     m_dMob_dTemp( thermalSinglePhaseFlowAccessors.get( fields::flow::dMobility_dTemperature {} ) ),
     m_enthalpy( thermalSinglePhaseFluidAccessors.get( fields::singlefluid::enthalpy {} ) ),
-    m_dEnthalpy_dPres( thermalSinglePhaseFluidAccessors.get( fields::singlefluid::dEnthalpy_dPressure {} ) ),
-    m_dEnthalpy_dTemp( thermalSinglePhaseFluidAccessors.get( fields::singlefluid::dEnthalpy_dTemperature {} ) ),
+    m_dEnthalpy( thermalSinglePhaseFluidAccessors.get( fields::singlefluid::dEnthalpy {} ) ),
     m_thermalConductivity( thermalConductivityAccessors.get( fields::thermalconductivity::effectiveConductivity {} ) )
   {}
 
@@ -208,8 +206,7 @@ public:
       singlePhaseFluxKernelsHelper::computeEnthalpyFlux( seri, sesri, sei,
                                                          trans,
                                                          m_enthalpy,
-                                                         m_dEnthalpy_dPres,
-                                                         m_dEnthalpy_dTemp,
+                                                         m_dEnthalpy,
                                                          m_gravCoef,
                                                          m_dDens,
                                                          m_dMob_dTemp,
@@ -317,8 +314,9 @@ private:
 
   /// Views on enthalpies
   ElementViewConst< arrayView2d< real64 const > > const m_enthalpy;
-  ElementViewConst< arrayView2d< real64 const > > const m_dEnthalpy_dPres;
-  ElementViewConst< arrayView2d< real64 const > > const m_dEnthalpy_dTemp;
+
+  /// Views on enthalpies
+  ElementViewConst< arrayView3d< real64 const > > const m_dEnthalpy;
 
   /// View on thermal conductivity
   ElementViewConst< arrayView3d< real64 const > > m_thermalConductivity;

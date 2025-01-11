@@ -66,14 +66,8 @@ ThermalSinglePhasePoromechanicsEFEM( NodeManager const & nodeManager,
         inputDt,
         inputGravityVector,
         fluidModelKey ),
-  m_dFluidDensity_dTemperature( embeddedSurfSubRegion.template getConstitutiveModel< constitutive::SingleFluidBase >( elementSubRegion.template getReference< string >(
-                                                                                                                        fluidModelKey ) ).dDensity_dTemperature() ),
   m_fluidInternalEnergy_n( embeddedSurfSubRegion.template getConstitutiveModel< constitutive::SingleFluidBase >( elementSubRegion.template getReference< string >( fluidModelKey ) ).internalEnergy_n() ),
   m_fluidInternalEnergy( embeddedSurfSubRegion.template getConstitutiveModel< constitutive::SingleFluidBase >( elementSubRegion.template getReference< string >( fluidModelKey ) ).internalEnergy() ),
-  m_dFluidInternalEnergy_dPressure( embeddedSurfSubRegion.template getConstitutiveModel< constitutive::SingleFluidBase >( elementSubRegion.template getReference< string >(
-                                                                                                                            fluidModelKey ) ).dInternalEnergy_dPressure() ),
-  m_dFluidInternalEnergy_dTemperature( embeddedSurfSubRegion.template getConstitutiveModel< constitutive::SingleFluidBase >( elementSubRegion.template getReference< string >(
-                                                                                                                               fluidModelKey ) ).dInternalEnergy_dTemperature() ),
   m_temperature_n( embeddedSurfSubRegion.template getField< fields::flow::temperature_n >() ),
   m_temperature( embeddedSurfSubRegion.template getField< fields::flow::temperature >() ),
   m_matrixTemperature( elementSubRegion.template getField< fields::flow::temperature >() )
@@ -180,7 +174,7 @@ complete( localIndex const k,
   real64 const fluidEnergy   =  m_fluidDensity( embSurfIndex, 0 ) * m_fluidInternalEnergy( embSurfIndex, 0 ) * volume;
   real64 const fluidEnergy_n =  m_fluidDensity_n( embSurfIndex, 0 ) * m_fluidInternalEnergy_n( embSurfIndex, 0 ) * volume_n;
 
-  stack.dFluidMassIncrement_dTemperature =  m_dFluidDensity_dTemperature( embSurfIndex, 0 ) * volume;
+  stack.dFluidMassIncrement_dTemperature =  m_dFluidDensity( embSurfIndex, 0, 1 ) * volume;  // tjb tag
 
   stack.energyIncrement               = fluidEnergy - fluidEnergy_n;
   stack.dEnergyIncrement_dJump        = m_fluidDensity( embSurfIndex, 0 ) * m_fluidInternalEnergy( embSurfIndex, 0 ) * m_surfaceArea[ embSurfIndex ];
@@ -188,8 +182,8 @@ complete( localIndex const k,
                                                                                                                                     // check
                                                                                                                                     // add
                                                                                                                                     // tags
-  stack.dEnergyIncrement_dTemperature = ( m_dFluidDensity_dTemperature( embSurfIndex, 0 ) * m_fluidInternalEnergy( embSurfIndex, 0 ) +
-                                          m_fluidDensity( embSurfIndex, 0 ) * m_dFluidInternalEnergy_dTemperature( embSurfIndex, 0 )  ) * volume;
+  stack.dEnergyIncrement_dTemperature = ( m_dFluidDensity( embSurfIndex, 0, 1 ) * m_fluidInternalEnergy( embSurfIndex, 0 ) +  // tjb tags
+                                          m_fluidDensity( embSurfIndex, 0 ) * m_dFluidInternalEnergy( embSurfIndex, 0, 1 )  ) * volume;
 
   globalIndex const fracturePressureDof        = m_fracturePresDofNumber[ embSurfIndex ];
   globalIndex const fractureTemperatureDof     = m_fracturePresDofNumber[ embSurfIndex ] + 1;

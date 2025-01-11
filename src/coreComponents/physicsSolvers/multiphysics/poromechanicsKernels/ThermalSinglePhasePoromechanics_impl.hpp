@@ -65,14 +65,10 @@ ThermalSinglePhasePoromechanics( NodeManager const & nodeManager,
         inputFlowDofKey,
         performStressInitialization,
         fluidModelKey ),
-  m_dFluidDensity_dTemperature( elementSubRegion.template getConstitutiveModel< constitutive::SingleFluidBase >( elementSubRegion.template getReference< string >(
-                                                                                                                   fluidModelKey ) ).dDensity_dTemperature() ),
   m_fluidInternalEnergy_n( elementSubRegion.template getConstitutiveModel< constitutive::SingleFluidBase >( elementSubRegion.template getReference< string >( fluidModelKey ) ).internalEnergy_n() ),
   m_fluidInternalEnergy( elementSubRegion.template getConstitutiveModel< constitutive::SingleFluidBase >( elementSubRegion.template getReference< string >( fluidModelKey ) ).internalEnergy() ),
-  m_dFluidInternalEnergy_dPressure( elementSubRegion.template getConstitutiveModel< constitutive::SingleFluidBase >( elementSubRegion.template getReference< string >(
-                                                                                                                       fluidModelKey ) ).dInternalEnergy_dPressure() ),
-  m_dFluidInternalEnergy_dTemperature( elementSubRegion.template getConstitutiveModel< constitutive::SingleFluidBase >( elementSubRegion.template getReference< string >(
-                                                                                                                          fluidModelKey ) ).dInternalEnergy_dTemperature() ),
+  m_dFluidInternalEnergy( elementSubRegion.template getConstitutiveModel< constitutive::SingleFluidBase >( elementSubRegion.template getReference< string >(
+                                                                                                             fluidModelKey ) ).dInternalEnergy() ),
   m_rockInternalEnergy_n( inputConstitutiveType.getInternalEnergy_n() ),
   m_rockInternalEnergy( inputConstitutiveType.getInternalEnergy() ),
   m_dRockInternalEnergy_dTemperature( inputConstitutiveType.getDinternalEnergy_dTemperature() ),
@@ -176,7 +172,7 @@ computeBodyForce( localIndex const k,
 
   real64 const dMixtureDens_dTemperature =
     dPorosity_dTemperature * ( -m_solidDensity( k, q ) + m_fluidDensity( k, q ) )
-    + porosity * m_dFluidDensity_dTemperature( k, q );
+    + porosity * m_dFluidDensity( k, q, 1 ); // tjb tag
 
   LvArray::tensorOps::scaledCopy< 3 >( stack.dBodyForce_dTemperature, m_gravityVector, dMixtureDens_dTemperature );
 }
@@ -206,7 +202,8 @@ computeFluidIncrement( localIndex const k,
                                stack );
 
   // Step 2: compute derivative of fluid mass increment wrt temperature
-  stack.dFluidMassIncrement_dTemperature = dPorosity_dTemperature * m_fluidDensity( k, q ) + porosity * m_dFluidDensity_dTemperature( k, q );
+  stack.dFluidMassIncrement_dTemperature = dPorosity_dTemperature * m_fluidDensity( k, q ) + porosity * m_dFluidDensity( k, q, 1 );  // tjb
+                                                                                                                                     // tag
 
   // Step 3: compute fluid energy increment and its derivatives wrt vol strain, pressure, and temperature
   real64 const fluidMass = porosity * m_fluidDensity( k, q );
@@ -216,9 +213,9 @@ computeFluidIncrement( localIndex const k,
 
   stack.dEnergyIncrement_dVolStrainIncrement = stack.dFluidMassIncrement_dVolStrainIncrement * m_fluidInternalEnergy( k, q );
   stack.dEnergyIncrement_dPressure = stack.dFluidMassIncrement_dPressure * m_fluidInternalEnergy( k, q )
-                                     + fluidMass * m_dFluidInternalEnergy_dPressure( k, q );
+                                     + fluidMass * m_dFluidInternalEnergy( k, q, 0 );  // tjb tag
   stack.dEnergyIncrement_dTemperature = stack.dFluidMassIncrement_dTemperature * m_fluidInternalEnergy( k, q )
-                                        + fluidMass * m_dFluidInternalEnergy_dTemperature( k, q );
+                                        + fluidMass * m_dFluidInternalEnergy( k, q, 1 ); // tjb tag
 
 
   // Step 4: assemble the solid part of the accumulation term
