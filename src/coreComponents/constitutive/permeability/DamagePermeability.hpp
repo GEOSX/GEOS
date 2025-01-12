@@ -34,16 +34,18 @@ public:
 
   DamagePermeabilityUpdate( arrayView3d< real64 > const & permeability,
                             arrayView3d< real64 > const & dPerm_dPressure,
-                            real64 const & bulkPermeability )
+                            real64 const & bulkPermeability,
+                            real64 const & damageDependenceConstant )
     : PermeabilityBaseUpdate( permeability, dPerm_dPressure ),
-    m_bulkPermeability( bulkPermeability )
+    m_bulkPermeability( bulkPermeability ),
+    m_damageDependenceConstant( damageDependenceConstant )
   {}
 
   GEOS_HOST_DEVICE
   void updateDamagePermeability ( localIndex const k,
                                   real64 const & damage ) const
   {
-    real64 const matrixPermeability = m_bulkPermeability*exp( 7.0*damage );
+    real64 const matrixPermeability = m_bulkPermeability*exp( m_damageDependenceConstant*damage );
 
     for( localIndex dim=0; dim<3; ++dim )
     {
@@ -53,7 +55,11 @@ public:
 
 private:
 
+  /// Permeability of the intact bulk material
   real64 m_bulkPermeability;
+  
+  /// Damage dependeny coefficient
+  real64 m_damageDependenceConstant;
 
 };
 
@@ -85,13 +91,15 @@ public:
   {
     return KernelWrapper( m_permeability,
                           m_dPerm_dPressure,
-                          m_bulkPermeability );
+                          m_bulkPermeability,
+                          m_damageDependenceConstant );
   }
 
 
   struct viewKeyStruct : public PermeabilityBase::viewKeyStruct
   {
     static constexpr char const * bulkPermeabilityString() { return "bulkPermeability"; }
+    static constexpr char const * damageDependenceConstantString() { return "damageDependenceConstant"; }
   };
 
 protected:
@@ -99,8 +107,12 @@ protected:
   virtual void postInputInitialization() override;
 
 private:
-
+  
+  /// Permeability of the intact bulk material
   real64 m_bulkPermeability;
+  
+  /// Damage dependeny coefficient
+  real64 m_damageDependenceConstant;
 
 };
 

@@ -34,7 +34,12 @@ DamagePermeability::DamagePermeability( string const & name, Group * const paren
   registerWrapper( viewKeyStruct::bulkPermeabilityString(), &m_bulkPermeability ).
     setInputFlag( InputFlags::REQUIRED ).
     setRestartFlags( RestartFlags::NO_WRITE ).
-    setDescription( "Permeability of an undamaged bulk rock." );
+    setDescription( "Permeability of the intact bulk material" );
+
+  registerWrapper( viewKeyStruct::damageDependenceConstantString(), &m_damageDependenceConstant ).
+    setInputFlag( InputFlags::REQUIRED ).
+    setRestartFlags( RestartFlags::NO_WRITE ).
+    setDescription( "Damage dependeny coefficient" );
 }
 
 std::unique_ptr< ConstitutiveBase >
