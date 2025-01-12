@@ -57,7 +57,7 @@ private:
 
   /// Permeability of the intact bulk material
   real64 m_bulkPermeability;
-  
+
   /// Damage dependeny coefficient
   real64 m_damageDependenceConstant;
 
@@ -107,10 +107,10 @@ protected:
   virtual void postInputInitialization() override;
 
 private:
-  
+
   /// Permeability of the intact bulk material
   real64 m_bulkPermeability;
-  
+
   /// Damage dependeny coefficient
   real64 m_damageDependenceConstant;
 

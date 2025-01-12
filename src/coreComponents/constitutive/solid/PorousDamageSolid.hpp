@@ -111,13 +111,13 @@ public:
       dPorosity_dTemperature = 0.0;
     }
 
-    // Update the damage-dependent permeability 
+    // Update the damage-dependent permeability
     updateMatrixPermeability( k );
 
     // Save the derivative of solid density wrt pressure for the computation of the body force
     dSolidDensity_dPressure = m_porosityUpdate.dGrainDensity_dPressure( k );
   }
-  
+
   GEOS_HOST_DEVICE
   void computeFractureFlowTerm( localIndex const k,
                                 localIndex const q,
@@ -274,7 +274,7 @@ private:
                            DiscretizationOps & stiffness ) const
   {
     updateBiotCoefficientAndAssignModuli( k );
-    
+
     // Compute total stress increment and its derivative w.r.t. pressure
     m_solidUpdate.smallStrainUpdate( k,
                                      q,
