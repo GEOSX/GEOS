@@ -111,8 +111,7 @@ public:
                           arrayView1d< real64 > const inputRhs,
                           real64 const inputDt,
                           string const fieldName,
-                          LocalDissipation localDissipationOption,
-                          real64 const inputCurrentTime ):
+                          LocalDissipation localDissipationOption ):
     Base( nodeManager,
           edgeManager,
           faceManager,
@@ -129,8 +128,7 @@ public:
     m_nodalDamage( nodeManager.template getReference< array1d< real64 > >( fieldName )),
     m_quadDamage( inputConstitutiveType.getNewDamage() ),
     m_quadExtDrivingForce( inputConstitutiveType.getExtDrivingForce() ),
-    m_localDissipationOption( localDissipationOption ),
-    m_currentTime( inputCurrentTime )
+    m_localDissipationOption( localDissipationOption )
   {}
 
   //***************************************************************************
@@ -208,8 +206,6 @@ public:
     real64 const ell = m_constitutiveUpdate.getRegularizationLength();
     real64 const Gc = m_constitutiveUpdate.getCriticalFractureEnergy( k );
     real64 const threshold = m_constitutiveUpdate.getEnergyThreshold( k, q );
-    real64 const volStrain = m_constitutiveUpdate.getVolStrain( k, q );
-    real64 const currentDamagePressure = m_currentTime * m_constitutiveUpdate.getDamagePressure();
 
     //Interpolate d and grad_d
     real64 N[ numNodesPerElem ];
@@ -244,10 +240,6 @@ public:
                                                  + N[a] * (ell*strainEnergyDensity/Gc) * m_constitutiveUpdate.getDegradationDerivative( k, qp_damage ) ) );
 
       }
-
-      /// Add the pressure term
-      stack.localResidual[ a ] -= detJ * 0.5 * ell/Gc * ( volStrain * currentDamagePressure * m_constitutiveUpdate.pressureDamageFunctionDerivative( qp_damage ) * N[a] );
-
       for( localIndex b = 0; b < numNodesPerElem; ++b )
       {
         if( m_localDissipationOption == LocalDissipation::Linear )
@@ -261,9 +253,6 @@ public:
           stack.localJacobian[ a ][ b ] -= detJ * ( pow( ell, 2 ) * LvArray::tensorOps::AiBi< 3 >( dNdX[a], dNdX[b] )
                                                     + N[a] * N[b] * (1 + m_constitutiveUpdate.getDegradationSecondDerivative( k, qp_damage ) * ell * strainEnergyDensity/Gc ) );
         }
-
-        stack.localJacobian[ a ][ b ] -= detJ * 0.5 * ell/Gc *
-                                         ( volStrain * currentDamagePressure * m_constitutiveUpdate.pressureDamageFunctionSecondDerivative( qp_damage ) * N[a] * N[b] );
       }
     }
 
@@ -318,8 +307,6 @@ protected:
 
   PhaseFieldDamageKernelLocalDissipation m_localDissipationOption;
 
-  real64 const m_currentTime;
-
 };
 
 using PhaseFieldDamageKernelFactory = finiteElement::KernelFactory< PhaseFieldDamageKernel,
@@ -329,8 +316,7 @@ using PhaseFieldDamageKernelFactory = finiteElement::KernelFactory< PhaseFieldDa
                                                                     arrayView1d< real64 > const,
                                                                     real64 const,
                                                                     string const,
-                                                                    PhaseFieldDamageKernelLocalDissipation,
-                                                                    real64 >;
+                                                                    PhaseFieldDamageKernelLocalDissipation >;
 
 } // namespace geos
 
