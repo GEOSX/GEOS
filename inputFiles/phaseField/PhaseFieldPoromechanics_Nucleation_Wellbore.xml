@@ -1,6 +1,10 @@
 <?xml version="1.0" ?>
 
 <Problem>
+  <Included>
+    <File name="./PhaseFieldPoromechanics_Nucleation_base.xml"/>
+  </Included>
+  
   <Solvers
     gravityVector="{ 0.0, 0.0, 0.0 }">
     <PhaseFieldPoromechanics
@@ -9,6 +13,10 @@
       damageSolverName="damageSolve"
       logLevel="1"
       targetRegions="{ Region1 }">
+      <NonlinearSolverParameters
+        couplingType="Sequential"
+        lineSearchAction="None"  	  
+        newtonMaxIter="100"/>
     </PhaseFieldPoromechanics>
 
     <SinglePhasePoromechanics
@@ -64,121 +72,45 @@
     <VTKMesh 
       name="mesh"
       regionAttribute="RING-MATRIX"
-      file="WellboreMesh/wellbore2d-r=4.vtu"
+      file="wellboreMesh/wellbore2d-r=4.vtu"
       nodesetNames="{ xneg, xpos, yneg, ypos, zneg, zpos, inner_hole }"/>
   </Mesh>
 
 
   <Events
-    maxTime="1013.0">
- 
+    maxTime="13.0">
+
     <PeriodicEvent
-      name="solverApplication0"
-      endTime="1000.0"
-      forceDt="1000.0"
-      target="/Solvers/phasefieldPoroSolve"/>
+      name="vtkOutput"
+      cycleFrequency="1"
+      target="/Outputs/VTKOutput"/>
 
     <PeriodicEvent
       name="solverApplication1"
-      beginTime="1000.0"
-      endTime="1012.0"
+      endTime="12.0"
       forceDt="0.5"
       target="/Solvers/phasefieldPoroSolve"/>
 
     <PeriodicEvent
       name="solverApplication2"
-      beginTime="1012.0"
-      endTime="1013.0"
+      beginTime="12.0"
+      endTime="13.0"
       forceDt="0.02"
       target="/Solvers/phasefieldPoroSolve"/>
 
     <PeriodicEvent
-      name="vtkOutput0"
-      endTime="1000.0"
-      forceDt="1000.0"
-      target="/Outputs/VTKOutput"/>
-
-    <PeriodicEvent
-      name="vtkOutput1"
-      beginTime="1000.0"
-      endTime="1012.0"
-      forceDt="0.5"
-      target="/Outputs/VTKOutput"/>
-    
-    <PeriodicEvent
-      name="vtkOutput2"
-      beginTime="1012.0"
-      endTime="1013.0"
-      forceDt="0.02"
-      target="/Outputs/VTKOutput"/>
-
-    <PeriodicEvent
       name="restarts"
-      timeFrequency="1000"
-      targetExactTimestep="0"
+      cycleFrequency="40"
       target="/Outputs/restartOutput"/>
-  </Events>
 
-  <NumericalMethods>
-    <FiniteElements>
-      <FiniteElementSpace 
-        name="FE1"
-        order="1"/>
-    </FiniteElements>
-    <FiniteVolume>
-      <HybridMimeticDiscretization
-        name="singlePhaseHybridMimetic"
-        innerProductType="quasiTPFA"/>
-    </FiniteVolume>
-  </NumericalMethods>
+  </Events>
 
   <ElementRegions>
     <CellElementRegion
       name="Region1"
       cellBlocks="{ 0_hexahedra, 1_hexahedra }"
-      materialList="{ concrete, water }"/>
+      materialList="{ rock, water }"/>
   </ElementRegions>
-
-  <Constitutive>
-    <PorousDamageElasticIsotropic
-      name="concrete"
-      solidModelName="concreteSolid"
-      porosityModelName="concretePorosity"
-      permeabilityModelName="concretePerm"/>
-
-    <DamageElasticIsotropic
-      name="concreteSolid"
-      defaultDensity="2.7e-9"
-      defaultBulkModulus="1.67e4"
-      defaultShearModulus="1.25e4"
-      lengthScale="0.5"
-      defaultCriticalFractureEnergy="4e-3"
-      criticalStrainEnergy="0"
-      extDrivingForceFlag="1"
-      degradationLowerLimit="1e-6"
-      defaultTensileStrength="5.5"
-      defaultCompressiveStrength="40.0"
-      defaultDeltaCoefficient="3.31"/>
-
-    <BiotPorosity
-      name="concretePorosity"
-      defaultGrainBulkModulus="8.35e4"
-      defaultReferencePorosity="0.1"/>
-
-    <DamagePermeability
-      name="concretePerm"
-      bulkPermeability="1.0e-9"/>
-
-    <CompressibleSinglePhaseFluid
-      name="water"
-      defaultDensity="1e-9"
-      defaultViscosity="1.0e-9"
-      referencePressure="0.000"
-      referenceDensity="1e-9"
-      compressibility="0.0"
-      referenceViscosity="1.0e-9"
-      viscosibility="0.0"/>
-  </Constitutive>
 
   <FieldSpecifications>    
     <FieldSpecification
@@ -186,7 +118,7 @@
        initialCondition="1"
        setNames="{ all }"
        objectPath="ElementRegions/Region1"
-       fieldName="concreteSolid_criticalFractureEnergy"
+       fieldName="rockSolid_criticalFractureEnergy"
        scale="4e-3"/>
 
     <FieldSpecification
@@ -194,15 +126,31 @@
       initialCondition="1"
       setNames="{ all }"
       objectPath="ElementRegions/Region1"
-      fieldName="concreteSolid_tensileStrength"
+      fieldName="rockSolid_tensileStrength"
       scale="5.5"/>
+
+    <FieldSpecification
+      name="compressiveStrength"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Region1"
+      fieldName="rockSolid_compressiveStrength"
+      scale="40.0"/>
+
+    <FieldSpecification
+      name="deltaCoefficient"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Region1"
+      fieldName="rockSolid_deltaCoefficient"
+      scale="3.31"/>
     
     <FieldSpecification 
       name="Sh"
       initialCondition="1"
       setNames="{ all }"
       objectPath="ElementRegions/Region1"
-      fieldName="concreteSolid_stress"
+      fieldName="rockSolid_stress"
       component="0"
       scale="-9.0"/>
 
@@ -211,7 +159,7 @@
       initialCondition="1"
       setNames="{ all }"
       objectPath="ElementRegions/Region1"
-      fieldName="concreteSolid_stress"
+      fieldName="rockSolid_stress"
       component="1"
       scale="-15.0"/>
 
@@ -220,7 +168,7 @@
       initialCondition="1"
       setNames="{ all }"
       objectPath="ElementRegions/Region1"
-      fieldName="concreteSolid_stress"
+      fieldName="rockSolid_stress"
       component="2"
       scale="0.0"/>
 
@@ -290,8 +238,8 @@
     <TableFunction
       name="timeFunction"
       inputVarNames="{ time }"
-      coordinates="{ 0, 1e3, 1.1e3 }"
-      values="{ 0.0, 0.0, 1.0 }"/>
+      coordinates="{ 0, 100 }"
+      values="{ 0.0, 1.0 }"/>
   </Functions>
 
   <Geometry>
@@ -319,7 +267,7 @@
   <Outputs>
     <VTK
       name="VTKOutput"
-      plotFileRoot="phaseFieldPoro_nucleation_wellbore2dConcrete_L=0p5_r=4_b=0p8_9-15-0-delta=3p31"/>
+      plotFileRoot="phaseFieldPoro_nucleation_wellbore"/>
 
     <Restart
       name="restartOutput"/>
