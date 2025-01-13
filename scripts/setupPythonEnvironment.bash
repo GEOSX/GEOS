@@ -24,6 +24,7 @@ declare -a LINK_SCRIPTS=("preprocess_xml"
                          "geos_ats_log_check"
                          "geos_ats_restart_check"
                          "geos_ats_curve_check"
+                         "geos_ats_process_tests_fails"
                          "mesh-doctor"
                          "activate"
                          "python")
