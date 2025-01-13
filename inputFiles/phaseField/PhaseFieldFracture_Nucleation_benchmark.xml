@@ -83,7 +83,7 @@
 
     <FieldSpecification
       name="yPosDisp"
-      fieldName="TotalDisplacement"
+      fieldName="totalDisplacement"
       component="1"
       objectPath="nodeManager"
       scale="1.3737e-3"
@@ -92,7 +92,7 @@
 
     <FieldSpecification
       name="yNegDisp"
-      fieldName="TotalDisplacement"
+      fieldName="totalDisplacement"
       component="1"
       objectPath="nodeManager"
       scale="-1.3737e-3"
@@ -101,7 +101,7 @@
 
     <FieldSpecification
       name="fixedY"
-      fieldName="TotalDisplacement"
+      fieldName="totalDisplacement"
       component="1"
       objectPath="nodeManager"
       scale="0.0"
@@ -109,7 +109,7 @@
 
     <FieldSpecification
       name="fixedX"
-      fieldName="TotalDisplacement"
+      fieldName="totalDisplacement"
       component="0"
       objectPath="nodeManager"
       scale="0.0"
@@ -117,7 +117,7 @@
 
     <FieldSpecification
       name="fixedZ"
-      fieldName="TotalDisplacement"
+      fieldName="totalDisplacement"
       component="2"
       objectPath="nodeManager"
       scale="0.0"

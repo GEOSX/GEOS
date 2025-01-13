@@ -48,6 +48,12 @@ decks = [
              partitions=((1, 1, 1), (2, 2, 1)),
              restart_step=65,
              check_step=130,
+             restartcheck_params=RestartcheckParameters(**restartcheck_params)),
+    TestDeck(name="PhaseFieldPoromechanics_Nucleation_smoke",
+             description='Testing the PF poromechanics nucleation model',
+             partitions=((1, 1, 1), (2, 2, 1)),
+             restart_step=5,
+             check_step=10,
              restartcheck_params=RestartcheckParameters(**restartcheck_params))
 ]
 

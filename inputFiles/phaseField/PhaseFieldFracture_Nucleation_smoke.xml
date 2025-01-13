@@ -137,7 +137,7 @@
 
     <FieldSpecification
       name="xtraction"
-      fieldName="TotalDisplacement"
+      fieldName="totalDisplacement"
       component="0"
       objectPath="nodeManager"
       scale="1e-3"
@@ -146,21 +146,21 @@
 
     <FieldSpecification
       name="xfix"
-      fieldName="TotalDisplacement"
+      fieldName="totalDisplacement"
       component="0"
       objectPath="nodeManager"
       setNames="{ xneg }"/>
 
     <FieldSpecification
       name="yfix"
-      fieldName="TotalDisplacement"
+      fieldName="totalDisplacement"
       component="1"
       objectPath="nodeManager"
       setNames="{ all }"/>
 
     <FieldSpecification
       name="zfix"
-      fieldName="TotalDisplacement"
+      fieldName="totalDisplacement"
       component="2"
       objectPath="nodeManager"
       setNames="{ all }"/>
