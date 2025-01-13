@@ -1451,9 +1451,9 @@ computeGradPhiBGradzF_precompDzF( int const qa,
 {
   const real64 w = GL_BASIS::weight( qa )*GL_BASIS::weight( qb )*GL_BASIS::weight( qc );
 
-  //OLD (patch qui fonctionnait)
-  // Ceci fonctionnait mais dans le cas où je pouvais calculer (et donner en input) la dérivée en z de delta
-  // Je le garde pour archive :)
+  // Old (functionning) version assuming:
+  //  * delta and epsilon are Q1
+  //  * the derivative dz(delta) is precomputed and given as input to GEOS.
   for( int j=0; j<num1dNodes; j++ )
   {
     const int i = GL_BASIS::TensorProduct3D::linearIndex( qa, qb, qc ); // i = control point q  =abc
@@ -1507,12 +1507,15 @@ computeGradPhiBGradzF( int const qa,
 {
   const real64 w = GL_BASIS::weight( qa )*GL_BASIS::weight( qb )*GL_BASIS::weight( qc );
 
-  // Nouvelle version où delta et epsilon sont Q1
+  // New version assuming:
+  //  * both delta and epsilon are Q1.
+  //  * no precomputation required, all terms computed on the fly.
 
-  //1D Coord of the nodes
+  // 1D Coord of the nodes
   real64 xa = GL_BASIS::parentSupportCoord( qa );
   real64 xb = GL_BASIS::parentSupportCoord( qb );
   real64 xc = GL_BASIS::parentSupportCoord( qc );
+
   for( int j=0; j<num1dNodes; j++ )
   {
     const int jbc = GL_BASIS::TensorProduct3D::linearIndex( j, qb, qc );
@@ -1535,8 +1538,6 @@ computeGradPhiBGradzF( int const qa,
       phik1 = LagrangeBasis1::value( k1, xa );
       phik2 = LagrangeBasis1::value( k2, xb );
       phik3 = LagrangeBasis1::value( k3, xc );
-
-      //GEOS_LOG_RANK_0(GEOS_FMT("inside2  j={}, kk={}, phik1={}, phik2={}, phik3={}", j, k, phik1, phik2, phik3));
 
       // diagonal terms
       const real64 w0 = w * gja * dphik1 * phik2 * phik3;
