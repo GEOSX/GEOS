@@ -101,7 +101,7 @@ void ContactSolverBase::registerDataOnMesh( dataRepository::Group & meshBodies )
 
       subRegion.registerField< fields::contact::deltaSlip >( getName() ).
         setDimLabels( 1, labelsTangent ).reference().resizeDimension< 1 >( 2 );
-      
+
       subRegion.registerField< fields::contact::deltaSlip_n >( this->getName() ).
         setDimLabels( 1, labelsTangent ).reference().resizeDimension< 1 >( 2 );
     } );
