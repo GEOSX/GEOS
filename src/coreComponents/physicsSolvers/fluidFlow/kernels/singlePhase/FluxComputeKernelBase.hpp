@@ -70,8 +70,7 @@ public:
                       fields::flow::pressure_n,
                       fields::flow::gravityCoefficient,
                       fields::flow::mobility,
-                      fields::flow::dMobility,
-                      fields::flow::dMobility_dPressure >;
+                      fields::flow::dMobility >;
 
   using SinglePhaseFluidAccessors =
     StencilMaterialAccessors< constitutive::SingleFluidBase,
@@ -124,7 +123,6 @@ public:
     m_pres( singlePhaseFlowAccessors.get( fields::flow::pressure {} ) ),
     m_mob( singlePhaseFlowAccessors.get( fields::flow::mobility {} ) ),
     m_dMob( singlePhaseFlowAccessors.get( fields::flow::dMobility {} ) ),
-    m_dMob_dPres( singlePhaseFlowAccessors.get( fields::flow::dMobility_dPressure {} ) ),
     m_dens( singlePhaseFluidAccessors.get( fields::singlefluid::density {} ) ),
     m_dDens( singlePhaseFluidAccessors.get( fields::singlefluid::dDensity {} ) ),
     m_localMatrix( localMatrix ),

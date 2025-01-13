@@ -56,7 +56,7 @@ struct FaceElementFluxKernel
    * @param[in] dens The material density in each element
    * @param[in] dDens_dPres The change in material density for each element
    * @param[in] mob The fluid mobility in each element
-   * @param[in] dMob_dPres The derivative of mobility wrt pressure in each element
+   * @param[in] dMob  The derivative of mobility  in each element
    * @param[in] permeability
    * @param[in] dPerm_dPres The derivative of permeability wrt pressure in each element
    * @param[in] permeabilityMultiplier
@@ -76,7 +76,6 @@ struct FaceElementFluxKernel
           ElementViewConst< arrayView3d< real64 const > > const & dDens,
           ElementViewConst< arrayView1d< real64 const > > const & mob,
           ElementViewConst< arrayView2d< real64 const > > const & dMob,
-          ElementViewConst< arrayView1d< real64 const > > const & dMob_dPres,
           ElementViewConst< arrayView3d< real64 const > > const & permeability,
           ElementViewConst< arrayView3d< real64 const > > const & dPerm_dPres,
           ElementViewConst< arrayView4d< real64 const > > const & dPerm_dDispJump,
@@ -107,7 +106,6 @@ struct FaceElementFluxKernel
            ElementViewConst< arrayView3d< real64 const > > const & dDens,
            ElementViewConst< arrayView1d< real64 const > > const & mob,
            ElementViewConst< arrayView2d< real64 const > > const & dMob,
-           ElementViewConst< arrayView1d< real64 const > > const & dMob_dPres,
            real64 const dt,
            arraySlice1d< real64 > const & flux,
            arraySlice2d< real64 > const & fluxJacobian,

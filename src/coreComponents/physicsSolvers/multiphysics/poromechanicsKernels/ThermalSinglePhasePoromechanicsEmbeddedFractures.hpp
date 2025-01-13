@@ -54,6 +54,7 @@ public:
   using SinglePhaseFVMAbstractBase::m_dofNumber;
   using SinglePhaseFVMAbstractBase::m_gravCoef;
   using SinglePhaseFVMAbstractBase::m_mob;
+  using SinglePhaseFVMAbstractBase::m_dMob;
   using SinglePhaseFVMAbstractBase::m_dens;
   using SinglePhaseFVMAbstractBase::m_dDens;
 
@@ -72,8 +73,7 @@ public:
   using Base = singlePhasePoromechanicsEmbeddedFracturesKernels::ConnectorBasedAssemblyKernel< NUM_EQN, NUM_DOF >;
 
   using ThermalSinglePhaseFlowAccessors =
-    StencilAccessors< fields::flow::temperature,
-                      fields::flow::dMobility_dTemperature >;
+    StencilAccessors< fields::flow::temperature >;
 
   using ThermalSinglePhaseFluidAccessors =
     StencilMaterialAccessors< constitutive::SingleFluidBase,
@@ -112,7 +112,6 @@ public:
             localMatrix,
             localRhs ),
     m_temp( thermalSinglePhaseFlowAccessors.get( fields::flow::temperature {} ) ),
-    m_dMob_dTemp( thermalSinglePhaseFlowAccessors.get( fields::flow::dMobility_dTemperature {} ) ),
     m_enthalpy( thermalSinglePhaseFluidAccessors.get( fields::singlefluid::enthalpy {} ) ),
     m_dEnthalpy( thermalSinglePhaseFluidAccessors.get( fields::singlefluid::dEnthalpy {} ) )
   {}
@@ -206,7 +205,7 @@ public:
                                                          m_dEnthalpy,
                                                          m_gravCoef,
                                                          m_dDens,
-                                                         m_dMob_dTemp,
+                                                         m_dMob,
                                                          alpha,
                                                          mobility,
                                                          potGrad,

@@ -52,7 +52,6 @@ void computeSinglePhaseFlux( localIndex const ( &seri )[2],
                              ElementViewConst< arrayView3d< real64 const > > const & dDens,
                              ElementViewConst< arrayView1d< real64 const > > const & mob,
                              ElementViewConst< arrayView2d< real64 const > > const & dMob,
-                             ElementViewConst< arrayView1d< real64 const > > const & dMob_dPres,
                              real64 & alpha,
                              real64 & mobility,
                              real64 & potGrad,
@@ -144,7 +143,7 @@ void computeEnthalpyFlux( localIndex const ( &seri )[2],
                           ElementViewConst< arrayView3d< real64 const > > const & dEnthalpy,
                           ElementViewConst< arrayView1d< real64 const > > const & gravCoef,
                           ElementViewConst< arrayView3d< real64 const > > const & dDens,
-                          ElementViewConst< arrayView1d< real64 const > > const & dMob_dTemp,
+                          ElementViewConst< arrayView2d< real64 const > > const & dMob,
                           real64 const & alpha,
                           real64 const & mobility,
                           real64 const & potGrad,
@@ -208,14 +207,14 @@ void computeEnthalpyFlux( localIndex const ( &seri )[2],
   {
     localIndex const k_up = 1 - localIndex( fmax( fmin( alpha, 1.0 ), 0.0 ) );
 
-    dMob_dT[k_up] = dMob_dTemp[seri[k_up]][sesri[k_up]][sei[k_up]];
+    dMob_dT[k_up] = dMob[seri[k_up]][sesri[k_up]][sei[k_up]][DerivOffset::dT];
   }
   else
   {
     real64 const mobWeights[2] = { alpha, 1.0 - alpha };
     for( integer ke = 0; ke < 2; ++ke )
     {
-      dMob_dT[ke] = mobWeights[ke] * dMob_dTemp[seri[ke]][sesri[ke]][sei[ke]];
+      dMob_dT[ke] = mobWeights[ke] * dMob[seri[ke]][sesri[ke]][sei[ke]][DerivOffset::dT];
     }
   }
 

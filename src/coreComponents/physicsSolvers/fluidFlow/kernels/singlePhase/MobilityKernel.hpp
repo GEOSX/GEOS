@@ -94,7 +94,7 @@ struct MobilityKernel
       compute( dens[a][0],
                dDens[a][0][DerivOffset::dP],
                visc[a][0],
-               dVisc[a][0][DerivOffset::dP],   // tjb use deriv::dp
+               dVisc[a][0][DerivOffset::dP],
                mob[a],
                dMob_dPres[a] );
     } );
@@ -121,40 +121,6 @@ struct MobilityKernel
     } );
   }
 
-  // Thermal version
-  template< typename POLICY >
-  static void launch( localIndex const size,
-                      arrayView2d< real64 const > const & dens,
-                      arrayView3d< real64 const > const & dDens, // tjb
-                      arrayView2d< real64 const > const & visc,
-                      arrayView3d< real64 const > const & dVisc, // tjb
-                      arrayView1d< real64 > const & mob,
-                      arrayView1d< real64 > const & dMob_dPres,
-                      arrayView1d< real64 > const & dMob_dTemp )
-  {
-    using DerivOffset = constitutive::singlefluid::DerivativeOffsetC< 1 >;
-    forAll< POLICY >( size, [=] GEOS_HOST_DEVICE ( localIndex const a )
-    {
-      old_compute( dens[a][0],
-                   dDens[a][0][DerivOffset::dP], // tjb use deriv::dp
-                   dDens[a][0][DerivOffset::dT], // tjb use deriv::dt
-                   visc[a][0],
-                   dVisc[a][0][DerivOffset::dP], // tjb use deriv::dp
-                   dVisc[a][0][DerivOffset::dT], // tjb use deriv::dt
-                   mob[a],
-                   dMob_dPres[a],
-                   dMob_dTemp[a] );
-      /*
-         compute( dens[a][0],
-         dDens[a][0],
-         visc[a][0],
-         dVisc[a][0],
-         mob[a],
-         dMob_dPres[a],
-         dMob_dTemp[a] );
-       */
-    } );
-  }
 
 // Value-only (no derivatives) version
   template< typename POLICY >

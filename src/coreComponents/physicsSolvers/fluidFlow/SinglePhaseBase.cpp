@@ -98,23 +98,11 @@ void SinglePhaseBase::registerDataOnMesh( Group & meshBodies )
     {
       subRegion.registerField< deltaVolume >( getName() );
 
-      //registerField( fields::flow::mobility{}, &m_mobility.value );
-      //registerField(  fields::flow::dMobility{}, &m_mobility.derivs );
       subRegion.registerField< mobility >( getName() );
-      // tjb new mobility
       subRegion.registerField< dMobility >( getName()).reference().resizeDimension< 1 >( m_numDofPerCell );
-
-      subRegion.registerField< dMobility_dPressure >( getName() );
 
       subRegion.registerField< fields::flow::mass >( getName() );
       subRegion.registerField< fields::flow::mass_n >( getName() );
-
-
-      if( m_isThermal )
-      {
-        subRegion.registerField< dMobility_dTemperature >( getName() );
-      }
-
 
     } );
 
@@ -359,13 +347,10 @@ void SinglePhaseBase::updateMobility( ObjectManagerBase & dataGroup ) const
   GEOS_MARK_FUNCTION;
 
   // output
-
   arrayView1d< real64 > const mob = dataGroup.getField< fields::flow::mobility >();
-  arrayView2d< real64 > const dMobility = dataGroup.getField< fields::flow::dMobility >(); // tjb
-  arrayView1d< real64 > const dMob_dPres = dataGroup.getField< fields::flow::dMobility_dPressure >();
+  arrayView2d< real64 > const dMobility = dataGroup.getField< fields::flow::dMobility >();
 
   // input
-
   SingleFluidBase & fluid =
     getConstitutiveModel< SingleFluidBase >( dataGroup, dataGroup.getReference< string >( viewKeyStruct::fluidNamesString() ) );
   FluidPropViews fluidProps = getFluidProperties( fluid );
@@ -380,44 +365,6 @@ void SinglePhaseBase::updateMobility( ObjectManagerBase & dataGroup ) const
                                                                                                              mob,
                                                                                                              dMobility );
   } );
-  // tjb delete these
-  if( m_isThermal )
-  {
-    arrayView1d< real64 > const dMob_dTemp =
-      dataGroup.getField< fields::flow::dMobility_dTemperature >();
-
-    singlePhaseBaseKernels::MobilityKernel::launch< parallelDevicePolicy<> >( dataGroup.size(),
-                                                                              fluidProps.dens,
-                                                                              fluidProps.dDens,
-                                                                              fluidProps.visc,
-                                                                              fluidProps.dVisc,
-                                                                              mob,
-                                                                              dMob_dPres,
-                                                                              dMob_dTemp );
-    for( localIndex i=0; i<dataGroup.size(); i++ )
-    {
-      //std::cout << dMobility[i][0] << " " << dMob_dPres[i] << std::endl;
-      //std::cout << dMobility[i][1] << " " << dMob_dTemp[i] << std::endl;
-      assert( fabs( dMobility[i][0] -dMob_dPres[i] ) < FLT_EPSILON );
-      assert( fabs( dMobility[i][1] -dMob_dTemp[i] ) < FLT_EPSILON );
-    }
-  }
-  else
-  {
-    singlePhaseBaseKernels::MobilityKernel::launch< parallelDevicePolicy<> >( dataGroup.size(),
-                                                                              fluidProps.dens,
-                                                                              fluidProps.dDens,
-                                                                              fluidProps.visc,
-                                                                              fluidProps.dVisc,
-                                                                              mob,
-                                                                              dMob_dPres );
-
-    for( localIndex i=0; i<dataGroup.size(); i++ )
-    {
-      assert( fabs( dMobility[i][0] -dMob_dPres[i] ) < FLT_EPSILON );
-    }
-
-  }
 
 }
 

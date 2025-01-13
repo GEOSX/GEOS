@@ -53,22 +53,6 @@ DECLARE_FIELD( dMobility,
                WRITE_AND_READ,
                "dMobility" );
 
-DECLARE_FIELD( dMobility_dPressure,
-               "dMobility_dPressure",
-               array1d< real64 >,
-               0,
-               NOPLOT,
-               NO_WRITE,
-               "Derivative of mobility with respect to pressure" );
-
-DECLARE_FIELD( dMobility_dTemperature,
-               "dMobility_dTemperature",
-               array1d< real64 >,
-               0,
-               NOPLOT,
-               NO_WRITE,
-               "Derivative of mobility with respect to temperature" );
-
 }
 
 }

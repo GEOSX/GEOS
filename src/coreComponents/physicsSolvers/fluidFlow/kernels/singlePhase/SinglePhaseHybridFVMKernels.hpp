@@ -241,7 +241,7 @@ public:
 
   using FlowAccessors =
     StencilAccessors< fields::flow::mobility,
-                      fields::flow::dMobility_dPressure >;
+                      fields::flow::dMobility >;
 
   /**
    * @brief Constructor
@@ -306,7 +306,7 @@ public:
     m_elemDens ( fluid.density() ),
     m_dElemDens( fluid.dDensity()),
     m_mob( flowAccessors.get( fields::flow::mobility {} ) ),
-    m_dMob_dPres( flowAccessors.get( fields::flow::dMobility_dPressure {} ) ),
+    m_dMob( flowAccessors.get( fields::flow::dMobility {} ) ),
     m_localMatrix( localMatrix ),
     m_localRhs( localRhs )
   {}
@@ -447,13 +447,13 @@ public:
       if( stack.oneSidedVolFlux[iFaceLoc] >= 0 || !isNeighborFound )
       {
         upwMobility = m_mob[m_er][m_esr][ei];
-        dUpwMobility_dPres = m_dMob_dPres[m_er][m_esr][ei];
+        dUpwMobility_dPres = m_dMob[m_er][m_esr][ei][DerivOffset::dP];
         upwDofNumber = m_elemDofNumber[m_er][m_esr][ei];
       }
       else
       {
         upwMobility = m_mob[neighbor[0]][neighbor[1]][neighbor[2]];
-        dUpwMobility_dPres = m_dMob_dPres[neighbor[0]][neighbor[1]][neighbor[2]];
+        dUpwMobility_dPres = m_dMob[neighbor[0]][neighbor[1]][neighbor[2]][DerivOffset::dP];
         upwDofNumber = m_elemDofNumber[neighbor[0]][neighbor[1]][neighbor[2]];
       }
 
@@ -664,7 +664,7 @@ protected:
   arrayView2d< real64 const > const m_elemDens;
   arrayView3d< real64 const > const m_dElemDens;
   ElementViewConst< arrayView1d< real64 const > > const m_mob;
-  ElementViewConst< arrayView1d< real64 const > > const m_dMob_dPres;
+  ElementViewConst< arrayView2d< real64 const > > const m_dMob;
 
   /// View on the local CRS matrix
   CRSMatrixView< real64, globalIndex const > const m_localMatrix;

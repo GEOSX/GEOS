@@ -79,8 +79,7 @@ public:
   using Base::m_sei;
 
   using ThermalSinglePhaseFlowAccessors =
-    StencilAccessors< fields::flow::temperature,
-                      fields::flow::dMobility_dTemperature >;
+    StencilAccessors< fields::flow::temperature >;
 
   using ThermalSinglePhaseFluidAccessors =
     StencilMaterialAccessors< constitutive::SingleFluidBase,
@@ -130,7 +129,6 @@ public:
             localMatrix,
             localRhs ),
     m_temp( thermalSinglePhaseFlowAccessors.get( fields::flow::temperature {} ) ),
-    m_dMob_dTemp( thermalSinglePhaseFlowAccessors.get( fields::flow::dMobility_dTemperature {} ) ),
     m_enthalpy( thermalSinglePhaseFluidAccessors.get( fields::singlefluid::enthalpy {} ) ),
     m_dEnthalpy( thermalSinglePhaseFluidAccessors.get( fields::singlefluid::dEnthalpy {} ) ),
     m_thermalConductivity( thermalConductivityAccessors.get( fields::thermalconductivity::effectiveConductivity {} ) ),
@@ -408,9 +406,6 @@ protected:
 
   /// Views on temperature
   ElementViewConst< arrayView1d< real64 const > > const m_temp;
-
-  /// Views on derivatives of fluid mobilities
-  ElementViewConst< arrayView1d< real64 const > > const m_dMob_dTemp;
 
   /// Views on enthalpies
   ElementViewConst< arrayView2d< real64 const > > const m_enthalpy;

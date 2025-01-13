@@ -70,6 +70,7 @@ public:
   using AbstractBase::m_permeability;
   using AbstractBase::m_dPerm_dPres;
   using AbstractBase::m_dDens;
+  using AbstractBase::m_dMob;
 
   using AbstractBase::m_localMatrix;
   using AbstractBase::m_localRhs;
@@ -85,8 +86,7 @@ public:
   using Base::m_faceGravCoef;
 
   using ThermalSinglePhaseFlowAccessors =
-    StencilAccessors< fields::flow::temperature,
-                      fields::flow::dMobility_dTemperature >;
+    StencilAccessors< fields::flow::temperature >;
 
   using ThermalSinglePhaseFluidAccessors =
     StencilMaterialAccessors< constitutive::SingleFluidBase,
@@ -143,7 +143,6 @@ public:
             localRhs ),
     m_temp( thermalSinglePhaseFlowAccessors.get( fields::flow::temperature {} ) ),
     m_faceTemp( faceManager.getField< fields::flow::faceTemperature >() ),
-    m_dMob_dTemp( thermalSinglePhaseFlowAccessors.get( fields::flow::dMobility_dTemperature {} ) ),
     m_enthalpy( thermalSinglePhaseFluidAccessors.get( fields::singlefluid::enthalpy {} ) ),
     m_dEnthalpy( thermalSinglePhaseFluidAccessors.get( fields::singlefluid::dEnthalpy {} ) ),
     m_thermalConductivity( thermalConductivityAccessors.get( fields::thermalconductivity::effectiveConductivity {} ) ),
@@ -221,7 +220,7 @@ public:
       if( f >= 0 ) // the element is upstream
       {
         real64 const dFlux_dP = mobility_up * dF_dP + dMobility_dP_up * f;
-        real64 const dFlux_dT = mobility_up * dF_dT + m_dMob_dTemp[er][esr][ei] * f;
+        real64 const dFlux_dT = mobility_up * dF_dT + m_dMob[er][esr][ei][DerivOffset::dT] * f;
 
         stack.dEnergyFlux_dP += dFlux_dP * enthalpy + flux * m_dEnthalpy[er][esr][ei][0][DerivOffset::dP];
         stack.dEnergyFlux_dT += dFlux_dT * enthalpy + flux * m_dEnthalpy[er][esr][ei][0][DerivOffset::dT];
@@ -287,9 +286,6 @@ protected:
 
   /// Views on face temperature
   arrayView1d< real64 const > const m_faceTemp;
-
-  /// Views on derivatives of fluid mobilities
-  ElementViewConst< arrayView1d< real64 const > > const m_dMob_dTemp;
 
   /// Views on enthalpies
   ElementViewConst< arrayView2d< real64 const > > const m_enthalpy;

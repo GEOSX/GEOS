@@ -61,7 +61,7 @@ public:
   using AbstractBase::m_gravCoef;
   using AbstractBase::m_pres;
   using AbstractBase::m_mob;
-  using AbstractBase::m_dMob_dPres;
+  using AbstractBase::m_dMob;
   using AbstractBase::m_dens;
   using AbstractBase::m_dDens;
   using AbstractBase::m_permeability;
@@ -199,7 +199,7 @@ public:
     mobility[Order::ELEM] = m_mob[er][esr][ei];
     singlePhaseBaseKernels::MobilityKernel::compute( faceDens, faceVisc, mobility[Order::FACE] );
 
-    dMobility_dP[Order::ELEM] = m_dMob_dPres[er][esr][ei];
+    dMobility_dP[Order::ELEM] = m_dMob[er][esr][ei][Deriv::dP];
     dMobility_dP[Order::FACE] = 0.0;
 
     // Compute average density
