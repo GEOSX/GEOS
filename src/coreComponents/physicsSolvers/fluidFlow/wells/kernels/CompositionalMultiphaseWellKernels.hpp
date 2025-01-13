@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -134,6 +134,7 @@ struct ControlEquationHelper
   static
   void
   switchControl( bool const isProducer,
+                 WellControls::Control const & inputControl,
                  WellControls::Control const & currentControl,
                  integer const phasePhaseIndex,
                  real64 const & targetBHP,
@@ -143,6 +144,7 @@ struct ControlEquationHelper
                  real64 const & currentBHP,
                  arrayView1d< real64 const > const & currentPhaseVolRate,
                  real64 const & currentTotalVolRate,
+                 real64 const & currentMassRate,
                  WellControls::Control & newControl );
 
   template< integer NC, integer IS_THERMAL >
@@ -1331,7 +1333,7 @@ public:
                    localIndex const numPhases,
                    integer const isProducer,
                    globalIndex const rankOffset,
-                   integer const useTotalMassEquation,
+                   BitFlags< isothermalCompositionalMultiphaseBaseKernels::KernelFlags > kernelFlags,
                    string const dofKey,
                    WellElementSubRegion const & subRegion,
                    constitutive::MultiFluidBase const & fluid,
@@ -1343,10 +1345,6 @@ public:
       localIndex constexpr NUM_COMP = NC();
 
       integer constexpr istherm = IS_THERMAL();
-
-      BitFlags< isothermalCompositionalMultiphaseBaseKernels::KernelFlags > kernelFlags;
-      if( useTotalMassEquation )
-        kernelFlags.set( isothermalCompositionalMultiphaseBaseKernels::KernelFlags::TotalMassEquation );
 
       ElementBasedAssemblyKernel< NUM_COMP, istherm >
       kernel( numPhases, isProducer, rankOffset, dofKey, subRegion, fluid, localMatrix, localRhs, kernelFlags );
@@ -1888,7 +1886,7 @@ public:
   createAndLaunch( integer const numComps,
                    real64 const dt,
                    globalIndex const rankOffset,
-                   integer const useTotalMassEquation,
+                   BitFlags< isothermalCompositionalMultiphaseBaseKernels::KernelFlags > kernelFlags,
                    string const dofKey,
                    WellControls const & wellControls,
                    WellElementSubRegion const & subRegion,
@@ -1899,14 +1897,7 @@ public:
     {
       integer constexpr NUM_COMP = NC();
 
-
-      BitFlags< isothermalCompositionalMultiphaseBaseKernels::KernelFlags > kernelFlags;
-      if( useTotalMassEquation )
-        kernelFlags.set( isothermalCompositionalMultiphaseBaseKernels::KernelFlags::TotalMassEquation );
-
       using kernelType = FaceBasedAssemblyKernel< NUM_COMP, 0 >;
-
-
       kernelType kernel( dt, rankOffset, dofKey, wellControls, subRegion, localMatrix, localRhs, kernelFlags );
       kernelType::template launch< POLICY >( subRegion.size(), kernel );
     } );

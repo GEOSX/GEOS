@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -87,7 +87,7 @@ struct CFLFluxKernel
   template< integer NC >
   GEOS_HOST_DEVICE inline static void
   compute( integer const numPhases,
-           integer const useNewGravity,
+           integer const checkPhasePresenceInGravity,
            localIndex const stencilSize,
            real64 const dt,
            arraySlice1d< localIndex const > const seri,
@@ -106,7 +106,8 @@ struct CFLFluxKernel
            ElementView< arrayView2d< real64, compflow::USD_COMP > > const & compOutflux );
 
   GEOS_HOST_DEVICE inline static void
-  calculateMeanDensity( integer const useNewGravity, integer const ip, localIndex const stencilSize,
+  calculateMeanDensity( integer const checkPhasePresenceInGravity,
+                        integer const ip, localIndex const stencilSize,
                         arraySlice1d< localIndex const > const seri,
                         arraySlice1d< localIndex const > const sesri,
                         arraySlice1d< localIndex const > const sei,
@@ -117,7 +118,7 @@ struct CFLFluxKernel
   template< integer NC, typename STENCILWRAPPER_TYPE >
   static void
   launch( integer const numPhases,
-          integer const useNewGravity,
+          integer const checkPhasePresenceInGravity,
           real64 const dt,
           STENCILWRAPPER_TYPE const & stencil,
           ElementViewConst< arrayView1d< real64 const > > const & pres,

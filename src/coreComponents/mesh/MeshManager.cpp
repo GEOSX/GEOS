@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -20,7 +20,6 @@
 
 #include "mesh/mpiCommunications/SpatialPartition.hpp"
 #include "generators/CellBlockManagerABC.hpp"
-#include "generators/MeshGeneratorBase.hpp"
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
 #include "common/TimingMacros.hpp"
 
@@ -43,7 +42,7 @@ MeshManager::~MeshManager()
 
 Group * MeshManager::createChild( string const & childKey, string const & childName )
 {
-  GEOS_LOG_RANK_0( "Adding Mesh: " << childKey << ", " << childName );
+  GEOS_LOG_RANK_0( GEOS_FMT( "{}: adding {} {}", getName(), childKey, childName ) );
   std::unique_ptr< MeshGeneratorBase > mesh = MeshGeneratorBase::CatalogInterface::factory( childKey, childName, this );
   return &this->registerGroup< MeshGeneratorBase >( childName, std::move( mesh ) );
 }
@@ -81,7 +80,7 @@ void MeshManager::generateMeshes( DomainPartition & domain )
 
 void MeshManager::generateMeshLevels( DomainPartition & domain )
 {
-  this->forSubGroups< MeshGeneratorBase >( [&]( MeshGeneratorBase & meshGen )
+  forSubGroups< MeshGeneratorBase >( [&]( MeshGeneratorBase & meshGen )
   {
     string const & meshName = meshGen.getName();
     domain.getMeshBodies().registerGroup< MeshBody >( meshName ).createMeshLevel( MeshBody::groupStructKeys::baseDiscretizationString() );
@@ -126,50 +125,10 @@ void MeshManager::importFields( DomainPartition & domain )
     }
 
     GEOS_LOG_RANK_0( GEOS_FMT( "{}: importing field data from mesh dataset", generator.getName() ) );
-
-    auto const importFields = [&generator]( ElementRegionBase const & region,
-                                            ElementSubRegionBase & subRegion,
-                                            MeshGeneratorBase::Block block,
-                                            std::map< string, string > const & fieldsMapping,
-                                            FieldIdentifiers & fieldsToBeSync )
+    MeshBody & meshBody = domain.getMeshBody( generator.getName() );
+    meshBody.forMeshLevels( [&]( MeshLevel & meshLevel )
     {
-      std::unordered_set< string > const materialWrapperNames = getMaterialWrapperNames( subRegion );
-      // Writing properties
-      for( auto const & pair : fieldsMapping )
-      {
-        string const & meshFieldName = pair.first;
-        string const & geosFieldName = pair.second;
-        // Find destination
-        if( !subRegion.hasWrapper( geosFieldName ) )
-        {
-          // Skip - the user may have not enabled a particular physics model/solver on this destination region.
-          if( generator.getLogLevel() >= 1 )
-          {
-            GEOS_LOG_RANK_0( "Skipping import of " << meshFieldName << " -> " << geosFieldName <<
-                             " on " << region.getName() << "/" << subRegion.getName() << " (field not found)" );
-          }
-
-          continue;
-        }
-
-        // Now that we know that the subRegion has this wrapper,
-        // we can add the geosFieldName to the list of fields to synchronize
-        fieldsToBeSync.addElementFields( { geosFieldName }, { region.getName() } );
-        WrapperBase & wrapper = subRegion.getWrapperBase( geosFieldName );
-        if( generator.getLogLevel() >= 1 )
-        {
-          GEOS_LOG_RANK_0( "Importing field " << meshFieldName << " into " << geosFieldName <<
-                           " on " << region.getName() << "/" << subRegion.getName() );
-        }
-
-        bool const isMaterialField = materialWrapperNames.count( geosFieldName ) > 0 && wrapper.numArrayDims() > 1;
-        generator.importFieldOnArray( block, subRegion.getName(), meshFieldName, isMaterialField, wrapper );
-      }
-    };
-
-    dataRepository::Group & meshLevels = domain.getMeshBody( generator.getName() ).getMeshLevels();
-    meshLevels.forSubGroups< MeshLevel >( [&]( MeshLevel & meshLevel )
-    {
+      GEOS_LOG_RANK_0( GEOS_FMT( "  mesh level = {}", meshLevel.getName() ) );
       FieldIdentifiers fieldsToBeSync;
       meshLevel.getElemManager().forElementSubRegionsComplete< CellElementSubRegion >(
         [&]( localIndex,
@@ -177,7 +136,8 @@ void MeshManager::importFields( DomainPartition & domain )
              ElementRegionBase const & region,
              CellElementSubRegion & subRegion )
       {
-        importFields( region, subRegion, MeshGeneratorBase::Block::VOLUMIC, generator.getVolumicFieldsMapping(), fieldsToBeSync );
+        GEOS_LOG_RANK_0( GEOS_FMT( "  volumic fields on {}/{}", region.getName(), subRegion.getName() ) );
+        importFields( generator, region.getName(), subRegion, MeshGeneratorBase::Block::VOLUMIC, generator.getVolumicFieldsMapping(), fieldsToBeSync );
       } );
       meshLevel.getElemManager().forElementSubRegionsComplete< FaceElementSubRegion >(
         [&]( localIndex,
@@ -185,7 +145,8 @@ void MeshManager::importFields( DomainPartition & domain )
              ElementRegionBase const & region,
              FaceElementSubRegion & subRegion )
       {
-        importFields( region, subRegion, MeshGeneratorBase::Block::SURFACIC, generator.getSurfacicFieldsMapping(), fieldsToBeSync );
+        GEOS_LOG_RANK_0( GEOS_FMT( "  surfaic fields on {}/{}", region.getName(), subRegion.getName() ) );
+        importFields( generator, region.getName(), subRegion, MeshGeneratorBase::Block::SURFACIC, generator.getSurfacicFieldsMapping(), fieldsToBeSync );
       } );
       CommunicationTools::getInstance().synchronizeFields( fieldsToBeSync, meshLevel, domain.getNeighbors() ); // TODO Validate this.
     } );
@@ -195,6 +156,45 @@ void MeshManager::importFields( DomainPartition & domain )
   {
     generator.freeResources();
   } );
+}
+
+void MeshManager::importFields( MeshGeneratorBase const & generator,
+                                string const & regionName,
+                                ElementSubRegionBase & subRegion,
+                                MeshGeneratorBase::Block const block,
+                                std::map< string, string > const & fieldsMapping,
+                                FieldIdentifiers & fieldsToBeSync )
+{
+  std::unordered_set< string > const materialWrapperNames = getMaterialWrapperNames( subRegion );
+  // Writing properties
+  for( auto const & pair : fieldsMapping )
+  {
+    string const & meshFieldName = pair.first;
+    string const & geosFieldName = pair.second;
+    // Find destination
+    if( !subRegion.hasWrapper( geosFieldName ) )
+    {
+      // Skip - the user may have not enabled a particular physics model/solver on this destination region.
+      if( generator.getLogLevel() >= 1 )
+      {
+        GEOS_LOG_RANK_0( GEOS_FMT( "    Skipping import of {} -> {} (field not found)", meshFieldName, geosFieldName ) );
+      }
+
+      continue;
+    }
+
+    // Now that we know that the subRegion has this wrapper,
+    // we can add the geosFieldName to the list of fields to synchronize
+    fieldsToBeSync.addElementFields( { geosFieldName }, { regionName } );
+    WrapperBase & wrapper = subRegion.getWrapperBase( geosFieldName );
+    if( generator.getLogLevel() >= 1 )
+    {
+      GEOS_LOG_RANK_0( GEOS_FMT( "    {} -> {}", meshFieldName, geosFieldName ) );
+    }
+
+    bool const isMaterialField = materialWrapperNames.count( geosFieldName ) > 0 && wrapper.numArrayDims() > 1;
+    generator.importFieldOnArray( block, subRegion.getName(), meshFieldName, isMaterialField, wrapper );
+  }
 }
 
 } /* namespace geos */

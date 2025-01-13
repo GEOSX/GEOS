@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -46,7 +46,7 @@ struct PotGrad
   compute ( integer const numPhase,
             integer const ip,
             integer const hasCapPressure,
-            integer const useNewGravity,
+            integer const checkPhasePresenceInGravity,
             localIndex const ( &seri )[numFluxSupportPoints],
             localIndex const ( &sesri )[numFluxSupportPoints],
             localIndex const ( &sei )[numFluxSupportPoints],
@@ -88,7 +88,11 @@ struct PotGrad
     real64 gravHead = 0.0;
     real64 dCapPressure_dC[numComp]{};
 
-    calculateMeanDensity( useNewGravity, ip, seri, sesri, sei, phaseVolFrac, dCompFrac_dCompDens, phaseMassDens, dPhaseMassDens, densMean, dDensMean_dP, dDensMean_dC );
+    calculateMeanDensity( checkPhasePresenceInGravity, ip,
+                          seri, sesri, sei,
+                          phaseVolFrac, dCompFrac_dCompDens,
+                          phaseMassDens, dPhaseMassDens,
+                          densMean, dDensMean_dP, dDensMean_dC );
 
     /// compute the TPFA potential difference
     for( integer i = 0; i < numFluxSupportPoints; i++ )
@@ -157,7 +161,7 @@ struct PotGrad
   template< integer numComp, integer numFluxSupportPoints >
   GEOS_HOST_DEVICE
   static void
-  calculateMeanDensity( integer const useNewGravity,
+  calculateMeanDensity( integer const checkPhasePresenceInGravity,
                         integer const ip,
                         localIndex const ( &seri )[numFluxSupportPoints],
                         localIndex const ( &sesri )[numFluxSupportPoints],
@@ -178,7 +182,7 @@ struct PotGrad
       localIndex const ei  = sei[i];
 
       bool const phaseExists = (phaseVolFrac[er][esr][ei][ip] > 0);
-      if( useNewGravity && !phaseExists )
+      if( checkPhasePresenceInGravity && !phaseExists )
       {
         continue;
       }
