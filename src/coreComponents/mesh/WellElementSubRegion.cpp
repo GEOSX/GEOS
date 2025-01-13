@@ -332,14 +332,18 @@ bool searchLocalElements( MeshLevel const & mesh,
     ElementSubRegionBase const & subRegionBase = region.getSubRegion( esr );
     region.applyLambdaToContainer< CellElementSubRegion, SurfaceElementSubRegion >( subRegionBase, [&]( auto const & subRegion )
     {
-      GEOS_LOG( GEOS_FMT( "  searching well connections with region/subregion: {}/{}", region.getName(), subRegion.getName() ) );
+      GEOS_LOG_RANK_0( GEOS_FMT( "  searching well connections with region/subregion: {}/{}", region.getName(), subRegion.getName() ) );
 
       // first, we search for the reservoir element that is the *closest* from the center of well element
       // note that this reservoir element does not necessarily contain the center of the well element
       // this "init" reservoir element will be used later to find the reservoir element that
       // contains the well element
-      localIndex eiInit     = -1;
+      localIndex eiInit = -1;
+
       initializeLocalSearch( mesh, location, targetRegionIndex, esr, eiInit );
+
+      if( eiInit < 0 ) // nothing found, skip the rest
+        return;
 
       // loop over the reservoir elements that are in the neighborhood of (esrInit,eiInit)
       // search locally, starting from the location of the previous perforation
@@ -374,8 +378,11 @@ bool searchLocalElements( MeshLevel const & mesh,
 
         if( resElemFound || nNodes == nodes.size())
         {
-          esrMatched = esr;
-          GEOS_LOG( GEOS_FMT( "    found {}/{}/{}", region.getName(), subRegion.getName(), eiMatched ) );
+          if( resElemFound )
+          {
+            esrMatched = esr;
+            GEOS_LOG( GEOS_FMT( "    found {}/{}/{}", region.getName(), subRegion.getName(), giMatched ) );
+          }
           // TODO learn how to exit forElementSubRegionsIndex
           break;
         }
@@ -505,7 +512,6 @@ void WellElementSubRegion::assignUnownedElementsInReservoir( MeshLevel & mesh,
   // assign the well elements based on location wrt the reservoir elements
   // if the center of the well element falls in the domain owned by rank k
   // then the well element is assigned to rank k
-  bool resElemFound = false;
   for( globalIndex currGlobal : unownedElems )
   {
     real64 const location[3] = { wellElemCoordsGlobal[currGlobal][0],
@@ -513,15 +519,17 @@ void WellElementSubRegion::assignUnownedElementsInReservoir( MeshLevel & mesh,
                                  wellElemCoordsGlobal[currGlobal][2] };
 
     // for each perforation, we have to find the reservoir element that contains the perforation
+    bool resElemFound = false;
     for( localIndex er = 0; er < elemManager.numRegions(); er++ )
     {
       // search for the reservoir element that contains the well element
       localIndex esrMatched = -1;
       localIndex eiMatched  = -1;
-      globalIndex giMatched  = -1;
-      if( searchLocalElements( mesh, location, m_searchDepth, er, esrMatched, eiMatched, giMatched ))
+      globalIndex giMatched = -1;
+      resElemFound = searchLocalElements( mesh, location, m_searchDepth, er, esrMatched, eiMatched, giMatched );
+
+      if( resElemFound )
       {
-        resElemFound = true;
         break;
       }
     }
@@ -821,8 +829,9 @@ void WellElementSubRegion::connectPerforationsToMeshElements( MeshLevel & mesh,
     real64 const location[3] = { perfCoordsGlobal[iperfGlobal][0],
                                  perfCoordsGlobal[iperfGlobal][1],
                                  perfCoordsGlobal[iperfGlobal][2] };
-    GEOS_LOG( GEOS_FMT( "{}: perforation {} location = ({}, {}, {})", lineBlock.getName(), iperfGlobal,
-                        location[0], location[1], location[2] ) );
+    GEOS_LOG_RANK_0( GEOS_FMT( "{}: perforation {} location = ({}, {}, {})",
+                               lineBlock.getName(), iperfGlobal,
+                               location[0], location[1], location[2] ) );
 
     localIndex erStart = -1, erEnd = -1;
 
