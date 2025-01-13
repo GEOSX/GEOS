@@ -311,7 +311,7 @@ public:
   createAndLaunch( localIndex const numComps,
                    localIndex const numPhases,
                    globalIndex const rankOffset,
-                   integer const useTotalMassEquation,
+                   BitFlags< isothermalCompositionalMultiphaseBaseKernels::KernelFlags > kernelFlags,
                    string const dofKey,
                    ElementSubRegionBase const & subRegion,
                    constitutive::MultiFluidBase const & fluid,
@@ -324,10 +324,6 @@ public:
     {
       localIndex constexpr NUM_COMP = NC();
       localIndex constexpr NUM_DOF = NC()+2;
-
-      BitFlags< isothermalCompositionalMultiphaseBaseKernels::KernelFlags > kernelFlags;
-      if( useTotalMassEquation )
-        kernelFlags.set( isothermalCompositionalMultiphaseBaseKernels::KernelFlags::TotalMassEquation );
 
       AccumulationKernel< NUM_COMP, NUM_DOF > kernel( numPhases, rankOffset, dofKey, subRegion,
                                                       fluid, solid, localMatrix, localRhs, kernelFlags );
