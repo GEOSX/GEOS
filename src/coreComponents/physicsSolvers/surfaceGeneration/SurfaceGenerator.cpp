@@ -447,7 +447,7 @@ void SurfaceGenerator::initializePostInitialConditionsPreSubGroups()
         faceCenter[1] = faceCenters[kf][1];
         faceCenter[2] = faceCenters[kf][2];
 
-        for( localIndex dim=0; dim<3; ++dim)
+        for( localIndex dim=0; dim<3; ++dim )
         {
           real64 const initialRockToughness = KIC[kf][dim];
 
