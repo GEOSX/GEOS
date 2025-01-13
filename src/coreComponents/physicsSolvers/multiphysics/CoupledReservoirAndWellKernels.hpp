@@ -306,7 +306,7 @@ public:
                    ElementRegionManager::ElementViewConst< arrayView1d< globalIndex const > > const resDofNumber,
                    PerforationData const * const perforationData,
                    MultiFluidBase const & fluid,
-                   integer const & useTotalMassEquation,
+                   BitFlags< isothermalCompositionalMultiphaseBaseKernels::KernelFlags > kernelFlags,
                    bool const & detectCrossflow,
                    integer & numCrossFlowPerforations,
                    arrayView1d< real64 > const & localRhs,
@@ -317,16 +317,9 @@ public:
     {
       integer constexpr NUM_COMP = NC();
 
-
-      BitFlags< isothermalCompositionalMultiphaseBaseKernels::KernelFlags > kernelFlags;
-      if( useTotalMassEquation )
-        kernelFlags.set( isothermalCompositionalMultiphaseBaseKernels::KernelFlags::TotalMassEquation );
-
-
       using kernelType = IsothermalCompositionalMultiPhaseFluxKernel< NUM_COMP, 0 >;
-
-
-      kernelType kernel( dt, rankOffset, wellDofKey, subRegion, resDofNumber, perforationData, fluid, localRhs, localMatrix, detectCrossflow, numCrossFlowPerforations, kernelFlags );
+      kernelType kernel( dt, rankOffset, wellDofKey, subRegion, resDofNumber, perforationData,
+                         fluid, localRhs, localMatrix, detectCrossflow, numCrossFlowPerforations, kernelFlags );
       kernelType::template launch< POLICY >( perforationData->size(), kernel );
     } );
 
@@ -559,7 +552,7 @@ public:
                    ElementRegionManager::ElementViewConst< arrayView1d< globalIndex const > > const resDofNumber,
                    PerforationData const * const perforationData,
                    MultiFluidBase const & fluid,
-                   integer const & useTotalMassEquation,
+                   BitFlags< isothermalCompositionalMultiphaseBaseKernels::KernelFlags > kernelFlags,
                    bool const & detectCrossflow,
                    integer & numCrossFlowPerforations,
                    arrayView1d< real64 > const & localRhs,
@@ -570,16 +563,9 @@ public:
     {
       integer constexpr NUM_COMP = NC();
 
-
-      BitFlags< isothermalCompositionalMultiphaseBaseKernels::KernelFlags > kernelFlags;
-      if( useTotalMassEquation )
-        kernelFlags.set( isothermalCompositionalMultiphaseBaseKernels::KernelFlags::TotalMassEquation );
-
-
       using kernelType = ThermalCompositionalMultiPhaseFluxKernel< NUM_COMP, 1 >;
-
-
-      kernelType kernel( dt, isProducer, rankOffset, wellDofKey, subRegion, resDofNumber, perforationData, fluid, localRhs, localMatrix, detectCrossflow, numCrossFlowPerforations, kernelFlags );
+      kernelType kernel( dt, isProducer, rankOffset, wellDofKey, subRegion, resDofNumber, perforationData,
+                         fluid, localRhs, localMatrix, detectCrossflow, numCrossFlowPerforations, kernelFlags );
       kernelType::template launch< POLICY >( perforationData->size(), kernel );
     } );
 
