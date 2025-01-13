@@ -22,7 +22,6 @@
 #include "SolidMechanicsLagrangianFEM.hpp"
 #include "kernels/ImplicitSmallStrainNewmark.hpp"
 #include "kernels/ImplicitSmallStrainQuasiStatic.hpp"
-#include "kernels/ImplicitSmallStrainQuasiStaticPressurizedDamage.hpp"
 #include "kernels/ExplicitSmallStrain.hpp"
 #include "kernels/ExplicitFiniteStrain.hpp"
 #include "kernels/FixedStressThermoPoromechanics.hpp"
@@ -60,7 +59,6 @@ SolidMechanicsLagrangianFEM::SolidMechanicsLagrangianFEM( const string & name,
   m_maxForce( 0.0 ),
   m_maxNumResolves( 10 ),
   m_strainTheory( 0 ),
-  m_pressurizedDamageFlag( 0 ),
   m_isFixedStressPoromechanicsUpdate( false )
 {
 
@@ -125,11 +123,6 @@ SolidMechanicsLagrangianFEM::SolidMechanicsLagrangianFEM( const string & name,
   registerWrapper( viewKeyStruct::maxForceString(), &m_maxForce ).
     setInputFlag( InputFlags::FALSE ).
     setDescription( "The maximum force contribution in the problem domain." );
-
-  registerWrapper( viewKeyStruct::pressurizedDamageFlagString(), &m_pressurizedDamageFlag ).
-    setApplyDefaultValue( 0 ).
-    setInputFlag( InputFlags::OPTIONAL ).
-    setDescription( "The flag to determine whether to add the pressurized term in the solid mechanics with phase-field damage." );
 
 }
 
@@ -1064,7 +1057,7 @@ void SolidMechanicsLagrangianFEM::setupSystem( DomainPartition & domain,
   localMatrix.assimilate< parallelDevicePolicy<> >( std::move( sparsityPattern ) );
 }
 
-void SolidMechanicsLagrangianFEM::assembleSystem( real64 const time_n,
+void SolidMechanicsLagrangianFEM::assembleSystem( real64 const GEOS_UNUSED_PARAM( time_n ),
                                                   real64 const dt,
                                                   DomainPartition & domain,
                                                   DofManager const & dofManager,
@@ -1138,30 +1131,14 @@ void SolidMechanicsLagrangianFEM::assembleSystem( real64 const time_n,
     {
       if( m_timeIntegrationOption == TimeIntegrationOption::QuasiStatic )
       {
-        if( m_pressurizedDamageFlag )
-        {
-          m_maxForce = assemblyLaunch< constitutive::DamageBase,
-                                       solidMechanicsLagrangianFEMKernels::QuasiStaticPressurizedDamageFactory >( mesh,
-                                                                                                                  dofManager,
-                                                                                                                  regionNames,
-                                                                                                                  viewKeyStruct::solidMaterialNamesString(),
-                                                                                                                  localMatrix,
-                                                                                                                  localRhs,
-                                                                                                                  dt,
-                                                                                                                  time_n + dt );
-        }
-        else
-        {
-          //GEOS_UNUSED_VAR( time_n );
-          m_maxForce = assemblyLaunch< constitutive::SolidBase,
-                                       solidMechanicsLagrangianFEMKernels::QuasiStaticFactory >( mesh,
-                                                                                                 dofManager,
-                                                                                                 regionNames,
-                                                                                                 viewKeyStruct::solidMaterialNamesString(),
-                                                                                                 localMatrix,
-                                                                                                 localRhs,
-                                                                                                 dt );
-        }
+        m_maxForce = assemblyLaunch< constitutive::SolidBase,
+                                     solidMechanicsLagrangianFEMKernels::QuasiStaticFactory >( mesh,
+                                                                                               dofManager,
+                                                                                               regionNames,
+                                                                                               viewKeyStruct::solidMaterialNamesString(),
+                                                                                               localMatrix,
+                                                                                               localRhs,
+                                                                                               dt );
       }
       else if( m_timeIntegrationOption == TimeIntegrationOption::ImplicitDynamic )
       {

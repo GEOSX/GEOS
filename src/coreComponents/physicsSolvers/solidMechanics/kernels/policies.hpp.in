@@ -21,7 +21,6 @@ using ExplicitFiniteStrainPolicy = @ExplicitFiniteStrainPolicy@;
 using FixedStressThermoPoromechanicsPolicy = @FixedStressThermoPoromechanicsPolicy@;
 using ImplicitSmallStrainNewmarkPolicy = @ImplicitSmallStrainNewmarkPolicy@;
 using ImplicitSmallStrainQuasiStaticPolicy = @ImplicitSmallStrainQuasiStaticPolicy@;
-using ImplicitSmallStrainQuasiStaticPressurizedDamagePolicy = @ImplicitSmallStrainQuasiStaticPressurizedDamagePolicy@;
 
 
 #endif /* GEOS_CORECOMPONENTS_PHYSICSSOLVERSE_SOLIDMECHANICS_KERNELS_CONFIG_HPP */

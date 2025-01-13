@@ -9,7 +9,6 @@ set( ExplicitFiniteStrainPolicy "geos::parallelDevicePolicy< ${GEOS_BLOCK_SIZE} 
 set( FixedStressThermoPoromechanicsPolicy "geos::parallelDevicePolicy< ${GEOS_BLOCK_SIZE} >" )
 set( ImplicitSmallStrainNewmarkPolicy "geos::parallelDevicePolicy< ${GEOS_BLOCK_SIZE} >" )
 set( ImplicitSmallStrainQuasiStaticPolicy "geos::parallelDevicePolicy< ${GEOS_BLOCK_SIZE} >" )
-set( ImplicitSmallStrainQuasiStaticPressurizedDamagePolicy "geos::parallelDevicePolicy< ${GEOS_BLOCK_SIZE} >" )
 
 
 configure_file( ${CMAKE_SOURCE_DIR}/${kernelPath}/policies.hpp.in
@@ -17,7 +16,6 @@ configure_file( ${CMAKE_SOURCE_DIR}/${kernelPath}/policies.hpp.in
 
 
 set( kernelNames SolidMechanicsKernels )
-set( damageKernelNames SolidMechanicsDamageKernels )
 set( subregionList CellElementSubRegion )
 set( solidBaseDispatch DamageSpectral<ElasticIsotropic>
                        DamageVolDev<ElasticIsotropic>
@@ -33,10 +31,6 @@ set( solidBaseDispatch DamageSpectral<ElasticIsotropic>
                        ElasticTransverseIsotropic
                        ElasticIsotropicPressureDependent
                        ElasticOrthotropic )
-
-set( damageBaseDispatch DamageSpectral<ElasticIsotropic>
-                        DamageVolDev<ElasticIsotropic>
-                        Damage<ElasticIsotropic> )
 
 set( finiteElementDispatch H1_Hexahedron_Lagrange1_GaussLegendre2
                            H1_Wedge_Lagrange1_Gauss6
@@ -82,29 +76,10 @@ endif( )
     endforeach()
   endforeach()
 
-  foreach( KERNELNAME ${damageKernelNames} )
-    foreach( SUBREGION_TYPE  ${subregionList} )
-      foreach( CONSTITUTIVE_TYPE ${damageBaseDispatch} )
-        foreach( FE_TYPE ${finiteElementDispatch} )
-        
-        set( filename "${CMAKE_BINARY_DIR}/generatedSrc/${kernelPath}/${KERNELNAME}_${SUBREGION_TYPE}_${CONSTITUTIVE_TYPE}_${FE_TYPE}.cpp" )
-        string(REPLACE "<" "-" filename ${filename})
-        string(REPLACE ">" "-" filename ${filename})
-        string(REPLACE "," "-" filename ${filename})
-        string(REPLACE " " "" filename ${filename})
-        message( " -- Generating file: ${filename}")
-        configure_file( ${CMAKE_SOURCE_DIR}/${kernelPath}/SolidMechanicsDamageKernels.cpp.template
-                        ${filename} )
-
-          list( APPEND physicsSolvers_sources ${filename} )
-        endforeach()
-      endforeach()
-    endforeach()
-  endforeach()
-
   set( porousSolidDispatch PorousSolid<ElasticIsotropic> )
 
   set( kernelNames SolidMechanicsFixedStressThermoPoroElasticKernels )
+
 
   foreach( KERNELNAME ${kernelNames} )
     foreach( SUBREGION_TYPE  ${subregionList} )
