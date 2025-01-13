@@ -156,7 +156,7 @@ void testMobilityNumericalDerivatives( SinglePhaseFVM<> & solver,
 
       // Step 2: update temperature and check derivatives
 
-      if ( isThermal )
+      if( isThermal )
       {
         using DerivOffsetTherm = constitutive::singlefluid::DerivativeOffsetC< 1 >;
         arrayView1d< real64 > const temp =
@@ -165,7 +165,7 @@ void testMobilityNumericalDerivatives( SinglePhaseFVM<> & solver,
           subRegion.getField< fields::flow::temperature_n >();
 
         arrayView2d< real64 > const dMobTherm =
-          subRegion.getField< fields::flow::dMobility>();
+          subRegion.getField< fields::flow::dMobility >();
 
         // reset the solver state to zero out variable updates (resetting the whole domain is overkill...)
         solver.resetStateToBeginningOfStep( domain );
