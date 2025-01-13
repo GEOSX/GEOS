@@ -224,6 +224,7 @@ struct FluxKernel
                               fields::permeability::permeability,
                               fields::permeability::permeabilityMultiplier >;
 
+  using DerivOffset = constitutive::singlefluid::DerivativeOffsetC< 0 >;
   /**
    * @brief The type for element-based non-constitutive data parameters.
    * Consists entirely of ArrayView's.

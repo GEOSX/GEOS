@@ -48,6 +48,7 @@ public:
                                                                CONSTITUTIVE_TYPE,
                                                                FE_TYPE >;
 
+  using DerivOffset = constitutive::singlefluid::DerivativeOffsetC< 1 >;
   /// Maximum number of nodes per element, which is equal to the maxNumTestSupportPointPerElem and
   /// maxNumTrialSupportPointPerElem by definition. When the FE_TYPE is not a Virtual Element, this
   /// will be the actual number of nodes per element.

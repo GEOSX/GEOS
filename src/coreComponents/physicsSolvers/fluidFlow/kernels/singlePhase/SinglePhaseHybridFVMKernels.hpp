@@ -232,6 +232,8 @@ public:
    * Can be converted from ElementRegionManager::ElementViewConstAccessor
    * by calling .toView() or .toViewConst() on an accessor instance
    */
+
+  using DerivOffset = constitutive::singlefluid::DerivativeOffsetC< 0 >;
   template< typename VIEWTYPE >
   using ElementViewConst = ElementRegionManager::ElementViewConst< VIEWTYPE >;
 
@@ -379,7 +381,7 @@ public:
         real64 const fGravCoef = m_faceGravCoef[m_elemToFaces[ei][jFaceLoc]];
 
         real64 const ccDens = m_elemDens[ei][0];
-        real64 const dCcDens_dPres = m_dElemDens[ei][0][0]; //tjb
+        real64 const dCcDens_dPres = m_dElemDens[ei][0][DerivOffset::dP];
         // no density evaluated at the face center
 
         // pressure difference

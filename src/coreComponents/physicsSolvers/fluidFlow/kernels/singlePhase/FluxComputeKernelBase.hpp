@@ -63,7 +63,7 @@ public:
   using DofNumberAccessor = ElementRegionManager::ElementViewAccessor< arrayView1d< globalIndex const > >;
 
   using SingleFluidProp = constitutive::SingleFluidVar< real64, 2, constitutive::singlefluid::LAYOUT_FLUID, constitutive::singlefluid::LAYOUT_FLUID_DC >;
-  using DerivOffset = constitutive::singlefluid::DerivativeOffset; // tjb why no tp
+  using DerivOffset = constitutive::singlefluid::DerivativeOffset;
   using SinglePhaseFlowAccessors =
     StencilAccessors< fields::ghostRank,
                       fields::flow::pressure,

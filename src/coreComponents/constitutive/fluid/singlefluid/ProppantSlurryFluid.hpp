@@ -166,11 +166,11 @@ public:
              m_dFluidVisc_dCompConc[k][q],
              isProppantBoundary,
              m_density[k][q],
-             m_dDensity[k][q][DerivOffset::dP],  // tjb add deriv:dp
+             m_dDensity[k][q][DerivOffset::dP],
              m_dDensity_dProppantConc[k][q],
              m_dDensity_dCompConc[k][q],
              m_viscosity[k][q],
-             m_dViscosity[k][q][DerivOffset::dP],// tjb add deriv:dp
+             m_dViscosity[k][q][DerivOffset::dP],
              m_dViscosity_dProppantConc[k][q],
              m_dViscosity_dCompConc[k][q] );
   }
@@ -262,11 +262,11 @@ private:
                 arraySlice1d< real64 const > const & dFluidViscosity_dComponentConcentration,
                 integer const & isProppantBoundary,
                 real64 & density,
-                real64 & dDensity_dp,  // tjb
+                real64 & dDensity_dp,
                 real64 & dDensity_dProppantConcentration,
                 arraySlice1d< real64 > const & dDensity_dComponentConcentration,
                 real64 & viscosity,
-                real64 & dViscosity_dp,  // tjb
+                real64 & dViscosity_dp,
                 real64 & dViscosity_dProppantConcentration,
                 arraySlice1d< real64 > const & dViscosity_dComponentConcentration ) const;
 
@@ -479,11 +479,11 @@ ProppantSlurryFluidUpdate::
            arraySlice1d< real64 const > const & GEOS_UNUSED_PARAM( dFluidViscosity_dComponentConcentration ),
            integer const & isProppantBoundary,
            real64 & density,
-           real64 & dDensity_dp, //tjb
+           real64 & dDensity_dp,
            real64 & dDensity_dProppantConcentration,
            arraySlice1d< real64 > const & dDensity_dComponentConcentration,
            real64 & viscosity,
-           real64 & dViscosity_dp, //tjb
+           real64 & dViscosity_dp,
            real64 & dViscosity_dProppantConcentration,
            arraySlice1d< real64 > const & dViscosity_dComponentConcentration ) const
 {

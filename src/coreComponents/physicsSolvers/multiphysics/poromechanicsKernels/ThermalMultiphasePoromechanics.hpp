@@ -22,6 +22,8 @@
 
 #include "physicsSolvers/multiphysics/poromechanicsKernels/MultiphasePoromechanics.hpp"
 
+#include "constitutive/fluid/singlefluid/SingleFluidLayouts.hpp"
+
 namespace geos
 {
 
@@ -53,7 +55,7 @@ public:
   using Base = poromechanicsKernels::MultiphasePoromechanics< SUBREGION_TYPE,
                                                               CONSTITUTIVE_TYPE,
                                                               FE_TYPE >;
-
+  using DerivOffset = constitutive::singlefluid::DerivativeOffsetC< 1 >;
 
   /// Number of nodes per element, which is equal to the maxNumTestSupportPointPerElem and
   /// maxNumTrialSupportPointPerElem by definition. When the FE_TYPE is not a Virtual Element, this

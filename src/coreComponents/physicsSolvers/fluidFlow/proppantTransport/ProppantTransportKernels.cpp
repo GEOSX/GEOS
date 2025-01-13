@@ -247,11 +247,11 @@ FluxKernel::
     localIndex const ei  = stencilElementIndices[i];
 
     edgeDensity += geometricWeight[i] * dens[ei][0];
-    dEdgeDens_dP[i] = geometricWeight[i] * dDens[ei][0][0];  // tjb
+    dEdgeDens_dP[i] = geometricWeight[i] * dDens[ei][0][DerivOffset::dP];
     dEdgeDens_dProppantC[i] = geometricWeight[i] * dDens_dProppantConc[ei][0];
 
     edgeViscosity += geometricWeight[i] * visc[ei][0];
-    dEdgeVisc_dP[i] = geometricWeight[i] * dVisc[ei][0][0];
+    dEdgeVisc_dP[i] = geometricWeight[i] * dVisc[ei][0][DerivOffset::dP];
     dEdgeVisc_dProppantC[i] = geometricWeight[i] * dVisc_dProppantConc[ei][0];
 
     proppantC[i] = proppantConc[ei];
@@ -822,7 +822,7 @@ void FluxKernel::
                        dComponentDens_dComponentConc[er][esr],
                        gravDepth[er][esr],
                        dens[er][esr],
-                       dDens[er][esr],  // tjb tag
+                       dDens[er][esr],
                        dDens_dProppantConc[er][esr],
                        dDens_dComponentConc[er][esr],
                        visc[er][esr],

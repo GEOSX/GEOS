@@ -174,16 +174,13 @@ complete( localIndex const k,
   real64 const fluidEnergy   =  m_fluidDensity( embSurfIndex, 0 ) * m_fluidInternalEnergy( embSurfIndex, 0 ) * volume;
   real64 const fluidEnergy_n =  m_fluidDensity_n( embSurfIndex, 0 ) * m_fluidInternalEnergy_n( embSurfIndex, 0 ) * volume_n;
 
-  stack.dFluidMassIncrement_dTemperature =  m_dFluidDensity( embSurfIndex, 0, 1 ) * volume;  // tjb tag
+  stack.dFluidMassIncrement_dTemperature =  m_dFluidDensity( embSurfIndex, 0, DerivOffset::dT ) * volume;
 
   stack.energyIncrement               = fluidEnergy - fluidEnergy_n;
   stack.dEnergyIncrement_dJump        = m_fluidDensity( embSurfIndex, 0 ) * m_fluidInternalEnergy( embSurfIndex, 0 ) * m_surfaceArea[ embSurfIndex ];
-  stack.dEnergyIncrement_dPressure    = m_dFluidDensity( embSurfIndex, 0, 0 ) * m_fluidInternalEnergy( embSurfIndex, 0 ) * volume;  // tjb
-                                                                                                                                    // check
-                                                                                                                                    // add
-                                                                                                                                    // tags
-  stack.dEnergyIncrement_dTemperature = ( m_dFluidDensity( embSurfIndex, 0, 1 ) * m_fluidInternalEnergy( embSurfIndex, 0 ) +  // tjb tags
-                                          m_fluidDensity( embSurfIndex, 0 ) * m_dFluidInternalEnergy( embSurfIndex, 0, 1 )  ) * volume;
+  stack.dEnergyIncrement_dPressure    = m_dFluidDensity( embSurfIndex, 0, 0 ) * m_fluidInternalEnergy( embSurfIndex, DerivOffset::dP ) * volume;
+  stack.dEnergyIncrement_dTemperature = ( m_dFluidDensity( embSurfIndex, 0, 1 ) * m_fluidInternalEnergy( embSurfIndex, 0 ) +
+                                          m_fluidDensity( embSurfIndex, 0 ) * m_dFluidInternalEnergy( embSurfIndex, 0, DerivOffset::dT )  ) * volume;
 
   globalIndex const fracturePressureDof        = m_fracturePresDofNumber[ embSurfIndex ];
   globalIndex const fractureTemperatureDof     = m_fracturePresDofNumber[ embSurfIndex ] + 1;

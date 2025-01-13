@@ -39,7 +39,6 @@ namespace singlePhaseFluxKernelsHelper
 template< typename VIEWTYPE >
 using ElementViewConst = ElementRegionManager::ElementViewConst< VIEWTYPE >;
 
-
 GEOS_HOST_DEVICE
 inline
 void computeSinglePhaseFlux( localIndex const ( &seri )[2],
@@ -69,10 +68,7 @@ void computeSinglePhaseFlux( localIndex const ( &seri )[2],
   for( localIndex ke = 0; ke < 2; ++ke )
   {
     densMean        += 0.5 * dens[seri[ke]][sesri[ke]][sei[ke]][0];
-    //dDensMean_dP[ke] = 0.5 * dDens_dPres[seri[ke]][sesri[ke]][sei[ke]][0];
-    // tjb - add derivid
     dDensMean_dP[ke] = 0.5 * dDens[seri[ke]][sesri[ke]][sei[ke]][0][DerivOffset::dP];
-    //assert( fabs( dDens_dPres[seri[ke]][sesri[ke]][sei[ke]][0]-dDens[seri[ke]][sesri[ke]][sei[ke]][0][DerivOffset::dP] )<FLT_EPSILON );
   }
 
   // compute potential difference
@@ -112,9 +108,6 @@ void computeSinglePhaseFlux( localIndex const ( &seri )[2],
     localIndex const ke = 1 - localIndex( fmax( fmin( alpha, 1.0 ), 0.0 ) );
     mobility = mob[seri[ke]][sesri[ke]][sei[ke]];
     dMobility_dP[ke] = dMob[seri[ke]][sesri[ke]][sei[ke]][DerivOffset::dP];
-    //tjb remove
-    //dMobility_dP[ke] = dMob_dPres[seri[ke]][sesri[ke]][sei[ke]];
-    //assert( fabs( dMob[seri[ke]][sesri[ke]][sei[ke]][DerivOffset::dP]-dMob_dPres[seri[ke]][sesri[ke]][sei[ke]] )<FLT_EPSILON );
   }
   else
   {
@@ -124,9 +117,6 @@ void computeSinglePhaseFlux( localIndex const ( &seri )[2],
     {
       mobility += mobWeights[ke] * mob[seri[ke]][sesri[ke]][sei[ke]];
       dMobility_dP[ke] = mobWeights[ke] * dMob[seri[ke]][sesri[ke]][sei[ke]][DerivOffset::dP];
-      //tjb remove
-      //dMobility_dP[ke] = mobWeights[ke] * dMob_dPres[seri[ke]][sesri[ke]][sei[ke]];
-      //assert( fabs( dMob[seri[ke]][sesri[ke]][sei[ke]][DerivOffset::dP]-dMob_dPres[seri[ke]][sesri[ke]][sei[ke]] )<FLT_EPSILON );
     }
   }
 
@@ -168,12 +158,12 @@ void computeEnthalpyFlux( localIndex const ( &seri )[2],
                           ENERGYFLUX_DERIVATIVE_TYPE & dEnergyFlux_dT )
 {
   // Step 1: compute the derivatives of the mean density at the interface wrt temperature
-
+  using DerivOffset = constitutive::singlefluid::DerivativeOffsetC< 1 >;
   real64 dDensMean_dT[2]{0.0, 0.0};
 
   for( integer ke = 0; ke < 2; ++ke )
   {
-    real64 const dDens_dT = dDens[seri[ke]][sesri[ke]][sei[ke]][0][0]; // tjb tag
+    real64 const dDens_dT = dDens[seri[ke]][sesri[ke]][sei[ke]][0][DerivOffset::dT];
     dDensMean_dT[ke] = 0.5 * dDens_dT;
   }
 
@@ -245,8 +235,8 @@ void computeEnthalpyFlux( localIndex const ( &seri )[2],
     localIndex const k_up = 1 - localIndex( fmax( fmin( alpha, 1.0 ), 0.0 ) );
 
     enthalpyTimesMobWeight = enthalpy[seri[k_up]][sesri[k_up]][sei[k_up]][0];
-    dEnthalpy_dP[k_up] = dEnthalpy[seri[k_up]][sesri[k_up]][sei[k_up]][0][0]; // tjb tag
-    dEnthalpy_dT[k_up] = dEnthalpy[seri[k_up]][sesri[k_up]][sei[k_up]][0][0]; // tjb tag
+    dEnthalpy_dP[k_up] = dEnthalpy[seri[k_up]][sesri[k_up]][sei[k_up]][0][DerivOffset::dP];
+    dEnthalpy_dT[k_up] = dEnthalpy[seri[k_up]][sesri[k_up]][sei[k_up]][0][DerivOffset::dT];
   }
   else
   {
@@ -254,8 +244,8 @@ void computeEnthalpyFlux( localIndex const ( &seri )[2],
     for( integer ke = 0; ke < 2; ++ke )
     {
       enthalpyTimesMobWeight += mobWeights[ke] * enthalpy[seri[ke]][sesri[ke]][sei[ke]][0];
-      dEnthalpy_dP[ke] = mobWeights[ke] * dEnthalpy[seri[ke]][sesri[ke]][sei[ke]][0][0]; // tjb
-      dEnthalpy_dT[ke] = mobWeights[ke] * dEnthalpy[seri[ke]][sesri[ke]][sei[ke]][0][0]; // tjb
+      dEnthalpy_dP[ke] = mobWeights[ke] * dEnthalpy[seri[ke]][sesri[ke]][sei[ke]][0][DerivOffset::dP];
+      dEnthalpy_dT[ke] = mobWeights[ke] * dEnthalpy[seri[ke]][sesri[ke]][sei[ke]][0][DerivOffset::dT];
     }
   }
 

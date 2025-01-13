@@ -49,6 +49,8 @@ public:
  * Can be converted from ElementRegionManager::ElementViewConstAccessor
  * by calling .toView() or .toViewConst() on an accessor instance
  */
+
+  using DerivOffset = constitutive::singlefluid::DerivativeOffsetC< 1 >;
   template< typename VIEWTYPE >
   using ElementViewConst = ElementRegionManager::ElementViewConst< VIEWTYPE >;
 
@@ -203,7 +205,7 @@ public:
 
       // Compute the derivatives of the density wrt temperature
 
-      real64 const dDens_dT = 0.5 * m_dDens[er][esr][ei][0][1]; // tjb tag
+      real64 const dDens_dT = 0.5 * m_dDens[er][esr][ei][0][DerivOffset::dT];
       // Compute the derivatives of the phase potential difference wrt temperature
 
       real64 const dF_dT = -stack.transmissibility * dDens_dT * ( m_gravCoef[er][esr][ei] - m_faceGravCoef[kf] );
@@ -221,8 +223,8 @@ public:
         real64 const dFlux_dP = mobility_up * dF_dP + dMobility_dP_up * f;
         real64 const dFlux_dT = mobility_up * dF_dT + m_dMob_dTemp[er][esr][ei] * f;
 
-        stack.dEnergyFlux_dP += dFlux_dP * enthalpy + flux * m_dEnthalpy[er][esr][ei][0][0];  // tjb add tags
-        stack.dEnergyFlux_dT += dFlux_dT * enthalpy + flux * m_dEnthalpy[er][esr][ei][0][1];  // tjb add tags
+        stack.dEnergyFlux_dP += dFlux_dP * enthalpy + flux * m_dEnthalpy[er][esr][ei][0][DerivOffset::dP];
+        stack.dEnergyFlux_dT += dFlux_dT * enthalpy + flux * m_dEnthalpy[er][esr][ei][0][DerivOffset::dT];
       }
       else
       {

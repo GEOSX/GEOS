@@ -117,7 +117,8 @@ void SlurryFluidBase::allocateConstitutiveData( Group & parent,
   this->resize( parent.size() );
 
 
-  // tjb these are also sized in m_dDenisty in base class
+  // These are also sized in m_dDenisty in base class , only dP and dT are populated
+  // Future dev should incorporate concentration derivatives in dDensity
   m_dDensity_dProppantConc.resize( parent.size(), numConstitutivePointsPerParentIndex );
   m_dDensity_dCompConc.resize( parent.size(), numConstitutivePointsPerParentIndex, NC );
 

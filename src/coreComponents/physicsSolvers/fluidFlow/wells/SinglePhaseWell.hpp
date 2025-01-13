@@ -22,6 +22,8 @@
 
 #include "WellSolverBase.hpp"
 
+#include "constitutive/fluid/singlefluid/SingleFluidLayouts.hpp"
+
 namespace geos
 {
 
@@ -45,7 +47,7 @@ class SinglePhaseWell : public WellSolverBase
 {
 public:
 
-
+  using DerivOffset = constitutive::singlefluid::DerivativeOffsetC< 1 >;
   /**
    * @brief main constructor for Group Objects
    * @param name the name of this instantiation of Group in the repository

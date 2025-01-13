@@ -326,7 +326,7 @@ complete( localIndex const k,
   real64 const oldMass = m_fluidDensity_n( embSurfIndex, 0 ) * m_elementVolumeFrac( embSurfIndex );
   real64 const localFlowResidual = ( newMass - oldMass );
   real64 const localFlowJumpJacobian = m_fluidDensity( embSurfIndex, 0 ) * m_surfaceArea[ embSurfIndex ];
-  real64 const localFlowFlowJacobian = m_dFluidDensity( embSurfIndex, 0, 0 ) * newVolume;  //tjb check
+  real64 const localFlowFlowJacobian = m_dFluidDensity( embSurfIndex, 0, DerivOffset::dP ) * newVolume;
 
   for( localIndex i = 0; i < nUdof; ++i )
   {

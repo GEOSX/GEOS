@@ -151,7 +151,7 @@ computeBodyForce( localIndex const k,
   real64 const dMixtureDens_dVolStrainIncrement = dPorosity_dVolStrain * ( -m_solidDensity( k, q ) + m_fluidDensity( k, q ) );
   real64 const dMixtureDens_dPressure = dPorosity_dPressure * ( -m_solidDensity( k, q ) + m_fluidDensity( k, q ) )
                                         + ( 1.0 - porosity ) * dSolidDensity_dPressure
-                                        + porosity * m_dFluidDensity( k, q, 0 ); // tjb check
+                                        + porosity * m_dFluidDensity( k, q, DerivOffset::dP );
 
   LvArray::tensorOps::scaledCopy< 3 >( stack.bodyForce, m_gravityVector, mixtureDensity );
   LvArray::tensorOps::scaledCopy< 3 >( stack.dBodyForce_dVolStrainIncrement, m_gravityVector, dMixtureDens_dVolStrainIncrement );

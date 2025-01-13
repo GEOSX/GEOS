@@ -193,7 +193,7 @@ void SinglePhaseWell::updateBHPForConstraint( WellElementSubRegion & subRegion )
                               &refGravCoef] ( localIndex const )
   {
     currentBHP = pres[iwelemRef] + dens[iwelemRef][0] * ( refGravCoef - wellElemGravCoef[iwelemRef] );
-    dCurrentBHP_dPres = 1.0 + dDens[iwelemRef][0][0] * ( refGravCoef - wellElemGravCoef[iwelemRef] );  // tjb add tag
+    dCurrentBHP_dPres = 1.0 + dDens[iwelemRef][0][DerivOffset::dP] * ( refGravCoef - wellElemGravCoef[iwelemRef] );
   } );
 
   if( logLevel >= 2 )
@@ -289,7 +289,7 @@ void SinglePhaseWell::updateVolRateForConstraint( WellElementSubRegion & subRegi
 
       real64 const densInv = 1.0 / dens[iwelemRef][0];
       currentVolRate = connRate[iwelemRef] * densInv;
-      dCurrentVolRate_dPres = -( useSurfaceConditions ==  0 ) * dDens[iwelemRef][0][0] * currentVolRate * densInv;  // tjb add tag
+      dCurrentVolRate_dPres = -( useSurfaceConditions ==  0 ) * dDens[iwelemRef][0][DerivOffset::dP] * currentVolRate * densInv;
       dCurrentVolRate_dRate = densInv;
 
       if( logLevel >= 2 && useSurfaceConditions )

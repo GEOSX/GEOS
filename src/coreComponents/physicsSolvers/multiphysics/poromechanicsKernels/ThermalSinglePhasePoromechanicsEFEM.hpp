@@ -21,7 +21,7 @@
 #define GEOS_PHYSICSSOLVERS_MULTIPHYSICS_POROMECHANICSKERNELS_THERMALSINGLEPHASEPOROMECHANICSEFEM_HPP_
 
 #include "physicsSolvers/multiphysics/poromechanicsKernels/SinglePhasePoromechanicsEFEM.hpp"
-
+#include "constitutive/fluid/singlefluid/SingleFluidLayouts.hpp"
 namespace geos
 {
 
@@ -40,6 +40,8 @@ public:
   using Base = poromechanicsEFEMKernels::SinglePhasePoromechanicsEFEM< SUBREGION_TYPE,
                                                                        CONSTITUTIVE_TYPE,
                                                                        FE_TYPE >;
+
+  using DerivOffset = constitutive::singlefluid::DerivativeOffsetC< 1 >;
 
   static constexpr int numNodesPerElem = Base::maxNumTestSupportPointsPerElem;
   static constexpr int numQuadraturePointsPerElem = FE_TYPE::numQuadraturePoints;
