@@ -545,8 +545,6 @@ real64 SurfaceGenerator::solverStep( real64 const & time_n,
     ElementRegionManager & elemManager = meshLevel.getElemManager();
     SurfaceElementRegion & fractureRegion = elemManager.getRegion< SurfaceElementRegion >( this->m_fractureRegionName );
 
-    FaceManager & faceManager = meshLevel.getFaceManager();
-
     for( localIndex a=0; a<fvManager.numSubGroups(); ++a )
     {
       FluxApproximationBase * const fluxApprox = fvManager.getGroupPointer< FluxApproximationBase >( a );
