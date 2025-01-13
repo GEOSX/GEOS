@@ -216,8 +216,7 @@ class SingleFluidBase : public ConstitutiveBase
 public:
 
   using SingleFluidProp = SingleFluidVar< real64, 2, constitutive::singlefluid::LAYOUT_FLUID, constitutive::singlefluid::LAYOUT_FLUID_DC >;
-  //using SingleFluidPropConst = SingleFluidVar< real64 const, 2, constitutive::singlefluid::LAYOUT_FLUID,
-  // constitutive::singlefluid::LAYOUT_FLUID_DC >;
+
   /**
    * @brief Constructor.
    * @param name name of the group
@@ -297,24 +296,9 @@ protected:
   SingleFluidProp m_internalEnergy;
   SingleFluidProp m_enthalpy;
 
-  //array2d< real64 > m_density;
-  array2d< real64 > m_dDensity_dPressure;
-  array2d< real64 > m_dDensity_dTemperature;
-
   array2d< real64 > m_density_n;
-
-  //array2d< real64 > m_viscosity;
-  array2d< real64 > m_dViscosity_dPressure;
-  array2d< real64 > m_dViscosity_dTemperature;
-
-  //array2d< real64 > m_internalEnergy;
   array2d< real64 > m_internalEnergy_n;
-  array2d< real64 > m_dInternalEnergy_dPressure;
-  array2d< real64 > m_dInternalEnergy_dTemperature;
 
-  //array2d< real64 > m_enthalpy;
-  array2d< real64 > m_dEnthalpy_dPressure;
-  array2d< real64 > m_dEnthalpy_dTemperature;
   //END_SPHINX_INCLUDE_00
 };
 

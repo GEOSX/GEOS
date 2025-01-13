@@ -83,9 +83,6 @@ using LAYOUT_FLUID = RAJA::PERM_JI;
 /// Constitutive model fluid property compositional derivative array layout
 using LAYOUT_FLUID_DC = RAJA::PERM_JKI;
 
-///Constitutive model singe fluid property derivative array layout
-using LAYOUT_SINGLEFLUID_DC = RAJA::PERMJI;
-
 #else
 
 /// Constitutive model single phase  property array layout with derivatives
@@ -103,9 +100,6 @@ using LAYOUT_PHASE_COMP_DC = RAJA::PERM_IJKLM;
 using LAYOUT_FLUID = RAJA::PERM_IJ;
 /// Constitutive model fluid property compositional derivative array layout
 using LAYOUT_FLUID_DC = RAJA::PERM_IJK;
-
-/// Constitutive model singe fluid property derivative array layout
-using LAYOUT_SINGLEFLUID_DC = RAJA::PERM_IJ;
 
 #endif
 
