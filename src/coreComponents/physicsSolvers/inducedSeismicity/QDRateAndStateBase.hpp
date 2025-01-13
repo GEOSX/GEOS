@@ -58,8 +58,6 @@ public:
   */
   void enforceRateAndVelocityConsistency( SurfaceElementSubRegion & subRegion ) const;
 
-protected:
-
   /**
     * @brief Compute stresses and update tractions on the fault
     * @param time_n the current time
@@ -79,6 +77,8 @@ protected:
   */
   virtual void applyInitialConditionsToFault( int const cycleNumber,
                                               DomainPartition & domain ) const;
+
+protected:
 
   /// shear impedance
   real64 m_shearImpedance;

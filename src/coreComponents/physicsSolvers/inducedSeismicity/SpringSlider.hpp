@@ -45,12 +45,12 @@ public:
   struct viewKeyStruct : public RSSOLVER_TYPE::viewKeyStruct
   {};
 
-private:
-
   virtual real64 updateStresses( real64 const & time_n,
                                  real64 const & dt,
                                  const int cycleNumber,
                                  DomainPartition & domain ) const override final;
+
+private:
 
   class SpringSliderParameters
   {

@@ -54,12 +54,12 @@ public:
 
   void setTargetDispJump( DomainPartition & domain ) const;
 
-private:
-
   virtual real64 updateStresses( real64 const & time_n,
                                  real64 const & dt,
                                  const int cycleNumber,
                                  DomainPartition & domain ) const override final;
+
+private:
 
   string m_stressSolverName;
 
