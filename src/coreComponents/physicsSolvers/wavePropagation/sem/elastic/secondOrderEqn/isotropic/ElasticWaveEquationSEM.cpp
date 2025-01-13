@@ -1015,6 +1015,7 @@ void ElasticWaveEquationSEM::cleanup( real64 const time_n,
       // sum contributions from all MPI ranks, since some receivers might be split among multiple ranks
       MpiWrapper::allReduce( dasReceivers,
                              dasReceivers,
+                             m_linearDASGeometry.size( 0 ),
                              MpiWrapper::Reduction::Sum,
                              MPI_COMM_GEOS );
       WaveSolverUtils::writeSeismoTrace( "dasTraceReceiver", getName(), m_outputSeismoTrace, m_linearDASGeometry.size( 0 ),
