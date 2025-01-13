@@ -43,7 +43,7 @@ TEST( SinglePhaseBaseKernels, mobility )
     real64 mob;
     real64 dMob_dPres;
 
-    MobilityKernel::compute( dens[i], dDens_dPres[i], dDens_dPres[i], visc[i], dVisc_dPres[i], dVisc_dPres[i], mob, dMob_dPres );
+    MobilityKernel::compute( dens[i], dDens_dPres[i], visc[i], dVisc_dPres[i], mob, dMob_dPres );
 
     // compute etalon
     real64 const mob_et = dens[i] / visc[i];

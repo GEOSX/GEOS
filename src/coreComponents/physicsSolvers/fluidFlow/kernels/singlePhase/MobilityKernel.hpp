@@ -22,6 +22,7 @@
 
 #include "common/DataTypes.hpp"
 #include "common/GEOS_RAJA_Interface.hpp"
+#include "constitutive/fluid/singlefluid/SingleFluidLayouts.hpp"
 
 namespace geos
 {
@@ -46,25 +47,6 @@ struct MobilityKernel
   {
     mob = dens / visc;
     dMob_dPres = dDens_dP / visc - mob / visc * dVisc_dP;  // tjb keep
-  }
-
-// Thermal version
-  GEOS_HOST_DEVICE
-  inline
-  static void
-  old_compute( real64 const & dens,
-               real64 const & dDens_dP, // tjb
-               real64 const & dDens_dT, // tjb
-               real64 const & visc,
-               real64 const & dVisc_dP, // tjb
-               real64 const & dVisc_dT, // tjb
-               real64 & mob,
-               real64 & dMob_dPres,
-               real64 & dMob_dTemp )
-  {
-    mob = dens / visc;
-    dMob_dPres = dDens_dP / visc - mob / visc * dVisc_dP;
-    dMob_dTemp = dDens_dT / visc - mob / visc * dVisc_dT;
   }
 
 // Value-only (no derivatives) version
