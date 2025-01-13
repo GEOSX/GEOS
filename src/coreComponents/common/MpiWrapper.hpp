@@ -1120,7 +1120,7 @@ void MpiWrapper::allReduce( SRC_CONTAINER_TYPE const & src, DST_CONTAINER_TYPE &
                  "Source and destination containers must have the same value type." );
   GEOS_ASSERT_GE( src.size(), count );
   GEOS_ASSERT_GE( dst.size(), count );
-  allReduce( src.data(), dst.data(), LvArray::integerConversion< int >( src.size() ), getMpiOp( op ), comm );
+  allReduce( src.data(), dst.data(), count, getMpiOp( op ), comm );
 }
 
 template< typename SRC_CONTAINER_TYPE, typename DST_CONTAINER_TYPE >
