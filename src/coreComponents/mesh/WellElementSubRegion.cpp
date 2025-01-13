@@ -806,7 +806,7 @@ void WellElementSubRegion::connectPerforationsToMeshElements( MeshLevel & mesh,
   arrayView2d< real64 const > const perfCoordsGlobal = lineBlock.getPerfCoords();
   arrayView1d< real64 const > const perfWellTransmissibilityGlobal = lineBlock.getPerfTransmissibility();
   arrayView1d< real64 const > const perfWellSkinFactorGlobal = lineBlock.getPerfSkinFactor();
-  arrayView1d< string const > const perfTargetTegionGlobal = lineBlock.getPerfTargetRegion();
+  arrayView1d< string const > const perfTargetRegionGlobal = lineBlock.getPerfTargetRegion();
 
   m_perforationData.resize( perfCoordsGlobal.size( 0 ) );
   localIndex iperfLocal = 0;
@@ -826,7 +826,7 @@ void WellElementSubRegion::connectPerforationsToMeshElements( MeshLevel & mesh,
 
     localIndex erStart = -1, erEnd = -1;
 
-    localIndex const targetRegionIndex = elemManager.getRegions().getIndex( perfTargetTegionGlobal[iperfGlobal] );
+    localIndex const targetRegionIndex = elemManager.getRegions().getIndex( perfTargetRegionGlobal[iperfGlobal] );
     if( targetRegionIndex >= 0 )
     {
       erStart = targetRegionIndex;
