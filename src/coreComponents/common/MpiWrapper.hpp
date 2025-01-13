@@ -397,7 +397,7 @@ public:
    * @param comm The communicator.
    */
   template< typename SRC_CONTAINER_TYPE, typename DST_CONTAINER_TYPE >
-  void MpiWrapper::allReduce( SRC_CONTAINER_TYPE const & src, DST_CONTAINER_TYPE & dst, int const count, Reduction const op, MPI_Comm const comm )
+  void allReduce( SRC_CONTAINER_TYPE const & src, DST_CONTAINER_TYPE & dst, int const count, Reduction const op, MPI_Comm const comm );
 
 
   /**
