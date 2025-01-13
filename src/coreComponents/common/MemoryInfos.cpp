@@ -44,6 +44,11 @@ MemoryInfos::MemoryInfos( umpire::MemoryResourceTraits::resource_type resourceTy
     case umpire::MemoryResourceTraits::resource_type::um:
       #if defined( GEOS_USE_CUDA )
       cudaMemGetInfo( &m_availableMemory, &m_totalMemory );
+      #elif defined( GEOS_USE_HIP )
+      {
+        hipError_t const err = hipMemGetInfo( &m_availableMemory, &m_totalMemory );
+        GEOS_WARNING_IF( err != hipSuccess, GEOS_FMT( "HIP error found: {} at {}:{}", hipGetErrorString( err ), __FILE__, __LINE__ ) );
+      }
       #else
       GEOS_WARNING( "Unknown device physical memory size getter for this compiler." );
       m_physicalMemoryHandled = 0;

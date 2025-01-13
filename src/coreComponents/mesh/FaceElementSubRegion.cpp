@@ -449,10 +449,11 @@ localIndex FaceElementSubRegion::unpackToFaceRelation( buffer_unit_type const * 
  * @param[in] elem2dToElems3d A mapping.
  * @param[in,out] elem2dToFaces This mapping will be corrected if needed to match @p elem2dToElems3d.
  */
-void fixNeighborMappingsInconsistency( string const & fractureName,
+void fixNeighborMappingsInconsistency( GEOS_MAYBE_UNUSED string const & fractureName,
                                        FixedToManyElementRelation const & elem2dToElems3d,
                                        FaceElementSubRegion::FaceMapType & elem2dToFaces )
 {
+  GEOS_MAYBE_UNUSED static constexpr std::string_view mappingInconsistency= "Mapping neighbor inconsistency detected for fracture {}.";
   {
     localIndex const num2dElems = elem2dToFaces.size( 0 );
     for( int e2d = 0; e2d < num2dElems; ++e2d )
@@ -486,9 +487,9 @@ void fixNeighborMappingsInconsistency( string const & fractureName,
         {
           std::swap( elem2dToFaces[e2d][0], elem2dToFaces[e2d][1] );
         }
-        else if( !matchStraight )
+        else
         {
-          GEOS_ERROR( "Mapping neighbor inconsistency detected for fracture " << fractureName );
+          GEOS_ERROR_IF( !matchStraight, GEOS_FMT( mappingInconsistency, fractureName ) );
         }
       }
     }
@@ -608,7 +609,7 @@ buildCollocatedEdgeBuckets( std::map< globalIndex, globalIndex > const & referen
   std::map< std::pair< globalIndex, globalIndex >, std::set< localIndex > > collocatedEdgeBuckets;
   for( auto const & p: edgesIds )
   {
-    static constexpr std::string_view nodeNotFound = "Internal error when trying to access the reference collocated node for global node {}.";
+    GEOS_MAYBE_UNUSED static constexpr std::string_view nodeNotFound = "Internal error when trying to access the reference collocated node for global node {}.";
 
     std::pair< globalIndex, globalIndex > const & nodes = p.first;
     localIndex const & edge = p.second;

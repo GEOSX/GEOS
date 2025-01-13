@@ -751,6 +751,29 @@ real64 PhysicsSolverBase::eisenstatWalker( real64 const newNewtonNorm,
   return krylovTol;
 }
 
+
+void MemoryUsageOutput( std::string const & message )
+{
+#if defined( GEOS_USE_HIP )
+  size_t free, total;
+
+  for( int rank=0; rank < MpiWrapper::commSize(); ++rank )
+  {
+    MpiWrapper::barrier();
+    if( rank == MpiWrapper::commRank() )
+    {
+      hipError_t const err = hipMemGetInfo( &free, &total );
+      std::cout << std::fixed << std::setprecision(3)
+                << "Rank " << rank
+                << " - " << message
+                << " - allocated memory: " << static_cast<double>(total - free) / (1 << 30)
+                << " GiB" << std::endl;
+    }
+  }
+#endif
+}
+
+
 real64 PhysicsSolverBase::nonlinearImplicitStep( real64 const & time_n,
                                                  real64 const & dt,
                                                  integer const cycleNumber,
@@ -760,6 +783,10 @@ real64 PhysicsSolverBase::nonlinearImplicitStep( real64 const & time_n,
   // dt may be cut during the course of this step, so we are keeping a local
   // value to track the achieved dt for this step.
   real64 stepDt = dt;
+
+
+  MemoryUsageOutput("Breakpoint 01");
+
 
   integer const maxNumberDtCuts = m_nonlinearSolverParameters.m_maxTimeStepCuts;
   real64 const dtCutFactor = m_nonlinearSolverParameters.m_timeStepCutFactor;
@@ -778,6 +805,9 @@ real64 PhysicsSolverBase::nonlinearImplicitStep( real64 const & time_n,
   // required.
   for( dtAttempt = 0; dtAttempt < maxNumberDtCuts; ++dtAttempt )
   {
+
+    MemoryUsageOutput("Breakpoint 02-" + std::to_string(dtAttempt));
+
     // reset the solver state, since we are restarting the time step
     if( dtAttempt > 0 )
     {
@@ -887,6 +917,8 @@ bool PhysicsSolverBase::solveNonlinearSystem( real64 const & time_n,
   for( newtonIter = 0; newtonIter < maxNewtonIter; ++newtonIter )
   {
 
+    MemoryUsageOutput("PhysicsSolverBase::solveNonlinearSystem-01 newtonIter:" + std::to_string(newtonIter));
+
     GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::NonlinearSolver,
                                 GEOS_FMT( "    Attempt: {:2}, ConfigurationIter: {:2}, NewtonIter: {:2}", dtAttempt, configurationLoopIter, newtonIter ) );
 
@@ -912,6 +944,8 @@ bool PhysicsSolverBase::solveNonlinearSystem( real64 const & time_n,
                       m_localMatrix.toViewConstSizes(),
                       localRhs );
 
+    MemoryUsageOutput("PhysicsSolverBase::solveNonlinearSystem-02 newtonIter:" + std::to_string(newtonIter));
+
       // apply boundary conditions to system
       applyBoundaryConditions( time_n,
                                stepDt,
@@ -921,6 +955,8 @@ bool PhysicsSolverBase::solveNonlinearSystem( real64 const & time_n,
                                localRhs );
 
       m_rhs.close();
+
+      MemoryUsageOutput("PhysicsSolverBase::solveNonlinearSystem-03 newtonIter:" + std::to_string(newtonIter));
 
       if( m_assemblyCallback )
       {
@@ -937,6 +973,8 @@ bool PhysicsSolverBase::solveNonlinearSystem( real64 const & time_n,
 
       // get residual norm
       residualNorm = calculateResidualNorm( time_n, stepDt, domain, m_dofManager, m_rhs.values() );
+      MemoryUsageOutput("PhysicsSolverBase::solveNonlinearSystem-04 newtonIter:" + std::to_string(newtonIter));
+
       GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Convergence, GEOS_FMT( "        ( R ) = ( {:4.2e} )", residualNorm ) );
     }
 
@@ -1011,6 +1049,8 @@ bool PhysicsSolverBase::solveNonlinearSystem( real64 const & time_n,
     }
 
     {
+      MemoryUsageOutput("PhysicsSolverBase::solveNonlinearSystem-05 newtonIter:" + std::to_string(newtonIter));
+
       Timer timer( m_timers["linear solver total"] );
 
       // if using adaptive Krylov tolerance scheme, update tolerance.
@@ -1032,16 +1072,21 @@ bool PhysicsSolverBase::solveNonlinearSystem( real64 const & time_n,
         // Compose parallel LA matrix/rhs out of local LA matrix/rhs
         //
         m_matrix.create( m_localMatrix.toViewConst(), m_dofManager.numLocalDofs(), MPI_COMM_GEOS );
+        MemoryUsageOutput("PhysicsSolverBase::solveNonlinearSystem-06 newtonIter:" + std::to_string(newtonIter));
+
       }
 
       // Output the linear system matrix/rhs for debugging purposes
       debugOutputSystem( time_n, cycleNumber, newtonIter, m_matrix, m_rhs );
 
       // Solve the linear system
+      MemoryUsageOutput("PhysicsSolverBase::solveNonlinearSystem-07 newtonIter:" + std::to_string(newtonIter));
       solveLinearSystem( m_dofManager, m_matrix, m_rhs, m_solution );
+      MemoryUsageOutput("PhysicsSolverBase::solveNonlinearSystem-08 newtonIter:" + std::to_string(newtonIter));
 
       // Increment the solver statistics for reporting purposes
       m_solverStatistics.logNonlinearIteration( m_linearSolverResult.numIterations );
+      MemoryUsageOutput("PhysicsSolverBase::solveNonlinearSystem-09 newtonIter:" + std::to_string(newtonIter));
 
       // Output the linear system solution for debugging purposes
       debugOutputSolution( time_n, cycleNumber, newtonIter, m_solution );
@@ -1064,6 +1109,7 @@ bool PhysicsSolverBase::solveNonlinearSystem( real64 const & time_n,
 
       // apply the system solution to the fields/variables
       applySystemSolution( m_dofManager, m_solution.values(), scaleFactor, stepDt, domain );
+      MemoryUsageOutput("PhysicsSolverBase::solveNonlinearSystem-10 newtonIter:" + std::to_string(newtonIter));
     }
 
     {
@@ -1075,6 +1121,8 @@ bool PhysicsSolverBase::solveNonlinearSystem( real64 const & time_n,
 
     lastResidual = residualNorm;
   }
+
+  MemoryUsageOutput("PhysicsSolverBase::solveNonlinearSystem-11: exit");
 
   return isNewtonConverged;
 }

@@ -20,6 +20,7 @@
 #ifndef GEOS_LINEARALGEBRA_INTERFACES_SUITESPARSE_HPP_
 #define GEOS_LINEARALGEBRA_INTERFACES_SUITESPARSE_HPP_
 
+#if defined(suitesparse_VERSION)
 #include "common/DataTypes.hpp"
 #include "common/LinearSolverBase.hpp"
 #include "common/PreconditionerBase.hpp"
@@ -142,4 +143,5 @@ private:
 
 }
 
+#endif /* if defined(suitesparse_VERSION) */
 #endif /*GEOS_LINEARALGEBRA_INTERFACES_SUITESPARSE_HPP_*/

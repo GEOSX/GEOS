@@ -174,7 +174,7 @@ void FaceManager::setGeometricalRelations( CellBlockManagerABC const & cellBlock
       return;
     }
 
-    constexpr char err[] = "Internal error when trying to connect matrix mapping and fracture mapping. Face {} seems wrongly connected.";
+    GEOS_MAYBE_UNUSED constexpr char err[] = "Internal error when trying to connect matrix mapping and fracture mapping. Face {} seems wrongly connected.";
 
     FaceElementSubRegion const & subRegion = region.getUniqueSubRegion< FaceElementSubRegion >();
     int const esr = 0;  // Since there's only on unique subregion, the index is always 0.

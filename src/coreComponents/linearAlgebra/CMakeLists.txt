@@ -38,7 +38,6 @@ set( linearAlgebra_headers
      solvers/BicgstabSolver.hpp
      solvers/BlockPreconditioner.hpp
      solvers/CgSolver.hpp
-     solvers/GmresSolver.hpp
      solvers/KrylovSolver.hpp
      solvers/KrylovUtils.hpp
      solvers/PreconditionerBlockJacobi.hpp
@@ -60,6 +59,12 @@ set( linearAlgebra_headers
      utilities/NormalOperator.hpp
      utilities/ReverseCutHillMcKeeOrdering.hpp
      utilities/TransposeOperator.hpp )
+
+# Workaround for link issue with cce-18
+if( NOT ${ENABLE_HIP} )
+    list( APPEND linearAlgebra_headers solvers/GmresSolver.hpp )
+endif()
+
 #
 # Specify all sources
 #
@@ -68,26 +73,31 @@ set( linearAlgebra_sources
      solvers/BicgstabSolver.cpp
      solvers/BlockPreconditioner.cpp
      solvers/CgSolver.cpp
-     solvers/GmresSolver.cpp
      solvers/KrylovSolver.cpp
      solvers/SeparateComponentPreconditioner.cpp
      utilities/ReverseCutHillMcKeeOrdering.cpp )
 
+# Workaround for link issue with cce-18
+if( NOT ${ENABLE_HIP} )
+    list( APPEND linearAlgebra_sources solvers/GmresSolver.hpp )
+endif()
+
 set( dependencyList ${parallelDeps} mesh denseLinearAlgebra finiteVolume )
 set( tplDependencyList "" )
 
-list( APPEND linearAlgebra_headers interfaces/direct/SuiteSparse.hpp )
-list( APPEND linearAlgebra_sources interfaces/direct/SuiteSparse.cpp )
-list( APPEND tplDependencyList suitesparse )
+if( ENABLE_SUITESPARSE )
+    list( APPEND linearAlgebra_headers interfaces/direct/SuiteSparse.hpp )
+    list( APPEND linearAlgebra_sources interfaces/direct/SuiteSparse.cpp )
+    list( APPEND tplDependencyList suitesparse )
+endif( )
 
 if( ENABLE_SUPERLU_DIST )
-      list( APPEND linearAlgebra_headers interfaces/direct/SuperLUDist.hpp )
-      list( APPEND linearAlgebra_sources interfaces/direct/SuperLUDist.cpp )
-      list( APPEND tplDependencyList superlu_dist )
+    list( APPEND linearAlgebra_headers interfaces/direct/SuperLUDist.hpp )
+    list( APPEND linearAlgebra_sources interfaces/direct/SuperLUDist.cpp )
+    list( APPEND tplDependencyList superlu_dist )
 endif( )
 
 if( ENABLE_TRILINOS )
-
     list( APPEND linearAlgebra_headers
           interfaces/trilinos/EpetraExport.hpp
           interfaces/trilinos/EpetraMatrix.hpp
@@ -106,11 +116,9 @@ if( ENABLE_TRILINOS )
           interfaces/trilinos/TrilinosSolver.cpp )
 
     list( APPEND tplDependencyList trilinos )
-
 endif()
 
 if( ENABLE_HYPRE )
-
     list( APPEND linearAlgebra_headers
           interfaces/hypre/HypreExport.hpp
           interfaces/hypre/HypreInterface.hpp
@@ -151,11 +159,9 @@ if( ENABLE_HYPRE )
           interfaces/hypre/HypreVector.cpp )
 
     list( APPEND tplDependencyList hypre umpire )
-
 endif()
 
 if( ENABLE_PETSC )
-
     list( APPEND linearAlgebra_headers
           interfaces/petsc/PetscExport.hpp
           interfaces/petsc/PetscInterface.hpp
@@ -174,7 +180,6 @@ if( ENABLE_PETSC )
           interfaces/petsc/PetscVector.cpp )
 
     list( APPEND tplDependencyList petsc )
-
 endif()
 
 geos_decorate_link_dependencies( LIST decoratedDependencies
@@ -195,4 +200,3 @@ install( TARGETS linearAlgebra LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib )
 if( GEOS_ENABLE_TESTS )
   add_subdirectory( unitTests )
 endif( )
-

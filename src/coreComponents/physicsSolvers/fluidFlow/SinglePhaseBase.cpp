@@ -996,7 +996,7 @@ void SinglePhaseBase::applySourceFluxBC( real64 const time_n,
                                                     mesh,
                                                     SourceFluxBoundaryCondition::catalogName(),
                                                     [&, isThermal]( SourceFluxBoundaryCondition const & fs,
-                                                                    string const & setName,
+                                                                    GEOS_MAYBE_UNUSED string const & setName,
                                                                     SortedArrayView< localIndex const > const & targetSet,
                                                                     ElementSubRegionBase & subRegion,
                                                                     string const & )

@@ -125,7 +125,7 @@ void SourceFluxStatsAggregator::registerDataOnMesh( Group & meshBodies )
 }
 
 void SourceFluxStatsAggregator::writeStatsToLog( integer minLogLevel,
-                                                 string_view elementSetName,
+                                                 GEOS_MAYBE_UNUSED string_view elementSetName,
                                                  WrappedStats const & wrappedStats )
 {
   if( getLogLevel() >= minLogLevel && logger::internal::rank == 0 )
@@ -135,7 +135,7 @@ void SourceFluxStatsAggregator::writeStatsToLog( integer minLogLevel,
                              wrappedStats.stats().m_elementCount ) );
 
     // we want to format differently if we have got multiple phases or not
-    string_view massUnit = units::getSymbol( m_solver->getMassUnit() );
+    GEOS_MAYBE_UNUSED string_view massUnit = units::getSymbol( m_solver->getMassUnit() );
     if( wrappedStats.stats().m_producedMass.size() == 1 )
     {
       GEOS_LOG_RANK( GEOS_FMT( "{} {} (of {}, in {}): Produced mass = {} {}",

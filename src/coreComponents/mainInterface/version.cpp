@@ -60,10 +60,14 @@ static std::string getGpuCompilerIdString()
 
 #if defined( GEOS_USE_CUDA )
   oss << "  - CUDA compiler version: " << CUDA_VERSION/10/100 << "." << CUDA_VERSION/10%100;
+
+#elif defined( GEOS_USE_HIP )
+  oss << "  - HIP compiler version: "
+      << HIP_VERSION_MAJOR << "."
+      << HIP_VERSION_MINOR << "."
+      << HIP_VERSION_PATCH;
 #endif
-#if defined( GEOS_USE_HIP )
-  oss << "  - ROCm compiler version: " << ROCM_VERSION/100/100 << "." << ROCM_VERSION/100%100;
-#endif
+
   return oss.str();
 }
 
@@ -72,13 +76,13 @@ void outputVersionInfo()
 
   GEOS_LOG_RANK_0( "GEOS version: " << getVersion() );
 
-  GEOS_LOG_RANK_0( "  - c++ compiler: " << getCppCompilerIdString() );
+  GEOS_LOG_RANK_0( "  - C++ compiler: " << getCppCompilerIdString() );
 
   std::string const gpuCompilerIdString = getGpuCompilerIdString();
   GEOS_LOG_RANK_0_IF( !gpuCompilerIdString.empty(), gpuCompilerIdString );
 
 #if defined(_OPENMP)
-  GEOS_LOG_RANK_0( "  - openmp version: " << _OPENMP );
+  GEOS_LOG_RANK_0( "  - OpenMP version: " << _OPENMP );
 #endif
 
 #if defined(GEOS_USE_MPI)
@@ -107,11 +111,11 @@ void outputVersionInfo()
 #endif
 
 #if defined(umpire_VERSION)
-  GEOS_LOG_RANK_0( "  - umpire version: " << STRINGIZE( umpire_VERSION ) );
+  GEOS_LOG_RANK_0( "  - Umpire version: " << STRINGIZE( umpire_VERSION ) );
 #endif
 
 #if defined(chai_VERSION)
-  GEOS_LOG_RANK_0( "  - chai version: " << STRINGIZE( chai_VERSION ) );
+  GEOS_LOG_RANK_0( "  - CHAI version: " << STRINGIZE( chai_VERSION ) );
 #endif
 
 #if defined(adiak_VERSION)
@@ -119,7 +123,7 @@ void outputVersionInfo()
 #endif
 
 #if defined(caliper_VERSION)
-  GEOS_LOG_RANK_0( "  - caliper version: " << STRINGIZE( caliper_VERSION ) );
+  GEOS_LOG_RANK_0( "  - Caliper version: " << STRINGIZE( caliper_VERSION ) );
 #endif
 
 #if defined(metis_VERSION)
@@ -127,23 +131,23 @@ void outputVersionInfo()
 #endif
 
 #if defined(parmetis_VERSION)
-  GEOS_LOG_RANK_0( "  - PARAMETIS version: " << STRINGIZE( parmetis_VERSION ) );
+  GEOS_LOG_RANK_0( "  - PARMETIS version: " << STRINGIZE( parmetis_VERSION ) );
 #endif
 
 #if defined(scotch_VERSION)
-  GEOS_LOG_RANK_0( "  - scotch version: " << STRINGIZE( scotch_VERSION ) );
+  GEOS_LOG_RANK_0( "  - Scotch version: " << STRINGIZE( scotch_VERSION ) );
 #endif
 
 #if defined(superlu_dist_VERSION)
-  GEOS_LOG_RANK_0( "  - superlu_dist version: " << STRINGIZE( superlu_dist_VERSION ) );
+  GEOS_LOG_RANK_0( "  - SuperLU_Dist version: " << STRINGIZE( superlu_dist_VERSION ) );
 #endif
 
 #if defined(suitesparse_VERSION)
-  GEOS_LOG_RANK_0( "  - suitesparse version: " << STRINGIZE( suitesparse_VERSION ) );
+  GEOS_LOG_RANK_0( "  - SuiteSparse version: " << STRINGIZE( suitesparse_VERSION ) );
 #endif
 
 #if defined(hypre_VERSION)
-  GEOS_LOG_RANK_0( "  - hypre version: " << STRINGIZE( hypre_VERSION ) );
+  GEOS_LOG_RANK_0( "  - HYPRE version: " << STRINGIZE( hypre_VERSION ) );
 #endif
 
 #if defined(trilinos_VERSION)
@@ -151,7 +155,7 @@ void outputVersionInfo()
 #endif
 
 #if defined(petsc_VERSION)
-  GEOS_LOG_RANK_0( "  - petsc version: " << STRINGIZE( petsc_VERSION ) );
+  GEOS_LOG_RANK_0( "  - PETSc version: " << STRINGIZE( petsc_VERSION ) );
 #endif
 
 #if defined(Python3_VERSION)
@@ -167,11 +171,11 @@ void outputVersionInfo()
   defined(GEOS_USE_HYPRE) && \
   ( GEOS_USE_HYPRE_DEVICE == GEOS_USE_HYPRE_CPU )
   GEOS_LOG_RANK_0( "" );
-  GEOS_LOG_RANK_0( "**************************************************" );
-  GEOS_LOG_RANK_0( "*                   WARNING!!!                   *" );
-  GEOS_LOG_RANK_0( "*                                                *" );
-  GEOS_LOG_RANK_0( "*  GEOS has GPU support enabled, but not HYPRE!  *" );
-  GEOS_LOG_RANK_0( "**************************************************" );
+  GEOS_LOG_RANK_0( "*******************************************************" );
+  GEOS_LOG_RANK_0( "*                   WARNING!!!                        *" );
+  GEOS_LOG_RANK_0( "*                                                     *" );
+  GEOS_LOG_RANK_0( "*  GEOS has GPU support enabled, but HYPRE does not!  *" );
+  GEOS_LOG_RANK_0( "*******************************************************" );
   GEOS_LOG_RANK_0( "" );
 #endif
 

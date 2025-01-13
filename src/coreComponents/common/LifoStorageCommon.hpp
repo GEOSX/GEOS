@@ -164,7 +164,7 @@ public:
     GEOS_ERROR( "To use LifoStorage, both _SC_AVPHYS_PAGES and _SC_PAGESIZE must be defined." );
 #endif
     int numberOfBuffersToStoreOnHost = std::max( 1, std::min( ( int )( 0.01 * percent * free / bufferSize ), maxNumberOfBuffers - numberOfBuffersToStoreOnDevice ) );
-    double freeGB = ( ( double ) free ) / ( 1024.0 * 1024.0 * 1024.0 ) / MpiWrapper::nodeCommSize();
+    GEOS_MAYBE_UNUSED double freeGB = ( ( double ) free ) / ( 1024.0 * 1024.0 * 1024.0 ) / MpiWrapper::nodeCommSize();
     LIFO_LOG_RANK( " LIFO : available memory on host " << freeGB << " GB" );
     return numberOfBuffersToStoreOnHost;
   }
