@@ -208,23 +208,41 @@ void FieldSpecificationManager::validateBoundaryConditions( MeshLevel & mesh ) c
       else
       {
         fieldNameNotFoundMessage << GEOS_FMT( "Available fields in {} are:\n", fs.getObjectPath());
-        bool stopIteration = false;
-        ElementRegionManager const & elemRegionGroup = mesh.getElemManager();
-        elemRegionGroup.forElementRegions( [&]( ElementRegionBase const & elemRegion )
+        //bool stopIteration = false;
+        // ElementRegionManager const & elemRegionGroup = mesh.getElemManager();
+        std::set< string > fieldNameAvail;
+        this->forSubGroups< FieldSpecificationBase >( [&] ( FieldSpecificationBase const & fs2 )
         {
-          if( stopIteration )
-            return;
-          auto const & subCellRegion = elemRegion.getSubRegion< CellElementSubRegion >( 0 );
-          if( !subCellRegion.hasWrapper( fs.getFieldName() ) )
+          fs2.apply< dataRepository::Group >( mesh,
+                                              [&]( FieldSpecificationBase const &,
+                                                   string const & setName,
+                                                   SortedArrayView< localIndex const > const & targetSet,
+                                                   Group & targetGroup,
+                                                   string const fieldName )
           {
-            stopIteration = true;
-            for( auto const & wrapperIter : subCellRegion.wrappers() )
+            dataRepository::InputFlags const flag = fs2.getWrapper< string >( FieldSpecificationBase::viewKeyStruct::fieldNameString() ).getInputFlag();
+            GEOS_UNUSED_VAR( setName );
+            GEOS_UNUSED_VAR( isTargetSetCreated );
+            GEOS_UNUSED_VAR( targetSet );
+            if( targetGroup.hasWrapper( fieldName ) ||
+                flag == InputFlags::FALSE ||
+                targetGroup.getName() == MeshLevel::groupStructKeys::faceManagerString() )
             {
-              auto const & wrapper = wrapperIter.second;
-              fieldNameNotFoundMessage << wrapper->getName() <<  " ";
+              fieldNameAvail.insert( fieldName );
+              std::cout << " targetGroup  " << targetGroup.getName() << " fieldName " << fieldName << std::endl;
             }
-          }
+
+          } );
         } );
+        for( auto it=fieldNameAvail.begin(); it!=fieldNameAvail.end(); ++it )
+        {
+          fieldNameNotFoundMessage << *it;
+          std::cout << " " << *it;
+          if( it != std::prev(fieldNameAvail.end()))
+          {
+            fieldNameNotFoundMessage << ", ";
+          }
+        }
 
         GEOS_THROW( fieldNameNotFoundMessage.str(), InputError );
       }
