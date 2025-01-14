@@ -28,8 +28,9 @@ ExternalDataSourceBase::ExternalDataSourceBase( string const & name, Group * con
 Group * ExternalDataSourceBase::createChild( string const & childKey, string const & childName )
 {
   GEOS_LOG_RANK_0( GEOS_FMT( "{}: adding {} {}", getName(), childKey, childName ) );
-  std::unique_ptr< ExternalDataSourceBase > event = ExternalDataSourceBase::CatalogInterface::factory( childKey, childName, this );
-  return &this->registerGroup< ExternalDataSourceBase >( childName, std::move( event ) );
+  std::unique_ptr< ExternalDataSourceBase > event =
+    ExternalDataSourceBase::CatalogInterface::factory( childKey, getDataContext(), childName, this );
+  return &this->registerGroup( childName, std::move( event ) );
 }
 
 void ExternalDataSourceBase::expandObjectCatalogs()

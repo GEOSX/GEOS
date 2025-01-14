@@ -43,7 +43,8 @@ MeshManager::~MeshManager()
 Group * MeshManager::createChild( string const & childKey, string const & childName )
 {
   GEOS_LOG_RANK_0( GEOS_FMT( "{}: adding {} {}", getName(), childKey, childName ) );
-  std::unique_ptr< MeshGeneratorBase > mesh = MeshGeneratorBase::CatalogInterface::factory( childKey, childName, this );
+  std::unique_ptr< MeshGeneratorBase > mesh =
+    MeshGeneratorBase::CatalogInterface::factory( childKey, getDataContext(), childName, this );
   return &this->registerGroup< MeshGeneratorBase >( childName, std::move( mesh ) );
 }
 
