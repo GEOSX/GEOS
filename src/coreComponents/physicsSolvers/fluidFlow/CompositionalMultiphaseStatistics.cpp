@@ -115,6 +115,68 @@ void CompositionalMultiphaseStatistics::registerDataOnMesh( Group & meshBodies )
         stats.immobilePhaseMass.resizeDimension< 0 >( numPhases );
         stats.componentMass.resizeDimension< 0, 1 >( numPhases, numComps );
 
+        if( m_writeCSV > 0 && MpiWrapper::commRank() == 0 )
+        {
+          auto addStatsValue = []( std::ostringstream & pstatsLayout, TableLayout & ptableLayout,
+                                   string const & description, string_view pmassUnit,
+                                   integer pnumPhases, integer pnumComps = 0 )
+          {
+            for( int ip = 0; ip < pnumPhases; ++ip )
+            {
+              if( pnumComps == 0 )
+              {
+                pstatsLayout << description << " (phase " << ip << ") [" << pmassUnit << "]";
+              }
+              else
+              {
+                for( int ic = 0; ic < pnumComps; ++ic )
+                {
+                  pstatsLayout << "Component " << ic << " (phase " << ip << ") mass [" << pmassUnit << "]";
+                  if( ic == 0 )
+                  {
+                    pstatsLayout << ",";
+                  }
+                }
+              }
+              if( ip == 0 )
+              {
+                pstatsLayout << ",";
+              }
+            }
+
+            ptableLayout.addToColumns( pstatsLayout.str());
+            pstatsLayout.str( "" );
+          };
+
+          string_view massUnit = units::getSymbol( m_solver->getMassUnit() );
+
+          TableLayout tableLayout( {
+              TableLayout::Column().setName( "Time [s]" ),
+              TableLayout::Column().setName( "Min pressure [Pa]" ),
+              TableLayout::Column().setName( "Average pressure [Pa]" ),
+              TableLayout::Column().setName( "Max pressure [Pa]" ),
+              TableLayout::Column().setName( "Min delta pressure [Pa]" ),
+              TableLayout::Column().setName( "Max delta pressure [Pa]" ),
+              TableLayout::Column().setName( "Min temperature [Pa]" ),
+              TableLayout::Column().setName( "Average temperature [Pa]" ),
+              TableLayout::Column().setName( "Max temperature [Pa]" ),
+              TableLayout::Column().setName( "Total dynamic pore volume [rm^3]" ),
+              TableLayout::Column().setName( GEOS_FMT( "Phase mass [{}] dynamic pore volume [rm^3]", massUnit ) ),
+            } );
+
+          std::ostringstream statsLayout;
+          addStatsValue( statsLayout, tableLayout, "Phase dynamic pore volume", massUnit, numPhases );
+          addStatsValue( statsLayout, tableLayout, "Phase", massUnit, numPhases );
+          addStatsValue( statsLayout, tableLayout, "Trapped phase mass (metric 1)", massUnit, numPhases );
+          addStatsValue( statsLayout, tableLayout, "Non-trapped phase mass (metric 1)", massUnit, numPhases );
+          addStatsValue( statsLayout, tableLayout, "Immobile phase mass (metric 2)", massUnit, numPhases );
+          addStatsValue( statsLayout, tableLayout, "Mobile phase mass (metric 2)", massUnit, numPhases );
+          addStatsValue( statsLayout, tableLayout, "Component", massUnit, numPhases, numComps );
+
+          std::ofstream outputFile( m_outputDir + "/" + regionNames[i] + ".csv" );
+          TableCSVFormatter csvFormatter( tableLayout );
+          outputFile << csvFormatter.headerToString();
+        }
       }
     }
   } );
@@ -406,37 +468,37 @@ void CompositionalMultiphaseStatistics::computeRegionStatistics( real64 const ti
     compPhaseStatsData.addRow( "Total dynamic pore volume [rm^3]", "all", CellType::MergeNext, stats.totalPoreVolume );
     compPhaseStatsData.addSeparator();
     compPhaseStatsData.addRow( "Phase dynamic pore volume: [rm^3]",
-                               stringutilities::joinLamda( phaseNames, "\n", []( auto data ) { return data[0]; } ),
+                               stringutilities::joinLambda( phaseNames, "\n", []( auto data ) { return data[0]; } ),
                                CellType::MergeNext,
-                               stringutilities::joinLamda( stats.phasePoreVolume, "\n", []( auto data ) { return data[0]; } ) );
+                               stringutilities::joinLambda( stats.phasePoreVolume, "\n", []( auto data ) { return data[0]; } ) );
     compPhaseStatsData.addSeparator();
 
     compPhaseStatsData.addRow( GEOS_FMT( "Phase mass [{}]", massUnit ),
-                               stringutilities::joinLamda( phaseNames, "\n", []( auto data ) { return data[0]; } ),
+                               stringutilities::joinLambda( phaseNames, "\n", []( auto data ) { return data[0]; } ),
                                CellType::MergeNext,
-                               stringutilities::joinLamda( stats.phaseMass, "\n", []( auto data ) { return data[0]; } ) );
+                               stringutilities::joinLambda( stats.phaseMass, "\n", []( auto data ) { return data[0]; } ) );
     compPhaseStatsData.addSeparator();
 
     compPhaseStatsData.addRow( GEOS_FMT( "Trapped phase mass (metric 1) [{}]", massUnit ),
-                               stringutilities::joinLamda( phaseNames, "\n", []( auto value ) { return value[0]; } ),
+                               stringutilities::joinLambda( phaseNames, "\n", []( auto value ) { return value[0]; } ),
                                CellType::MergeNext,
-                               stringutilities::joinLamda( stats.trappedPhaseMass, "\n", []( auto value ) { return value[0]; } ) );
+                               stringutilities::joinLambda( stats.trappedPhaseMass, "\n", []( auto value ) { return value[0]; } ) );
     compPhaseStatsData.addSeparator();
     compPhaseStatsData.addRow( GEOS_FMT( "nonTrappedPhaseMass [{}]", massUnit ),
-                               stringutilities::joinLamda( phaseNames, "\n", []( auto value ) { return value[0]; } ),
+                               stringutilities::joinLambda( phaseNames, "\n", []( auto value ) { return value[0]; } ),
                                CellType::MergeNext,
-                               stringutilities::joinLamda( nonTrappedPhaseMass, "\n", []( auto value ) { return value[0]; } ) );
+                               stringutilities::joinLambda( nonTrappedPhaseMass, "\n", []( auto value ) { return value[0]; } ) );
     compPhaseStatsData.addSeparator();
 
     compPhaseStatsData.addRow( GEOS_FMT( "Immobile phase mass (metric 2) [{}]", massUnit ),
-                               stringutilities::joinLamda( phaseNames, "\n", []( auto value ) { return value[0]; } ),
+                               stringutilities::joinLambda( phaseNames, "\n", []( auto value ) { return value[0]; } ),
                                CellType::MergeNext,
-                               stringutilities::joinLamda( stats.immobilePhaseMass, "\n", []( auto value ) { return value[0]; } )  );
+                               stringutilities::joinLambda( stats.immobilePhaseMass, "\n", []( auto value ) { return value[0]; } )  );
     compPhaseStatsData.addSeparator();
     compPhaseStatsData.addRow( GEOS_FMT( "Mobile phase mass (metric 2) [{}]", massUnit ),
-                               stringutilities::joinLamda( phaseNames, "\n", []( auto value ) { return value[0]; } ),
+                               stringutilities::joinLambda( phaseNames, "\n", []( auto value ) { return value[0]; } ),
                                CellType::MergeNext,
-                               stringutilities::joinLamda( mobilePhaseMass, "\n", []( auto value ) { return value[0]; } ) );
+                               stringutilities::joinLambda( mobilePhaseMass, "\n", []( auto value ) { return value[0]; } ) );
     compPhaseStatsData.addSeparator();
 
     compPhaseStatsData.addRow( GEOS_FMT( "Component mass [{}]", massUnit ),
@@ -451,67 +513,20 @@ void CompositionalMultiphaseStatistics::computeRegionStatistics( real64 const ti
 
     if( m_writeCSV > 0 && MpiWrapper::commRank() == 0 )
     {
-      auto addStatsValue = []( std::ostringstream & pstatsLayout, TableLayout & ptableLayout,
-                               string const & description, string_view pmassUnit,
-                               integer pnumPhases, integer pnumComps = 0 )
-      {
-        for( int ip = 0; ip < pnumPhases; ++ip )
-        {
-          if( pnumComps == 0 )
-          {
-            pstatsLayout << "," << description << " " << ip << " [" << pmassUnit << "]";
-          }
-          else
-          {
-            for( int ic = 0; ic < pnumComps; ++ic )
-            {
-              pstatsLayout << ",Component " << ic << " (phase " << ip << ") mass [" << pmassUnit << "]";
-            }
-          }
-        }
-
-        ptableLayout.addToColumns( pstatsLayout.str());
-        pstatsLayout.str( "" );
-      };
-
-      TableLayout tableLayout( {
-          TableLayout::Column().setName( "Time [s]" ),
-          TableLayout::Column().setName( "Min pressure [Pa]" ),
-          TableLayout::Column().setName( "Average pressure [Pa]" ),
-          TableLayout::Column().setName( "Max pressure [Pa]" ),
-          TableLayout::Column().setName( "Min delta pressure [Pa]" ),
-          TableLayout::Column().setName( "Max delta pressure [Pa]" ),
-          TableLayout::Column().setName( "Min temperature [Pa]]" ),
-          TableLayout::Column().setName( "Average temperature [Pa]" ),
-          TableLayout::Column().setName( "Max temperature [Pa]" ),
-          TableLayout::Column().setName( "Total dynamic pore volume [rm^3]" ),
-          TableLayout::Column().setName( GEOS_FMT( "Phase mass [{}] dynamic pore volume [rm^3]", massUnit ) ),
-        } );
-
-      std::ostringstream statsLayout;
-      addStatsValue( statsLayout, tableLayout, "Phase dynamic pore volume", massUnit, numPhases );
-      addStatsValue( statsLayout, tableLayout, "Phase mass", massUnit, numPhases );
-      addStatsValue( statsLayout, tableLayout, "Trapped phase mass (metric 1)", massUnit, numPhases );
-      addStatsValue( statsLayout, tableLayout, "Non-trapped phase mass (metric 1)", massUnit, numPhases );
-      addStatsValue( statsLayout, tableLayout, "Immobile phase mass (metric 2)", massUnit, numPhases );
-      addStatsValue( statsLayout, tableLayout, "Mobile phase mass (metric 2)", massUnit, numPhases );
-      addStatsValue( statsLayout, tableLayout, "Component", massUnit, numPhases, numComps );
-      tableLayout.addToColumns( statsLayout.str());
-
       TableData tableData;
       tableData.addRow( time, stats.minPressure, stats.averagePressure, stats.maxPressure, stats.minDeltaPressure, stats.maxDeltaPressure,
                         stats.minTemperature, stats.averageTemperature, stats.maxTemperature, stats.totalPoreVolume,
-                        stringutilities::joinLamda( stats.phasePoreVolume, "\n", []( auto data ) { return data[0]; } ),
-                        stringutilities::joinLamda( stats.phaseMass, "\n", []( auto data ) { return data[0]; } ),
-                        stringutilities::joinLamda( stats.trappedPhaseMass, "\n", []( auto value ) { return value[0]; } ),
-                        stringutilities::joinLamda( nonTrappedPhaseMass, "\n", []( auto value ) { return value[0]; } ),
-                        stringutilities::joinLamda( stats.immobilePhaseMass, "\n", []( auto value ) { return value[0]; } ),
-                        stringutilities::joinLamda( mobilePhaseMass, "\n", []( auto value ) { return value[0]; } ),
+                        stringutilities::joinLambda( stats.phasePoreVolume, "\n", []( auto data ) { return data[0]; } ),
+                        stringutilities::joinLambda( stats.phaseMass, "\n", []( auto data ) { return data[0]; } ),
+                        stringutilities::joinLambda( stats.trappedPhaseMass, "\n", []( auto value ) { return value[0]; } ),
+                        stringutilities::joinLambda( nonTrappedPhaseMass, "\n", []( auto value ) { return value[0]; } ),
+                        stringutilities::joinLambda( stats.immobilePhaseMass, "\n", []( auto value ) { return value[0]; } ),
+                        stringutilities::joinLambda( mobilePhaseMass, "\n", []( auto value ) { return value[0]; } ),
                         stringutilities::join( massValues, '\n' ) );
 
-      std::ofstream outputFile( m_outputDir + "/" + regionNames[i] + ".csv" );
-      TableCSVFormatter const csvOutput( tableLayout );
-      outputFile << csvOutput.toString( tableData );
+      std::ofstream outputFile( m_outputDir + "/" + regionNames[i] + ".csv", std::ios_base::app );
+      TableCSVFormatter const csvOutput;
+      outputFile << csvOutput.dataToString( tableData );
       outputFile.close();
     }
   }

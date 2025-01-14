@@ -395,7 +395,7 @@ void DomainPartition::outputPartitionInformation() const
 
         GEOS_LOG_RANK_0( "  MeshBody: " + meshBody.getName() + " MeshLevel: " + meshLevel.getName() + "\n" );
 
-        TableLayout layoutPartition( "Rank",
+        TableLayout layoutPartition( "Mesh partitionning over ranks",
                                      {" ",
                                       TableLayout::Column()
                                         .setName( "Nodes" )
