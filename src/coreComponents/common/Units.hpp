@@ -30,6 +30,7 @@ namespace geos
 namespace units
 {
 
+static constexpr double DarcyToSqM = 9.869233e-13;
 
 /**
  * @return the input Kelvin degrees converted in Celsius
