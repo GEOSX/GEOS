@@ -14,11 +14,11 @@
  */
 
 /**
- * @file H1_Tetrahedron_Lagrange1_Gauss1.hpp
+ * @file H1_Tetrahedron_Lagrange1_Gauss.hpp
  */
 
-#ifndef GEOS_FINITEELEMENT_ELEMENTFORMULATIONS_H1TETRAHEDRONLAGRANGE1GAUSS1_HPP_
-#define GEOS_FINITEELEMENT_ELEMENTFORMULATIONS_H1TETRAHEDRONLAGRANGE1GAUSS1_HPP_
+#ifndef GEOS_FINITEELEMENT_ELEMENTFORMULATIONS_H1TETRAHEDRONLAGRANGE1GAUSS_HPP_
+#define GEOS_FINITEELEMENT_ELEMENTFORMULATIONS_H1TETRAHEDRONLAGRANGE1GAUSS_HPP_
 
 #include "FiniteElementBase.hpp"
 #include "LagrangeBasis1.hpp"
@@ -28,8 +28,6 @@ namespace geos
 {
 namespace finiteElement
 {
-
-#define TETRAHEDRON_QUADRATURE_POINTS 14
 
 /**
  * This class contains the kernel accessible functions specific to the
@@ -48,7 +46,8 @@ namespace finiteElement
  *          0              1
  *
  */
-class H1_Tetrahedron_Lagrange1_Gauss1 final : public FiniteElementBase
+template< int NUM_Q_POINTS >
+class H1_Tetrahedron_Lagrange1_Gauss final : public FiniteElementBase
 {
 public:
 
@@ -65,19 +64,13 @@ public:
   constexpr static localIndex maxSupportPoints = numNodes;
 
   /// The number of quadrature points per element.
-#if TETRAHEDRON_QUADRATURE_POINTS == 14
-  constexpr static localIndex numQuadraturePoints = 14;
-#elif TETRAHEDRON_QUADRATURE_POINTS == 5
-  constexpr static localIndex numQuadraturePoints = 5;
-#elif TETRAHEDRON_QUADRATURE_POINTS == 1
-  constexpr static localIndex numQuadraturePoints = 1;
-#endif
+  constexpr static localIndex numQuadraturePoints = NUM_Q_POINTS;
 
   /// The number of sampling points per element.
   constexpr static int numSamplingPoints = numSamplingPointsPerDirection * numSamplingPointsPerDirection * numSamplingPointsPerDirection;
 
   GEOS_HOST_DEVICE
-  virtual ~H1_Tetrahedron_Lagrange1_Gauss1() override
+  virtual ~H1_Tetrahedron_Lagrange1_Gauss() override
   {}
 
   GEOS_HOST_DEVICE
@@ -342,32 +335,40 @@ private:
   inline
   constexpr static real64 quadratureWeight( localIndex const q )
   {
-
-#if TETRAHEDRON_QUADRATURE_POINTS == 14
-    real64 const w[numQuadraturePoints] = { 0.073493043116361949544,
-                                            0.073493043116361949544,
-                                            0.073493043116361949544,
-                                            0.073493043116361949544,
-                                            0.11268792571801585080,
-                                            0.11268792571801585080,
-                                            0.11268792571801585080,
-                                            0.11268792571801585080,
-                                            0.042546020777081466438,
-                                            0.042546020777081466438,
-                                            0.042546020777081466438,
-                                            0.042546020777081466438,
-                                            0.042546020777081466438,
-                                            0.042546020777081466438 };
-
-#elif TETRAHEDRON_QUADRATURE_POINTS == 5
-    real64 const w[numQuadraturePoints] = {-4.0/5.0, 9.0/20.0, 9.0/20.0, 9.0/20.0, 9.0/20.0 };
-
-#elif TETRAHEDRON_QUADRATURE_POINTS == 1
-    real64 const w[numQuadraturePoints] = { 1.0 };
-
-#endif
-
-    return w[q];
+    if constexpr (NUM_Q_POINTS == 1)
+    {
+      real64 const w[numQuadraturePoints] = { 1.0 };
+      return w[q];
+    }
+    else if constexpr (NUM_Q_POINTS == 5)
+    {
+      real64 const w[numQuadraturePoints] = {-4.0/5.0, 9.0/20.0, 9.0/20.0, 9.0/20.0, 9.0/20.0 };
+      return w[q];
+    }
+    else if constexpr (NUM_Q_POINTS == 14)
+    {
+      real64 const w[numQuadraturePoints] = { 0.073493043116361949544,
+                                              0.073493043116361949544,
+                                              0.073493043116361949544,
+                                              0.073493043116361949544,
+                                              0.11268792571801585080,
+                                              0.11268792571801585080,
+                                              0.11268792571801585080,
+                                              0.11268792571801585080,
+                                              0.042546020777081466438,
+                                              0.042546020777081466438,
+                                              0.042546020777081466438,
+                                              0.042546020777081466438,
+                                              0.042546020777081466438,
+                                              0.042546020777081466438 };
+      return w[q];
+    }
+    else
+    {
+      GEOS_UNUSED_VAR( q );
+      GEOS_ERROR( "NUM_Q_POINTS not available for this element type" );
+      return 0;
+    }
 
   }
 
@@ -382,32 +383,41 @@ private:
   constexpr static real64 quadratureParentCoords0( localIndex const q )
   {
 
+    if constexpr (NUM_Q_POINTS == 1)
+    {
+      real64 const qCoords[numQuadraturePoints] = { 1.0/4.0 };
+      return qCoords[q];
+    }
+    else if constexpr (NUM_Q_POINTS == 5)
+    {
+      real64 const qCoords[numQuadraturePoints] = { 1.0/4.0, 1.0/2.0, 1.0/6.0, 1.0/6.0, 1.0/6.0 };
+      return qCoords[q];
+    }
+    else if constexpr (NUM_Q_POINTS == 14)
+    {
+      real64 const qCoords[numQuadraturePoints] = { 0.72179424906732632079,
+                                                    0.092735250310891226402,
+                                                    0.092735250310891226402,
+                                                    0.092735250310891226402,
+                                                    0.067342242210098170608,
+                                                    0.31088591926330060980,
+                                                    0.31088591926330060980,
+                                                    0.31088591926330060980,
+                                                    0.045503704125649649492,
+                                                    0.045503704125649649492,
+                                                    0.045503704125649649492,
+                                                    0.45449629587435035051,
+                                                    0.45449629587435035051,
+                                                    0.45449629587435035051 };
+      return qCoords[q];
+    }
+    else
+    {
+      GEOS_UNUSED_VAR( q );
+      GEOS_ERROR( "NUM_Q_POINTS not available for this element type" );
+      return 0;
+    }
 
-#if TETRAHEDRON_QUADRATURE_POINTS == 14
-    real64 const qCoords[numQuadraturePoints] = { 0.72179424906732632079,
-                                                  0.092735250310891226402,
-                                                  0.092735250310891226402,
-                                                  0.092735250310891226402,
-                                                  0.067342242210098170608,
-                                                  0.31088591926330060980,
-                                                  0.31088591926330060980,
-                                                  0.31088591926330060980,
-                                                  0.045503704125649649492,
-                                                  0.045503704125649649492,
-                                                  0.045503704125649649492,
-                                                  0.45449629587435035051,
-                                                  0.45449629587435035051,
-                                                  0.45449629587435035051 };
-
-#elif TETRAHEDRON_QUADRATURE_POINTS == 5
-    real64 const qCoords[numQuadraturePoints] = { 1.0/4.0, 1.0/2.0, 1.0/6.0, 1.0/6.0, 1.0/6.0 };
-
-#elif TETRAHEDRON_QUADRATURE_POINTS == 1
-    real64 const qCoords[numQuadraturePoints] = { 1.0/4.0 };
-
-#endif
-
-    return qCoords[q];
   }
 
   /**
@@ -421,31 +431,41 @@ private:
   constexpr static real64 quadratureParentCoords1( localIndex const q )
   {
 
-#if TETRAHEDRON_QUADRATURE_POINTS == 14
-    real64 const qCoords[numQuadraturePoints] = { 0.092735250310891226402,
-                                                  0.72179424906732632079,
-                                                  0.092735250310891226402,
-                                                  0.092735250310891226402,
-                                                  0.31088591926330060980,
-                                                  0.067342242210098170608,
-                                                  0.31088591926330060980,
-                                                  0.31088591926330060980,
-                                                  0.045503704125649649492,
-                                                  0.45449629587435035051,
-                                                  0.45449629587435035051,
-                                                  0.045503704125649649492,
-                                                  0.045503704125649649492,
-                                                  0.45449629587435035051 };
+    if constexpr (NUM_Q_POINTS == 1)
+    {
+      real64 const qCoords[numQuadraturePoints] = { 1.0/4.0 };
+      return qCoords[q];
+    }
+    else if constexpr (NUM_Q_POINTS == 5)
+    {
+      real64 const qCoords[numQuadraturePoints] = { 1.0/4.0, 1.0/6.0, 1.0/2.0, 1.0/6.0, 1.0/6.0 };
+      return qCoords[q];
+    }
+    else if constexpr (NUM_Q_POINTS == 14)
+    {
+      real64 const qCoords[numQuadraturePoints] = { 0.092735250310891226402,
+                                                    0.72179424906732632079,
+                                                    0.092735250310891226402,
+                                                    0.092735250310891226402,
+                                                    0.31088591926330060980,
+                                                    0.067342242210098170608,
+                                                    0.31088591926330060980,
+                                                    0.31088591926330060980,
+                                                    0.045503704125649649492,
+                                                    0.45449629587435035051,
+                                                    0.45449629587435035051,
+                                                    0.045503704125649649492,
+                                                    0.045503704125649649492,
+                                                    0.45449629587435035051 };
+      return qCoords[q];
+    }
+    else
+    {
+      GEOS_UNUSED_VAR( q );
+      GEOS_ERROR( "NUM_Q_POINTS not available for this element type" );
+      return 0;
+    }
 
-#elif TETRAHEDRON_QUADRATURE_POINTS == 5
-    real64 const qCoords[numQuadraturePoints] = { 1.0/4.0, 1.0/6.0, 1.0/2.0, 1.0/6.0, 1.0/6.0 };
-
-#elif TETRAHEDRON_QUADRATURE_POINTS == 1
-    real64 const qCoords[numQuadraturePoints] = { 1.0/4.0 };
-
-#endif
-
-    return qCoords[q];
   }
 
   /**
@@ -459,31 +479,42 @@ private:
   constexpr static real64 quadratureParentCoords2( localIndex const q )
   {
 
-#if TETRAHEDRON_QUADRATURE_POINTS == 14
-    real64 const qCoords[numQuadraturePoints] = { 0.092735250310891226402,
-                                                  0.092735250310891226402,
-                                                  0.72179424906732632079,
-                                                  0.092735250310891226402,
-                                                  0.31088591926330060980,
-                                                  0.31088591926330060980,
-                                                  0.067342242210098170608,
-                                                  0.31088591926330060980,
-                                                  0.45449629587435035051,
-                                                  0.045503704125649649492,
-                                                  0.45449629587435035051,
-                                                  0.045503704125649649492,
-                                                  0.45449629587435035051,
-                                                  0.045503704125649649492 };
+    if constexpr (NUM_Q_POINTS == 1)
+    {
+      real64 const qCoords[numQuadraturePoints] = { 1.0/4.0 };
+      return qCoords[q];
+    }
+    else if constexpr (NUM_Q_POINTS == 5)
+    {
+      real64 const qCoords[numQuadraturePoints] = { 1.0/4.0, 1.0/6.0, 1.0/6.0, 1.0/2.0, 1.0/6.0 };
+      return qCoords[q];
+    }
+    else if constexpr (NUM_Q_POINTS == 14)
+    {
+      real64 const qCoords[numQuadraturePoints] = { 0.092735250310891226402,
+                                                    0.092735250310891226402,
+                                                    0.72179424906732632079,
+                                                    0.092735250310891226402,
+                                                    0.31088591926330060980,
+                                                    0.31088591926330060980,
+                                                    0.067342242210098170608,
+                                                    0.31088591926330060980,
+                                                    0.45449629587435035051,
+                                                    0.045503704125649649492,
+                                                    0.45449629587435035051,
+                                                    0.045503704125649649492,
+                                                    0.45449629587435035051,
+                                                    0.045503704125649649492 };
 
-#elif TETRAHEDRON_QUADRATURE_POINTS == 5
-    real64 const qCoords[numQuadraturePoints] = { 1.0/4.0, 1.0/6.0, 1.0/6.0, 1.0/2.0, 1.0/6.0 };
+      return qCoords[q];
+    }
+    else
+    {
+      GEOS_UNUSED_VAR( q );
+      GEOS_ERROR( "NUM_Q_POINTS not available for this element type" );
+      return 0;
+    }
 
-#elif TETRAHEDRON_QUADRATURE_POINTS == 1
-    real64 const qCoords[numQuadraturePoints] = { 1.0/4.0 };
-
-#endif
-
-    return qCoords[q];
   }
 
   /**
@@ -499,11 +530,12 @@ private:
 
 /// @cond Doxygen_Suppress
 
+template< int NUM_Q_POINTS >
 GEOS_HOST_DEVICE
 inline
 real64
-H1_Tetrahedron_Lagrange1_Gauss1::
-  determinantJacobianTransformation( real64 const (&X)[numNodes][3] )
+H1_Tetrahedron_Lagrange1_Gauss< NUM_Q_POINTS >::
+determinantJacobianTransformation( real64 const (&X)[numNodes][3] )
 {
   return ( X[1][0] - X[0][0] )*( ( X[2][1] - X[0][1] )*( X[3][2] - X[0][2] ) - ( X[3][1] - X[0][1] )*( X[2][2] - X[0][2] ) )
          + ( X[1][1] - X[0][1] )*( ( X[3][0] - X[0][0] )*( X[2][2] - X[0][2] ) - ( X[2][0] - X[0][0] )*( X[3][2] - X[0][2] ) )
@@ -512,12 +544,13 @@ H1_Tetrahedron_Lagrange1_Gauss1::
 
 //*************************************************************************************************
 
+template< int NUM_Q_POINTS >
 GEOS_HOST_DEVICE
 inline
 void
-H1_Tetrahedron_Lagrange1_Gauss1::
-  calcN( real64 const (&coords)[3],
-         real64 (& N)[numNodes] )
+H1_Tetrahedron_Lagrange1_Gauss< NUM_Q_POINTS >::
+calcN( real64 const (&coords)[3],
+       real64 (& N)[numNodes] )
 {
   real64 const r = coords[0];
   real64 const s = coords[1];
@@ -531,12 +564,13 @@ H1_Tetrahedron_Lagrange1_Gauss1::
 }
 
 
+template< int NUM_Q_POINTS >
 GEOS_HOST_DEVICE
 inline
 void
-H1_Tetrahedron_Lagrange1_Gauss1::
-  calcN( localIndex const q,
-         real64 (& N)[numNodes] )
+H1_Tetrahedron_Lagrange1_Gauss< NUM_Q_POINTS >::
+calcN( localIndex const q,
+       real64 (& N)[numNodes] )
 {
   real64 const pointCoord[3] = {quadratureParentCoords0( q ),
                                 quadratureParentCoords1( q ),
@@ -545,25 +579,27 @@ H1_Tetrahedron_Lagrange1_Gauss1::
   calcN( pointCoord, N );
 }
 
+template< int NUM_Q_POINTS >
 GEOS_HOST_DEVICE
 inline
-void H1_Tetrahedron_Lagrange1_Gauss1::
-  calcN( localIndex const q,
-         StackVariables const & GEOS_UNUSED_PARAM( stack ),
-         real64 ( & N )[numNodes] )
+void H1_Tetrahedron_Lagrange1_Gauss< NUM_Q_POINTS >::
+calcN( localIndex const q,
+       StackVariables const & GEOS_UNUSED_PARAM( stack ),
+       real64 ( & N )[numNodes] )
 {
   return calcN( q, N );
 }
 
 //*************************************************************************************************
 
+template< int NUM_Q_POINTS >
 GEOS_HOST_DEVICE
 inline
 real64
-H1_Tetrahedron_Lagrange1_Gauss1::
-  calcGradN( localIndex const q,
-             real64 const (&X)[numNodes][3],
-             real64 (& gradN)[numNodes][3] )
+H1_Tetrahedron_Lagrange1_Gauss< NUM_Q_POINTS >::
+calcGradN( localIndex const q,
+           real64 const (&X)[numNodes][3],
+           real64 (& gradN)[numNodes][3] )
 {
 
   gradN[0][0] =  X[1][1]*( X[3][2] - X[2][2] ) - X[2][1]*( X[3][2] - X[1][2] ) + X[3][1]*( X[2][2] - X[1][2] );
@@ -596,23 +632,25 @@ H1_Tetrahedron_Lagrange1_Gauss1::
   return detJ * weight * quadratureWeight( q );
 }
 
+template< int NUM_Q_POINTS >
 GEOS_HOST_DEVICE
 inline
-real64 H1_Tetrahedron_Lagrange1_Gauss1::
-  calcGradN( localIndex const q,
-             real64 const (&X)[numNodes][3],
-             StackVariables const & GEOS_UNUSED_PARAM( stack ),
-             real64 ( & gradN )[numNodes][3] )
+real64 H1_Tetrahedron_Lagrange1_Gauss< NUM_Q_POINTS >::
+calcGradN( localIndex const q,
+           real64 const (&X)[numNodes][3],
+           StackVariables const & GEOS_UNUSED_PARAM( stack ),
+           real64 ( & gradN )[numNodes][3] )
 {
   return calcGradN( q, X, gradN );
 }
 
+template< int NUM_Q_POINTS >
 GEOS_HOST_DEVICE
 inline
 real64
-H1_Tetrahedron_Lagrange1_Gauss1::calcGradFaceBubbleN( localIndex const q,
-                                                      real64 const (&X)[numNodes][3],
-                                                      real64 (& gradN)[numFaces][3] )
+H1_Tetrahedron_Lagrange1_Gauss< NUM_Q_POINTS >::calcGradFaceBubbleN( localIndex const q,
+                                                                     real64 const (&X)[numNodes][3],
+                                                                     real64 (& gradN)[numFaces][3] )
 {
 
   //real64 detJ = determinantJacobianTransformation( X );
@@ -667,12 +705,13 @@ H1_Tetrahedron_Lagrange1_Gauss1::calcGradFaceBubbleN( localIndex const q,
 
 //*************************************************************************************************
 
+template< int NUM_Q_POINTS >
 GEOS_HOST_DEVICE
 inline
 real64
-H1_Tetrahedron_Lagrange1_Gauss1::
-  transformedQuadratureWeight( localIndex const q,
-                               real64 const (&X)[numNodes][3] )
+H1_Tetrahedron_Lagrange1_Gauss< NUM_Q_POINTS >::
+transformedQuadratureWeight( localIndex const q,
+                             real64 const (&X)[numNodes][3] )
 {
 
   real64 detJ =  determinantJacobianTransformation( X );
@@ -682,9 +721,11 @@ H1_Tetrahedron_Lagrange1_Gauss1::
 
 /// @endcond
 
-#undef TETRAHEDRON_QUADRATURE_POINTS
+using H1_Tetrahedron_Lagrange1_Gauss1 = H1_Tetrahedron_Lagrange1_Gauss< 1 >;
+using H1_Tetrahedron_Lagrange1_Gauss5 = H1_Tetrahedron_Lagrange1_Gauss< 5 >;
+using H1_Tetrahedron_Lagrange1_Gauss14 = H1_Tetrahedron_Lagrange1_Gauss< 14 >;
 
 }
 }
 
-#endif //GEOS_FINITEELEMENT_ELEMENTFORMULATIONS_H1TETRAHEDRONLAGRANGE1GAUSS1_HPP_
+#endif //GEOS_FINITEELEMENT_ELEMENTFORMULATIONS_H1TETRAHEDRONLAGRANGE1GAUSS_HPP_

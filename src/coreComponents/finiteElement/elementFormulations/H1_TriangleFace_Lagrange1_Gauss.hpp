@@ -14,11 +14,11 @@
  */
 
 /**
- * @file H1_TriangleFace_Lagrange1_Gauss1.hpp
+ * @file H1_TriangleFace_Lagrange1_Gauss.hpp
  */
 
-#ifndef GEOS_FINITEELEMENT_ELEMENTFORMULATIONS_H1TRIANGLEFACELAGRANGE1GAUSS1_HPP_
-#define GEOS_FINITEELEMENT_ELEMENTFORMULATIONS_H1TRIANGLEFACELAGRANGE1GAUSS1_HPP_
+#ifndef GEOS_FINITEELEMENT_ELEMENTFORMULATIONS_H1TRIANGLEFACELAGRANGE1GAUSS_HPP_
+#define GEOS_FINITEELEMENT_ELEMENTFORMULATIONS_H1TRIANGLEFACELAGRANGE1GAUSS_HPP_
 
 #include "FiniteElementBase.hpp"
 #include "LagrangeBasis1.hpp"
@@ -28,8 +28,6 @@ namespace geos
 {
 namespace finiteElement
 {
-
-#define TRIANGLE_QUADRATURE_POINTS 4
 
 /**
  * This class contains the kernel accessible functions specific to the
@@ -49,7 +47,8 @@ namespace finiteElement
  *          0              1
  *
  */
-class H1_TriangleFace_Lagrange1_Gauss1 final : public FiniteElementBase
+template< int NUM_Q_POINTS >
+class H1_TriangleFace_Lagrange1_Gauss final : public FiniteElementBase
 {
 public:
 
@@ -62,16 +61,10 @@ public:
   constexpr static localIndex maxSupportPoints = numNodes;
 
   /// The number of quadrature points per element.
-#if TRIANGLE_QUADRATURE_POINTS == 6
-  constexpr static localIndex numQuadraturePoints = 6;
-#elif TRIANGLE_QUADRATURE_POINTS == 4
-  constexpr static localIndex numQuadraturePoints = 4;
-#elif TRIANGLE_QUADRATURE_POINTS == 1
-  constexpr static localIndex numQuadraturePoints = 1;
-#endif
+  constexpr static localIndex numQuadraturePoints = NUM_Q_POINTS;
 
   GEOS_HOST_DEVICE
-  virtual ~H1_TriangleFace_Lagrange1_Gauss1() override
+  virtual ~H1_TriangleFace_Lagrange1_Gauss() override
   {}
 
   GEOS_HOST_DEVICE
@@ -248,28 +241,35 @@ private:
   constexpr static real64 quadratureWeight( localIndex const q )
   {
 
-#if TRIANGLE_QUADRATURE_POINTS == 6
-    real64 const w[numQuadraturePoints] = { 1.0/6.0,
-                                            1.0/6.0,
-                                            1.0/6.0,
-                                            1.0/6.0,
-                                            1.0/6.0,
-                                            1.0/6.0 };
-
-#elif TRIANGLE_QUADRATURE_POINTS == 4
-
-    real64 const w[numQuadraturePoints] = {-0.562500000000000,
-                                           0.520833333333333,
-                                           0.520833333333333,
-                                           0.520833333333333 };
-
-#elif TRIANGLE_QUADRATURE_POINTS == 1
-
-    real64 const w[numQuadraturePoints] = { 1.0 };
-#endif
-
-    return w[q];
-
+    if constexpr (NUM_Q_POINTS == 1)
+    {
+      real64 const w[numQuadraturePoints] = { 1.0 };
+      return w[q];
+    }
+    else if constexpr (NUM_Q_POINTS == 4)
+    {
+      real64 const w[numQuadraturePoints] = {-0.562500000000000,
+                                             0.520833333333333,
+                                             0.520833333333333,
+                                             0.520833333333333 };
+      return w[q];
+    }
+    else if constexpr (NUM_Q_POINTS == 6)
+    {
+      real64 const w[numQuadraturePoints] = { 1.0/6.0,
+                                              1.0/6.0,
+                                              1.0/6.0,
+                                              1.0/6.0,
+                                              1.0/6.0,
+                                              1.0/6.0 };
+      return w[q];
+    }
+    else
+    {
+      GEOS_UNUSED_VAR( q );
+      GEOS_ERROR( "NUM_Q_POINTS not available for this element type" );
+      return 0;
+    }
   }
 
   /**
@@ -283,27 +283,35 @@ private:
   constexpr static real64 quadratureParentCoords0( localIndex const q )
   {
 
-#if TRIANGLE_QUADRATURE_POINTS == 6
-    real64 const qCoords[numQuadraturePoints] = { 0.659027622374092,
-                                                  0.109039009072877,
-                                                  0.231933368553031,
-                                                  0.659027622374092,
-                                                  0.109039009072877,
-                                                  0.231933368553031 };
-
-#elif TRIANGLE_QUADRATURE_POINTS == 4
-    real64 const qCoords[numQuadraturePoints] = { 0.333333333333333,
-                                                  0.600000000000000,
-                                                  0.200000000000000,
-                                                  0.200000000000000 };
-
-#elif TRIANGLE_QUADRATURE_POINTS == 1
-    real64 const qCoords[numQuadraturePoints] = { 1/3 };
-
-#endif
-
-
-    return qCoords[q];
+    if constexpr (NUM_Q_POINTS == 1)
+    {
+      real64 const qCoords[numQuadraturePoints] = { 1/3 };
+      return qCoords[q];
+    }
+    else if constexpr (NUM_Q_POINTS == 4)
+    {
+      real64 const qCoords[numQuadraturePoints] = { 0.333333333333333,
+                                                    0.600000000000000,
+                                                    0.200000000000000,
+                                                    0.200000000000000 };
+      return qCoords[q];
+    }
+    else if constexpr (NUM_Q_POINTS == 6)
+    {
+      real64 const qCoords[numQuadraturePoints] = { 0.659027622374092,
+                                                    0.109039009072877,
+                                                    0.231933368553031,
+                                                    0.659027622374092,
+                                                    0.109039009072877,
+                                                    0.231933368553031 };
+      return qCoords[q];
+    }
+    else
+    {
+      GEOS_UNUSED_VAR( q );
+      GEOS_ERROR( "NUM_Q_POINTS not available for this element type" );
+      return 0;
+    }
   }
 
   /**
@@ -317,53 +325,65 @@ private:
   constexpr static real64 quadratureParentCoords1( localIndex const q )
   {
 
-#if TRIANGLE_QUADRATURE_POINTS == 6
-    real64 const qCoords[numQuadraturePoints] = { 0.231933368553031,
-                                                  0.659027622374092,
-                                                  0.109039009072877,
-                                                  0.109039009072877,
-                                                  0.231933368553031,
-                                                  0.659027622374092 };
-
-#elif TRIANGLE_QUADRATURE_POINTS == 4
-    real64 const qCoords[numQuadraturePoints] = { 0.333333333333333,
-                                                  0.200000000000000,
-                                                  0.600000000000000,
-                                                  0.200000000000000 };
-
-#elif TRIANGLE_QUADRATURE_POINTS == 1
-    real64 const qCoords[numQuadraturePoints] = { 1/3 };
-
-#endif
-
-    return qCoords[q];
+    if constexpr (NUM_Q_POINTS == 1)
+    {
+      real64 const qCoords[numQuadraturePoints] = { 1/3 };
+      return qCoords[q];
+    }
+    else if constexpr (NUM_Q_POINTS == 4)
+    {
+      real64 const qCoords[numQuadraturePoints] = { 0.333333333333333,
+                                                    0.200000000000000,
+                                                    0.600000000000000,
+                                                    0.200000000000000 };
+      return qCoords[q];
+    }
+    else if constexpr (NUM_Q_POINTS == 6)
+    {
+      real64 const qCoords[numQuadraturePoints] = { 0.231933368553031,
+                                                    0.659027622374092,
+                                                    0.109039009072877,
+                                                    0.109039009072877,
+                                                    0.231933368553031,
+                                                    0.659027622374092 };
+      return qCoords[q];
+    }
+    else
+    {
+      GEOS_UNUSED_VAR( q );
+      GEOS_ERROR( "NUM_Q_POINTS not available for this element type" );
+      return 0;
+    }
   }
 
 };
 
 /// @cond Doxygen_Suppress
 
+
+template< int NUM_Q_POINTS >
 template< localIndex NUMDOFSPERTRIALSUPPORTPOINT, bool UPPER >
 GEOS_HOST_DEVICE
 inline
-void H1_TriangleFace_Lagrange1_Gauss1::
-  addGradGradStabilization( StackVariables const & stack,
-                            real64 ( & matrix )
-                            [maxSupportPoints * NUMDOFSPERTRIALSUPPORTPOINT]
-                            [maxSupportPoints * NUMDOFSPERTRIALSUPPORTPOINT],
-                            real64 const & scaleFactor )
+void H1_TriangleFace_Lagrange1_Gauss< NUM_Q_POINTS >::
+addGradGradStabilization( StackVariables const & stack,
+                          real64 ( & matrix )
+                          [maxSupportPoints * NUMDOFSPERTRIALSUPPORTPOINT]
+                          [maxSupportPoints * NUMDOFSPERTRIALSUPPORTPOINT],
+                          real64 const & scaleFactor )
 {
   GEOS_UNUSED_VAR( stack );
   GEOS_UNUSED_VAR( matrix );
   GEOS_UNUSED_VAR( scaleFactor );
 }
 
+template< int NUM_Q_POINTS >
 GEOS_HOST_DEVICE
 inline
 void
-H1_TriangleFace_Lagrange1_Gauss1::
-  calcN( real64 const (&coords)[2],
-         real64 ( & N )[numNodes] )
+H1_TriangleFace_Lagrange1_Gauss< NUM_Q_POINTS >::
+calcN( real64 const (&coords)[2],
+       real64 ( & N )[numNodes] )
 {
   real64 const r  = coords[0];
   real64 const s  = coords[1];
@@ -373,12 +393,13 @@ H1_TriangleFace_Lagrange1_Gauss1::
   N[2] = s;
 }
 
+template< int NUM_Q_POINTS >
 GEOS_HOST_DEVICE
 inline
 void
-H1_TriangleFace_Lagrange1_Gauss1::
-  calcN( localIndex const q,
-         real64 (& N)[numNodes] )
+H1_TriangleFace_Lagrange1_Gauss< NUM_Q_POINTS >::
+calcN( localIndex const q,
+       real64 (& N)[numNodes] )
 {
 
   real64 const qCoords[2] = {quadratureParentCoords0( q ), quadratureParentCoords1( q ) };
@@ -387,24 +408,26 @@ H1_TriangleFace_Lagrange1_Gauss1::
 
 }
 
+template< int NUM_Q_POINTS >
 GEOS_HOST_DEVICE
 inline
-void H1_TriangleFace_Lagrange1_Gauss1::
-  calcN( localIndex const q,
-         StackVariables const & GEOS_UNUSED_PARAM( stack ),
-         real64 ( & N )[numNodes] )
+void H1_TriangleFace_Lagrange1_Gauss< NUM_Q_POINTS >::
+calcN( localIndex const q,
+       StackVariables const & GEOS_UNUSED_PARAM( stack ),
+       real64 ( & N )[numNodes] )
 {
   return calcN( q, N );
 }
 
 //*************************************************************************************************
 
+template< int NUM_Q_POINTS >
 GEOS_HOST_DEVICE
 inline
 real64
-H1_TriangleFace_Lagrange1_Gauss1::
-  transformedQuadratureWeight( localIndex const q,
-                               real64 const (&X)[numNodes][3] )
+H1_TriangleFace_Lagrange1_Gauss< NUM_Q_POINTS >::
+transformedQuadratureWeight( localIndex const q,
+                             real64 const (&X)[numNodes][3] )
 {
   //GEOS_UNUSED_VAR( q );
   real64 n[3] = { ( X[1][1] - X[0][1] ) * ( X[2][2] - X[0][2] ) - ( X[2][1] - X[0][1] ) * ( X[1][2] - X[0][2] ),
@@ -416,8 +439,10 @@ H1_TriangleFace_Lagrange1_Gauss1::
 
 /// @endcond
 
-#undef TRIANGLE_QUADRATURE_POINTS
+using H1_TriangleFace_Lagrange1_Gauss1 = H1_TriangleFace_Lagrange1_Gauss< 1 >;
+using H1_TriangleFace_Lagrange1_Gauss4 = H1_TriangleFace_Lagrange1_Gauss< 4 >;
+using H1_TriangleFace_Lagrange1_Gauss6 = H1_TriangleFace_Lagrange1_Gauss< 6 >;
 
 }
 }
-#endif //GEOS_FINITEELEMENT_ELEMENTFORMULATIONS_H1TRIANGLEFACELAGRANGE1GAUSS1_HPP_
+#endif //GEOS_FINITEELEMENT_ELEMENTFORMULATIONS_H1TRIANGLEFACELAGRANGE1GAUSS_HPP_
