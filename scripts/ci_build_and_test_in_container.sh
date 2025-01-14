@@ -343,7 +343,7 @@ find . -name *.pyc | xargs rm -f
 
 # Clean the rst files
 echo "Cleaning the rst files..."
-or_die rm -rf ${GEOS_SRC_DIR}/docs/sphinx/datastructure
+or_die rm -rf ${GEOS_SRC_DIR}/src/docs/sphinx/datastructure
 
 # If we're here, either everything went OK or we have to deal with the integrated tests manually.
 if [[ ! -z "${INTEGRATED_TEST_EXIT_STATUS+x}" ]]; then
