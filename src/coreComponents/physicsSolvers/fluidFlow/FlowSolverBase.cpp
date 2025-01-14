@@ -365,6 +365,11 @@ void FlowSolverBase::initializePreSubGroups()
       }
     } );
   }
+  else
+  {
+    GEOS_ERROR( GEOS_FMT( "{}: can not find discretization named '{}' (a discretization deriving from FluxApproximationBase must be selected for {} solver '{}' )",
+                          getDataContext(), m_discretizationName, getCatalogName(), getName() ) );
+  }
 }
 
 void FlowSolverBase::validatePoreVolumes( DomainPartition const & domain ) const

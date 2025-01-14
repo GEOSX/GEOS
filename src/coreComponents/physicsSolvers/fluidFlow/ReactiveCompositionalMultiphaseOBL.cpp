@@ -121,20 +121,6 @@ ReactiveCompositionalMultiphaseOBL::ReactiveCompositionalMultiphaseOBL( const st
   m_linearSolverParameters.get().mgr.strategy = LinearSolverParameters::MGR::StrategyType::reactiveCompositionalMultiphaseOBL;
 }
 
-void ReactiveCompositionalMultiphaseOBL::initializePreSubGroups()
-{
-  FlowSolverBase::initializePreSubGroups();
-
-  DomainPartition & domain = this->getGroupByPath< DomainPartition >( "/Problem/domain" );
-  NumericalMethodsManager const & numericalMethodManager = domain.getNumericalMethodManager();
-  FiniteVolumeManager const & fvManager = numericalMethodManager.getFiniteVolumeManager();
-  if( !fvManager.hasGroup< FluxApproximationBase >( m_discretizationName ) )
-  {
-    GEOS_ERROR( "A discretization deriving from FluxApproximationBase must be selected with ReactiveCompositionalMultiphaseOBL" );
-  }
-
-}
-
 void ReactiveCompositionalMultiphaseOBL::setupDofs( DomainPartition const & domain,
                                                     DofManager & dofManager ) const
 {

@@ -162,15 +162,6 @@ void CompositionalMultiphaseFVM::initializePreSubGroups()
   m_linearSolverParameters.get().mgr.strategy = m_isThermal
                                                 ? LinearSolverParameters::MGR::StrategyType::thermalCompositionalMultiphaseFVM
                                                 : LinearSolverParameters::MGR::StrategyType::compositionalMultiphaseFVM;
-
-  DomainPartition & domain = this->getGroupByPath< DomainPartition >( "/Problem/domain" );
-  NumericalMethodsManager const & numericalMethodManager = domain.getNumericalMethodManager();
-  FiniteVolumeManager const & fvManager = numericalMethodManager.getFiniteVolumeManager();
-  if( !fvManager.hasGroup< FluxApproximationBase >( m_discretizationName ) )
-  {
-    GEOS_ERROR( "A discretization deriving from FluxApproximationBase must be selected with CompositionalMultiphaseFlow" );
-  }
-
 }
 
 void CompositionalMultiphaseFVM::setupDofs( DomainPartition const & domain,
