@@ -47,10 +47,16 @@ namespace finiteElement
  *          0              1
  *
  */
-template< int NUM_Q_POINTS >
+template< typename NUM_Q_POINTS >
 class H1_TriangleFace_Lagrange1_Gauss final : public FiniteElementBase
 {
 public:
+
+  /// Check that the number of quadrature points is valid.
+  static_assert( ( NUM_Q_POINTS::value == 1 ||
+                   NUM_Q_POINTS::value == 4 ||
+                   NUM_Q_POINTS::value == 6 ),
+                 "NUM_Q_POINTS::value must be 1, 4, or 6!" );
 
   /// The type of basis used for this element
   using BASIS = LagrangeBasis1;
@@ -61,7 +67,7 @@ public:
   constexpr static localIndex maxSupportPoints = numNodes;
 
   /// The number of quadrature points per element.
-  constexpr static localIndex numQuadraturePoints = NUM_Q_POINTS;
+  constexpr static localIndex numQuadraturePoints = NUM_Q_POINTS::value;
 
   GEOS_HOST_DEVICE
   virtual ~H1_TriangleFace_Lagrange1_Gauss() override
@@ -241,12 +247,12 @@ private:
   constexpr static real64 quadratureWeight( localIndex const q )
   {
 
-    if constexpr (NUM_Q_POINTS == 1)
+    if constexpr (numQuadraturePoints == 1)
     {
       real64 const w[numQuadraturePoints] = { 1.0 };
       return w[q];
     }
-    else if constexpr (NUM_Q_POINTS == 4)
+    else if constexpr (numQuadraturePoints == 4)
     {
       real64 const w[numQuadraturePoints] = {-0.562500000000000,
                                              0.520833333333333,
@@ -254,7 +260,7 @@ private:
                                              0.520833333333333 };
       return w[q];
     }
-    else if constexpr (NUM_Q_POINTS == 6)
+    else if constexpr (numQuadraturePoints == 6)
     {
       real64 const w[numQuadraturePoints] = { 1.0/6.0,
                                               1.0/6.0,
@@ -264,12 +270,7 @@ private:
                                               1.0/6.0 };
       return w[q];
     }
-    else
-    {
-      GEOS_UNUSED_VAR( q );
-      GEOS_ERROR( "NUM_Q_POINTS not available for this element type" );
-      return 0;
-    }
+
   }
 
   /**
@@ -283,12 +284,12 @@ private:
   constexpr static real64 quadratureParentCoords0( localIndex const q )
   {
 
-    if constexpr (NUM_Q_POINTS == 1)
+    if constexpr (numQuadraturePoints == 1)
     {
       real64 const qCoords[numQuadraturePoints] = { 1/3 };
       return qCoords[q];
     }
-    else if constexpr (NUM_Q_POINTS == 4)
+    else if constexpr (numQuadraturePoints == 4)
     {
       real64 const qCoords[numQuadraturePoints] = { 0.333333333333333,
                                                     0.600000000000000,
@@ -296,7 +297,7 @@ private:
                                                     0.200000000000000 };
       return qCoords[q];
     }
-    else if constexpr (NUM_Q_POINTS == 6)
+    else if constexpr (numQuadraturePoints == 6)
     {
       real64 const qCoords[numQuadraturePoints] = { 0.659027622374092,
                                                     0.109039009072877,
@@ -306,12 +307,7 @@ private:
                                                     0.231933368553031 };
       return qCoords[q];
     }
-    else
-    {
-      GEOS_UNUSED_VAR( q );
-      GEOS_ERROR( "NUM_Q_POINTS not available for this element type" );
-      return 0;
-    }
+
   }
 
   /**
@@ -325,12 +321,12 @@ private:
   constexpr static real64 quadratureParentCoords1( localIndex const q )
   {
 
-    if constexpr (NUM_Q_POINTS == 1)
+    if constexpr (numQuadraturePoints == 1)
     {
       real64 const qCoords[numQuadraturePoints] = { 1/3 };
       return qCoords[q];
     }
-    else if constexpr (NUM_Q_POINTS == 4)
+    else if constexpr (numQuadraturePoints == 4)
     {
       real64 const qCoords[numQuadraturePoints] = { 0.333333333333333,
                                                     0.200000000000000,
@@ -338,7 +334,7 @@ private:
                                                     0.200000000000000 };
       return qCoords[q];
     }
-    else if constexpr (NUM_Q_POINTS == 6)
+    else if constexpr (numQuadraturePoints == 6)
     {
       real64 const qCoords[numQuadraturePoints] = { 0.231933368553031,
                                                     0.659027622374092,
@@ -348,12 +344,7 @@ private:
                                                     0.659027622374092 };
       return qCoords[q];
     }
-    else
-    {
-      GEOS_UNUSED_VAR( q );
-      GEOS_ERROR( "NUM_Q_POINTS not available for this element type" );
-      return 0;
-    }
+
   }
 
 };
@@ -361,7 +352,7 @@ private:
 /// @cond Doxygen_Suppress
 
 
-template< int NUM_Q_POINTS >
+template< typename NUM_Q_POINTS >
 template< localIndex NUMDOFSPERTRIALSUPPORTPOINT, bool UPPER >
 GEOS_HOST_DEVICE
 inline
@@ -377,7 +368,7 @@ addGradGradStabilization( StackVariables const & stack,
   GEOS_UNUSED_VAR( scaleFactor );
 }
 
-template< int NUM_Q_POINTS >
+template< typename NUM_Q_POINTS >
 GEOS_HOST_DEVICE
 inline
 void
@@ -393,7 +384,7 @@ calcN( real64 const (&coords)[2],
   N[2] = s;
 }
 
-template< int NUM_Q_POINTS >
+template< typename NUM_Q_POINTS >
 GEOS_HOST_DEVICE
 inline
 void
@@ -408,7 +399,7 @@ calcN( localIndex const q,
 
 }
 
-template< int NUM_Q_POINTS >
+template< typename NUM_Q_POINTS >
 GEOS_HOST_DEVICE
 inline
 void H1_TriangleFace_Lagrange1_Gauss< NUM_Q_POINTS >::
@@ -421,7 +412,7 @@ calcN( localIndex const q,
 
 //*************************************************************************************************
 
-template< int NUM_Q_POINTS >
+template< typename NUM_Q_POINTS >
 GEOS_HOST_DEVICE
 inline
 real64
@@ -439,9 +430,13 @@ transformedQuadratureWeight( localIndex const q,
 
 /// @endcond
 
-using H1_TriangleFace_Lagrange1_Gauss1 = H1_TriangleFace_Lagrange1_Gauss< 1 >;
-using H1_TriangleFace_Lagrange1_Gauss4 = H1_TriangleFace_Lagrange1_Gauss< 4 >;
-using H1_TriangleFace_Lagrange1_Gauss6 = H1_TriangleFace_Lagrange1_Gauss< 6 >;
+/// @brief Istanciation of the class with 1 quadrature points.
+using H1_TriangleFace_Lagrange1_Gauss1 = H1_TriangleFace_Lagrange1_Gauss< std::integral_constant< int, 1 > >;
+/// @brief Istanciation of the class with 4 quadrature points.
+using H1_TriangleFace_Lagrange1_Gauss4 = H1_TriangleFace_Lagrange1_Gauss< std::integral_constant< int, 4 > >;
+/// @brief Istanciation of the class with 6 quadrature points.
+using H1_TriangleFace_Lagrange1_Gauss6 = H1_TriangleFace_Lagrange1_Gauss< std::integral_constant< int, 6 > >;
+
 
 }
 }
