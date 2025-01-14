@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -167,7 +167,17 @@ public:
   // miscellaneous getters
 
   GEOS_HOST_DEVICE
-  virtual void getElasticStiffness( localIndex const k, localIndex const q, real64 ( &stiffness )[6][6] ) const override;
+  virtual void getElasticStiffness( localIndex const k, localIndex const q, real64 ( &stiffness )[6][6] ) const override final;
+
+  GEOS_HOST_DEVICE
+  virtual void getElasticStrain( localIndex const k,
+                                 localIndex const q,
+                                 real64 ( &elasticStrain )[6] ) const override final;
+
+  GEOS_HOST_DEVICE
+  virtual void getElasticStrainInc( localIndex const k,
+                                    localIndex const q,
+                                    real64 ( &elasticStrainInc )[6] ) const override final;
 
   /**
    * @brief Getter for apparent shear modulus.
@@ -179,7 +189,17 @@ public:
     return LvArray::math::max( m_c44[k], m_c66[k] );
   }
 
+
 protected:
+
+  GEOS_HOST_DEVICE
+  virtual void computeElasticStrain( localIndex const k,
+                                     localIndex const q,
+                                     real64 const (&stress)[6],
+                                     real64 ( &elasticStrain )[6] ) const;
+
+
+private:
 
   /// A reference to the ArrayView holding c11 for each element.
   arrayView1d< real64 > const m_c11;
@@ -230,6 +250,57 @@ void ElasticTransverseIsotropicUpdates::getElasticStiffness( localIndex const k,
   stiffness[3][3] = m_c44[k];
   stiffness[4][4] = m_c44[k];
   stiffness[5][5] = m_c66[k];
+}
+
+GEOS_HOST_DEVICE
+inline
+void ElasticTransverseIsotropicUpdates::computeElasticStrain( localIndex const k,
+                                                              localIndex const q,
+                                                              real64 const (&stress)[6],
+                                                              real64 ( & elasticStrain)[6] ) const
+{
+  GEOS_UNUSED_VAR( q );
+  real64 const c12 = ( m_c11[k] - 2.0 * m_c66[k] );
+  real64 const detC = m_c11[k]*(m_c11[k]*m_c33[k] - m_c13[k]*m_c13[k]) - c12*(c12*m_c33[k] - m_c13[k]*m_c13[k]) + m_c13[k]*(c12*m_c13[k] - m_c11[k]*m_c13[k]);
+
+  elasticStrain[0] =
+    ( (m_c11[k]*m_c33[k] - m_c13[k]*m_c13[k])*stress[0] + (m_c13[k]*m_c13[k] - c12*m_c33[k])*stress[1] + (c12*m_c13[k] - m_c13[k]*m_c11[k])*stress[2] ) / detC;
+  elasticStrain[1] =
+    ( (m_c13[k]*m_c13[k] - c12*m_c33[k])*stress[0] + (m_c11[k]*m_c33[k] - m_c13[k]*m_c13[k])*stress[1] + (m_c13[k]*c12 - m_c11[k]*m_c13[k])*stress[2] ) / detC;
+  elasticStrain[2] = ( (c12*m_c13[k] - m_c11[k]*m_c13[k])*stress[0] + (c12*m_c13[k] - m_c11[k]*m_c13[k])*stress[1] + (m_c11[k]*m_c11[k] - c12*c12)*stress[2] ) / detC;
+
+  elasticStrain[3] = stress[3] / m_c44[k];
+  elasticStrain[4] = stress[4] / m_c44[k];
+  elasticStrain[5] = stress[5] / m_c66[k];
+}
+
+
+GEOS_HOST_DEVICE
+inline
+void ElasticTransverseIsotropicUpdates::getElasticStrain( localIndex const k,
+                                                          localIndex const q,
+                                                          real64 ( & elasticStrain)[6] ) const
+{
+
+  real64 stress[6] = {m_newStress[k][q][0], m_newStress[k][q][1], m_newStress[k][q][2], m_newStress[k][q][3], m_newStress[k][q][4], m_newStress[k][q][5]};
+
+  computeElasticStrain( k, q, stress, elasticStrain );
+
+}
+
+GEOS_HOST_DEVICE
+inline
+void ElasticTransverseIsotropicUpdates::getElasticStrainInc( localIndex const k,
+                                                             localIndex const q,
+                                                             real64 ( & elasticStrainInc)[6] ) const
+{
+
+  real64 stress[6] =
+  {m_newStress[k][q][0] - m_oldStress[k][q][0], m_newStress[k][q][1] - m_oldStress[k][q][1], m_newStress[k][q][2] - m_oldStress[k][q][2], m_newStress[k][q][3] - m_oldStress[k][q][3],
+   m_newStress[k][q][4] - m_oldStress[k][q][4], m_newStress[k][q][5] - m_oldStress[k][q][5]};
+
+  computeElasticStrain( k, q, stress, elasticStrainInc );
+
 }
 
 inline

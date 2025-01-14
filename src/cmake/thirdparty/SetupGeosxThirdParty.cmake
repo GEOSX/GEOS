@@ -670,7 +670,7 @@ if(DEFINED HYPRE_DIR AND ENABLE_HYPRE)
         find_package( rocsolver REQUIRED )
         find_package( rocsparse REQUIRED )
         find_package( rocrand REQUIRED )
-        append( APPEND HYPRE_DEPENDS roc::rocblas roc::rocsparse roc::rocsolver roc::rocrand )
+        list( APPEND HYPRE_DEPENDS roc::rocblas roc::rocsparse roc::rocsolver roc::rocrand )
     endif( )
 
     find_and_import( NAME hypre
