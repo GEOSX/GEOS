@@ -69,31 +69,32 @@ void ElementRegionManager::setMaxGlobalIndex()
   m_maxGlobalIndex = MpiWrapper::max( m_localMaxGlobalIndex, MPI_COMM_GEOS );
 }
 
-
+auto const & getUserAvailableKeys()
+{
+  static std::set< string > keys = {
+    CellElementRegion::catalogName(),
+    WellElementRegion::catalogName(),
+    SurfaceElementRegion::catalogName(),
+  };
+  return keys;
+}
 
 Group * ElementRegionManager::createChild( string const & childKey, string const & childName )
 {
-  GEOS_ERROR_IF( !(CatalogInterface::hasKeyName( childKey )),
-                 "KeyName ("<<childKey<<") not found in ObjectManager::Catalog" );
   GEOS_LOG_RANK_0( GEOS_FMT( "{}: adding {} {}", getName(), childKey, childName ) );
-
+  GEOS_ERROR_IF( getUserAvailableKeys().count( childKey ) == 0,
+                 CatalogInterface::unknownTypeError( childKey, getDataContext(), getUserAvailableKeys() ) );
   Group & elementRegions = this->getGroup( ElementRegionManager::groupKeyStruct::elementRegionsGroup() );
   return &elementRegions.registerGroup( childName,
-                                        CatalogInterface::factory( childKey, childName, &elementRegions ) );
+                                        CatalogInterface::factory( childKey, getDataContext(),
+                                                                   childName, &elementRegions ) );
 }
 
 void ElementRegionManager::expandObjectCatalogs()
 {
-  ObjectManagerBase::CatalogInterface::CatalogType const & catalog = ObjectManagerBase::getCatalog();
-  for( ObjectManagerBase::CatalogInterface::CatalogType::const_iterator iter = catalog.begin();
-       iter!=catalog.end();
-       ++iter )
+  for( string const & key : getUserAvailableKeys() )
   {
-    string const key = iter->first;
-    if( key.find( "ElementRegion" ) != string::npos )
-    {
-      this->createChild( key, key );
-    }
+    this->createChild( key, key );
   }
 }
 
