@@ -84,14 +84,11 @@ void ParticleManager::setMaxGlobalIndex()
 
 Group * ParticleManager::createChild( string const & childKey, string const & childName )
 {
-  GEOS_ERROR_IF( !(CatalogInterface::hasKeyName( childKey )),
-                 "KeyName ("<<childKey<<") not found in ObjectManager::Catalog" );
   GEOS_LOG_RANK_0( GEOS_FMT( "{}: adding {} {}", getName(), childKey, childName ) );
-
   Group & particleRegions = this->getGroup( ParticleManager::groupKeyStruct::particleRegionsGroup() );
   return &particleRegions.registerGroup( childName,
-                                         CatalogInterface::factory( childKey, childName, &particleRegions ) );
-
+                                         CatalogInterface::factory( childKey, getDataContext(),
+                                                                    childName, &particleRegions ) );
 }
 
 void ParticleManager::expandObjectCatalogs()
