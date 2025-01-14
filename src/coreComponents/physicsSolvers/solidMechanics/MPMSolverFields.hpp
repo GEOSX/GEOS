@@ -352,6 +352,14 @@ DECLARE_FIELD( particleDomainScaledFlag,
                LEVEL_1,
                WRITE_AND_READ,
                "particleDomainScaledFlag" );            
+
+DECLARE_FIELD( particleColor,
+               "particleColor",
+               array1d< int >,
+               0,
+               LEVEL_0,
+               WRITE_AND_READ,
+               "particleColor" );
 }
 
 }

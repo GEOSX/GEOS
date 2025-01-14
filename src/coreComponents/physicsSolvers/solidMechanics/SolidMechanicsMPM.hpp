@@ -168,7 +168,8 @@ public:
     NoAtomics,
     RandomMix,
     MinimalAtomics,
-    Reduction
+    Reduction,
+    Colors
   };
 
   /**
@@ -491,6 +492,8 @@ public:
 
   void optimizeBinSort( ParticleManager & particleManager );
 
+  void particleColorSort( ParticleManager & particleManager );
+
   GEOS_HOST_DEVICE
   GEOS_FORCE_INLINE
   real64 kernel( real64 const & r ); // distance from particle to query point
@@ -650,6 +653,11 @@ public:
                                       integer const cycleNumber,
                                       ParticleManager & particleManager,
                                       NodeManager & nodeManager );
+
+  void particleToGrid_colors( real64 const time_n,
+                              integer const cycleNumber,
+                              ParticleManager & particleManager,
+                              NodeManager & nodeManager );
 
   void gridTrialUpdate( real64 dt,
                         NodeManager & nodeManager );
@@ -1114,7 +1122,8 @@ ENUM_STRINGS( SolidMechanicsMPM::GPUSchemeOption,
               "NoAtomics",
               "RandomMix",
               "MinimalAtomics",
-              "Reduction" );
+              "Reduction",
+              "Colors" );
 
 //**********************************************************************************************************************
 //**********************************************************************************************************************
