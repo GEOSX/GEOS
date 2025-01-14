@@ -254,11 +254,11 @@ public:
 protected:
 
   /// Fluid density
-  arrayView2d< real64 const > const m_fluidDensity;
+  arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const m_fluidDensity;
   /// Fluid density at the previous converged time step
-  arrayView2d< real64 const > const m_fluidDensity_n;
+  arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const m_fluidDensity_n;
   /// Derivative of fluid density wrt pressure
-  arrayView3d< real64 const > const m_dFluidDensity;
+  arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > const m_dFluidDensity;
 
   integer const m_performStressInitialization;
 };
@@ -343,7 +343,7 @@ protected:
   arrayView2d< real64 const > const m_rockDensity;
 
   // the fluid density
-  arrayView2d< real64 const > const m_fluidDensity;
+  arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const m_fluidDensity;
 
   // the porosity
   arrayView2d< real64 const > const m_porosity;

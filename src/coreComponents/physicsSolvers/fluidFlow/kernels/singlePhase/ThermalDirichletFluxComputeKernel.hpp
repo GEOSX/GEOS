@@ -288,8 +288,8 @@ protected:
   arrayView1d< real64 const > const m_faceTemp;
 
   /// Views on enthalpies
-  ElementViewConst< arrayView2d< real64 const > > const m_enthalpy;
-  ElementViewConst< arrayView3d< real64 const > > const m_dEnthalpy;
+  ElementViewConst< arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > > const m_enthalpy;
+  ElementViewConst< arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > > const m_dEnthalpy;
 
   /// View on thermal conductivity
   ElementViewConst< arrayView3d< real64 const > > m_thermalConductivity;

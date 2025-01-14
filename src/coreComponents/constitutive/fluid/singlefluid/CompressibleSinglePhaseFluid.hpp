@@ -45,10 +45,10 @@ public:
   using DerivOffset = singlefluid::DerivativeOffset;
   CompressibleSinglePhaseUpdate( DensRelationType const & densRelation,
                                  ViscRelationType const & viscRelation,
-                                 arrayView2d< real64 > const & density,
-                                 arrayView3d< real64 > const & dDensity,
-                                 arrayView2d< real64 > const & viscosity,
-                                 arrayView3d< real64 > const & dViscosity )
+                                 arrayView2d< real64, constitutive::singlefluid::USD_FLUID > const & density,
+                                 arrayView3d< real64, constitutive::singlefluid::USD_FLUID_DC > const & dDensity,
+                                 arrayView2d< real64, constitutive::singlefluid::USD_FLUID > const & viscosity,
+                                 arrayView3d< real64, constitutive::singlefluid::USD_FLUID_DC > const & dViscosity )
     : SingleFluidBaseUpdate( density,
                              dDensity,
                              viscosity,

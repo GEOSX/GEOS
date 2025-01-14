@@ -23,6 +23,7 @@
 #include "common/DataTypes.hpp"
 #include "mesh/ElementRegionManager.hpp"
 #include "finiteVolume/SurfaceElementStencil.hpp"
+#include "constitutive/fluid/singlefluid/SingleFluidLayouts.hpp"
 
 namespace geos
 {
@@ -72,10 +73,10 @@ struct FaceElementFluxKernel
           ElementViewConst< arrayView1d< integer const > > const & ghostRank,
           ElementViewConst< arrayView1d< real64 const > > const & pres,
           ElementViewConst< arrayView1d< real64 const > > const & gravCoef,
-          ElementViewConst< arrayView2d< real64 const > > const & dens,
-          ElementViewConst< arrayView3d< real64 const > > const & dDens,
+          ElementViewConst< arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > > const & dens,
+          ElementViewConst< arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > > const & dDens,
           ElementViewConst< arrayView1d< real64 const > > const & mob,
-          ElementViewConst< arrayView2d< real64 const > > const & dMob,
+          ElementViewConst< arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > > const & dMob,
           ElementViewConst< arrayView3d< real64 const > > const & permeability,
           ElementViewConst< arrayView3d< real64 const > > const & dPerm_dPres,
           ElementViewConst< arrayView4d< real64 const > > const & dPerm_dDispJump,
@@ -102,10 +103,10 @@ struct FaceElementFluxKernel
            real64 const (&dTrans_dDispJump)[MAX_NUM_CONNECTIONS][2][3],
            ElementViewConst< arrayView1d< real64 const > > const & pres,
            ElementViewConst< arrayView1d< real64 const > > const & gravCoef,
-           ElementViewConst< arrayView2d< real64 const > > const & dens,
-           ElementViewConst< arrayView3d< real64 const > > const & dDens,
+           ElementViewConst< arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > > const & dens,
+           ElementViewConst< arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > > const & dDens,
            ElementViewConst< arrayView1d< real64 const > > const & mob,
-           ElementViewConst< arrayView2d< real64 const > > const & dMob,
+           ElementViewConst< arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > > const & dMob,
            real64 const dt,
            arraySlice1d< real64 > const & flux,
            arraySlice2d< real64 > const & fluxJacobian,

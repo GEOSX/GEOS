@@ -261,7 +261,7 @@ void ProppantTransport::updateProppantModel( ObjectManagerBase & dataGroup )
 
   SlurryFluidBase const & fluid = getConstitutiveModel< SlurryFluidBase >( dataGroup, dataGroup.getReference< string >( viewKeyStruct::fluidNamesString() ) );
 
-  arrayView2d< real64 const > const fluidDens            = fluid.fluidDensity();
+  arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const fluidDens            = fluid.fluidDensity();
   arrayView2d< real64 const > const dFluidDens_dPres     = fluid.dFluidDensity_dPressure();
   arrayView3d< real64 const > const dFluidDens_dCompConc = fluid.dFluidDensity_dComponentConcentration();
   arrayView2d< real64 const > const fluidVisc            = fluid.fluidViscosity();
@@ -1076,7 +1076,6 @@ void ProppantTransport::updateProppantPackVolume( real64 const GEOS_UNUSED_PARAM
                                                                      particleFluidAccessors.get< fields::particlefluid::settlingFactor >(),
                                                                      slurryFluidAccessors.get< fields::singlefluid::density >(),
                                                                      slurryFluidAccessors.get< fields::slurryfluid::fluidDensity >(),
-                                                                     slurryFluidAccessors.get< fields::slurryfluid::fluidViscosity >(),
                                                                      flowAccessors.get< fields::proppant::isProppantMobile >(),
                                                                      flowAccessors.get< fields::proppant::isProppantBoundary >(),
                                                                      flowAccessors.get< fields::elementAperture >(),

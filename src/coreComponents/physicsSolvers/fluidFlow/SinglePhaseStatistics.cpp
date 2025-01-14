@@ -144,7 +144,7 @@ void SinglePhaseStatistics::computeRegionStatistics( real64 const time,
 
     string const & fluidName = subRegion.template getReference< string >( FlowSolverBase::viewKeyStruct::fluidNamesString() );
     SingleFluidBase const & fluid = constitutiveModels.getGroup< SingleFluidBase >( fluidName );
-    arrayView2d< real64 const > const densities = fluid.density();
+    arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const densities = fluid.density();
 
     real64 subRegionAvgPresNumerator = 0.0;
     real64 subRegionMinPres = 0.0;

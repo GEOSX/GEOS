@@ -250,9 +250,9 @@ protected:
 
   /// The rank global densities
   arrayView2d< real64 const > const m_solidDensity;
-  arrayView2d< real64 const > const m_fluidDensity;
-  arrayView2d< real64 const > const m_fluidDensity_n;
-  arrayView3d< real64 const > const m_dFluidDensity;
+  arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const m_fluidDensity;
+  arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const m_fluidDensity_n;
+  arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > const m_dFluidDensity;
 
   /// The rank-global fluid pressure array.
   arrayView1d< real64 const > const m_matrixPressure;

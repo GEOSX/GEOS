@@ -213,8 +213,8 @@ protected:
   arrayView2d< real64 const > const m_dPoro_dTemp;
 
   /// Views on fluid internal energy
-  arrayView2d< real64 const > const m_internalEnergy;
-  arrayView3d< real64 const > const m_dInternalEnergy;
+  arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const m_internalEnergy;
+  arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > const m_dInternalEnergy;
 
   /// Views on rock internal energy
   arrayView2d< real64 const > const m_rockInternalEnergy;

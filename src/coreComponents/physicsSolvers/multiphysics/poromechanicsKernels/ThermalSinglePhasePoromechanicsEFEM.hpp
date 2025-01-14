@@ -163,9 +163,9 @@ public:
 private:
 
   /// Views on fluid internal energy
-  arrayView2d< real64 const > const m_fluidInternalEnergy_n;
-  arrayView2d< real64 const > const m_fluidInternalEnergy;
-  arrayView3d< real64 const > const m_dFluidInternalEnergy;
+  arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const m_fluidInternalEnergy_n;
+  arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const m_fluidInternalEnergy;
+  arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > const m_dFluidInternalEnergy;
 
   /// Views on temperature
   arrayView1d< real64 const > const m_temperature_n;

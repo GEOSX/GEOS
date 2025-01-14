@@ -154,12 +154,12 @@ protected:
 
   /// Views on fluid mobility
   ElementViewConst< arrayView1d< real64 const > > const m_mob;
-  ElementViewConst< arrayView2d< real64 const > > const m_dMob;
+  ElementViewConst< arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > > const m_dMob;
   ElementViewConst< arrayView1d< real64 const > > const m_dMob_dPres;
 
   /// Views on fluid density
-  ElementViewConst< arrayView2d< real64 const > > const m_dens;
-  ElementViewConst< arrayView3d< real64 const > > const m_dDens;
+  ElementViewConst< arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > > const m_dens;
+  ElementViewConst< arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > > const m_dDens;
 
   // Residual and jacobian
 

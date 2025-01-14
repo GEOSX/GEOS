@@ -275,8 +275,8 @@ void SinglePhaseBase::updateMass( ElementSubRegionBase & subRegion ) const
 
   SingleFluidBase & fluid =
     getConstitutiveModel< SingleFluidBase >( subRegion, subRegion.getReference< string >( viewKeyStruct::fluidNamesString() ) );
-  arrayView2d< real64 const > const density = fluid.density();
-  arrayView2d< real64 const > const density_n = fluid.density_n();
+  arrayView2d< real64 const, singlefluid::USD_FLUID > const density = fluid.density();
+  arrayView2d< real64 const, singlefluid::USD_FLUID > const density_n = fluid.density_n();
 
   forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const ei )
   {
@@ -302,8 +302,8 @@ void SinglePhaseBase::updateEnergy( ElementSubRegionBase & subRegion ) const
 
   SingleFluidBase & fluid =
     getConstitutiveModel< SingleFluidBase >( subRegion, subRegion.getReference< string >( viewKeyStruct::fluidNamesString() ) );
-  arrayView2d< real64 const > const density = fluid.density();
-  arrayView2d< real64 const > const fluidInternalEnergy = fluid.internalEnergy();
+  arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const density = fluid.density();
+  arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const fluidInternalEnergy = fluid.internalEnergy();
 
   forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const ei )
   {
@@ -348,7 +348,7 @@ void SinglePhaseBase::updateMobility( ObjectManagerBase & dataGroup ) const
 
   // output
   arrayView1d< real64 > const mob = dataGroup.getField< fields::flow::mobility >();
-  arrayView2d< real64 > const dMobility = dataGroup.getField< fields::flow::dMobility >();
+  arrayView2d< real64, constitutive::singlefluid::USD_FLUID > const dMobility = dataGroup.getField< fields::flow::dMobility >();
 
   // input
   SingleFluidBase & fluid =
@@ -771,7 +771,7 @@ void SinglePhaseBase::implicitStepComplete( real64 const & time,
 
       SingleFluidBase const & fluid =
         getConstitutiveModel< SingleFluidBase >( subRegion, subRegion.template getReference< string >( viewKeyStruct::fluidNamesString() ) );
-      arrayView2d< real64 const > const density_n = fluid.density_n();
+      arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const density_n = fluid.density_n();
 
       forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const ei )
       {
@@ -1076,8 +1076,8 @@ void SinglePhaseBase::applySourceFluxBC( real64 const time_n,
         SingleFluidBase const & fluid =
           getConstitutiveModel< SingleFluidBase >( subRegion, subRegion.template getReference< string >( viewKeyStruct::fluidNamesString() ) );
 
-        arrayView2d< real64 const > const enthalpy = fluid.enthalpy();
-        arrayView3d< real64 const > const dEnthalpy = fluid.dEnthalpy();
+        arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const enthalpy = fluid.enthalpy();
+        arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > const dEnthalpy = fluid.dEnthalpy();
         forAll< parallelDevicePolicy<> >( targetSet.size(), [sizeScalingFactor,
                                                              targetSet,
                                                              rankOffset,

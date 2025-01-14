@@ -248,8 +248,8 @@ PressureRelationKernel::
           arrayView1d< real64 const > const & wellElemGravCoef,
           arrayView1d< localIndex const > const & nextWellElemIndex,
           arrayView1d< real64 const > const & wellElemPressure,
-          arrayView2d< real64 const > const & wellElemDensity,
-          arrayView3d< real64 const > const & dWellElemDensity,
+          arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const & wellElemDensity,
+          arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > const & dWellElemDensity,
           CRSMatrixView< real64, globalIndex const > const & localMatrix,
           arrayView1d< real64 > const & localRhs )
 {
@@ -463,16 +463,16 @@ void
 PerforationKernel::
   launch( localIndex const size,
           ElementViewConst< arrayView1d< real64 const > > const & resPressure,
-          ElementViewConst< arrayView2d< real64 const > > const & resDensity,
-          ElementViewConst< arrayView3d< real64 const > > const & dResDensity,
-          ElementViewConst< arrayView2d< real64 const > > const & resViscosity,
-          ElementViewConst< arrayView3d< real64 const > > const & dResViscosity,
+          ElementViewConst< arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > > const & resDensity,
+          ElementViewConst< arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > > const & dResDensity,
+          ElementViewConst< arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > > const & resViscosity,
+          ElementViewConst< arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > > const & dResViscosity,
           arrayView1d< real64 const > const & wellElemGravCoef,
           arrayView1d< real64 const > const & wellElemPressure,
-          arrayView2d< real64 const > const & wellElemDensity,
-          arrayView3d< real64 const > const & dWellElemDensity,
-          arrayView2d< real64 const > const & wellElemViscosity,
-          arrayView3d< real64 const > const & dWellElemViscosity,
+          arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const & wellElemDensity,
+          arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > const & dWellElemDensity,
+          arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const & wellElemViscosity,
+          arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > const & dWellElemViscosity,
           arrayView1d< real64 const > const & perfGravCoef,
           arrayView1d< localIndex const > const & perfWellElemIndex,
           arrayView1d< real64 const > const & perfTransmissibility,
@@ -524,9 +524,9 @@ AccumulationKernel::
           arrayView1d< globalIndex const > const & wellElemDofNumber,
           arrayView1d< integer const > const & wellElemGhostRank,
           arrayView1d< real64 const > const & wellElemVolume,
-          arrayView2d< real64 const > const & wellElemDensity,
-          arrayView3d< real64 const > const & dWellElemDensity,
-          arrayView2d< real64 const > const & wellElemDensity_n,
+          arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const & wellElemDensity,
+          arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > const & dWellElemDensity,
+          arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const & wellElemDensity_n,
           CRSMatrixView< real64, globalIndex const > const & localMatrix,
           arrayView1d< real64 > const & localRhs )
 {
@@ -562,7 +562,7 @@ PresInitializationKernel::
           WellControls const & wellControls,
           real64 const & currentTime,
           ElementViewConst< arrayView1d< real64 const > > const & resPressure,
-          ElementViewConst< arrayView2d< real64 const > > const & resDensity,
+          ElementViewConst< arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > > const & resDensity,
           arrayView1d< localIndex const > const & resElementRegion,
           arrayView1d< localIndex const > const & resElementSubRegion,
           arrayView1d< localIndex const > const & resElementIndex,
@@ -672,7 +672,7 @@ RateInitializationKernel::
   launch( localIndex const subRegionSize,
           WellControls const & wellControls,
           real64 const & currentTime,
-          arrayView2d< real64 const > const & wellElemDens,
+          arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const & wellElemDens,
           arrayView1d< real64 > const & connRate )
 {
   real64 const targetRate = wellControls.getTargetTotalRate( currentTime );

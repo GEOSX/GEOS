@@ -60,10 +60,10 @@ protected:
    * @param viscosity   fluid viscosity
    * @param dVisc_dPres derivative of viscosity w.r.t. pressure
    */
-  SingleFluidBaseUpdate( arrayView2d< real64 >  const & density,
-                         arrayView3d< real64 >  const & dDensity,
-                         arrayView2d< real64 > const & viscosity,
-                         arrayView3d< real64 >  const & dViscosity )
+  SingleFluidBaseUpdate( arrayView2d< real64, constitutive::singlefluid::USD_FLUID >  const & density,
+                         arrayView3d< real64, constitutive::singlefluid::USD_FLUID_DC >  const & dDensity,
+                         arrayView2d< real64, constitutive::singlefluid::USD_FLUID > const & viscosity,
+                         arrayView3d< real64, constitutive::singlefluid::USD_FLUID_DC >  const & dViscosity )
     :
     m_density( density ),
     m_dDensity( dDensity ),
@@ -95,12 +95,12 @@ protected:
 
 
   /// Fluid density property and derivatives
-  arrayView2d< real64 >  m_density;
-  arrayView3d< real64 >  m_dDensity;
+  arrayView2d< real64, constitutive::singlefluid::USD_FLUID >  m_density;
+  arrayView3d< real64, constitutive::singlefluid::USD_FLUID_DC >  m_dDensity;
 
   /// Fluid viscosity property and derivatives
-  arrayView2d< real64 > m_viscosity;
-  arrayView3d< real64 > m_dViscosity;
+  arrayView2d< real64, constitutive::singlefluid::USD_FLUID > m_viscosity;
+  arrayView3d< real64, constitutive::singlefluid::USD_FLUID_DC > m_dViscosity;
 
 
 //END_SPHINX_INCLUDE_01
@@ -244,7 +244,8 @@ public:
   arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > dDensity() const
   { return m_density.derivs; }
 
-  arrayView2d< real64 const > density_n() const { return m_density_n; }
+  arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > density_n() const { return m_density_n; }
+  arrayView2d< real64, constitutive::singlefluid::USD_FLUID > density_n() { return m_density_n; }
 
   arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > viscosity() const { return m_viscosity.value; }
   arrayView2d< real64, constitutive::singlefluid::USD_FLUID > viscosity() { return m_viscosity.value; }
@@ -261,8 +262,8 @@ public:
   arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > dInternalEnergy() const
   { return m_internalEnergy.derivs; }
 
-  arrayView2d< real64 > internalEnergy_n() { return m_internalEnergy_n; }
-  arrayView2d< real64 const > internalEnergy_n() const { return m_internalEnergy_n; }
+  arrayView2d< real64, constitutive::singlefluid::USD_FLUID > internalEnergy_n() { return m_internalEnergy_n; }
+  arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > internalEnergy_n() const { return m_internalEnergy_n; }
 
   arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > enthalpy() const { return m_enthalpy.value; }
   arrayView2d< real64, constitutive::singlefluid::USD_FLUID > enthalpy() { return m_enthalpy.value; }
@@ -296,8 +297,8 @@ protected:
   SingleFluidProp m_internalEnergy;
   SingleFluidProp m_enthalpy;
 
-  array2d< real64 > m_density_n;
-  array2d< real64 > m_internalEnergy_n;
+  array2d< real64, constitutive::singlefluid::LAYOUT_FLUID >  m_density_n;
+  array2d< real64, constitutive::singlefluid::LAYOUT_FLUID >  m_internalEnergy_n;
 
   //END_SPHINX_INCLUDE_00
 };
