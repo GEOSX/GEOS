@@ -116,7 +116,7 @@ void testMobilityNumericalDerivatives( SinglePhaseFVM<> & solver,
       arrayView1d< real64 > const mob =
         subRegion.getField< fields::flow::mobility >();
 
-      arrayView2d< real64 > const dMob =
+      arrayView2d< real64, constitutive::singlefluid::USD_FLUID > const dMob =
         subRegion.getField< fields::flow::dMobility >();
 
       // reset the solver state to zero out variable updates
@@ -164,7 +164,7 @@ void testMobilityNumericalDerivatives( SinglePhaseFVM<> & solver,
         arrayView1d< real64 const > const temp_n =
           subRegion.getField< fields::flow::temperature_n >();
 
-        arrayView2d< real64 > const dMobTherm =
+        arrayView2d< real64, constitutive::singlefluid::USD_FLUID > const dMobTherm =
           subRegion.getField< fields::flow::dMobility >();
 
         // reset the solver state to zero out variable updates (resetting the whole domain is overkill...)
