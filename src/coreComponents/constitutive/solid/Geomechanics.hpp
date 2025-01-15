@@ -1228,7 +1228,7 @@ void GeomechanicsUpdates::computeElasticProperties( real64 const ( &stress )[6],
 		}
 
 		// Elastic-plastic coupling
-		if ( evp < 0.0 )
+		if ( evp < -1.e-12 )
         {
             bulk = bulk - m_b3 * exp( m_b4 / evp );
         }
@@ -1276,7 +1276,7 @@ void GeomechanicsUpdates::computeElasticProperties( real64 const ( &stress )[6],
 	//
 	// If the user has specified a nonzero value of G1, the shear modulus will be defined
   // from a poisson's ratio nu = g1+g2*exp(g3/I1)
-	// to vary with pressure so the drained Poisson's ratio transitions from G1 to G1+G2 as
+	// to vary with pressure so the drained Poisson's ratio transitions from G1+G2 to G1 as
 	// the pressure increases relative to g3.  Treatment of fluid effects has not yet been developed.
   
   shear = m_g0;  // Default behavior is constant shear modulus
