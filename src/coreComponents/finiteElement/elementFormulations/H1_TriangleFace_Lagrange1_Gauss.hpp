@@ -249,25 +249,25 @@ private:
 
     if constexpr (numQuadraturePoints == 1)
     {
-      real64 const w[numQuadraturePoints] = { 1.0 };
+      constexpr real64 w[numQuadraturePoints] = { 1.0 };
       return w[q];
     }
     else if constexpr (numQuadraturePoints == 4)
     {
-      real64 const w[numQuadraturePoints] = {-0.562500000000000,
-                                             0.520833333333333,
-                                             0.520833333333333,
-                                             0.520833333333333 };
+      constexpr real64 w[numQuadraturePoints] = {-0.562500000000000,
+                                                  0.520833333333333,
+                                                  0.520833333333333,
+                                                  0.520833333333333 };
       return w[q];
     }
     else if constexpr (numQuadraturePoints == 6)
     {
-      real64 const w[numQuadraturePoints] = { 1.0/6.0,
-                                              1.0/6.0,
-                                              1.0/6.0,
-                                              1.0/6.0,
-                                              1.0/6.0,
-                                              1.0/6.0 };
+      real64 const w[numQuadraturePoints] = { 0.166666666666666,
+                                              0.166666666666666,
+                                              0.166666666666666,
+                                              0.166666666666666,
+                                              0.166666666666666,
+                                              0.166666666666666 };
       return w[q];
     }
 
@@ -286,25 +286,25 @@ private:
 
     if constexpr (numQuadraturePoints == 1)
     {
-      real64 const qCoords[numQuadraturePoints] = { 1/3 };
+      constexpr real64 qCoords[numQuadraturePoints] = { 1.0/3.0 };
       return qCoords[q];
     }
     else if constexpr (numQuadraturePoints == 4)
     {
-      real64 const qCoords[numQuadraturePoints] = { 0.333333333333333,
-                                                    0.600000000000000,
-                                                    0.200000000000000,
-                                                    0.200000000000000 };
+      constexpr real64 qCoords[numQuadraturePoints] = { 0.333333333333333,
+                                                        0.600000000000000,
+                                                        0.200000000000000,
+                                                        0.200000000000000 };
       return qCoords[q];
     }
     else if constexpr (numQuadraturePoints == 6)
     {
-      real64 const qCoords[numQuadraturePoints] = { 0.659027622374092,
-                                                    0.109039009072877,
-                                                    0.231933368553031,
-                                                    0.659027622374092,
-                                                    0.109039009072877,
-                                                    0.231933368553031 };
+      constexpr real64 qCoords[numQuadraturePoints] = { 0.659027622374092,
+                                                        0.109039009072877,
+                                                        0.231933368553031,
+                                                        0.659027622374092,
+                                                        0.109039009072877,
+                                                        0.231933368553031 };
       return qCoords[q];
     }
 
@@ -323,25 +323,25 @@ private:
 
     if constexpr (numQuadraturePoints == 1)
     {
-      real64 const qCoords[numQuadraturePoints] = { 1/3 };
+      constexpr real64 qCoords[numQuadraturePoints] = { 1.0/3.0 };
       return qCoords[q];
     }
     else if constexpr (numQuadraturePoints == 4)
     {
-      real64 const qCoords[numQuadraturePoints] = { 0.333333333333333,
-                                                    0.200000000000000,
-                                                    0.600000000000000,
-                                                    0.200000000000000 };
+      constexpr real64 qCoords[numQuadraturePoints] = { 0.333333333333333,
+                                                        0.200000000000000,
+                                                        0.600000000000000,
+                                                        0.200000000000000 };
       return qCoords[q];
     }
     else if constexpr (numQuadraturePoints == 6)
     {
-      real64 const qCoords[numQuadraturePoints] = { 0.231933368553031,
-                                                    0.659027622374092,
-                                                    0.109039009072877,
-                                                    0.109039009072877,
-                                                    0.231933368553031,
-                                                    0.659027622374092 };
+      constexpr real64 qCoords[numQuadraturePoints] = { 0.231933368553031,
+                                                        0.659027622374092,
+                                                        0.109039009072877,
+                                                        0.109039009072877,
+                                                        0.231933368553031,
+                                                        0.659027622374092 };
       return qCoords[q];
     }
 
