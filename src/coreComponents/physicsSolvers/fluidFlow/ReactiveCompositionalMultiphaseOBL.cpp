@@ -123,6 +123,8 @@ ReactiveCompositionalMultiphaseOBL::ReactiveCompositionalMultiphaseOBL( const st
 
 void ReactiveCompositionalMultiphaseOBL::initializePreSubGroups()
 {
+  FlowSolverBase::initializePreSubGroups();
+
   checkDiscretizationName();
 }
 
