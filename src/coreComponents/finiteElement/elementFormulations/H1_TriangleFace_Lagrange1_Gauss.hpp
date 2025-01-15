@@ -255,9 +255,9 @@ private:
     else if constexpr (numQuadraturePoints == 4)
     {
       constexpr real64 w[numQuadraturePoints] = {-0.562500000000000,
-                                                  0.520833333333333,
-                                                  0.520833333333333,
-                                                  0.520833333333333 };
+                                                 0.520833333333333,
+                                                 0.520833333333333,
+                                                 0.520833333333333 };
       return w[q];
     }
     else if constexpr (numQuadraturePoints == 6)
