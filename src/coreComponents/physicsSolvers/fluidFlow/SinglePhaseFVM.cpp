@@ -68,7 +68,7 @@ void SinglePhaseFVM< BASE >::initializePreSubGroups()
 {
   BASE::initializePreSubGroups();
 
-  checkDiscretizationName();
+  this->checkDiscretizationName();
 
   if( m_isThermal )
   {
