@@ -68,6 +68,8 @@ void SinglePhaseFVM< BASE >::initializePreSubGroups()
 {
   BASE::initializePreSubGroups();
 
+  checkDiscretizationName();
+
   if( m_isThermal )
   {
     // For thermal simulations 2 pdes are considered so we let AMG know.

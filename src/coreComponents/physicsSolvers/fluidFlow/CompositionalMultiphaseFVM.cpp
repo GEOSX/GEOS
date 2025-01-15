@@ -162,6 +162,8 @@ void CompositionalMultiphaseFVM::initializePreSubGroups()
   m_linearSolverParameters.get().mgr.strategy = m_isThermal
                                                 ? LinearSolverParameters::MGR::StrategyType::thermalCompositionalMultiphaseFVM
                                                 : LinearSolverParameters::MGR::StrategyType::compositionalMultiphaseFVM;
+
+  checkDiscretizationName();
 }
 
 void CompositionalMultiphaseFVM::setupDofs( DomainPartition const & domain,

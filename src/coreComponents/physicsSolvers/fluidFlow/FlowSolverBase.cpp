@@ -365,10 +365,17 @@ void FlowSolverBase::initializePreSubGroups()
       }
     } );
   }
-  else
+}
+
+void FlowSolverBase::checkDiscretizationName()
+{
+  DomainPartition & domain = this->getGroupByPath< DomainPartition >( "/Problem/domain" );
+  NumericalMethodsManager const & numericalMethodManager = domain.getNumericalMethodManager();
+  FiniteVolumeManager const & fvManager = numericalMethodManager.getFiniteVolumeManager();
+  if( !fvManager.hasGroup< FluxApproximationBase >( m_discretizationName ) )
   {
     GEOS_ERROR( GEOS_FMT( "{}: can not find discretization named '{}' (a discretization deriving from FluxApproximationBase must be selected for {} solver '{}' )",
-                          getDataContext(), m_discretizationName, getCatalogName(), getName() ) );
+                          getDataContext(), m_discretizationName, getCatalogName(), getName()));
   }
 }
 

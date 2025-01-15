@@ -121,6 +121,11 @@ ReactiveCompositionalMultiphaseOBL::ReactiveCompositionalMultiphaseOBL( const st
   m_linearSolverParameters.get().mgr.strategy = LinearSolverParameters::MGR::StrategyType::reactiveCompositionalMultiphaseOBL;
 }
 
+void ReactiveCompositionalMultiphaseOBL::initializePreSubGroups()
+{
+  checkDiscretizationName();
+}
+
 void ReactiveCompositionalMultiphaseOBL::setupDofs( DomainPartition const & domain,
                                                     DofManager & dofManager ) const
 {
