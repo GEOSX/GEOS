@@ -1228,7 +1228,7 @@ void GeomechanicsUpdates::computeElasticProperties( real64 const ( &stress )[6],
 		}
 
 		// Elastic-plastic coupling
-		if ( evp < 0.0 )
+		if ( evp < -1.e-12 )
         {
             bulk = bulk - m_b3 * exp( m_b4 / evp );
         }
