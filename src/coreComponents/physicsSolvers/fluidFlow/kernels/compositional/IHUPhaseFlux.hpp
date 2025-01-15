@@ -626,11 +626,11 @@ struct computePotentialGravity
     real64 dDensMean_dPres[numFluxSupportPoints]{};
     real64 dDensMean_dComp[numFluxSupportPoints][numComp]{};
     isothermalCompositionalMultiphaseFVMKernels::helpers::
-    calculateMeanDensity( ip, seri, sesri, sei,
-    checkPhasePresenceInGravity, 
-                          phaseVolFrac, dCompFrac_dCompDens,
-                          phaseMassDens, dPhaseMassDens,
-                          densMean, dDensMean_dPres, dDensMean_dComp );
+      calculateMeanDensity( ip, seri, sesri, sei,
+                            checkPhasePresenceInGravity,
+                            phaseVolFrac, dCompFrac_dCompDens,
+                            phaseMassDens, dPhaseMassDens,
+                            densMean, dDensMean_dPres, dDensMean_dComp );
 
     // compute potential difference MPFA-style
     for( localIndex i = 0; i < numFluxSupportPoints; ++i )

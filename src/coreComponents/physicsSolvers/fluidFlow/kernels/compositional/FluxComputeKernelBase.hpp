@@ -178,8 +178,8 @@ protected:
 
 namespace helpers
 {
-  template< typename VIEWTYPE >
-  using ElementViewConst = ElementRegionManager::ElementViewConst< VIEWTYPE >;
+template< typename VIEWTYPE >
+using ElementViewConst = ElementRegionManager::ElementViewConst< VIEWTYPE >;
 
 template< localIndex numComp, localIndex numFluxSupportPoints >
 GEOS_HOST_DEVICE

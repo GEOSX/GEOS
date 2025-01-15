@@ -115,7 +115,7 @@ struct HU2PhaseFlux
                                                          phaseFlux, dPhaseFlux_dP, dPhaseFlux_dC );
     // gravity part
     computeGravityFlux< numComp, numFluxSupportPoints >( ip, numPhase,
-    checkPhasePresenceInGravity,
+                                                         checkPhasePresenceInGravity,
                                                          seri, sesri, sei,
                                                          trans, dTrans_dPres, gravCoef,
                                                          phaseVolFrac,
@@ -261,7 +261,7 @@ protected:
   GEOS_HOST_DEVICE
   static void
   computeGravityFlux( integer const & ip, integer const & numPhase,
-  integer const checkPhasePresenceInGravity,
+                      integer const checkPhasePresenceInGravity,
                       localIndex const (&seri)[numFluxSupportPoints],
                       localIndex const (&sesri)[numFluxSupportPoints],
                       localIndex const (&sei)[numFluxSupportPoints],
@@ -487,12 +487,12 @@ protected:
                                        localIndex const (&seri)[numFluxSupportPoints],
                                        localIndex const (&sesri)[numFluxSupportPoints],
                                        localIndex const (&sei)[numFluxSupportPoints],
-                        integer const checkPhasePresenceInGravity,
+                                       integer const checkPhasePresenceInGravity,
                                        real64 const (&trans)[2],
                                        real64 const (&dTrans_dP)[2],
                                        ElementViewConst< arrayView1d< real64 const > > const & gravCoef,
                                        ElementViewConst< arrayView3d< real64 const, compflow::USD_COMP_DC > > const & dCompFrac_dCompDens,
-                      ElementViewConst< arrayView2d< real64 const, compflow::USD_PHASE > > const & phaseVolFrac,
+                                       ElementViewConst< arrayView2d< real64 const, compflow::USD_PHASE > > const & phaseVolFrac,
                                        ElementViewConst< arrayView3d< real64 const, constitutive::multifluid::USD_PHASE > > const & phaseMassDens,
                                        ElementViewConst< arrayView4d< real64 const, constitutive::multifluid::USD_PHASE_DC > > const & dPhaseMassDens,
                                        real64 & gravPot,
@@ -507,11 +507,11 @@ protected:
     real64 dDensMean_dP[numFluxSupportPoints]{};
     real64 dDensMean_dC[numFluxSupportPoints][numComp]{};
     isothermalCompositionalMultiphaseFVMKernels::helpers::
-    calculateMeanDensity( ip, seri, sesri, sei,
-    checkPhasePresenceInGravity, 
-                      phaseVolFrac, dCompFrac_dCompDens,
-                      phaseMassDens, dPhaseMassDens,
-                      densMean, dDensMean_dP, dDensMean_dC );
+      calculateMeanDensity( ip, seri, sesri, sei,
+                            checkPhasePresenceInGravity,
+                            phaseVolFrac, dCompFrac_dCompDens,
+                            phaseMassDens, dPhaseMassDens,
+                            densMean, dDensMean_dP, dDensMean_dC );
 
     // compute potential difference MPFA-style
     for( localIndex i = 0; i < numFluxSupportPoints; ++i )

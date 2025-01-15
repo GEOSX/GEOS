@@ -88,11 +88,11 @@ struct PotGrad
     real64 dDensMean_dP[numFluxSupportPoints]{};
     real64 dDensMean_dC[numFluxSupportPoints][numComp]{};
     isothermalCompositionalMultiphaseFVMKernels::helpers::
-    calculateMeanDensity( ip, seri, sesri, sei,
-    checkPhasePresenceInGravity,
-                          phaseVolFrac, dCompFrac_dCompDens,
-                          phaseMassDens, dPhaseMassDens,
-                          densMean, dDensMean_dP, dDensMean_dC );
+      calculateMeanDensity( ip, seri, sesri, sei,
+                            checkPhasePresenceInGravity,
+                            phaseVolFrac, dCompFrac_dCompDens,
+                            phaseMassDens, dPhaseMassDens,
+                            densMean, dDensMean_dP, dDensMean_dC );
 
     /// compute the TPFA potential difference
     for( integer i = 0; i < numFluxSupportPoints; i++ )
