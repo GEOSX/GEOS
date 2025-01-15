@@ -577,8 +577,7 @@ struct computePotentialViscous
                        GEOS_UNUSED_PARAM( dPhaseCapPressure_dPhaseVolFrac ),
                        real64 & pot,
                        real64( &GEOS_UNUSED_PARAM( dPot_dPres ))[numFluxSupportPoints],
-                       real64( &GEOS_UNUSED_PARAM( dPot_dComp ))[numFluxSupportPoints][numComp],
-                       real64( &GEOS_UNUSED_PARAM( dProp_dComp ))[numComp] )
+                       real64( &GEOS_UNUSED_PARAM( dPot_dComp ))[numFluxSupportPoints][numComp] )
   {
     pot = totFlux;
     //could be relevant for symmetry to include derivative
@@ -617,27 +616,20 @@ struct computePotentialGravity
                        GEOS_UNUSED_PARAM( dPhaseCapPressure_dPhaseVolFrac ),
                        real64 & pot,
                        real64 ( & dPot_dPres )[numFluxSupportPoints],
-                       real64 (& dPot_dComp )[numFluxSupportPoints][numComp],
-                       real64 ( & dProp_dComp )[numComp] )
+                       real64 ( & dPot_dComp )[numFluxSupportPoints][numComp] )
   {
+    //init
+    assignToZero( pot, dPot_dPres, dPot_dComp );
+
     //working arrays
     real64 densMean{};
     real64 dDensMean_dPres[numFluxSupportPoints]{};
     real64 dDensMean_dComp[numFluxSupportPoints][numComp]{};
-
-    //init
-    assignToZero( pot, dPot_dPres, dPot_dComp );
-    for( localIndex i = 0; i < numFluxSupportPoints; ++i )
-    {
-      for( localIndex jc = 0; jc < numComp; ++jc )
-      {
-        dProp_dComp[jc] = 0.0;
-      }
-    }
-
-    calculateMeanDensity( checkPhasePresenceInGravity, ip, seri, sesri, sei,
+    isothermalCompositionalMultiphaseFVMKernels::helpers::
+    calculateMeanDensity( ip, seri, sesri, sei,
+    checkPhasePresenceInGravity, 
                           phaseVolFrac, dCompFrac_dCompDens,
-                          phaseMassDens, dPhaseMassDens, dProp_dComp,
+                          phaseMassDens, dPhaseMassDens,
                           densMean, dDensMean_dPres, dDensMean_dComp );
 
     // compute potential difference MPFA-style
@@ -657,65 +649,6 @@ struct computePotentialGravity
     }
   }
 
-  template< localIndex numComp, localIndex numFluxSupportPoints >
-  GEOS_HOST_DEVICE
-  static void calculateMeanDensity( integer const checkPhasePresenceInGravity,
-                                    localIndex const ip,
-                                    localIndex const (&seri)[numFluxSupportPoints],
-                                    localIndex const (&sesri)[numFluxSupportPoints],
-                                    localIndex const (&sei)[numFluxSupportPoints],
-                                    ElementViewConst< arrayView2d< real64 const, compflow::USD_PHASE > > const & phaseVolFrac,
-                                    ElementViewConst< arrayView3d< real64 const, compflow::USD_COMP_DC > > const & dCompFrac_dCompDens,
-                                    ElementViewConst< arrayView3d< real64 const, constitutive::multifluid::USD_PHASE > > const & phaseMassDens,
-                                    ElementViewConst< arrayView4d< real64 const, constitutive::multifluid::USD_PHASE_DC > > const & dPhaseMassDens,
-                                    real64 (& dProp_dComp)[numComp],
-                                    real64 & densMean, real64 (& dDensMean_dPres)[numFluxSupportPoints], real64 (& dDensMean_dComp)[numFluxSupportPoints][numComp] )
-  {
-    integer denom = 0;
-    for( localIndex i = 0; i < numFluxSupportPoints; ++i )
-    {
-      localIndex const er = seri[i];
-      localIndex const esr = sesri[i];
-      localIndex const ei = sei[i];
-
-      bool const phaseExists = (phaseVolFrac[er][esr][ei][ip] > 0);
-      if( checkPhasePresenceInGravity && !phaseExists )
-      {
-        continue;
-      }
-
-      // density
-      real64 const density = phaseMassDens[er][esr][ei][0][ip];
-      real64 const dDens_dPres = dPhaseMassDens[er][esr][ei][0][ip][Deriv::dP];
-
-      applyChainRule( numComp,
-                      dCompFrac_dCompDens[er][esr][ei],
-                      dPhaseMassDens[er][esr][ei][0][ip],
-                      dProp_dComp,
-                      Deriv::dC );
-
-      // average density and derivatives
-      densMean += density;
-      dDensMean_dPres[i] = dDens_dPres;
-      for( localIndex jc = 0; jc < numComp; ++jc )
-      {
-        dDensMean_dComp[i][jc] = dProp_dComp[jc];
-      }
-      denom++;
-    }
-    if( denom > 1 )
-    {
-      densMean /= denom;
-      for( localIndex i = 0; i < numFluxSupportPoints; ++i )
-      {
-        dDensMean_dPres[i] /= denom;
-        for( integer jc = 0; jc < numComp; ++jc )
-        {
-          dDensMean_dComp[i][jc] /= denom;
-        }
-      }
-    }
-  }
 };
 
 /*! @copydoc computePotential
@@ -748,8 +681,7 @@ struct computePotentialCapillary
                        ElementViewConst< arrayView4d< real64 const, constitutive::cappres::USD_CAPPRES_DS > > const & dPhaseCapPressure_dPhaseVolFrac,
                        real64 & pot,
                        real64 ( & dPot_dPres)[numFluxSupportPoints],
-                       real64 (& dPot_dComp)[numFluxSupportPoints][numComp],
-                       real64( &GEOS_UNUSED_PARAM( dProp_dComp ))[numComp] )
+                       real64 (& dPot_dComp)[numFluxSupportPoints][numComp] )
   {
     //init
     assignToZero( pot, dPot_dPres, dPot_dComp );
@@ -822,7 +754,6 @@ static void computePotentialFluxesGravity( localIndex const numPhase,
   real64 pot{};
   real64 dPot_dP[numFluxSupportPoints]{};
   real64 dPot_dC[numFluxSupportPoints][numComp]{};
-  real64 dProp_dC[numComp]{};
 
   //
   UpwindHelpers::computePotentialGravity::compute< numComp, numFluxSupportPoints >( numPhase,
@@ -844,8 +775,7 @@ static void computePotentialFluxesGravity( localIndex const numPhase,
                                                                                     dPhaseCapPressure_dPhaseVolFrac,
                                                                                     pot,
                                                                                     dPot_dP,
-                                                                                    dPot_dC,
-                                                                                    dProp_dC );
+                                                                                    dPot_dC );
 
   // and the fractional flow for gravitational part as \lambda_i^{up}/\sum_{numPhase}(\lambda_k^{up}) with up decided upon
   // the Upwind strategy
@@ -886,7 +816,6 @@ static void computePotentialFluxesGravity( localIndex const numPhase,
       real64 potOther{};
       real64 dPotOther_dP[numFluxSupportPoints]{};
       real64 dPotOther_dC[numFluxSupportPoints][numComp]{};
-      real64 dPropOther_dC[numComp]{};
 
       //Fetch pot for phase j!=i defined as \rho_j g dz/dx
       UpwindHelpers::computePotentialGravity::compute< numComp, numFluxSupportPoints >( numPhase,
@@ -908,8 +837,7 @@ static void computePotentialFluxesGravity( localIndex const numPhase,
                                                                                         dPhaseCapPressure_dPhaseVolFrac,
                                                                                         potOther,
                                                                                         dPotOther_dP,
-                                                                                        dPotOther_dC,
-                                                                                        dPropOther_dC );
+                                                                                        dPotOther_dC );
 
       //Eventually get the mobility of the second phase
       localIndex k_up_o = -1;
@@ -999,7 +927,6 @@ static void computePotentialFluxesCapillary( localIndex const numPhase,
   real64 pot{};
   real64 dPot_dP[numFluxSupportPoints]{};
   real64 dPot_dC[numFluxSupportPoints][numComp]{};
-  real64 dProp_dC[numComp]{};
 
   computePotentialCapillary::compute< numComp, numFluxSupportPoints >( numPhase,
                                                                        ip,
@@ -1018,8 +945,7 @@ static void computePotentialFluxesCapillary( localIndex const numPhase,
                                                                        dPhaseCapPressure_dPhaseVolFrac,
                                                                        pot,
                                                                        dPot_dP,
-                                                                       dPot_dC,
-                                                                       dProp_dC );
+                                                                       dPot_dC );
 
   // and the fractional flow for gravitational part as \lambda_i^{up}/\sum_{numPhase}(\lambda_k^{up}) with up decided upon
   // the Upwind strategy
@@ -1057,7 +983,6 @@ static void computePotentialFluxesCapillary( localIndex const numPhase,
       real64 potOther{};
       real64 dPotOther_dP[numFluxSupportPoints]{};
       real64 dPotOther_dC[numFluxSupportPoints][numComp]{};
-      real64 dPropOther_dC[numComp]{};
 
       //Fetch pot for phase j!=i defined as \rho_j g dz/dx
       computePotentialCapillary::compute< numComp, numFluxSupportPoints >( numPhase,
@@ -1077,8 +1002,7 @@ static void computePotentialFluxesCapillary( localIndex const numPhase,
                                                                            dPhaseCapPressure_dPhaseVolFrac,
                                                                            potOther,
                                                                            dPotOther_dP,
-                                                                           dPotOther_dC,
-                                                                           dPropOther_dC );
+                                                                           dPotOther_dC );
 
       //Eventually get the mobility of the second phase
       localIndex k_up_o = -1;
@@ -1336,9 +1260,8 @@ public:
     real64 pot{};
     real64 pot_dP[numFluxSupportPoints]{};
     real64 pot_dC[numFluxSupportPoints][numComp]{};
-    real64 dProp_dC[numComp]{};
 
-    fn( ip, pot, pot_dP, pot_dC, dProp_dC );
+    fn( ip, pot, pot_dP, pot_dC );
 
     localIndex const k_up = 0;
     localIndex const k_dw = 1;
@@ -1359,9 +1282,8 @@ public:
         real64 potOther{};
         real64 potOther_dP[numFluxSupportPoints]{};
         real64 potOther_dC[numFluxSupportPoints][numComp]{};
-        real64 dPropOther_dC[numComp]{};
 
-        fn( jp, potOther, potOther_dP, potOther_dC, dPropOther_dC );
+        fn( jp, potOther, potOther_dP, potOther_dC );
 
         real64 const mob_up = phaseMob[er_up][esr_up][ei_up][jp];
         real64 const mob_dw = phaseMob[er_dw][esr_dw][ei_dw][jp];
@@ -1404,12 +1326,10 @@ public:
                                 ElementViewConst< arrayView3d< real64 const, constitutive::cappres::USD_CAPPRES > > const & phaseCapPressure,
                                 ElementViewConst< arrayView4d< real64 const, constitutive::cappres::USD_CAPPRES_DS > > const & dPhaseCapPressure_dPhaseVolFrac,
                                 integer const GEOS_UNUSED_PARAM( hasCapPressure ),
-                                real64 & potential
-                                )
+                                real64 & potential )
   {
     real64 dPot_dP[numFluxSupportPoints]{};
     real64 dPot_dC[numFluxSupportPoints][numComp]{};
-    real64 dProp_dC[numComp]{};
     UpwindHelpers::computePotentialViscous::compute< numComp, numFluxSupportPoints >(
       numPhase,
       ip,
@@ -1428,8 +1348,7 @@ public:
       dPhaseCapPressure_dPhaseVolFrac,
       potential,
       dPot_dP,
-      dPot_dC,
-      dProp_dC );
+      dPot_dC );
   }
 
   template< localIndex numComp, localIndex numFluxSupportPoints >
@@ -1467,8 +1386,7 @@ public:
                                                                        [&]( localIndex ipp,
                                                                             real64 & potential_,
                                                                             real64 (& dPotential_dP_)[numFluxSupportPoints],
-                                                                            real64 (& dPotential_dC_)[numFluxSupportPoints][numComp],
-                                                                            real64 (& dProp_dC)[numComp] ) {
+                                                                            real64 (& dPotential_dC_)[numFluxSupportPoints][numComp] ) {
 
       UpwindHelpers::computePotentialGravity::compute< numComp, numFluxSupportPoints >(
         numPhase,
@@ -1490,8 +1408,7 @@ public:
         dPhaseCapPressure_dPhaseVolFrac,
         potential_,
         dPotential_dP_,
-        dPotential_dC_,
-        dProp_dC );
+        dPotential_dC_ );
 
     } );
   }
@@ -1532,8 +1449,8 @@ public:
                                                                        [&]( localIndex ipp,
                                                                             real64 & potential_,
                                                                             real64 (& dPotential_dP_)[numFluxSupportPoints],
-                                                                            real64 (& dPotential_dC_)[numFluxSupportPoints][numComp],
-                                                                            real64 (& dProp_dC)[numComp] ) {
+                                                                            real64 (& dPotential_dC_)[numFluxSupportPoints][numComp] )
+    {
 
       UpwindHelpers::computePotentialCapillary::compute< numComp, numFluxSupportPoints >(
         numPhase,
@@ -1553,8 +1470,7 @@ public:
         dPhaseCapPressure_dPhaseVolFrac,
         potential_,
         dPotential_dP_,
-        dPotential_dC_,
-        dProp_dC );
+        dPotential_dC_ );
     } );
   }
 
