@@ -45,8 +45,12 @@ MPMEventManager::~MPMEventManager()
 
 Group * MPMEventManager::createChild( string const & childKey, string const & childName )
 {
-  GEOS_LOG_RANK_0( "Adding MPM Event: " << childKey << ", " << childName );
-  std::unique_ptr< MPMEventBase > event = MPMEventBase::CatalogInterface::factory( childKey, childName, this );
+  // GEOS_LOG_RANK_0( "Adding MPM Event: " << childKey << ", " << childName );
+  // std::unique_ptr< MPMEventBase > event = MPMEventBase::CatalogInterface::factory( childKey, childName, this );
+  // return &this->registerGroup< MPMEventBase >( childName, std::move( event ) );
+
+  GEOS_LOG_RANK_0( GEOS_FMT( "{}: adding {} {}", getName(), childKey, childName ) );
+  std::unique_ptr< MPMEventBase > event =  MPMEventBase::CatalogInterface::factory( childKey, getDataContext(), childName, this );
   return &this->registerGroup< MPMEventBase >( childName, std::move( event ) );
 }
 

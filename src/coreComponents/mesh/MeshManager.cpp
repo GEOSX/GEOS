@@ -46,15 +46,23 @@ Group * MeshManager::createChild( string const & childKey,
 {
   if( MeshGeneratorBase::CatalogInterface::hasKeyName( childKey ) )
   {
-    GEOS_LOG_RANK_0( "Adding Mesh: " << childKey << ", " << childName );
-    std::unique_ptr< MeshGeneratorBase > meshGen = MeshGeneratorBase::CatalogInterface::factory( childKey, childName, this );
-    return &this->registerGroup< MeshGeneratorBase >( childName, std::move( meshGen ) );
+    // GEOS_LOG_RANK_0( "Adding Mesh: " << childKey << ", " << childName );
+    // std::unique_ptr< MeshGeneratorBase > meshGen = MeshGeneratorBase::CatalogInterface::factory( childKey, childName, this );
+    // return &this->registerGroup< MeshGeneratorBase >( childName, std::move( meshGen ) );
+    
+    GEOS_LOG_RANK_0( GEOS_FMT( "{}: adding {} {}", getName(), childKey, childName ) );
+    std::unique_ptr< MeshGeneratorBase > mesh = MeshGeneratorBase::CatalogInterface::factory( childKey, getDataContext(), childName, this );
+    return &this->registerGroup< MeshGeneratorBase >( childName, std::move( mesh ) );
   }
   else if( ParticleMeshGeneratorBase::CatalogInterface::hasKeyName( childKey ) )
   {
-    GEOS_LOG_RANK_0( "Adding ParticleMesh: " << childKey << ", " << childName );
-    std::unique_ptr< ParticleMeshGeneratorBase > partMeshGen = ParticleMeshGeneratorBase::CatalogInterface::factory( childKey, childName, this );
-    return &this->registerGroup< ParticleMeshGeneratorBase >( childName, std::move( partMeshGen ) );
+    // GEOS_LOG_RANK_0( "Adding ParticleMesh: " << childKey << ", " << childName );
+    // std::unique_ptr< ParticleMeshGeneratorBase > partMeshGen = ParticleMeshGeneratorBase::CatalogInterface::factory( childKey, childName, this );
+    // return &this->registerGroup< ParticleMeshGeneratorBase >( childName, std::move( partMeshGen ) );
+    
+    GEOS_LOG_RANK_0( GEOS_FMT( "{}: adding {} {}", getName(), childKey, childName ) );
+    std::unique_ptr< ParticleMeshGeneratorBase > mesh = ParticleMeshGeneratorBase::CatalogInterface::factory( childKey, getDataContext(), childName, this );
+    return &this->registerGroup< ParticleMeshGeneratorBase >( childName, std::move( mesh ) );
   }
   else
   {

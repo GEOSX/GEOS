@@ -99,7 +99,7 @@ SpatialPartition::SpatialPartition( string const & name,
     setDescription( "Minimum extent of problem dimensions (excluding ghost objects)." );
 
   registerWrapper( viewKeyStruct::gridMaxString() , &m_gridMax ).
-      setApplyDefaultValue( 1.0 ).
+    setApplyDefaultValue( 1.0 ).
     setInputFlag( InputFlags::FALSE ).
     setDescription( "Maximum extent of problem dimensions (excluding ghost objects)." );
 

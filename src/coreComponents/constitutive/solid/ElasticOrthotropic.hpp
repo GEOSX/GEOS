@@ -280,7 +280,35 @@ void ElasticOrthotropicUpdates::computeElasticStrain( localIndex const k,
   elasticStrain[5] = stress[5] / m_c66[k];
 }
 
+GEOS_HOST_DEVICE
+GEOS_FORCE_INLINE
+void ElasticOrthotropicUpdates::getElasticStrain( localIndex const k,
+                                                  localIndex const q,
+                                                  real64 ( & elasticStrain)[6] ) const
+{
 
+  real64 stress[6] = {m_newStress[k][q][0], m_newStress[k][q][1], m_newStress[k][q][2], m_newStress[k][q][3], m_newStress[k][q][4], m_newStress[k][q][5]};
+
+  computeElasticStrain( k, q, stress, elasticStrain );
+
+}
+
+GEOS_HOST_DEVICE
+GEOS_FORCE_INLINE
+void ElasticOrthotropicUpdates::getElasticStrainInc( localIndex const k,
+                                                     localIndex const q,
+                                                     real64 ( & elasticStrainInc)[6] ) const
+{
+
+  real64 stress[6] =
+  {m_newStress[k][q][0] - m_oldStress[k][q][0], m_newStress[k][q][1] - m_oldStress[k][q][1], m_newStress[k][q][2] - m_oldStress[k][q][2], m_newStress[k][q][3] - m_oldStress[k][q][3],
+   m_newStress[k][q][4] - m_oldStress[k][q][4], m_newStress[k][q][5] - m_oldStress[k][q][5]};
+
+  computeElasticStrain( k, q, stress, elasticStrainInc );
+
+}
+
+GEOS_FORCE_INLINE
 GEOS_HOST_DEVICE
 void ElasticOrthotropicUpdates::smallStrainNoStateUpdate_StressOnly( localIndex const k,
                                                                      localIndex const q,

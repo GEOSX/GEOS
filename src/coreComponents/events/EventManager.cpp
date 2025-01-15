@@ -93,7 +93,8 @@ EventManager::~EventManager()
 Group * EventManager::createChild( string const & childKey, string const & childName )
 {
   GEOS_LOG_RANK_0( GEOS_FMT( "{}: adding {} {}", getName(), childKey, childName ) );
-  std::unique_ptr< EventBase > event = EventBase::CatalogInterface::factory( childKey, childName, this );
+  std::unique_ptr< EventBase > event =
+    EventBase::CatalogInterface::factory( childKey, getDataContext(), childName, this );
   return &this->registerGroup< EventBase >( childName, std::move( event ) );
 }
 

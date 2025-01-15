@@ -36,7 +36,6 @@
 #include "solid/ElasticIsotropic.hpp"
 #include "solid/ElasticIsotropicPressureDependent.hpp"
 #include "solid/ElasticTransverseIsotropic.hpp"
-#include "solid/ElasticTransverseIsotropicPressureDependent.hpp"
 #include "solid/Geomechanics.hpp"
 #include "solid/Graphite.hpp"
 #include "solid/ElasticOrthotropic.hpp"
@@ -207,7 +206,6 @@ struct ConstitutivePassThruMPM< ContinuumBase >
                                  Chiumenti,
                                  StrainHardeningPolymer,
                                  PerfectlyPlastic,
-                                 ElasticTransverseIsotropicPressureDependent,
                                  ElasticTransverseIsotropic,
                                  VonMisesJ,
                                  ElasticIsotropic,

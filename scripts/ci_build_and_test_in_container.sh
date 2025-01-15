@@ -304,8 +304,11 @@ if [[ "${RUN_INTEGRATED_TESTS}" = true ]]; then
 
   echo "Running integrated tests..."
   integratedTests/geos_ats.sh --baselineCacheDirectory /tmp/geos/baselines
+  echo "Processing logs..."
+  bin/geos_ats_process_tests_fails --directory integratedTests/TestResults &> integratedTests/TestResults/processedTestsLogs.txt
+  echo "Packing logs..."
   tar -czf ${DATA_EXCHANGE_DIR}/test_logs_${DATA_BASENAME_WE}.tar.gz integratedTests/TestResults
-
+  
   echo "Checking results..."
   bin/geos_ats_log_check integratedTests/TestResults/test_results.ini -y ${GEOS_SRC_DIR}/.integrated_tests.yaml &> $tempdir/log_check.txt
   cat $tempdir/log_check.txt
@@ -315,7 +318,7 @@ if [[ "${RUN_INTEGRATED_TESTS}" = true ]]; then
     INTEGRATED_TEST_EXIT_STATUS=0
   else
     echo "IntegratedTests failed. Rebaseline is required."
-
+   
     # Rebaseline and pack into an archive
     echo "Rebaselining..."
     integratedTests/geos_ats.sh -a rebaselinefailed

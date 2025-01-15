@@ -4429,7 +4429,7 @@ void SolidMechanicsMPM::computeGridSurfaceNormalWeights( ParticleManager & parti
         particleContributionToGrid = LvArray::tensorOps::AiBi< 3 >( gridSurfaceNormal[mappedNode][fieldIndex], surfaceNormal ) * shapeFunctionValues[pp][g] * particleMass[p];
         RAJA::atomicAdd( parallelDeviceAtomic{}, &gridSurfaceNormalWeights[mappedNode][fieldIndex], particleContributionToGrid );
 
-        if( LvArray::tensorOps::l2NormSquared< 3 >( particleSurfaceNormal[p] ) )
+        if( LvArray::tensorOps::l2NormSquared< 3 >( particleSurfaceNormal[p] ) > 1e-16 )
         {
           particleContributionToGrid = shapeFunctionValues[pp][g] * particleMass[p];
           RAJA::atomicAdd( parallelDeviceAtomic{}, &gridSurfaceNormalWeightNormalization[mappedNode][fieldIndex], particleContributionToGrid );
@@ -9429,42 +9429,44 @@ void SolidMechanicsMPM::particleToGrid_reduction( real64 const time_n,
 
 void SolidMechanicsMPM::particleColorSort( ParticleManager & particleManager )
 {
-  real64 nEl[3] = { 0.0 };
-  LvArray::tensorOps::copy< 3 >( nEl, m_nEl );
-  real64 hEl[3] = { 0.0 };
-  LvArray::tensorOps::copy< 3 >( hEl, m_hEl );
-  real64 xLocalMin[3] = { 0.0 };
-  LvArray::tensorOps::copy< 3 >( xLocalMin, m_xLocalMin );
-  // arrayView3d< int const > const ijkMap = m_ijkMap;
+  GEOS_UNUSED_VAR( particleManager ); 
+  
+  // real64 nEl[3] = { 0.0 };
+  // LvArray::tensorOps::copy< 3 >( nEl, m_nEl );
+  // real64 hEl[3] = { 0.0 };
+  // LvArray::tensorOps::copy< 3 >( hEl, m_hEl );
+  // real64 xLocalMin[3] = { 0.0 };
+  // LvArray::tensorOps::copy< 3 >( xLocalMin, m_xLocalMin );
+  // // arrayView3d< int const > const ijkMap = m_ijkMap;
 
-  int colorDims[3];
-  colorDims[0] = 4;
-  colorDims[1] = 4;
-  colorDims[2] = 4;
-  int totalColors = colorDims[0]*colorDims[1]*colorDims[2];
+  // int colorDims[3];
+  // colorDims[0] = 4;
+  // colorDims[1] = 4;
+  // colorDims[2] = 4;
+  // int totalColors = colorDims[0]*colorDims[1]*colorDims[2];
 
-  array2d< array1d < int> > > idx( numSubRegions, totalColors );
+  // array2d< array1d < int> > > idx( numSubRegions, totalColors );
 
-  localIndex subRegionIndex = 0;
-  particleManager.forParticleSubRegions( [&]( ParticleSubRegion & subRegion )
-  {
-    arrayView2d< real64 const > const particlePosition = subRegion.getParticleCenter();
-    arrayView1d< int > const particleColor = subRegion.getField< fields::mpm::particleColor >();
+  // localIndex subRegionIndex = 0;
+  // particleManager.forParticleSubRegions( [&]( ParticleSubRegion & subRegion )
+  // {
+  //   arrayView2d< real64 const > const particlePosition = subRegion.getParticleCenter();
+  //   arrayView1d< int > const particleColor = subRegion.getField< fields::mpm::particleColor >();
 
-    SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
-    forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
-    {
-      localIndex const p = activeParticleIndices[pp];
+  //   SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
+  //   forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
+  //   {
+  //     localIndex const p = activeParticleIndices[pp];
 
-      localIndex i = LvArray::math::floor( ( particlePosition[p][0] - xLocalMin[0] ) / hEl[0] );
-      localIndex j = LvArray::math::floor( ( particlePosition[p][1] - xLocalMin[1] ) / hEl[1] );
-      localIndex k = LvArray::math::floor( ( particlePosition[p][2] - xLocalMin[2] ) / hEl[2] );
+  //     localIndex i = LvArray::math::floor( ( particlePosition[p][0] - xLocalMin[0] ) / hEl[0] );
+  //     localIndex j = LvArray::math::floor( ( particlePosition[p][1] - xLocalMin[1] ) / hEl[1] );
+  //     localIndex k = LvArray::math::floor( ( particlePosition[p][2] - xLocalMin[2] ) / hEl[2] );
 
-      particleColor[p] = colorDims[0] * colorDims[1] * (k % colorDims[2]) + colorDims[0] * (j % colorDims[1]) + (i % colorDims[0]);
-    });
+  //     particleColor[p] = colorDims[0] * colorDims[1] * (k % colorDims[2]) + colorDims[0] * (j % colorDims[1]) + (i % colorDims[0]);
+  //   });
 
-    subRegionIndex++;
-  });
+  //   subRegionIndex++;
+  // });
 }
 
 void SolidMechanicsMPM::particleToGrid_colors( real64 const time_n,
@@ -11075,7 +11077,7 @@ void SolidMechanicsMPM::computeSurfaceNormals( ParticleManager & particleManager
       localIndex const p = activeParticleIndices[pp];
       
       // Particle is on the surface, and does not already have an existing surface normal or position
-      if( particleSurfaceFlag[p] > 0 && LvArray::tensorOps::l2Norm< 3 >( particleSurfaceNormal[p] ) > 1e-16)
+      if( particleSurfaceFlag[p] > 0 && LvArray::tensorOps::l2Norm< 3 >( particleSurfaceNormal[p] ) > 1e-16 )
       {
         LvArray::tensorOps::fill< 3 >( particleSurfaceNormal[p] , 0.0 );
         
