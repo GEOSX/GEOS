@@ -8812,7 +8812,7 @@ void SolidMechanicsMPM::interpolateTable( real64 x,
         case SolidMechanicsMPM::InterpolationOption::Cosine:
           // smooth-step interpolation with cosine, zero endpoint velocity
           output[i] = table[tableInterval][i + 1] - 0.5 * ( table[tableInterval + 1][i + 1] - table[tableInterval][i + 1] ) * ( cos( 3.141592653589793 * timeFrac ) - 1.0 );
-          outputRate[i] = - 0.5 * ( table[tableInterval + 1][i + 1] - table[tableInterval][i + 1] ) * sin( 3.141592653589793 * timeFrac ) / timeInterval;
+          outputRate[i] = 0.5 * ( table[tableInterval + 1][i + 1] - table[tableInterval][i + 1] ) * sin( 3.141592653589793 * timeFrac ) / timeInterval;
           break;
         case SolidMechanicsMPM::InterpolationOption::Smoothstep:
           // smooth-step interpolation with 5th order polynomial, zero endpoint velocity and acceleration
