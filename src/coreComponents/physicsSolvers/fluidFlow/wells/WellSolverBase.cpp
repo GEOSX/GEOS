@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -67,17 +67,10 @@ WellSolverBase::WellSolverBase( string const & name,
 
 Group *WellSolverBase::createChild( string const & childKey, string const & childName )
 {
-  Group *rval = nullptr;
-
-  if( childKey == keys::wellControls )
-  {
-    rval = &registerGroup< WellControls >( childName );
-  }
-  else
-  {
-    PhysicsSolverBase::createChild( childKey, childName );
-  }
-  return rval;
+  const auto childTypes = { keys::wellControls };
+  GEOS_ERROR_IF( childKey != keys::wellControls,
+                 PhysicsSolverBase::CatalogInterface::unknownTypeError( childKey, getDataContext(), childTypes ) );
+  return &registerGroup< WellControls >( childName );
 }
 
 void WellSolverBase::expandObjectCatalogs()

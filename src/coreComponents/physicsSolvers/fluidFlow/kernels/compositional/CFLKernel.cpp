@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -22,6 +22,7 @@
 #include "finiteVolume/SurfaceElementStencil.hpp"
 #include "finiteVolume/EmbeddedSurfaceToCellStencil.hpp"
 #include "finiteVolume/FaceElementToCellStencil.hpp"
+#include "CFLKernel.hpp"
 
 namespace geos
 {
@@ -32,12 +33,13 @@ namespace isothermalCompositionalMultiphaseFVMKernels
 
 /******************************** CFLFluxKernel ********************************/
 
-template< integer NC, localIndex NUM_ELEMS, localIndex maxStencilSize >
+template< integer NC >
 GEOS_HOST_DEVICE
 inline
 void
 CFLFluxKernel::
   compute( integer const numPhases,
+           integer const checkPhasePresenceInGravity,
            localIndex const stencilSize,
            real64 const dt,
            arraySlice1d< localIndex const > const seri,
@@ -67,27 +69,7 @@ CFLFluxKernel::
     real64 gravHead{};
 
     // calculate quantities on primary connected cells
-    integer denom = 0;
-    for( localIndex i = 0; i < NUM_ELEMS; ++i )
-    {
-      localIndex const er  = seri[i];
-      localIndex const esr = sesri[i];
-      localIndex const ei  = sei[i];
-
-      bool const phaseExists = (phaseVolFrac[er][esr][ei][ip] > 0);
-      if( !phaseExists )
-      {
-        continue;
-      }
-
-      // average density across the face
-      densMean += phaseMassDens[er][esr][ei][0][ip];
-      denom++;
-    }
-    if( denom > 1 )
-    {
-      densMean /= denom;
-    }
+    calculateMeanDensity( checkPhasePresenceInGravity, ip, stencilSize, seri, sesri, sei, phaseVolFrac, phaseMassDens, densMean );
 
     //***** calculation of phase volumetric flux *****
 
@@ -138,10 +120,43 @@ CFLFluxKernel::
   }
 }
 
-template< integer NC, typename STENCILWRAPPER_TYPE >
+GEOS_HOST_DEVICE
+inline
 void
-CFLFluxKernel::
+CFLFluxKernel::calculateMeanDensity( integer const checkPhasePresenceInGravity, integer const ip, localIndex const stencilSize,
+                                     arraySlice1d< localIndex const > const seri,
+                                     arraySlice1d< localIndex const > const sesri,
+                                     arraySlice1d< localIndex const > const sei,
+                                     ElementViewConst< arrayView2d< real64 const, compflow::USD_PHASE > > const & phaseVolFrac,
+                                     ElementViewConst< arrayView3d< real64 const, multifluid::USD_PHASE > > const & phaseMassDens,
+                                     real64 & densMean )
+{
+  integer denom = 0;
+  for( localIndex i = 0; i < stencilSize; ++i )
+  {
+    localIndex const er = seri[i];
+    localIndex const esr = sesri[i];
+    localIndex const ei = sei[i];
+
+    bool const phaseExists = (phaseVolFrac[er][esr][ei][ip] > 0);
+    if( checkPhasePresenceInGravity && !phaseExists )
+    {
+      continue;
+    }
+
+    // average density across the face
+    densMean += phaseMassDens[er][esr][ei][0][ip];
+    denom++;
+  }
+  if( denom > 1 )
+  {
+    densMean /= denom;
+  }
+}
+template< integer NC, typename STENCILWRAPPER_TYPE >
+void CFLFluxKernel::
   launch( integer const numPhases,
+          integer const checkPhasePresenceInGravity,
           real64 const dt,
           STENCILWRAPPER_TYPE const & stencilWrapper,
           ElementViewConst< arrayView1d< real64 const > > const & pres,
@@ -161,9 +176,6 @@ CFLFluxKernel::
   typename STENCILWRAPPER_TYPE::IndexContainerViewConstType const & sesri = stencilWrapper.getElementSubRegionIndices();
   typename STENCILWRAPPER_TYPE::IndexContainerViewConstType const & sei = stencilWrapper.getElementIndices();
 
-  localIndex constexpr numElems = STENCILWRAPPER_TYPE::maxNumPointsInFlux;
-  localIndex constexpr maxStencilSize = STENCILWRAPPER_TYPE::maxStencilSize;
-
   forAll< parallelDevicePolicy<> >( stencilWrapper.size(), [=] GEOS_HOST_DEVICE ( localIndex const iconn )
   {
     // compute transmissibility
@@ -176,23 +188,24 @@ CFLFluxKernel::
                                    transmissibility,
                                    dTrans_dPres );
 
-    CFLFluxKernel::compute< NC, numElems, maxStencilSize >( numPhases,
-                                                            sei[iconn].size(),
-                                                            dt,
-                                                            seri[iconn],
-                                                            sesri[iconn],
-                                                            sei[iconn],
-                                                            transmissibility[0],
-                                                            pres,
-                                                            gravCoef,
-                                                            phaseVolFrac,
-                                                            phaseRelPerm,
-                                                            phaseVisc,
-                                                            phaseDens,
-                                                            phaseMassDens,
-                                                            phaseCompFrac,
-                                                            phaseOutflux,
-                                                            compOutflux );
+    CFLFluxKernel::compute< NC >( numPhases,
+                                  checkPhasePresenceInGravity,
+                                  sei[iconn].size(),
+                                  dt,
+                                  seri[iconn],
+                                  sesri[iconn],
+                                  sei[iconn],
+                                  transmissibility[0],
+                                  pres,
+                                  gravCoef,
+                                  phaseVolFrac,
+                                  phaseRelPerm,
+                                  phaseVisc,
+                                  phaseDens,
+                                  phaseMassDens,
+                                  phaseCompFrac,
+                                  phaseOutflux,
+                                  compOutflux );
   } );
 }
 
@@ -200,6 +213,7 @@ CFLFluxKernel::
   template \
   void CFLFluxKernel:: \
     launch< NC, STENCILWRAPPER_TYPE >( integer const numPhases, \
+                                       integer const checkPhasePresenceInGravity, \
                                        real64 const dt, \
                                        STENCILWRAPPER_TYPE const & stencil, \
                                        ElementViewConst< arrayView1d< real64 const > > const & pres, \

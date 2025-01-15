@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -430,7 +430,7 @@ public:
   createAndLaunch( integer const numComps,
                    integer const numPhases,
                    globalIndex const rankOffset,
-                   integer const useTotalMassEquation,
+                   BitFlags< isothermalCompositionalMultiphaseFVMKernels::KernelFlags > kernelFlags,
                    string const & dofKey,
                    string const & solverName,
                    FaceManager const & faceManager,
@@ -452,11 +452,6 @@ public:
       ElementRegionManager::ElementViewAccessor< arrayView1d< globalIndex const > > dofNumberAccessor =
         elemManager.constructArrayViewAccessor< globalIndex, 1 >( dofKey );
       dofNumberAccessor.setName( solverName + "/accessors/" + dofKey );
-
-      // for now, we neglect capillary pressure in the kernel
-      BitFlags< isothermalCompositionalMultiphaseFVMKernels::KernelFlags > kernelFlags;
-      if( useTotalMassEquation )
-        kernelFlags.set( isothermalCompositionalMultiphaseFVMKernels::KernelFlags::TotalMassEquation );
 
       using KernelType = DirichletFluxComputeKernel< NUM_COMP, NUM_DOF, typename FluidType::KernelWrapper >;
       typename KernelType::CompFlowAccessors compFlowAccessors( elemManager, solverName );

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -37,6 +37,7 @@ inline
 void
 ControlEquationHelper::
   switchControl( bool const isProducer,
+                 WellControls::Control const & inputControl,
                  WellControls::Control const & currentControl,
                  integer const phasePhaseIndex,
                  real64 const & targetBHP,
@@ -46,6 +47,7 @@ ControlEquationHelper::
                  real64 const & currentBHP,
                  arrayView1d< real64 const > const & currentPhaseVolRate,
                  real64 const & currentTotalVolRate,
+                 real64 const & currentMassRate,
                  WellControls::Control & newControl )
 {
   // if isViable is true at the end of the following checks, no need to switch
@@ -58,7 +60,7 @@ ControlEquationHelper::
 
   // Currently, the available constraints are:
   //   - Producer: BHP, PHASEVOLRATE
-  //   - Injector: BHP, TOTALVOLRATE
+  //   - Injector: BHP, TOTALVOLRATE, MASSRATE
 
   // TODO: support GRAT, WRAT, LIQUID for producers and check if any of the active constraint is violated
 
@@ -71,6 +73,10 @@ ControlEquationHelper::
       controlIsViable = ( LvArray::math::abs( currentPhaseVolRate[phasePhaseIndex] ) <= LvArray::math::abs( targetPhaseRate ) );
     }
     // the control is viable if the reference total rate is below the max rate for injectors
+    else if( inputControl == WellControls::Control::MASSRATE )
+    {
+      controlIsViable = ( LvArray::math::abs( currentMassRate ) <= LvArray::math::abs( targetMassRate ) );
+    }
     else
     {
       controlIsViable = ( LvArray::math::abs( currentTotalVolRate ) <= LvArray::math::abs( targetTotalRate ) );
@@ -219,17 +225,6 @@ ControlEquationHelper::
     if constexpr ( IS_THERMAL )
       dControlEqn[COFFSET_WJ::dT] = massDensity*dCurrentTotalVolRate[COFFSET_WJ::dT];
   }
-  // Total mass rate control
-  else if( currentControl == WellControls::Control::MASSRATE )
-  {
-    controlEqn = massDensity*currentTotalVolRate - targetMassRate;
-    dControlEqn[COFFSET_WJ::dP] = massDensity*dCurrentTotalVolRate[COFFSET_WJ::dP];
-    dControlEqn[COFFSET_WJ::dQ] = massDensity*dCurrentTotalVolRate[COFFSET_WJ::dQ];
-    for( integer ic = 0; ic < NC; ++ic )
-    {
-      dControlEqn[COFFSET_WJ::dC+ic] = massDensity*dCurrentTotalVolRate[COFFSET_WJ::dC+ic];
-    }
-  }
   else
   {
     GEOS_ERROR( "This constraint is not supported in CompositionalMultiphaseWell" );
@@ -323,6 +318,7 @@ PressureRelationKernel::
   // static well control data
   bool const isProducer = wellControls.isProducer();
   WellControls::Control const currentControl = wellControls.getControl();
+  WellControls::Control const inputControl = wellControls.getInputControl();
   real64 const targetBHP = wellControls.getTargetBHP( timeAtEndOfStep );
   real64 const targetTotalRate = wellControls.getTargetTotalRate( timeAtEndOfStep );
   real64 const targetPhaseRate = wellControls.getTargetPhaseRate( timeAtEndOfStep );
@@ -344,6 +340,9 @@ PressureRelationKernel::
   arrayView1d< real64 const > const & dCurrentTotalVolRate =
     wellControls.getReference< array1d< real64 > >( CompositionalMultiphaseWell::viewKeyStruct::dCurrentTotalVolRateString() );
 
+  real64 const & currentMassRate =
+    wellControls.getReference< real64 >( CompositionalMultiphaseWell::viewKeyStruct::currentMassRateString() );
+
   real64 const & massDensity  =
     wellControls.getReference< real64 >( CompositionalMultiphaseWell::viewKeyStruct::massDensityString() );
 
@@ -358,6 +357,7 @@ PressureRelationKernel::
     {
       WellControls::Control newControl = currentControl;
       ControlEquationHelper::switchControl( isProducer,
+                                            inputControl,
                                             currentControl,
                                             targetPhaseIndex,
                                             targetBHP,
@@ -367,6 +367,7 @@ PressureRelationKernel::
                                             currentBHP,
                                             currentPhaseVolRate,
                                             currentTotalVolRate,
+                                            currentMassRate,
                                             newControl );
       if( currentControl != newControl )
       {
@@ -737,7 +738,6 @@ RateInitializationKernel::
     else if( control == WellControls::Control::MASSRATE )
     {
       connRate[iwelem] = targetMassRate;
-      connRate[iwelem] = targetMassRate* totalDens[iwelem][0];
     }
     else
     {

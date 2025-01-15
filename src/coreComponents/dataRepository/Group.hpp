@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -247,24 +247,6 @@ public:
     T & rval = registerGroup< T >( keyIndex.key(), std::make_unique< T >( keyIndex.key(), this ) );
     keyIndex.setIndex( m_subGroups.getIndex( keyIndex.key() ) );
     return rval;
-  }
-
-  /**
-   * @brief @copybrief registerGroup(string const &,std::unique_ptr<T>)
-   *
-   * @tparam T The type of the Group to add/register. This should be a type that derives from Group.
-   * @tparam TBASE The type whose type catalog will be used to look up the new sub-group type
-   * @param[in] name        The name of the group to use as a string key.
-   * @param[in] catalogName The catalog name of the new type.
-   * @return                A pointer to the newly registered Group.
-   *
-   * Creates and registers a Group or class derived from Group as a subgroup of this Group.
-   */
-  template< typename T = Group, typename TBASE = Group >
-  T & registerGroup( string const & name, string const & catalogName )
-  {
-    std::unique_ptr< TBASE > newGroup = TBASE::CatalogInterface::Factory( catalogName, name, this );
-    return registerGroup< T >( name, std::move( newGroup ) );
   }
 
   /**
@@ -770,6 +752,26 @@ public:
   void postRestartInitializationRecursive();
 
   /**
+   * @return The validated name for a given Group from its xml value: If the node has a "name"
+   *         attribute, it is validated after the `groupName` rtType regex, and its value is
+   *         returned. Else if the Group name is not "Required", the node tag name is used.
+   * @param targetNode The XML node whose name is to be processed. It throws if not of element type.
+   * @param targetNodePos The position of the target node within the XML document.
+   * @param parentNodeName The name of the parent node, used for error reporting.
+   * @param parentNodePos The position of the parent node, used for error reporting.
+   * @param siblingNames A set containing the names of sibling nodes (to verify that there are no
+   *                     duplicates). The function will populate this set if the attribute name is
+   *                     used and if no error is found.
+   * @throws InputError if the node type is not an xml element or if there are duplicate names
+   *         among xml siblings.
+   */
+  static string processInputName( xmlWrapper::xmlNode const & targetNode,
+                                  xmlWrapper::xmlNodePos const & targetNodePos,
+                                  string_view parentNodeName,
+                                  xmlWrapper::xmlNodePos const & parentNodePos,
+                                  std::set< string > & siblingNames );
+
+  /**
    * @brief Recursively read values using ProcessInputFile() from the input
    * file and put them into the wrapped values for this group.
    * Also add the includes content to the xmlDocument when `Include` nodes are encountered.
@@ -783,11 +785,11 @@ public:
    * but allow to reuse an existing xmlNodePos.
    * @param[in] xmlDocument the XML document that contains the targetNode.
    * @param[in] targetNode the XML node that to extract input values from.
-   * @param[in] nodePos the target node position, typically obtained with xmlDocument::getNodePosition().
+   * @param[in] targetNodePos the target node position, typically obtained with xmlDocument::getNodePosition().
    */
   void processInputFileRecursive( xmlWrapper::xmlDocument & xmlDocument,
                                   xmlWrapper::xmlNode & targetNode,
-                                  xmlWrapper::xmlNodePos const & nodePos );
+                                  xmlWrapper::xmlNodePos const & targetNodePos );
 
   /**
    * @brief Recursively call postInputInitialization() to apply post processing after

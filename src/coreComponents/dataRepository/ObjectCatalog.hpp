@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -30,6 +30,7 @@
 #include "common/logger/Logger.hpp"
 #include "common/format/StringUtilities.hpp"
 #include "LvArray/src/system.hpp"
+#include "DataContext.hpp"
 
 #include <iostream>
 #include <list>
@@ -171,38 +172,47 @@ public:
   /**
    * @brief Static method to create a new object that derives from BASETYPE
    * @param[in] objectTypeName the key to the catalog entry that is able to create the correct type.
+   * @param context The data context of the Group for which we attempt to create a sub-group.
    * @param args these are the arguments to the constructor of the target type
    * @return passes a unique_ptr<BASETYPE> to the newly allocated class.
-   *
-   * @note The simulation is killed if the builder is not found.
+   * @note Generate a fatal error:
+   * - if the object type to create is not found in this Catalog,
+   * - if the builder is not found.
    */
   //START_SPHINX_2
   static std::unique_ptr< BASETYPE > factory( std::string const & objectTypeName,
+                                              DataContext const & context,
                                               ARGS... args )
   {
-    // We stop the simulation if the product is not found
-    if( !hasKeyName( objectTypeName ) )
-    {
-      std::list< typename CatalogType::key_type > keys = getKeys();
-      string const tmp = stringutilities::join( keys.cbegin(), keys.cend(), ",\n" );
-
-      string errorMsg = "Could not find keyword \"" + objectTypeName + "\" in this context. ";
-      errorMsg += "Please be sure that all your keywords are properly spelled or that input file parameters have not changed.\n";
-      errorMsg += "All available keys are: [\n" + tmp + "\n]";
-      GEOS_ERROR( errorMsg );
-    }
+    // We stop the simulation if the type to create is not found
+    GEOS_ERROR_IF( !hasKeyName( objectTypeName ), unknownTypeError( objectTypeName, context, getKeys() ) );
 
     // We also stop the simulation if the builder is not here.
     CatalogInterface< BASETYPE, ARGS... > const * builder = getCatalog().at( objectTypeName ).get();
-    if( builder == nullptr )
-    {
-      const string errorMsg = "\"" + objectTypeName + "\" could be found. But the builder is invalid.\n";
-      GEOS_ERROR( errorMsg );
-    }
+    GEOS_ERROR_IF( builder == nullptr,
+                   GEOS_FMT( "Type \"{}\" is valid in {}, but the builder is invalid.",
+                             objectTypeName, context ) );
 
     return builder->allocate( args ... );
   }
   //STOP_SPHINX
+
+  /**
+   * @return Generates a formatted error message for an unknown type for a catalog.
+   * @param objectTypeName The name of the object type that is invalid.
+   * @param context The data context of the Group for which the erroneous type creation was attempted.
+   * @param allowedKeys A container of allowed keys, which will be listed in the error message.
+   * @tparam KEYS_CONTAINER_T A container type holding the allowed keys.
+   */
+  template< typename KEYS_CONTAINER_T >
+  static string unknownTypeError( string const & objectTypeName, DataContext const & context,
+                                  KEYS_CONTAINER_T const & allowedKeys )
+  {
+    return GEOS_FMT( "The tag \"{}\" is invalid within {}. Please verify the keywords spelling and that "
+                     "input file parameters have not changed.\n"
+                     "All available tags are: {}\n",
+                     objectTypeName, context, stringutilities::join( allowedKeys, ", " ) );
+  }
 
   /**
    * @brief Downcast base type reference to derived type
@@ -303,7 +313,7 @@ public:
    */
   CatalogEntry & operator=( CatalogEntry && source )
   {
-    CatalogInterface< BASETYPE, ARGS... >::operator=( std::move(source));
+    CatalogInterface< BASETYPE, ARGS... >::operator=( std::move( source ));
   }
 
   /**
@@ -312,7 +322,7 @@ public:
    * @return a unique_ptr<BASETYPE> to the newly allocated class.
    */
   //START_SPHINX_4
-  virtual std::unique_ptr< BASETYPE > allocate( ARGS... args ) const override
+  virtual std::unique_ptr< BASETYPE > allocate( ARGS ... args ) const override
   {
 #if OBJECTCATALOGVERBOSE > 0
     GEOS_LOG( "Creating type " << LvArray::system::demangle( typeid(TYPE).name())
@@ -589,7 +599,7 @@ public:
    */
   CatalogEntry & operator=( CatalogEntry && source )
   {
-    CatalogInterface< BASETYPE >::operator=( std::move(source));
+    CatalogInterface< BASETYPE >::operator=( std::move( source ));
   }
 
   /**

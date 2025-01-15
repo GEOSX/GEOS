@@ -2,10 +2,11 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2018-2020 TotalEnergies
- * Copyright (c) 2019-     GEOSX Contributors
+ * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2023-2024 Chevron
+ * Copyright (c) 2019-     GEOS/GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -66,10 +67,10 @@ CellElementRegionSelector::getMatchingCellblocks( CellElementRegion const & regi
                            "Available cellBlock list: {{ {} }}\nAvailable region attribute list: {{ {} }}",
                            region.getWrapperDataContext( ViewKeys::sourceCellBlockNamesString() ),
                            matchPattern,
-                           stringutilities::joinLamda( m_regionAttributesOwners, ", ",
-                                                       []( auto pair ) { return pair->first; } ),
-                           stringutilities::joinLamda( m_cellBlocksOwners, ", ",
-                                                       []( auto pair ) { return pair->first; } ) ),
+                           stringutilities::joinLambda( m_regionAttributesOwners, ", ",
+                                                        []( auto pair ) { return pair->first; } ),
+                           stringutilities::joinLambda( m_cellBlocksOwners, ", ",
+                                                        []( auto pair ) { return pair->first; } ) ),
                  InputError );
   return matchedCellBlocks;
 }
@@ -85,8 +86,8 @@ CellElementRegionSelector::verifyRequestedCellBlocks( CellElementRegion const & 
                    GEOS_FMT( "{}: No cellBlock named '{}'.\nAvailable cellBlock list: {{ {} }}",
                              region.getWrapperDataContext( ViewKeys::sourceCellBlockNamesString() ),
                              requestedCellBlockName,
-                             stringutilities::joinLamda( m_cellBlocksOwners, ", ",
-                                                         []( auto pair ) { return pair->first; } ) ),
+                             stringutilities::joinLambda( m_cellBlocksOwners, ", ",
+                                                          []( auto pair ) { return pair->first; } ) ),
                    InputError );
   }
 }
@@ -161,7 +162,7 @@ void CellElementRegionSelector::checkSelectionConsistency() const
         multipleRefsErrors.push_back(
           GEOS_FMT( "The {} '{}' has been referenced in multiple {}:\n{}",
                     qualifierType, qualifier, CellElementRegion::catalogName(),
-                    stringutilities::joinLamda( owningRegions, '\n', getRegionStr ) ) );
+                    stringutilities::joinLambda( owningRegions, '\n', getRegionStr ) ) );
       }
     }
     GEOS_THROW_IF( !multipleRefsErrors.empty(), stringutilities::join( multipleRefsErrors, "\n\n" ), InputError );

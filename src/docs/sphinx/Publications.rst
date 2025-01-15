@@ -2,7 +2,7 @@
 Publications
 ###############################################################################
 
-Last updated 26-August-2024
+Last updated 16-December-2024
 
 Preprints and Early-Views
 =========================
@@ -23,6 +23,11 @@ Preprints and Early-Views
        | RM Aronson, N Castelletto, FP Hamon, JA White, HA Tchelepi
        | Computer Methods in Applied Mechanics and Engineering
        | `doi:10.1016/j.cma.2024.117008 <https://doi.org/10.1016/j.cma.2024.117008>`_
+
+   * - | **Pressure stability in explicitly coupled simulations of poromechanics with application to CO2 sequestration**
+       | RM Aronson, P Tomin, N Castelletto, FP Hamon, JA White, HA Tchelepi
+       | Computer Methods in Applied Mechanics and Engineering
+       | `doi:10.1016/j.cma.2024.117633 <https://doi.org/10.1016/j.cma.2024.117633>`_
 
    * - | **Managing reservoir dynamics when converting natural gas fields to underground hydrogen storage**
        | JT Camargo, JA White, FP Hamon, V Fakeye, TA Buscheck, N Huerta

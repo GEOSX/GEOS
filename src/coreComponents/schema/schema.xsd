@@ -185,6 +185,12 @@
 					<xsd:field xpath="@name" />
 				</xsd:unique>
 			</xsd:element>
+			<xsd:element name="ExternalDataSource" type="ExternalDataSourceType" minOccurs="1" maxOccurs="1">
+				<xsd:unique name="ExternalDataSourceVTKHierarchicalDataSourceUniqueName">
+					<xsd:selector xpath="VTKHierarchicalDataSource" />
+					<xsd:field xpath="@name" />
+				</xsd:unique>
+			</xsd:element>
 			<xsd:element name="FieldSpecifications" type="FieldSpecificationsType" maxOccurs="1">
 				<xsd:unique name="FieldSpecificationsAquiferUniqueName">
 					<xsd:selector xpath="Aquifer" />
@@ -391,6 +397,10 @@
 				</xsd:unique>
 				<xsd:unique name="SolversQuasiDynamicEQUniqueName">
 					<xsd:selector xpath="QuasiDynamicEQ" />
+					<xsd:field xpath="@name" />
+				</xsd:unique>
+				<xsd:unique name="SolversQuasiDynamicEQRK32UniqueName">
+					<xsd:selector xpath="QuasiDynamicEQRK32" />
 					<xsd:field xpath="@name" />
 				</xsd:unique>
 				<xsd:unique name="SolversReactiveCompositionalMultiphaseOBLUniqueName">
@@ -1083,6 +1093,25 @@
 			<xsd:pattern value=".*[\[\]`$].*|seconds|minutes|hours|days|years|full" />
 		</xsd:restriction>
 	</xsd:simpleType>
+	<xsd:complexType name="ExternalDataSourceType">
+		<xsd:choice minOccurs="0" maxOccurs="unbounded">
+			<xsd:element name="VTKHierarchicalDataSource" type="VTKHierarchicalDataSourceType">
+				<xsd:unique name="ExternalDataSourceVTKHierarchicalDataSourceVTKHierarchicalDataSourceUniqueName">
+					<xsd:selector xpath="VTKHierarchicalDataSource" />
+					<xsd:field xpath="@name" />
+				</xsd:unique>
+			</xsd:element>
+		</xsd:choice>
+	</xsd:complexType>
+	<xsd:complexType name="VTKHierarchicalDataSourceType">
+		<xsd:choice minOccurs="0" maxOccurs="unbounded">
+			<xsd:element name="VTKHierarchicalDataSource" type="VTKHierarchicalDataSourceType" />
+		</xsd:choice>
+		<!--file => Path to the mesh file-->
+		<xsd:attribute name="file" type="groupNameRef" use="required" />
+		<!--name => A name is required for any non-unique nodes-->
+		<xsd:attribute name="name" type="groupName" use="required" />
+	</xsd:complexType>
 	<xsd:complexType name="FieldSpecificationsType">
 		<xsd:choice minOccurs="0" maxOccurs="unbounded">
 			<xsd:element name="Aquifer" type="AquiferType" />
@@ -1502,6 +1531,10 @@ stress - traction is applied to the faces as specified by the inner product of i
 					<xsd:selector xpath="InternalWell" />
 					<xsd:field xpath="@name" />
 				</xsd:unique>
+				<xsd:unique name="MeshInternalMeshRegionUniqueName">
+					<xsd:selector xpath="Region" />
+					<xsd:field xpath="@name" />
+				</xsd:unique>
 				<xsd:unique name="MeshInternalMeshVTKWellUniqueName">
 					<xsd:selector xpath="VTKWell" />
 					<xsd:field xpath="@name" />
@@ -1510,6 +1543,10 @@ stress - traction is applied to the faces as specified by the inner product of i
 			<xsd:element name="InternalWellbore" type="InternalWellboreType">
 				<xsd:unique name="MeshInternalWellboreInternalWellUniqueName">
 					<xsd:selector xpath="InternalWell" />
+					<xsd:field xpath="@name" />
+				</xsd:unique>
+				<xsd:unique name="MeshInternalWellboreRegionUniqueName">
+					<xsd:selector xpath="Region" />
 					<xsd:field xpath="@name" />
 				</xsd:unique>
 				<xsd:unique name="MeshInternalWellboreVTKWellUniqueName">
@@ -1521,6 +1558,10 @@ stress - traction is applied to the faces as specified by the inner product of i
 			<xsd:element name="VTKMesh" type="VTKMeshType">
 				<xsd:unique name="MeshVTKMeshInternalWellUniqueName">
 					<xsd:selector xpath="InternalWell" />
+					<xsd:field xpath="@name" />
+				</xsd:unique>
+				<xsd:unique name="MeshVTKMeshRegionUniqueName">
+					<xsd:selector xpath="Region" />
 					<xsd:field xpath="@name" />
 				</xsd:unique>
 				<xsd:unique name="MeshVTKMeshVTKWellUniqueName">
@@ -1538,6 +1579,7 @@ stress - traction is applied to the faces as specified by the inner product of i
 					<xsd:field xpath="@name" />
 				</xsd:unique>
 			</xsd:element>
+			<xsd:element name="Region" type="RegionType" />
 			<xsd:element name="VTKWell" type="VTKWellType">
 				<xsd:unique name="MeshInternalMeshVTKWellPerforationUniqueName">
 					<xsd:selector xpath="Perforation" />
@@ -1609,6 +1651,14 @@ stress - traction is applied to the faces as specified by the inner product of i
 		<!--name => A name is required for any non-unique nodes-->
 		<xsd:attribute name="name" type="groupName" use="required" />
 	</xsd:complexType>
+	<xsd:complexType name="RegionType">
+		<!--id => Interval region identifier-->
+		<xsd:attribute name="id" type="integer" use="required" />
+		<!--pathInRepository => Path of the dataset in the repository-->
+		<xsd:attribute name="pathInRepository" type="string" use="required" />
+		<!--name => A name is required for any non-unique nodes-->
+		<xsd:attribute name="name" type="groupName" use="required" />
+	</xsd:complexType>
 	<xsd:complexType name="VTKWellType">
 		<xsd:choice minOccurs="0" maxOccurs="unbounded">
 			<xsd:element name="Perforation" type="PerforationType" />
@@ -1638,6 +1688,7 @@ stress - traction is applied to the faces as specified by the inner product of i
 					<xsd:field xpath="@name" />
 				</xsd:unique>
 			</xsd:element>
+			<xsd:element name="Region" type="RegionType" />
 			<xsd:element name="VTKWell" type="VTKWellType">
 				<xsd:unique name="MeshInternalWellboreVTKWellPerforationUniqueName">
 					<xsd:selector xpath="Perforation" />
@@ -1706,6 +1757,7 @@ stress - traction is applied to the faces as specified by the inner product of i
 					<xsd:field xpath="@name" />
 				</xsd:unique>
 			</xsd:element>
+			<xsd:element name="Region" type="RegionType" />
 			<xsd:element name="VTKWell" type="VTKWellType">
 				<xsd:unique name="MeshVTKMeshVTKWellPerforationUniqueName">
 					<xsd:selector xpath="Perforation" />
@@ -1713,6 +1765,8 @@ stress - traction is applied to the faces as specified by the inner product of i
 				</xsd:unique>
 			</xsd:element>
 		</xsd:choice>
+		<!--dataSourceName => Name of the VTK data source-->
+		<xsd:attribute name="dataSourceName" type="string" default="" />
 		<!--faceBlocks => For multi-block files, names of the face mesh block.-->
 		<xsd:attribute name="faceBlocks" type="groupNameRef_array" default="{}" />
 		<!--fieldNamesInGEOS => Names of the volumic fields in GEOS to import into-->
@@ -1720,7 +1774,7 @@ stress - traction is applied to the faces as specified by the inner product of i
 		<!--fieldsToImport => Volumic fields to be imported from the external mesh file-->
 		<xsd:attribute name="fieldsToImport" type="groupNameRef_array" default="{}" />
 		<!--file => Path to the mesh file-->
-		<xsd:attribute name="file" type="path" use="required" />
+		<xsd:attribute name="file" type="path" default="" />
 		<!--logLevel => Log level-->
 		<xsd:attribute name="logLevel" type="integer" default="0" />
 		<!--mainBlockName => For multi-block files, name of the 3d mesh block.-->
@@ -2059,6 +2113,11 @@ the relative residual norm satisfies:
 	<xsd:complexType name="BlueprintType">
 		<!--childDirectory => Child directory path-->
 		<xsd:attribute name="childDirectory" type="string" default="" />
+		<!--logLevel => Sets the level of information to write in the standard output (the console typically).
+Level 0 outputs no specific information for this solver. Higher levels require more outputs.
+1
+ - Output timing information-->
+		<xsd:attribute name="logLevel" type="integer" default="0" />
 		<!--outputFullQuadratureData => If true writes out data associated with every quadrature point.-->
 		<xsd:attribute name="outputFullQuadratureData" type="integer" default="0" />
 		<!--parallelThreads => Number of plot files.-->
@@ -2075,6 +2134,11 @@ the relative residual norm satisfies:
 		<xsd:attribute name="childDirectory" type="string" default="" />
 		<!--inputPath => Path at which the chombo to geos file will be written.-->
 		<xsd:attribute name="inputPath" type="string" default="/INVALID_INPUT_PATH" />
+		<!--logLevel => Sets the level of information to write in the standard output (the console typically).
+Level 0 outputs no specific information for this solver. Higher levels require more outputs.
+1
+ - Output timing information-->
+		<xsd:attribute name="logLevel" type="integer" default="0" />
 		<!--outputPath => Path at which the geos to chombo file will be written.-->
 		<xsd:attribute name="outputPath" type="string" use="required" />
 		<!--parallelThreads => Number of plot files.-->
@@ -2089,6 +2153,11 @@ the relative residual norm satisfies:
 	<xsd:complexType name="PythonType">
 		<!--childDirectory => Child directory path-->
 		<xsd:attribute name="childDirectory" type="string" default="" />
+		<!--logLevel => Sets the level of information to write in the standard output (the console typically).
+Level 0 outputs no specific information for this solver. Higher levels require more outputs.
+1
+ - Output timing information-->
+		<xsd:attribute name="logLevel" type="integer" default="0" />
 		<!--parallelThreads => Number of plot files.-->
 		<xsd:attribute name="parallelThreads" type="integer" default="1" />
 		<!--name => A name is required for any non-unique nodes-->
@@ -2097,6 +2166,11 @@ the relative residual norm satisfies:
 	<xsd:complexType name="RestartType">
 		<!--childDirectory => Child directory path-->
 		<xsd:attribute name="childDirectory" type="string" default="" />
+		<!--logLevel => Sets the level of information to write in the standard output (the console typically).
+Level 0 outputs no specific information for this solver. Higher levels require more outputs.
+1
+ - Output timing information-->
+		<xsd:attribute name="logLevel" type="integer" default="0" />
 		<!--parallelThreads => Number of plot files.-->
 		<xsd:attribute name="parallelThreads" type="integer" default="1" />
 		<!--name => A name is required for any non-unique nodes-->
@@ -2107,6 +2181,11 @@ the relative residual norm satisfies:
 		<xsd:attribute name="childDirectory" type="string" default="" />
 		<!--fieldNames => Names of the fields to output. If this attribute is specified, GEOSX outputs all (and only) the fields specified by the user, regardless of their plotLevel-->
 		<xsd:attribute name="fieldNames" type="groupNameRef_array" default="{}" />
+		<!--logLevel => Sets the level of information to write in the standard output (the console typically).
+Level 0 outputs no specific information for this solver. Higher levels require more outputs.
+1
+ - Output timing information-->
+		<xsd:attribute name="logLevel" type="integer" default="0" />
 		<!--onlyPlotSpecifiedFieldNames => If this flag is equal to 1, then we only plot the fields listed in `fieldNames`. Otherwise, we plot all the fields with the required `plotLevel`, plus the fields listed in `fieldNames`-->
 		<xsd:attribute name="onlyPlotSpecifiedFieldNames" type="integer" default="0" />
 		<!--parallelThreads => Number of plot files.-->
@@ -2145,7 +2224,7 @@ the relative residual norm satisfies:
 	<xsd:complexType name="VTKType">
 		<!--childDirectory => Child directory path-->
 		<xsd:attribute name="childDirectory" type="string" default="" />
-		<!--fieldNames => Names of the fields to output. If this attribute is specified, GEOSX outputs all the fields specified by the user, regardless of their `plotLevel`-->
+		<!--fieldNames => Names of the fields to output. If this attribute is specified, GEOS outputs all the fields specified by the user, regardless of their `plotLevel`-->
 		<xsd:attribute name="fieldNames" type="groupNameRef_array" default="{}" />
 		<!--format => Output data format.  Valid options: ``binary``, ``ascii``-->
 		<xsd:attribute name="format" type="geos_vtk_VTKOutputMode" default="binary" />
@@ -2212,6 +2291,7 @@ the relative residual norm satisfies:
 			<xsd:element name="PhaseFieldFracture" type="PhaseFieldFractureType" />
 			<xsd:element name="ProppantTransport" type="ProppantTransportType" />
 			<xsd:element name="QuasiDynamicEQ" type="QuasiDynamicEQType" />
+			<xsd:element name="QuasiDynamicEQRK32" type="QuasiDynamicEQRK32Type" />
 			<xsd:element name="ReactiveCompositionalMultiphaseOBL" type="ReactiveCompositionalMultiphaseOBLType" />
 			<xsd:element name="SeismicityRate" type="SeismicityRateType" />
 			<xsd:element name="SinglePhaseFVM" type="SinglePhaseFVMType" />
@@ -2597,6 +2677,8 @@ Level 0 outputs no specific information for this solver. Higher levels require m
 		<xsd:attribute name="useDBC" type="integer" default="0" />
 		<!--useMass => Use mass formulation instead of molar. Warning : Affects SourceFlux rates units.-->
 		<xsd:attribute name="useMass" type="integer" default="0" />
+		<!--useNewGravity => Flag indicating whether new gravity treatment is used-->
+		<xsd:attribute name="useNewGravity" type="integer" default="0" />
 		<!--useSimpleAccumulation => Flag indicating whether simple accumulation form is used-->
 		<xsd:attribute name="useSimpleAccumulation" type="integer" default="1" />
 		<!--useTotalMassEquation => Flag indicating whether total mass equation is used-->
@@ -2684,6 +2766,8 @@ Level 0 outputs no specific information for this solver. Higher levels require m
 		<xsd:attribute name="temperature" type="real64" use="required" />
 		<!--useMass => Use mass formulation instead of molar. Warning : Affects SourceFlux rates units.-->
 		<xsd:attribute name="useMass" type="integer" default="0" />
+		<!--useNewGravity => Flag indicating whether new gravity treatment is used-->
+		<xsd:attribute name="useNewGravity" type="integer" default="0" />
 		<!--useSimpleAccumulation => Flag indicating whether simple accumulation form is used-->
 		<xsd:attribute name="useSimpleAccumulation" type="integer" default="1" />
 		<!--useTotalMassEquation => Flag indicating whether total mass equation is used-->
@@ -3483,6 +3567,41 @@ Level 0 outputs no specific information for this solver. Higher levels require m
 		<xsd:attribute name="targetRegions" type="groupNameRef_array" use="required" />
 		<!--targetSlipIncrement => Target slip incrmeent for timestep size selction-->
 		<xsd:attribute name="targetSlipIncrement" type="real64" default="1e-07" />
+		<!--writeLinearSystem => Write matrix, rhs, solution to screen ( = 1) or file ( = 2).-->
+		<xsd:attribute name="writeLinearSystem" type="integer" default="0" />
+		<!--name => A name is required for any non-unique nodes-->
+		<xsd:attribute name="name" type="groupName" use="required" />
+	</xsd:complexType>
+	<xsd:complexType name="QuasiDynamicEQRK32Type">
+		<xsd:choice minOccurs="0" maxOccurs="unbounded">
+			<xsd:element name="LinearSolverParameters" type="LinearSolverParametersType" maxOccurs="1" />
+			<xsd:element name="NonlinearSolverParameters" type="NonlinearSolverParametersType" maxOccurs="1" />
+		</xsd:choice>
+		<!--cflFactor => Factor to apply to the `CFL condition <http://en.wikipedia.org/wiki/Courant-Friedrichs-Lewy_condition>`_ when calculating the maximum allowable time step. Values should be in the interval (0,1] -->
+		<xsd:attribute name="cflFactor" type="real64" default="0.5" />
+		<!--discretization => Name of discretization object (defined in the :ref:`NumericalMethodsManager`) to use for this solver. For instance, if this is a Finite Element Solver, the name of a :ref:`FiniteElement` should be specified. If this is a Finite Volume Method, the name of a :ref:`FiniteVolume` discretization should be specified.-->
+		<xsd:attribute name="discretization" type="groupNameRef" use="required" />
+		<!--initialDt => Initial time-step value required by the solver to the event manager.-->
+		<xsd:attribute name="initialDt" type="real64" default="1e+99" />
+		<!--logLevel => Sets the level of information to write in the standard output (the console typically).
+Level 0 outputs no specific information for this solver. Higher levels require more outputs.
+1
+ - Line search information
+ - Solution information (scaling, maximum changes, quality check)
+ - Convergence information
+ - Time step information
+ - Linear solver information
+ - Nonlinear solver information
+ - Solver timers information
+2
+ - The summary of declared fields and coupling-->
+		<xsd:attribute name="logLevel" type="integer" default="0" />
+		<!--shearImpedance => Shear impedance.-->
+		<xsd:attribute name="shearImpedance" type="real64" use="required" />
+		<!--stressSolverName => Name of solver for computing stress. If empty, the spring-slider model is run.-->
+		<xsd:attribute name="stressSolverName" type="string" default="" />
+		<!--targetRegions => Allowable regions that the solver may be applied to. Note that this does not indicate that the solver will be applied to these regions, only that allocation will occur such that the solver may be applied to these regions. The decision about what regions this solver will beapplied to rests in the EventManager.-->
+		<xsd:attribute name="targetRegions" type="groupNameRef_array" use="required" />
 		<!--writeLinearSystem => Write matrix, rhs, solution to screen ( = 1) or file ( = 2).-->
 		<xsd:attribute name="writeLinearSystem" type="integer" default="0" />
 		<!--name => A name is required for any non-unique nodes-->

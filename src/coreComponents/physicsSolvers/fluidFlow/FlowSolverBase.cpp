@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -286,16 +286,6 @@ void FlowSolverBase::saveSequentialIterationState( DomainPartition & domain )
   m_sequentialTempChange = m_isThermal ? MpiWrapper::max( maxTempChange ) : 0.0;
 }
 
-void FlowSolverBase::enableFixedStressPoromechanicsUpdate()
-{
-  m_isFixedStressPoromechanicsUpdate = true;
-}
-
-void FlowSolverBase::enableJumpStabilization()
-{
-  m_isJumpStabilized = true;
-}
-
 void FlowSolverBase::setConstitutiveNamesCallSuper( ElementSubRegionBase & subRegion ) const
 {
   PhysicsSolverBase::setConstitutiveNamesCallSuper( subRegion );
@@ -455,6 +445,12 @@ void FlowSolverBase::initializePostInitialConditionsPreSubGroups()
                                                                 arrayView1d< string const > const & regionNames )
   {
     precomputeData( mesh, regionNames );
+
+    FieldIdentifiers fieldsToBeSync;
+    fieldsToBeSync.addElementFields( { fields::flow::pressure::key(), fields::flow::temperature::key() },
+                                     regionNames );
+
+    CommunicationTools::getInstance().synchronizeFields( fieldsToBeSync, mesh, domain.getNeighbors(), false );
   } );
 }
 
@@ -489,6 +485,97 @@ void FlowSolverBase::precomputeData( MeshLevel & mesh,
       gravityCoef[ kf ] = LvArray::tensorOps::AiBi< 3 >( faceCenter[ kf ], gravVector );
     } );
   }
+}
+
+void FlowSolverBase::initializeState( DomainPartition & domain )
+{
+  // Compute hydrostatic equilibrium in the regions for which corresponding field specification tag has been specified
+  computeHydrostaticEquilibrium( domain );
+
+  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
+                                                               MeshLevel & mesh,
+                                                               arrayView1d< string const > const & regionNames )
+  {
+    initializePorosityAndPermeability( mesh, regionNames );
+    initializeHydraulicAperture( mesh, regionNames );
+
+    // Initialize primary variables from applied initial conditions
+    initializeFluidState( mesh, regionNames );
+
+    // Initialize the rock thermal quantities: conductivity and solid internal energy
+    // Note:
+    // - This must be called after updatePorosityAndPermeability and updatePhaseVolumeFraction
+    // - This step depends on porosity and phaseVolFraction
+    if( m_isThermal )
+    {
+      initializeThermalState( mesh, regionNames );
+    }
+
+    // Save initial pressure and temperature fields
+    saveInitialPressureAndTemperature( mesh, regionNames );
+  } );
+
+  // report to the user if some pore volumes are very small
+  // note: this function is here because: 1) porosity has been initialized and 2) NTG has been applied
+  validatePoreVolumes( domain );
+}
+
+void FlowSolverBase::initializePorosityAndPermeability( MeshLevel & mesh, arrayView1d< string const > const & regionNames )
+{
+  // Update porosity and permeability
+  // In addition, to avoid multiplying permeability/porosity bay netToGross in the assembly kernel, we do it once and for all here
+  mesh.getElemManager().forElementSubRegions< CellElementSubRegion, SurfaceElementSubRegion >( regionNames, [&]( localIndex const,
+                                                                                                                 auto & subRegion )
+  {
+    // Apply netToGross to reference porosity and horizontal permeability
+    CoupledSolidBase const & porousSolid =
+      getConstitutiveModel< CoupledSolidBase >( subRegion, subRegion.template getReference< string >( viewKeyStruct::solidNamesString() ) );
+    PermeabilityBase const & permeability =
+      getConstitutiveModel< PermeabilityBase >( subRegion, subRegion.template getReference< string >( viewKeyStruct::permeabilityNamesString() ) );
+    arrayView1d< real64 const > const netToGross = subRegion.template getField< fields::flow::netToGross >();
+    porousSolid.scaleReferencePorosity( netToGross );
+    permeability.scaleHorizontalPermeability( netToGross );
+
+    // in some initializeState versions it uses newPorosity, so let's run updatePorosityAndPermeability to compute something
+    saveConvergedState( subRegion );   // necessary for a meaningful porosity update in sequential schemes
+    updatePorosityAndPermeability( subRegion );
+    porousSolid.initializeState();
+
+    // run final update
+    saveConvergedState( subRegion );   // necessary for a meaningful porosity update in sequential schemes
+    updatePorosityAndPermeability( subRegion );
+
+    // Save the computed porosity into the old porosity
+    // Note:
+    // - This must be called after updatePorosityAndPermeability
+    // - This step depends on porosity
+    porousSolid.saveConvergedState();
+  } );
+}
+
+void FlowSolverBase::initializeHydraulicAperture( MeshLevel & mesh, const arrayView1d< const string > & regionNames )
+{
+  mesh.getElemManager().forElementRegions< SurfaceElementRegion >( regionNames,
+                                                                   [&]( localIndex const,
+                                                                        SurfaceElementRegion & region )
+  {
+    region.forElementSubRegions< SurfaceElementSubRegion >( [&]( SurfaceElementSubRegion & subRegion )
+    { subRegion.getWrapper< real64_array >( fields::flow::hydraulicAperture::key()).setApplyDefaultValue( region.getDefaultAperture()); } );
+  } );
+}
+
+void FlowSolverBase::saveInitialPressureAndTemperature( MeshLevel & mesh, const arrayView1d< const string > & regionNames )
+{
+  mesh.getElemManager().forElementSubRegions( regionNames, [&]( localIndex const,
+                                                                ElementSubRegionBase & subRegion )
+  {
+    arrayView1d< real64 const > const pres = subRegion.getField< fields::flow::pressure >();
+    arrayView1d< real64 > const initPres = subRegion.getField< fields::flow::initialPressure >();
+    arrayView1d< real64 const > const temp = subRegion.getField< fields::flow::temperature >();
+    arrayView1d< real64 > const initTemp = subRegion.template getField< fields::flow::initialTemperature >();
+    initPres.setValues< parallelDevicePolicy<> >( pres );
+    initTemp.setValues< parallelDevicePolicy<> >( temp );
+  } );
 }
 
 void FlowSolverBase::updatePorosityAndPermeability( CellElementSubRegion & subRegion ) const

@@ -173,6 +173,7 @@
 		<xsd:choice minOccurs="0" maxOccurs="unbounded">
 			<xsd:element name="Benchmarks" type="BenchmarksType" maxOccurs="1" />
 			<xsd:element name="Events" type="EventsType" minOccurs="1" maxOccurs="1" />
+			<xsd:element name="ExternalDataSource" type="ExternalDataSourceType" minOccurs="1" maxOccurs="1" />
 			<xsd:element name="FieldSpecifications" type="FieldSpecificationsType" maxOccurs="1" />
 			<xsd:element name="Functions" type="FunctionsType" maxOccurs="1" />
 			<xsd:element name="Geometry" type="GeometryType" maxOccurs="1" />
@@ -279,6 +280,16 @@
 		<!--lastTime => Last event occurrence (time)-->
 		<xsd:attribute name="lastTime" type="real64" />
 	</xsd:complexType>
+	<xsd:complexType name="ExternalDataSourceType">
+		<xsd:choice minOccurs="0" maxOccurs="unbounded">
+			<xsd:element name="VTKHierarchicalDataSource" type="VTKHierarchicalDataSourceType" />
+		</xsd:choice>
+	</xsd:complexType>
+	<xsd:complexType name="VTKHierarchicalDataSourceType">
+		<xsd:choice minOccurs="0" maxOccurs="unbounded">
+			<xsd:element name="VTKHierarchicalDataSource" type="VTKHierarchicalDataSourceType" />
+		</xsd:choice>
+	</xsd:complexType>
 	<xsd:complexType name="FieldSpecificationsType">
 		<xsd:choice minOccurs="0" maxOccurs="unbounded">
 			<xsd:element name="Aquifer" type="AquiferType" />
@@ -380,6 +391,7 @@
 	<xsd:complexType name="InternalMeshType">
 		<xsd:choice minOccurs="0" maxOccurs="unbounded">
 			<xsd:element name="InternalWell" type="InternalWellType" />
+			<xsd:element name="Region" type="RegionType" />
 			<xsd:element name="VTKWell" type="VTKWellType" />
 			<xsd:element name="meshLevels" type="meshLevelsType" />
 		</xsd:choice>
@@ -390,6 +402,7 @@
 		</xsd:choice>
 	</xsd:complexType>
 	<xsd:complexType name="PerforationType" />
+	<xsd:complexType name="RegionType" />
 	<xsd:complexType name="VTKWellType">
 		<xsd:choice minOccurs="0" maxOccurs="unbounded">
 			<xsd:element name="Perforation" type="PerforationType" />
@@ -398,6 +411,7 @@
 	<xsd:complexType name="InternalWellboreType">
 		<xsd:choice minOccurs="0" maxOccurs="unbounded">
 			<xsd:element name="InternalWell" type="InternalWellType" />
+			<xsd:element name="Region" type="RegionType" />
 			<xsd:element name="VTKWell" type="VTKWellType" />
 			<xsd:element name="meshLevels" type="meshLevelsType" />
 		</xsd:choice>
@@ -418,6 +432,7 @@
 	<xsd:complexType name="VTKMeshType">
 		<xsd:choice minOccurs="0" maxOccurs="unbounded">
 			<xsd:element name="InternalWell" type="InternalWellType" />
+			<xsd:element name="Region" type="RegionType" />
 			<xsd:element name="VTKWell" type="VTKWellType" />
 			<xsd:element name="meshLevels" type="meshLevelsType" />
 		</xsd:choice>
@@ -523,6 +538,7 @@
 			<xsd:element name="PhaseFieldFracture" type="PhaseFieldFractureType" />
 			<xsd:element name="ProppantTransport" type="ProppantTransportType" />
 			<xsd:element name="QuasiDynamicEQ" type="QuasiDynamicEQType" />
+			<xsd:element name="QuasiDynamicEQRK32" type="QuasiDynamicEQRK32Type" />
 			<xsd:element name="ReactiveCompositionalMultiphaseOBL" type="ReactiveCompositionalMultiphaseOBLType" />
 			<xsd:element name="SeismicityRate" type="SeismicityRateType" />
 			<xsd:element name="SinglePhaseFVM" type="SinglePhaseFVMType" />
@@ -1004,6 +1020,17 @@
 		<xsd:attribute name="meshTargets" type="geos_mapBase_lt_std_pair_lt_string_cm_-string-_gt__cm_-LvArray_Array_lt_string_cm_-1_cm_-camp_int_seq_lt_long_cm_-0l_gt__cm_-int_cm_-LvArray_ChaiBuffer_gt__cm_-std_integral_constant_lt_bool_cm_-true_gt_-_gt_" />
 	</xsd:complexType>
 	<xsd:complexType name="QuasiDynamicEQType">
+		<xsd:choice minOccurs="0" maxOccurs="unbounded">
+			<xsd:element name="LinearSolverParameters" type="LinearSolverParametersType" maxOccurs="1" />
+			<xsd:element name="NonlinearSolverParameters" type="NonlinearSolverParametersType" maxOccurs="1" />
+			<xsd:element name="SolverStatistics" type="SolverStatisticsType" />
+		</xsd:choice>
+		<!--maxStableDt => Value of the Maximum Stable Timestep for this solver.-->
+		<xsd:attribute name="maxStableDt" type="real64" />
+		<!--meshTargets => MeshBody/Region combinations that the solver will be applied to.-->
+		<xsd:attribute name="meshTargets" type="geos_mapBase_lt_std_pair_lt_string_cm_-string-_gt__cm_-LvArray_Array_lt_string_cm_-1_cm_-camp_int_seq_lt_long_cm_-0l_gt__cm_-int_cm_-LvArray_ChaiBuffer_gt__cm_-std_integral_constant_lt_bool_cm_-true_gt_-_gt_" />
+	</xsd:complexType>
+	<xsd:complexType name="QuasiDynamicEQRK32Type">
 		<xsd:choice minOccurs="0" maxOccurs="unbounded">
 			<xsd:element name="LinearSolverParameters" type="LinearSolverParametersType" maxOccurs="1" />
 			<xsd:element name="NonlinearSolverParameters" type="NonlinearSolverParametersType" maxOccurs="1" />

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -198,7 +198,11 @@ TEST_F( AcousticWaveEquationSEMTest, SeismoTrace )
 
   //Assert on time-step computed with the automatci time-step routine
   real64 const dtOut = propagator->getReference< real64 >( AcousticWaveEquationSEM::viewKeyStruct::timeStepString() );
-  ASSERT_TRUE( dtOut < 0.04 );
+  real64 const Vp = 1500.0;
+  real64 const h = 100.0;
+  real64 const cflConstant = 1/sqrt( 3 );
+  real64 const dtTheo = (cflConstant*h)/Vp;
+  ASSERT_TRUE( dtOut < dtTheo );
 
   real64 time_n = time;
   // run for 1s (10 steps)

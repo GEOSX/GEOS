@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -32,18 +32,29 @@ using namespace dataRepository;
 namespace xmlWrapper
 {
 
-void validateString( string const & value, Regex const & regex )
+void validateString( string const & value, const Regex & regex )
 {
-  std::smatch m;
-  bool inputValidated = std::regex_match( value, m, std::regex( regex.m_regexStr ) );
-  if( !inputValidated )
+  std::regex regexInstance{ regex.m_regexStr };
+  // if validation fails, let's try to find the error start & end to underline it. If it fails, underline the whole message.
+  if( !std::regex_match( value, regexInstance ))
   {
-    ptrdiff_t errorId = ( m.size()>0 && m.position( 0 )==0 ) ? m.length() : 0;
+    std::smatch m;
+    std::regex_search( value, m, regexInstance );
+    ptrdiff_t const errorStart = ( m.size()>0 && m.position( 0 )==0 ) ? m.length() : 0;
+
+    size_t errorLength;
+    for( errorLength = 1; errorStart + errorLength < value.length(); ++errorLength )
+    {
+      if( std::regex_match( value.substr( errorStart + errorLength, 1 ), regexInstance ) )
+        break;
+    }
+
+    string const underline = string( errorStart, ' ' ) + string( errorLength, '^' );
     GEOS_THROW( GEOS_FMT( "Input string validation failed at:\n"
                           "  \"{}\"\n"
-                          "   {:>{}}\n"
+                          "   {}\n"
                           "  Expected format: {}",
-                          value, '^', errorId+1, regex.m_formatDescription ),
+                          value, underline, regex.m_formatDescription ),
                 InputError );
   }
 }
@@ -171,7 +182,7 @@ void xmlDocument::addIncludedXML( xmlNode & targetNode, int const level )
         return isAbsolutePath( fileName ) ? fileName : joinPath( splitPath( currentFilePath ).first, fileName );
       }();
 
-      GEOS_LOG_RANK_0( "Included additionnal XML file: " << getAbsolutePath( includedFilePath ) );
+      GEOS_LOG_RANK_0( "Included additional XML file: " << getAbsolutePath( includedFilePath ) );
 
       xmlDocument includedXmlDocument;
       xmlResult const result = includedXmlDocument.loadFile( includedFilePath, hasNodeFileInfo() );
