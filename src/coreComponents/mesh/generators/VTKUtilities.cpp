@@ -375,6 +375,7 @@ splitMeshByPartition( vtkSmartPointer< vtkDataSet > mesh,
   ArrayOfArrays< vtkIdType > cellsLists;
   cellsLists.resizeFromCapacities< serialPolicy >( numParts, cellCounts.data() );
 
+  //Matteo: in here we need to make sure that the edfmMesh gets split according to the same partitioning as the main mesh
   forAll< parallelHostPolicy >( part.size(), [part, cellsLists = cellsLists.toView()] ( localIndex const cellIdx )
   {
     cellsLists.emplaceBackAtomic< parallelHostAtomic >( LvArray::integerConversion< localIndex >( part[cellIdx] ),
@@ -580,7 +581,8 @@ AllMeshes loadAllMeshes( Path const & filePath,
 
   for( string const & edfmSurfBlockName: edfmSurfBlockNames )
   {
-    edfmSurfaces[edfmSurfBlockName] = loadMesh( filePath, edfmSurfBlockName, lastRank );
+    // Matteo: we want to load this on the same rank as the 3D mesh.
+    edfmSurfaces[edfmSurfBlockName] = loadMesh( filePath, edfmSurfBlockName, 0 );
   }
   return AllMeshes( main, faces, edfmSurfaces );
 }

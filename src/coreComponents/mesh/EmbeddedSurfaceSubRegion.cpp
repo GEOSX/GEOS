@@ -284,7 +284,7 @@ array1d< localIndex > EmbeddedSurfaceSubRegion::getEdfmNodeParentEdgeIndex( Arra
                                                                             arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const & nodesCoord )
 {
   // first we build a node index to parent cell index map (we only need one)
-  array1d< int > nodeToElem( elemNodesLocations.size());
+  array1d< int > nodeToElem( elemNodesLocations.size() );
   for( int i = 0; i<elemNodesLocations.size(); i++ )
   {
     nodeToElem[i] = -1;

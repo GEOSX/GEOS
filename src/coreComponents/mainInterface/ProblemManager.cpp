@@ -731,12 +731,9 @@ void ProblemManager::generateMesh()
 
 }
 
-void ProblemManager::generateEmbeddedFractures()
+void ProblemManager::generateEmbeddedFractures() const
 {
   DomainPartition & domain = getDomainPartition();
-  MeshManager & meshManager = this->getGroup< MeshManager >( groupKeys.meshManager );
-
-  meshManager.generateEmbeddedFractures( domain );
 
   MeshBody & meshBody = domain.getMeshBody( 0 );
   CellBlockManagerABC const & cellBlockManager = meshBody.getCellBlockManager();

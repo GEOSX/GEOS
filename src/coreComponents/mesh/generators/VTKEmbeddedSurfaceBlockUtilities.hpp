@@ -36,4 +36,4 @@ void importEmbeddedFractureNetwork( string const & embeddedSurfaceBlockName,
                                     CellBlockManager & cellBlockManager );
 }
 
-#endif // include guard
+#endif /* GEOS_VTKEMBEDDEDSURFACEBLOCKUTILITIES_HPP_ */
