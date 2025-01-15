@@ -27,11 +27,6 @@
 #include "BufferOps.hpp"
 #include "mesh/MeshFields.hpp"
 
-
-#include "mainInterface/GeosxState.hpp"
-#include "mainInterface/ProblemManager.hpp"
-#include "mesh/DomainPartition.hpp"
-
 namespace geos
 {
 using namespace dataRepository;
@@ -345,14 +340,13 @@ array1d< localIndex > EmbeddedSurfaceSubRegion::getEdfmNodeParentEdgeIndex( Arra
   return parentEdgeIndex;
 }
 
-bool EmbeddedSurfaceSubRegion::addAllEmbeddedSurfaces(
-  localIndex const regionIndex,
-  localIndex const subRegionIndex,
-  NodeManager const & nodeManager,
-  EmbeddedSurfaceNodeManager & embSurfNodeManager,
-  EdgeManager const & edgeManager,
-  FixedOneToManyRelation const & cellToEdges,
-  EmbeddedSurfaceBlockABC const & embeddedSurfaceBlock )
+void EmbeddedSurfaceSubRegion::copyFromEmbeddedSurfaceBlock( localIndex const regionIndex,
+                                                             localIndex const subRegionIndex,
+                                                             NodeManager const & nodeManager,
+                                                             EmbeddedSurfaceNodeManager & embSurfNodeManager,
+                                                             EdgeManager const & edgeManager,
+                                                             FixedOneToManyRelation const & cellToEdges,
+                                                             EmbeddedSurfaceBlockABC const & embeddedSurfaceBlock )
 {
 
   arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const & nodesCoord = nodeManager.referencePosition();
@@ -419,9 +413,6 @@ bool EmbeddedSurfaceSubRegion::addAllEmbeddedSurfaces(
     LvArray::tensorOps::copy< 3 >( m_tangentVector2[i], elemTangentialVectors2[i] );
     this->calculateElementGeometricQuantities( elemNodeCoords.toViewConst(), i );
   }
-
-  return true;
-
 }
 
 void EmbeddedSurfaceSubRegion::inheritGhostRank( array1d< array1d< arrayView1d< integer const > > > const & cellGhostRank )

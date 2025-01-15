@@ -685,6 +685,9 @@ void ProblemManager::generateMesh()
   domain.setupCommunications( useNonblockingMPI );
   domain.outputPartitionInformation();
 
+  // Create Embedded fractures here.
+  generateEmbeddedFractures();
+
   domain.forMeshBodies( [&]( MeshBody & meshBody )
   {
     if( meshBody.hasGroup( keys::particleManager ) )
@@ -728,6 +731,47 @@ void ProblemManager::generateMesh()
 
 }
 
+void ProblemManager::generateEmbeddedFractures()
+{
+  DomainPartition & domain = getDomainPartition();
+  MeshManager & meshManager = this->getGroup< MeshManager >( groupKeys.meshManager );
+
+  meshManager.generateEmbeddedFractures( domain );
+
+  MeshBody & meshBody = domain.getMeshBody( 0 );
+  CellBlockManagerABC const & cellBlockManager = meshBody.getCellBlockManager();
+  Group const & embSurfBlocks = cellBlockManager.getEmbeddedSurfaceBlocks();
+  string const & faceBlockName = embeddedSurfaceRegion.getFaceBlockName();
+
+  if( embSurfBlocks.hasGroup( faceBlockName ))
+  {
+    EmbeddedSurfaceBlockABC const & embSurf = embSurfBlocks.getGroup< EmbeddedSurfaceBlockABC >( faceBlockName );
+
+    elemManager.forElementSubRegionsComplete< CellElementSubRegion >( [&]( localIndex const er,
+                                                                           localIndex const esr,
+                                                                           ElementRegionBase &,
+                                                                           CellElementSubRegion & subRegion )
+    {
+      FixedOneToManyRelation const & cellToEdges = subRegion.edgeList();
+
+      embeddedSurfaceSubRegion.copyFromEmbeddedSurfaceBlock( er,
+                                                             esr,
+                                                             nodeManager,
+                                                             embSurfNodeManager,
+                                                             edgeManager,
+                                                             cellToEdges,
+                                                             embSurf );
+
+      // Add all the fracture information to the CellElementSubRegion
+      for( localIndex edfmIndex=0; edfmIndex < embSurf.numEmbeddedSurfElem(); ++edfmIndex )
+      {
+        localIndex cellIndex = embSurf.getEmbeddedSurfElemTo3dElem().toCellIndex[edfmIndex][0];
+        subRegion.addFracturedElement( cellIndex, edfmIndex );
+        newObjects.newElements[ {embeddedSurfaceRegion.getIndexInParent(), embeddedSurfaceSubRegion.getIndexInParent()} ].insert( edfmIndex );
+      }
+    } );   // end loop over subregions
+  }
+}
 
 void ProblemManager::importFields()
 {

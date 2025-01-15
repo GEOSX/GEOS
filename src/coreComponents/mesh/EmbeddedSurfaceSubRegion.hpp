@@ -290,6 +290,18 @@ public:
 
   ///@}
 
+  /**
+   * @brief Fill the EmbeddedSurfaceSubRegion by copying those of the source CellBlock
+   * @param embeddedSurfaceBlock the CellBlEmbeddedSurfaceBlock which properties (connectivity info) will be copied.
+   */
+  void copyFromEmbeddedSurfaceBlock( localIndex const regionIndex,
+                                     localIndex const subRegionIndex,
+                                     NodeManager const & nodeManager,
+                                     EmbeddedSurfaceNodeManager & embSurfNodeManager,
+                                     EdgeManager const & edgeManager,
+                                     FixedOneToManyRelation const & cellToEdges,
+                                     EmbeddedSurfaceBlockABC const & embeddedSurfaceBlock );
+
 private:
 
   /**
