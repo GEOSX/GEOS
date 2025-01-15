@@ -325,12 +325,56 @@ void DomainPartition::addNeighbors( const unsigned int idim,
 
 void DomainPartition::outputPartitionInformation() const
 {
-  auto numberOfEntities = []( ObjectManagerBase const & objectManager )
+  using stringutilities::addCommaSeparators;
+
+  struct RankMeshStats
   {
-    return std::make_pair( objectManager.getNumberOfLocalIndices(), objectManager.getNumberOfGhosts() );
+    // Table rows will follow this enum ordering
+    enum StatIndex
+    {
+      Node = 0, Edge, Face, Elem
+    };
+    std::array< globalIndex, 4 > localCount;
+    std::array< globalIndex, 4 > ghostCount;
+    std::array< double, 4 > ratio;
   };
 
-  GEOS_LOG_RANK_0( "MPI Partition information:" );
+  auto fillStats = []( RankMeshStats & stat,
+                       RankMeshStats::StatIndex statIndex,
+                       ObjectManagerBase const & objectManager )
+  {
+    stat.localCount[ statIndex ] += objectManager.getNumberOfLocalIndices();
+    stat.ghostCount[ statIndex ] += objectManager.getNumberOfGhosts();
+  };
+
+  auto computeRatios = []( RankMeshStats & stat )
+  {
+    for( size_t i = 0; i < RankMeshStats::Count; ++i )
+    {
+      stat.ratio[i] = stat.localCount[i] + stat.ghostCount[i] == 0 ? 0 :
+                      stat.localCount[i] / (stat.localCount[i] + stat.ghostCount[i]);
+    }
+  };
+
+  auto addLocalGhostRow = []( TableData & tableData, RankMeshStats const & stat, string_view heading )
+  {
+    dataPartition.addRow( heading,
+                          addCommaSeparators( stat.localCount[0] ), addCommaSeparators( stat.ghostCount[0] ),
+                          addCommaSeparators( stat.localCount[1] ), addCommaSeparators( stat.ghostCount[1] ),
+                          addCommaSeparators( stat.localCount[2] ), addCommaSeparators( stat.ghostCount[2] ),
+                          addCommaSeparators( stat.localCount[3] ), addCommaSeparators( stat.ghostCount[3] ) );
+  };
+
+  auto addSummaryRow = []( TableData & tableData, std::array< globalIndex, 4 > stats, string_view heading )
+  {
+    dataPartition.addRow( heading,
+                          CellType::MergeNext, addCommaSeparators( stats[0] ),
+                          CellType::MergeNext, addCommaSeparators( stats[1] ),
+                          CellType::MergeNext, addCommaSeparators( stats[2] ),
+                          CellType::MergeNext, addCommaSeparators( stats[3] ) );
+  };
+
+  GEOS_LOG_RANK_0( "MPI Partitioning information:" );
 
   forMeshBodies( [&]( MeshBody const & meshBody )
   {
@@ -338,184 +382,103 @@ void DomainPartition::outputPartitionInformation() const
     {
       if( level!=0 )
       {
+        // formatting is done on rank 0
+        vector< RankMeshStats > allRankStats;
+        allRankStats.resize( MpiWrapper::commSize() );
 
-        // get the number of local and ghost entities for each type
-        auto const [ numLocalNodes, numGhostNodes ] = numberOfEntities( meshLevel.getNodeManager() );
-        real64 const nodeRatio = ( numLocalNodes + numGhostNodes ) > 0 ? real64( numLocalNodes ) / real64( numLocalNodes + numGhostNodes ) : -1.0;
-        auto const [ numLocalEdges, numGhostEdges ] = numberOfEntities( meshLevel.getEdgeManager() );
-        real64 const edgeRatio = ( numLocalEdges + numGhostEdges ) > 0 ? real64( numLocalEdges ) / real64( numLocalEdges + numGhostEdges ) : -1.0;
-        auto const [ numLocalFaces, numGhostFaces ] = numberOfEntities( meshLevel.getFaceManager() );
-        real64 const faceRatio = ( numLocalFaces + numGhostFaces ) > 0 ? real64( numLocalFaces ) / real64( numLocalFaces + numGhostFaces ) : -1.0;
+        { // Compute stats of the current rank, then gather it on rank 0
+          RankMeshStats rankStats{};
+          //TODO be sure that everything is init at 0
+          fillStats( rankStats, RankMeshStats::Node, meshLevel.getNodeManager() );
+          fillStats( rankStats, RankMeshStats::Edge, meshLevel.getEdgeManager() );
+          fillStats( rankStats, RankMeshStats::Face, meshLevel.getFaceManager() );
 
-        localIndex numLocalElems = 0;
-        localIndex numGhostElems = 0;
-        meshLevel.getElemManager().forElementSubRegions< CellElementSubRegion >( [&]( CellElementSubRegion const & subRegion )
-        {
-          auto [ numLocalElemsInSubRegion, numGhostElemsInSubRegion ] = numberOfEntities( subRegion );
-          numLocalElems += numLocalElemsInSubRegion;
-          numGhostElems += numGhostElemsInSubRegion;
-        } );
-        real64 const elemRatio = ( numLocalElems + numGhostElems ) > 0 ? real64( numLocalElems ) / real64( numLocalElems + numGhostElems ) : -1.0;
-
-        localIndex const values[8] = { numLocalNodes, numGhostNodes, numLocalEdges, numGhostEdges, numLocalFaces, numGhostFaces, numLocalElems, numGhostElems };
-        localIndex minValues[8] = {0};
-        localIndex maxValues[8] = {0};
-        localIndex sumValues[8] = {0};
-        MpiWrapper::allReduce( values, minValues, 8, MPI_MIN, MPI_COMM_WORLD );
-        MpiWrapper::allReduce( values, maxValues, 8, MPI_MAX, MPI_COMM_WORLD );
-        MpiWrapper::allReduce( values, sumValues, 8, MPI_SUM, MPI_COMM_WORLD );
-        localIndex const minNumLocalNodes = minValues[0];
-        localIndex const maxNumLocalNodes = maxValues[0];
-        localIndex const sumNumLocalNodes = sumValues[0];
-        localIndex const minNumGhostNodes = minValues[1];
-        localIndex const maxNumGhostNodes = maxValues[1];
-        localIndex const sumNumGhostNodes = sumValues[1];
-        localIndex const minNumLocalEdges = minValues[2];
-        localIndex const maxNumLocalEdges = maxValues[2];
-        localIndex const sumNumLocalEdges = sumValues[2];
-        localIndex const minNumGhostEdges = minValues[3];
-        localIndex const maxNumGhostEdges = maxValues[3];
-        localIndex const sumNumGhostEdges = sumValues[3];
-        localIndex const minNumLocalFaces = minValues[4];
-        localIndex const maxNumLocalFaces = maxValues[4];
-        localIndex const sumNumLocalFaces = sumValues[4];
-        localIndex const minNumGhostFaces = minValues[5];
-        localIndex const maxNumGhostFaces = maxValues[5];
-        localIndex const sumNumGhostFaces = sumValues[5];
-        localIndex const minNumLocalElems = minValues[6];
-        localIndex const maxNumLocalElems = maxValues[6];
-        localIndex const sumNumLocalElems = sumValues[6];
-        localIndex const minNumGhostElems = minValues[7];
-        localIndex const maxNumGhostElems = maxValues[7];
-        localIndex const sumNumGhostElems = sumValues[7];
-
-        real64 const ratios[4] = { nodeRatio, edgeRatio, faceRatio, elemRatio };
-        real64 minRatios[4] = {0};
-        real64 maxRatios[4] = {0};
-        MpiWrapper::allReduce( ratios, minRatios, 4, MPI_MIN, MPI_COMM_WORLD );
-        MpiWrapper::allReduce( ratios, maxRatios, 4, MPI_MAX, MPI_COMM_WORLD );
-        real64 const minNodeRatio = minRatios[0];
-        real64 const maxNodeRatio = maxRatios[0];
-        real64 const minEdgeRatio = minRatios[1];
-        real64 const maxEdgeRatio = maxRatios[1];
-        real64 const minFaceRatio = minRatios[2];
-        real64 const maxFaceRatio = maxRatios[2];
-        real64 const minElemRatio = minRatios[3];
-        real64 const maxElemRatio = maxRatios[3];
-
-        GEOS_LOG_RANK_0( "  MeshBody: " + meshBody.getName() + " MeshLevel: " + meshLevel.getName() + "\n" );
-        int const thisRank = MpiWrapper::commRank();
-
-        TableLayout layoutPartition( "Mesh partitionning over ranks",
-                                     {TableLayout::Column()
-                                        .setName( "" )
-                                        .addSubColumns( {  "Ranks" } ),
-                                      TableLayout::Column()
-                                        .setName( "Nodes" )
-                                        .addSubColumns( {  "Local", "Ghost" } ),
-                                      TableLayout::Column()
-                                        .setName( "Edges" )
-                                        .addSubColumns( {  "Local", "Ghost" } ),
-                                      TableLayout::Column()
-                                        .setName( "Faces" )
-                                        .addSubColumns( {  "Local", "Ghost" } ),
-                                      TableLayout::Column()
-                                        .setName( "Elems" )
-                                        .addSubColumns( {  "Local", "Ghost" } )} );
-
-        TableData dataPartition;
-
-        // output in rank order
-
-        for( int rank=0; rank<MpiWrapper::commSize(); ++rank )
-        {
-          if( rank == thisRank )
+          meshLevel.getElemManager().forElementSubRegions< CellElementSubRegion >(
+            [&]( CellElementSubRegion const & subRegion )
           {
-            if( rank == 1 )
-              dataPartition.addSeparator();
-            dataPartition.addRow( rank,
-                                  stringutilities::addCommaSeparators( numLocalNodes ),
-                                  stringutilities::addCommaSeparators( numGhostNodes ),
-                                  stringutilities::addCommaSeparators( numLocalEdges ),
-                                  stringutilities::addCommaSeparators( numGhostEdges ),
-                                  stringutilities::addCommaSeparators( numLocalFaces ),
-                                  stringutilities::addCommaSeparators( numGhostFaces ),
-                                  stringutilities::addCommaSeparators( numLocalElems ),
-                                  stringutilities::addCommaSeparators( numGhostElems ));
+            fillStats( rankStats, subRegion.getElemManager() );
+          } );
+
+          computeRatios( rankStats );
+          MpiWrapper::gather( rankStats, 1, allRankStats.data(), allRankStats.size(), 0 );
+        }
+
+
+        if( MpiWrapper::commRank() == 0 )
+        {
+          TableLayout const layout( "Mesh partitioning over ranks",
+                                    {TableLayout::Column()
+                                       .setName( "" )
+                                       .addSubColumns( {  "Ranks" } ),
+                                     TableLayout::Column()
+                                       .setName( "Nodes" )
+                                       .addSubColumns( {  "Local", "Ghost" } ),
+                                     TableLayout::Column()
+                                       .setName( "Edges" )
+                                       .addSubColumns( {  "Local", "Ghost" } ),
+                                     TableLayout::Column()
+                                       .setName( "Faces" )
+                                       .addSubColumns( {  "Local", "Ghost" } ),
+                                     TableLayout::Column()
+                                       .setName( "Elems" )
+                                       .addSubColumns( {  "Local", "Ghost" } )} );
+          TableData tableData;
+
+          for( int rankId = 0; rankId < MpiWrapper::commSize(); ++rankId )
+          {
+            if( rankId == 1 )
+              tableData.addSeparator();
+
+            addLocalGhostRow( tableData, allRankStats[rankId], std::to_string( rank ) );
           }
 
-          MpiWrapper::barrier();
+          RankMeshStats sumStats{};
+          RankMeshStats minStats{};
+          RankMeshStats maxStats{};
+          // TODO : set minStats attributs @ maxvalues
+          for( int rankId = 0; rankId < MpiWrapper::commSize(); ++rankId )
+          {
+            for( size_t statId = 0; statId < RankMeshStats::Count; ++statId )
+            {
+              sumStats.localCount[statId] += allRankStats[rankId].localCount[statId];
+              sumStats.ghostCount[statId] += allRankStats[rankId].ghostCount[statId];
+              sumStats.ratio[statId] += allRankStats[rankId].ratio[statId];
+
+              minStats.localCount[statId] = std::min( minStats.localCount[statId], allRankStats[rankId].localCount[statId] );
+              minStats.ghostCount[statId] = std::min( minStats.ghostCount[statId], allRankStats[rankId].ghostCount[statId] );
+              minStats.ratio[statId] = std::min( minStats.ratio[statId], allRankStats[rankId].ratio[statId] );
+
+              maxStats.localCount[statId] = std::max( maxStats.localCount[statId], allRankStats[rankId].localCount[statId] );
+              maxStats.ghostCount[statId] = std::max( maxStats.ghostCount[statId], allRankStats[rankId].ghostCount[statId] );
+              maxStats.ratio[statId] = std::max( maxStats.ratio[statId], allRankStats[rankId].ratio[statId] );
+            }
+          }
+
+          tableData.addSeparator();
+          addLocalGhostRow( tableData, sumStats, "sum" );
+          addLocalGhostRow( tableData, minStats, "min" );
+          addLocalGhostRow( tableData, maxStats, "max" );
+
+          std::array< globalIndex, 4 > localGhostSum;
+          std::array< double, 4 > localTotalMinRatio;
+          std::array< double, 4 > localTotalMaxRatio;
+          for( size_t statId = 0; statId < RankMeshStats::Count; ++statId )
+          {
+            localGhostSum[statId] = sumStats.localCount[statId] + sumStats.ghostCount[statId];
+            localTotalMinRatio[statId] = std::min( sumStats.ratio[statId], sumStats.ratio[statId] );
+            localTotalMaxRatio[statId] = std::max( sumStats.ratio[statId], sumStats.ratio[statId] );
+          }
+          tableData.addSeparator();
+          addSummaryRow( tableData, localGhostSum, "sum(total)" );
+          addSummaryRow( tableData, localTotalMinRatio, "min(local/total)" );
+          addSummaryRow( tableData, localTotalMaxRatio, "max(local/total)" );
         }
-        MpiWrapper::barrier();
 
-        dataPartition.addSeparator();
-
-        dataPartition.addRow( "sum",
-                              stringutilities::addCommaSeparators( sumNumLocalNodes ),
-                              stringutilities::addCommaSeparators( sumNumGhostNodes ),
-                              stringutilities::addCommaSeparators( sumNumLocalEdges ),
-                              stringutilities::addCommaSeparators( sumNumGhostEdges ),
-                              stringutilities::addCommaSeparators( sumNumLocalFaces ),
-                              stringutilities::addCommaSeparators( sumNumGhostFaces ),
-                              stringutilities::addCommaSeparators( sumNumLocalElems ),
-                              stringutilities::addCommaSeparators( sumNumGhostElems ));
-        dataPartition.addRow( "min",
-                              stringutilities::addCommaSeparators( minNumLocalNodes ),
-                              stringutilities::addCommaSeparators( minNumGhostNodes ),
-                              stringutilities::addCommaSeparators( minNumLocalEdges ),
-                              stringutilities::addCommaSeparators( minNumGhostEdges ),
-                              stringutilities::addCommaSeparators( minNumLocalFaces ),
-                              stringutilities::addCommaSeparators( minNumGhostFaces ),
-                              stringutilities::addCommaSeparators( minNumLocalElems ),
-                              stringutilities::addCommaSeparators( minNumGhostElems ));
-        dataPartition.addRow( "max",
-                              stringutilities::addCommaSeparators( maxNumLocalNodes ),
-                              stringutilities::addCommaSeparators( maxNumGhostNodes ),
-                              stringutilities::addCommaSeparators( maxNumLocalEdges ),
-                              stringutilities::addCommaSeparators( maxNumGhostEdges ),
-                              stringutilities::addCommaSeparators( maxNumLocalFaces ),
-                              stringutilities::addCommaSeparators( maxNumGhostFaces ),
-                              stringutilities::addCommaSeparators( maxNumLocalElems ),
-                              stringutilities::addCommaSeparators( maxNumGhostElems ));
-        MpiWrapper::barrier();
-
-        dataPartition.addSeparator();
-
-        dataPartition.addRow( "sum(total)",
-                              CellType::MergeNext,
-                              stringutilities::addCommaSeparators( sumNumLocalNodes + sumNumGhostNodes ),
-                              CellType::MergeNext,
-                              stringutilities::addCommaSeparators( sumNumLocalEdges + sumNumGhostEdges ),
-                              CellType::MergeNext,
-                              stringutilities::addCommaSeparators( sumNumLocalFaces + sumNumGhostFaces ),
-                              CellType::MergeNext,
-                              stringutilities::addCommaSeparators( sumNumLocalElems + sumNumGhostElems ));
-        dataPartition.addRow( "min(local/total)",
-                              CellType::MergeNext,
-                              minNodeRatio,
-                              CellType::MergeNext,
-                              minEdgeRatio,
-                              CellType::MergeNext,
-                              minFaceRatio,
-                              CellType::MergeNext,
-                              minElemRatio );
-        dataPartition.addRow( "min(local/total)",
-                              CellType::MergeNext,
-                              maxNodeRatio,
-                              CellType::MergeNext,
-                              maxEdgeRatio,
-                              CellType::MergeNext,
-                              maxFaceRatio,
-                              CellType::MergeNext,
-                              maxElemRatio );
-        MpiWrapper::barrier();
-
-        TableTextFormatter logPartition( layoutPartition );
-        GEOS_LOG_RANK_0( logPartition.toString( dataPartition ));
+        TableTextFormatter logPartition( layout );
+        GEOS_LOG_RANK_0( logPartition.toString( tableData ));
       }
     } );
-  }
-                 );
+  } );
 
 }
 
