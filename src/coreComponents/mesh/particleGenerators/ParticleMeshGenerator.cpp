@@ -191,7 +191,6 @@ void ParticleMeshGenerator::fillParticleBlockManager( ParticleBlockManager & par
       {
         case ParticleColumnHeaders::StrengthScale:
         case ParticleColumnHeaders::MaterialDirectionX:
-        case ParticleColumnHeaders::SurfaceNormalX:
           defaultValue = 1.0;
           break;
         case ParticleColumnHeaders::Temperature:
@@ -211,6 +210,7 @@ void ParticleMeshGenerator::fillParticleBlockManager( ParticleBlockManager & par
         case ParticleColumnHeaders::VelocityZ:
         case ParticleColumnHeaders::MaterialDirectionY:
         case ParticleColumnHeaders::MaterialDirectionZ:
+        case ParticleColumnHeaders::SurfaceNormalX:
         case ParticleColumnHeaders::SurfaceNormalY:
         case ParticleColumnHeaders::SurfaceNormalZ:
         case ParticleColumnHeaders::SurfacePositionX:
