@@ -96,17 +96,10 @@ void SinglePhasePoromechanicsEmbeddedFractures::initializePostInitialConditionsP
   updateState( this->getGroupByPath< DomainPartition >( "/Problem/domain" ) );
 }
 
-void SinglePhasePoromechanicsEmbeddedFractures::setupDofs( DomainPartition const & domain,
-                                                           DofManager & dofManager ) const
+void SinglePhasePoromechanicsEmbeddedFractures::setupCoupling( DomainPartition const & domain,
+                                                               DofManager & dofManager ) const
 {
-  GEOS_MARK_FUNCTION;
-  solidMechanicsSolver()->setupDofs( domain, dofManager );
-  flowSolver()->setupDofs( domain, dofManager );
-
-  // Add coupling between displacement and cell pressures
-  dofManager.addCoupling( fields::solidMechanics::totalDisplacement::key(),
-                          SinglePhaseBase::viewKeyStruct::elemDofFieldString(),
-                          DofManager::Connector::Elem );
+  Base::setupCoupling( domain, dofManager );
 
   map< std::pair< string, string >, array1d< string > > meshTargets;
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const & meshBodyName,
