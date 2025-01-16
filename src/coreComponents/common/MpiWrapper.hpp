@@ -928,7 +928,7 @@ int MpiWrapper::gather( T const & value,
                         MPI_Comm MPI_PARAM( comm ) )
 {
   if( commRank() == 0 )
-    GEOS_ERROR_IF_LT_MSG( destValuesBuffer.size(), (size_t)commSize(),
+    GEOS_ERROR_IF_LT_MSG( destValuesBuffer.size(), size_t( commSize() ),
                           "Receive buffer is not large enough to contain the values to receive." );
 #ifdef GEOS_USE_MPI
   return MPI_Gather( &value, sizeof( T ), internal::getMpiType< uint8_t >(),
