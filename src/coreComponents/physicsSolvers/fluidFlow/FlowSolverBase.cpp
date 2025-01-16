@@ -143,6 +143,7 @@ void FlowSolverBase::registerDataOnMesh( Group & meshBodies )
                                                               [&]( localIndex const,
                                                                    ElementSubRegionBase & subRegion )
     {
+      subRegion.registerField< fields::flow::deltaVolume >( getName() );
       subRegion.registerField< fields::flow::gravityCoefficient >( getName() ).
         setApplyDefaultValue( 0.0 );
       subRegion.registerField< fields::flow::netToGross >( getName() );
