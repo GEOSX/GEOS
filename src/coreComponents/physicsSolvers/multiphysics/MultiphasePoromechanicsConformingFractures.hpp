@@ -2,11 +2,10 @@
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
- * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 TotalEnergies
- * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
- * Copyright (c) 2023-2024 Chevron
- * Copyright (c) 2019-     GEOS/GEOSX Contributors
+ * Copyright (c) 2018-2020 Lawrence Livermore National Security LLC
+ * Copyright (c) 2018-2020 The Board of Trustees of the Leland Stanford Junior University
+ * Copyright (c) 2018-2020 TotalEnergies
+ * Copyright (c) 2019-     GEOSX Contributors
  * All rights reserved
  *
  * See top level LICENSE, COPYRIGHT, CONTRIBUTORS, NOTICE, and ACKNOWLEDGEMENTS files for details.
@@ -14,24 +13,24 @@
  */
 
 /**
- * @file SinglePhasePoromechanicsConformingFractures.hpp
+ * @file MultiphasePoromechanicsConformingFractures.hpp
  */
 
-#ifndef GEOS_PHYSICSSOLVERS_MULTIPHYSICS_SINGLEPHASEPOROMECHANICSCONFORMINGFRACTURES_HPP_
-#define GEOS_PHYSICSSOLVERS_MULTIPHYSICS_SINGLEPHASEPOROMECHANICSCONFORMINGFRACTURES_HPP_
+#ifndef GEOS_PHYSICSSOLVERS_MULTIPHYSICS_MULTIPHASEPOROMECHANICSCONFORMINGFRACTURES_HPP_
+#define GEOS_PHYSICSSOLVERS_MULTIPHYSICS_MULTIPHASEPOROMECHANICSCONFORMINGFRACTURES_HPP_
 
-#include "physicsSolvers/multiphysics/SinglePhasePoromechanics.hpp"
+#include "physicsSolvers/multiphysics/MultiphasePoromechanics.hpp"
 #include "physicsSolvers/contact/SolidMechanicsLagrangeContact.hpp"
 
 namespace geos
 {
 
-template< typename FLOW_SOLVER = SinglePhaseBase >
-class SinglePhasePoromechanicsConformingFractures : public SinglePhasePoromechanics< FLOW_SOLVER, SolidMechanicsLagrangeContact >
+template< typename FLOW_SOLVER = CompositionalMultiphaseBase >
+class MultiphasePoromechanicsConformingFractures : public MultiphasePoromechanics< FLOW_SOLVER, SolidMechanicsLagrangeContact >
 {
 public:
 
-  using Base = SinglePhasePoromechanics< FLOW_SOLVER, SolidMechanicsLagrangeContact >;
+  using Base = MultiphasePoromechanics< FLOW_SOLVER, SolidMechanicsLagrangeContact >;
   using Base::m_solvers;
   using Base::m_dofManager;
   using Base::m_localMatrix;
@@ -42,15 +41,15 @@ public:
   static string coupledSolverAttributePrefix() { return "poromechanicsConformingFractures"; }
 
   /**
-   * @brief main constructor for SinglePhasePoromechanicsConformingFractures objects
-   * @param name the name of this instantiation of SinglePhasePoromechanicsConformingFractures in the repository
-   * @param parent the parent group of this instantiation of SinglePhasePoromechanicsConformingFractures
+   * @brief main constructor for MultiphasePoromechanicsConformingFractures objects
+   * @param name the name of this instantiation of MultiphasePoromechanicsConformingFractures in the repository
+   * @param parent the parent group of this instantiation of MultiphasePoromechanicsConformingFractures
    */
-  SinglePhasePoromechanicsConformingFractures( const string & name,
-                                               dataRepository::Group * const parent );
+  MultiphasePoromechanicsConformingFractures( const string & name,
+                                              dataRepository::Group * const parent );
 
   /// Destructor for the class
-  ~SinglePhasePoromechanicsConformingFractures() override {}
+  ~MultiphasePoromechanicsConformingFractures() override {}
 
   /**
    * @brief name of the node manager in the object catalog
@@ -59,9 +58,9 @@ public:
    */
   static string catalogName()
   {
-    if constexpr ( std::is_same_v< FLOW_SOLVER, SinglePhaseBase > )
+    if constexpr ( std::is_same_v< FLOW_SOLVER, CompositionalMultiphaseBase > )
     {
-      return "SinglePhasePoromechanicsConformingFractures";
+      return "MultiphasePoromechanicsConformingFractures";
     }
     else
     {
@@ -100,13 +99,11 @@ public:
 
   virtual void updateState( DomainPartition & domain ) override final;
 
-  virtual void setMGRStrategy() override
-  {
-    if( this->m_linearSolverParameters.get().preconditionerType == LinearSolverParameters::PreconditionerType::mgr )
-      GEOS_ERROR( GEOS_FMT( "{}: MGR strategy is not implemented for {}", this->getName(), this->getCatalogName()));
-  }
-
   /**@}*/
+
+protected:
+
+  virtual void postInputInitialization() override;
 
 private:
 
@@ -179,6 +176,7 @@ private:
    */
   void updateHydraulicApertureAndFracturePermeability( DomainPartition & domain );
 
+
   std::unique_ptr< CRSMatrix< real64, localIndex > > & getRefDerivativeFluxResidual_dAperture()
   {
     return m_derivativeFluxResidual_dAperture;
@@ -196,9 +194,10 @@ private:
 
   std::unique_ptr< CRSMatrix< real64, localIndex > > m_derivativeFluxResidual_dAperture;
 
-  string const m_pressureKey = SinglePhaseBase::viewKeyStruct::elemDofFieldString();
+  string const m_flowDofKey = CompositionalMultiphaseBase::viewKeyStruct::elemDofFieldString();
+
 };
 
 } /* namespace geos */
 
-#endif /* GEOS_PHYSICSSOLVERS_MULTIPHYSICS_SINGLEPHASEPOROMECHANICSCONFORMINGFRACTURES_HPP_ */
+#endif /* GEOS_PHYSICSSOLVERS_MULTIPHYSICS_MULTIPHASEPOROMECHANICSCONFORMINGFRACTURES_HPP_ */
