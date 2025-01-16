@@ -371,7 +371,7 @@ private:
                             constitutive::ConstitutiveManager const & constitutiveManager,
                             map< std::tuple< string, string, string, string >, localIndex > const & regionQuadrature );
 
-  void generateEmbeddedFractures() const;
+  void generateEmbeddedSurfacesMesh();
 
   /// The PhysicsSolverManager
   PhysicsSolverManager * m_physicsSolverManager;

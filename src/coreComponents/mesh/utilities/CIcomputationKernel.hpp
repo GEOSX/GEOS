@@ -238,24 +238,24 @@ using KernelVariant = std::variant< CIcomputationKernel< finiteElement::H1_Hexah
                                     CIcomputationKernel< finiteElement::H1_Pyramid_Lagrange1_Gauss5 > >;
 
 
-KernelVariant createKernel( ElementType elemType, 
+KernelVariant createKernel( ElementType elemType,
                             NodeManager const & nodeManager,
                             CellElementSubRegion const & subRegion,
                             EmbeddedSurfaceSubRegion & esr )
 {
-    switch ( elemType ) 
-    {
-      case ElementType::Tetrahedron:
-        return CIcomputationKernel<finiteElement::H1_Tetrahedron_Lagrange1_Gauss1>( nodeManager, subRegion, esr );
-      case ElementType::Hexahedron:
-        return CIcomputationKernel<finiteElement::H1_Hexahedron_Lagrange1_GaussLegendre2>( nodeManager, subRegion, esr );
-      case ElementType::Pyramid:
-        return CIcomputationKernel<finiteElement::H1_Pyramid_Lagrange1_Gauss5>( nodeManager, subRegion, esr );
-      case ElementType::Wedge:
-        return CIcomputationKernel<finiteElement::H1_Wedge_Lagrange1_Gauss6>( nodeManager, subRegion, esr );  
-      default:
-        GEOS_THROW( "Element type not supported", std::runtime_error );
-    }
+  switch( elemType )
+  {
+    case ElementType::Tetrahedron:
+      return CIcomputationKernel< finiteElement::H1_Tetrahedron_Lagrange1_Gauss1 >( nodeManager, subRegion, esr );
+    case ElementType::Hexahedron:
+      return CIcomputationKernel< finiteElement::H1_Hexahedron_Lagrange1_GaussLegendre2 >( nodeManager, subRegion, esr );
+    case ElementType::Pyramid:
+      return CIcomputationKernel< finiteElement::H1_Pyramid_Lagrange1_Gauss5 >( nodeManager, subRegion, esr );
+    case ElementType::Wedge:
+      return CIcomputationKernel< finiteElement::H1_Wedge_Lagrange1_Gauss6 >( nodeManager, subRegion, esr );
+    default:
+      GEOS_THROW( "Element type not supported", std::runtime_error );
+  }
 }
 
 }

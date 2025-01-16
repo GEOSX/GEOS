@@ -46,6 +46,7 @@
 #include "mesh/simpleGeometricObjects/GeometricObjectManager.hpp"
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
 #include "mesh/mpiCommunications/SpatialPartition.hpp"
+#include "mesh/EmbeddedSurfacesParallelSynchronization.hpp"
 #include "physicsSolvers/PhysicsSolverManager.hpp"
 #include "physicsSolvers/PhysicsSolverBase.hpp"
 #include "schema/schemaUtilities.hpp"
@@ -731,93 +732,99 @@ void ProblemManager::generateMesh()
 
 }
 
-void ProblemManager::generateEmbeddedSurfacesMesh() const
+void ProblemManager::generateEmbeddedSurfacesMesh()
 {
   DomainPartition & domain = getDomainPartition();
 
   MeshBody & meshBody = domain.getMeshBody( 0 );
   CellBlockManagerABC const & cellBlockManager = meshBody.getCellBlockManager();
   Group const & embSurfBlocks = cellBlockManager.getEmbeddedSurfaceBlocks();
-  string const & faceBlockName = embeddedSurfaceRegion.getFaceBlockName();
 
   // Get meshLevel
   MeshLevel & meshLevel = domain.getMeshBody( 0 ).getBaseDiscretization();
-  if( embSurfBlocks.hasGroup( faceBlockName ))
+  ElementRegionManager & elemManager = meshLevel.getElemManager();
+
+  // Get EmbeddedSurfaceSubRegions
+  elemManager.forElementRegions< SurfaceElementRegion >( [&] ( SurfaceElementRegion & surfaceRegion )
   {
-    // Get managers
-    ElementRegionManager & elemManager = meshLevel.getElemManager();
-    NodeManager & nodeManager = meshLevel.getNodeManager();
-    EmbeddedSurfaceNodeManager & embSurfNodeManager = meshLevel.getEmbSurfNodeManager();
-    EdgeManager & edgeManager = meshLevel.getEdgeManager();
-    arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const & nodesCoord = nodeManager.referencePosition();
 
-    NewObjectLists newObjects;
+    EmbeddedSurfaceSubRegion & embeddedSurfaceSubRegion = surfaceRegion.getUniqueSubRegion< EmbeddedSurfaceSubRegion >();
+    string const & faceBlockName = surfaceRegion.getFaceBlockName();
 
-    EmbeddedSurfaceBlockABC const & embSurf = embSurfBlocks.getGroup< EmbeddedSurfaceBlockABC >( faceBlockName );
-
-    elemManager.forElementSubRegionsComplete< CellElementSubRegion >( [&]( localIndex const er,
-                                                                           localIndex const esr,
-                                                                           ElementRegionBase &,
-                                                                           CellElementSubRegion & subRegion )
+    if( embSurfBlocks.hasGroup( faceBlockName ))
     {
-      FixedOneToManyRelation const & cellToEdges = subRegion.edgeList();
+      // Get managers
 
-      embeddedSurfaceSubRegion.copyFromEmbeddedSurfaceBlock( er,
-                                                             esr,
-                                                             nodeManager,
-                                                             embSurfNodeManager,
-                                                             edgeManager,
-                                                             cellToEdges,
-                                                             embSurf );
+      NodeManager & nodeManager = meshLevel.getNodeManager();
+      EmbeddedSurfaceNodeManager & embSurfNodeManager = meshLevel.getEmbSurfNodeManager();
+      EdgeManager & edgeManager = meshLevel.getEdgeManager();
 
-      // Add all the fracture information to the CellElementSubRegion
-      for( localIndex edfmIndex = 0; edfmIndex < embSurf.numEmbeddedSurfElem(); ++edfmIndex )
+      NewObjectLists newObjects;
+
+      EmbeddedSurfaceBlockABC const & embSurf = embSurfBlocks.getGroup< EmbeddedSurfaceBlockABC >( faceBlockName );
+
+      elemManager.forElementSubRegionsComplete< CellElementSubRegion >( [&]( localIndex const er,
+                                                                             localIndex const esr,
+                                                                             ElementRegionBase &,
+                                                                             CellElementSubRegion & subRegion )
       {
-        localIndex cellIndex = embSurf.getEmbeddedSurfElemTo3dElem().toCellIndex[edfmIndex][0];
-        subRegion.addFracturedElement( cellIndex, edfmIndex );
-        newObjects.newElements[ {embeddedSurfaceRegion.getIndexInParent(), embeddedSurfaceSubRegion.getIndexInParent()} ].insert( edfmIndex );
+        FixedOneToManyRelation const & cellToEdges = subRegion.edgeList();
+
+        embeddedSurfaceSubRegion.copyFromEmbeddedSurfaceBlock( er,
+                                                               esr,
+                                                               nodeManager,
+                                                               embSurfNodeManager,
+                                                               edgeManager,
+                                                               cellToEdges,
+                                                               embSurf );
+
+        // Add all the fracture information to the CellElementSubRegion
+        for( localIndex edfmIndex = 0; edfmIndex < embSurf.numEmbeddedSurfElem(); ++edfmIndex )
+        {
+          localIndex cellIndex = embSurf.getEmbeddedSurfElemTo3dElem().toCellIndex[edfmIndex][0];
+          subRegion.addFracturedElement( cellIndex, edfmIndex );
+          newObjects.newElements[ {surfaceRegion.getIndexInParent(), embeddedSurfaceSubRegion.getIndexInParent()} ].insert( edfmIndex );
+        }
+      } ); // end loop over subregions
+
+      // add all new nodes to newObject list
+      for( localIndex ni = 0; ni < embSurfNodeManager.size(); ni++ )
+      {
+        newObjects.newNodes.insert( ni );
       }
-    } );   // end loop over subregions
 
-    // add all new nodes to newObject list
-    for( localIndex ni = 0; ni < embSurfNodeManager.size(); ni++ )
-    {
-      newObjects.newNodes.insert( ni );
+      // Set the ghostRank form the parent cell
+      ElementRegionManager::ElementViewAccessor< arrayView1d< integer const > > const & cellElemGhostRank =
+        elemManager.constructArrayViewAccessor< integer, 1 >( ObjectManagerBase::viewKeyStruct::ghostRankString() );
+
+      embeddedSurfaceSubRegion.inheritGhostRank( cellElemGhostRank );
+
+      embeddedSurfacesParallelSynchronization::sychronizeTopology( meshLevel,
+                                                                   domain.getNeighbors(),
+                                                                   newObjects,
+                                                                   1,
+                                                                   surfaceRegion.getName() );
+
+      // addEmbeddedElementsToSets( elemManager, embeddedSurfaceSubRegion );
+
+      EmbeddedSurfaceSubRegion::NodeMapType & embSurfToNodeMap = embeddedSurfaceSubRegion.nodeList();
+
+      // Populate EdgeManager for embedded surfaces.
+      EdgeManager & embSurfEdgeManager = meshLevel.getEmbSurfEdgeManager();
+
+      EmbeddedSurfaceSubRegion::EdgeMapType & embSurfToEdgeMap = embeddedSurfaceSubRegion.edgeList();
+
+      localIndex numOfPoints = embSurfNodeManager.size();
+
+      // Create the edges
+      embSurfEdgeManager.buildEdges( numOfPoints, embSurfToNodeMap.toViewConst(), embSurfToEdgeMap );
+      // Node to cell map
+      embSurfNodeManager.setElementMaps( elemManager );
+      // Node to edge map
+      embSurfNodeManager.setEdgeMaps( embSurfEdgeManager );
+      embSurfNodeManager.compressRelationMaps();
     }
-
-    // Set the ghostRank form the parent cell
-    ElementRegionManager::ElementViewAccessor< arrayView1d< integer const > > const & cellElemGhostRank =
-      elemManager.constructArrayViewAccessor< integer, 1 >( ObjectManagerBase::viewKeyStruct::ghostRankString() );
-
-    embeddedSurfaceSubRegion.inheritGhostRank( cellElemGhostRank );
-
-    setGlobalIndices( elemManager, embSurfNodeManager, embeddedSurfaceSubRegion );
-
-    embeddedSurfacesParallelSynchronization::sychronizeTopology( meshLevel,
-                                                                 domain.getNeighbors(),
-                                                                 newObjects,
-                                                                 m_mpiCommOrder,
-                                                                 this->m_fractureRegionName );
-
-    addEmbeddedElementsToSets( elemManager, embeddedSurfaceSubRegion );
-
-    EmbeddedSurfaceSubRegion::NodeMapType & embSurfToNodeMap = embeddedSurfaceSubRegion.nodeList();
-
-    // Populate EdgeManager for embedded surfaces.
-    EdgeManager & embSurfEdgeManager = meshLevel.getEmbSurfEdgeManager();
-
-    EmbeddedSurfaceSubRegion::EdgeMapType & embSurfToEdgeMap = embeddedSurfaceSubRegion.edgeList();
-
-    localIndex numOfPoints = embSurfNodeManager.size();
-
-    // Create the edges
-    embSurfEdgeManager.buildEdges( numOfPoints, embSurfToNodeMap.toViewConst(), embSurfToEdgeMap );
-    // Node to cell map
-    embSurfNodeManager.setElementMaps( elemManager );
-    // Node to edge map
-    embSurfNodeManager.setEdgeMaps( embSurfEdgeManager );
-    embSurfNodeManager.compressRelationMaps();
-  }
+  } );
 }
 
 void ProblemManager::importFields()
