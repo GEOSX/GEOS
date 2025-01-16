@@ -116,6 +116,11 @@ public:
                                  real64 ( &elasticStrain )[6] ) const override final;
 
   GEOS_HOST_DEVICE
+  virtual void getElasticStrainInc( localIndex const k,
+                                    localIndex const q,
+                                    real64 ( &elasticStrainInc )[6] ) const override final;
+
+  GEOS_HOST_DEVICE
   virtual void viscousStateUpdate( localIndex const k,
                                    localIndex const q,
                                    real64 beta ) const override;
@@ -220,6 +225,60 @@ void ElasticIsotropicPressureDependentUpdates::getElasticStrain( localIndex cons
                                      deviator,
                                      elasticStrain );
 
+}
+
+
+GEOS_HOST_DEVICE
+inline
+void ElasticIsotropicPressureDependentUpdates::getElasticStrainInc( localIndex const k,
+                                                                    localIndex const q,
+                                                                    real64 ( & elasticStrainInc)[6] ) const
+{
+  real64 const mu     = m_shearModulus[k];
+  real64 const p0     = m_refPressure;
+  real64 const eps_v0 = m_refStrainVol;
+  real64 const Cr     = m_recompressionIndex[k];
+  real64 deviator[6]{};
+  real64 stress[6]{};
+  real64 P;
+  real64 Q;
+
+  LvArray::tensorOps::copy< 6 >( stress, m_newStress[k][q] );
+
+  twoInvariant::stressDecomposition( stress,
+                                     P,
+                                     Q,
+                                     deviator );
+
+  real64 elasticStrainVol = LvArray::math::log( P/p0 ) * Cr * (-1.0) + eps_v0;
+  real64 elasticStrainDev = Q/3./mu;
+
+  twoInvariant::strainRecomposition( elasticStrainVol,
+                                     elasticStrainDev,
+                                     deviator,
+                                     elasticStrainInc );
+
+  real64 oldStrain[6]{};
+
+  LvArray::tensorOps::copy< 6 >( stress, m_oldStress[k][q] );
+
+  twoInvariant::stressDecomposition( stress,
+                                     P,
+                                     Q,
+                                     deviator );
+
+  elasticStrainVol = LvArray::math::log( P/p0 ) * Cr * (-1.0) + eps_v0;
+  elasticStrainDev = Q/3./mu;
+
+  twoInvariant::strainRecomposition( elasticStrainVol,
+                                     elasticStrainDev,
+                                     deviator,
+                                     oldStrain );
+
+  for( localIndex i = 0; i<6; ++i )
+  {
+    elasticStrainInc[i] -= oldStrain[i];
+  }
 }
 
 
