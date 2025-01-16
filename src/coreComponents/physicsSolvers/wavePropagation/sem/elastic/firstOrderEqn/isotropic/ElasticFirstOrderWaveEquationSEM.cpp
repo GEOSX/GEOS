@@ -631,8 +631,7 @@ real64 ElasticFirstOrderWaveEquationSEM::explicitStepInternal( real64 const & ti
     CommunicationTools & syncFields = CommunicationTools::getInstance();
     syncFields.synchronizeFields( fieldsToBeSync,
                                   domain.getMeshBody( 0 ).getMeshLevel( m_discretizationName ),
-                                  domain.getNeighbors(),
-                                  true );
+                                  domain.getNeighbors() );
 
     // compute the seismic traces since last step.
     arrayView2d< real32 > const uxReceivers   = m_displacementxNp1AtReceivers.toView();

@@ -254,8 +254,7 @@ real64 HydrofractureSolver< POROMECHANICS_SOLVER >::fullyCoupledSolverStep( real
 
       CommunicationTools::getInstance().synchronizeFields( fieldsToBeSync,
                                                            domain.getMeshBody( 0 ).getBaseDiscretization(),
-                                                           domain.getNeighbors(),
-                                                           false );
+                                                           domain.getNeighbors() );
 
       this->updateState( domain );
 

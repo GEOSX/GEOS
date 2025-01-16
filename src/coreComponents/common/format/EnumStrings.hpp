@@ -202,7 +202,8 @@ struct GEOS_FMT_NS::formatter< Enum, std::enable_if_t< std::is_enum< Enum >::val
   template< typename FormatContext >
   auto format( Enum e, FormatContext & ctx ) const
   {
-    return GEOS_FMT_NS::formatter< std::underlying_type_t< Enum > >::format( toUnderlying( e ), ctx );
+    using underlyingType = std::underlying_type_t< Enum >;
+    return GEOS_FMT_NS::formatter< underlyingType >::format( underlyingType( e ), ctx );
   }
 };
 

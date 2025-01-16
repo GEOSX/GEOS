@@ -593,7 +593,7 @@ int SurfaceGenerator::separationDriver( DomainPartition & domain,
     fieldsToBeSync.addFields( FieldLocation::Node, { fields::solidMechanics::externalForce::key() } );
   }
 
-  CommunicationTools::getInstance().synchronizeFields( fieldsToBeSync, mesh, domain.getNeighbors(), false );
+  CommunicationTools::getInstance().synchronizeFields( fieldsToBeSync, mesh, domain.getNeighbors() );
 
   elementManager.forElementSubRegions< CellElementSubRegion >( [] ( auto & elemSubRegion )
   {

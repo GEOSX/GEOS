@@ -835,7 +835,7 @@ void SpatialPartition::sendCoordinateListToNeighbors( arrayView1d< R1Tensor > co
   {
     // Unpack the buffer to an array of coordinates.
     const buffer_unit_type * receiveBufferPtr = receiveBuffer[n].data();  // needed for const cast
-    bufferOps::Unpack( receiveBufferPtr, particleCoordinatesReceivedFromNeighbors[n] );
+    bufferOps::Unpack( receiveBufferPtr, particleCoordinatesReceivedFromNeighbors[n], MPI_REPLACE );
   }
 }
 
@@ -934,7 +934,7 @@ void SpatialPartition::sendListOfIndicesToNeighbors( std::vector< array1d< index
   {
     // Unpack the buffer to an array of coordinates.
     const buffer_unit_type * receiveBufferPtr = receiveBuffer[n].data();  // needed for const cast
-    bufferOps::Unpack( receiveBufferPtr, listReceivedFromEachNeighbor[n] );
+    bufferOps::Unpack( receiveBufferPtr, listReceivedFromEachNeighbor[n], MPI_REPLACE );
   }
 }
 

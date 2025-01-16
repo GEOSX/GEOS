@@ -184,28 +184,7 @@ if(DEFINED CONDUIT_DIR)
 
     message( " ----> Conduit_VERSION = ${Conduit_VERSION}")
 
-
-    set(CONDUIT_TARGETS conduit conduit_relay conduit_blueprint)
-    foreach(targetName ${CONDUIT_TARGETS} )
-        get_target_property(includeDirs
-                            ${targetName}
-                            INTERFACE_INCLUDE_DIRECTORIES)
-
-        set_property(TARGET ${targetName}
-                     APPEND PROPERTY INTERFACE_SYSTEM_INCLUDE_DIRECTORIES
-                     ${includeDirs})
-    endforeach()
-
-    # Conduit uses our HDF5 and we need to propagate the above fix.
-    # get_target_property(CONDUIT_RELAY_INTERFACE_INCLUDE_DIRECTORIES conduit_relay INTERFACE_INCLUDE_DIRECTORIES)
-    # list(REMOVE_ITEM CONDUIT_RELAY_INTERFACE_INCLUDE_DIRECTORIES /usr/include)
-    # set_target_properties(conduit_relay PROPERTIES INTERFACE_INCLUDE_DIRECTORIES ${CONDUIT_RELAY_INTERFACE_INCLUDE_DIRECTORIES})
-
-    # get_target_property(CONDUIT_RELAY_INTERFACE_SYSTEM_INCLUDE_DIRECTORIES conduit_relay INTERFACE_SYSTEM_INCLUDE_DIRECTORIES)
-    # list(REMOVE_ITEM CONDUIT_RELAY_INTERFACE_SYSTEM_INCLUDE_DIRECTORIES /usr/include)
-    # set_target_properties(conduit_relay PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES ${CONDUIT_RELAY_INTERFACE_SYSTEM_INCLUDE_DIRECTORIES})
-
-    set(thirdPartyLibs ${thirdPartyLibs} conduit::conduit)
+    set(thirdPartyLibs ${thirdPartyLibs} conduit::conduit )
 else()
     mandatory_tpl_doesnt_exist("Conduit" CONDUIT_DIR)
 endif()
@@ -407,23 +386,12 @@ if(DEFINED ADIAK_DIR)
     # Header file provides incorrect version 0.3.0
     message( " ----> adiak_VERSION = 0.2.2")
 
-    set(adiak_target "")
-    if(TARGET adiak::adiak)
-      set(adiak_target ${adiak_target} adiak::adiak)
-    endif()
-    if(TARGET adiak)
-      set(adiak_target ${adiak_target} adiak)
-    endif()
-
-    set_property(TARGET ${adiak_target}
-                 APPEND PROPERTY INTERFACE_SYSTEM_INCLUDE_DIRECTORIES
-                 ${adiak_INCLUDE_DIR} )
-    set_property(TARGET ${adiak_target}
-                 APPEND PROPERTY INTERFACE_INCLUDE_DIRECTORIES
-                 ${adiak_INCLUDE_DIR} )
+    if( NOT TARGET adiak )
+      add_library( adiak ALIAS adiak::adiak )
+    endif( )
 
     set(ENABLE_ADIAK ON CACHE BOOL "")
-    set(thirdPartyLibs ${thirdPartyLibs} ${adiak_target})
+    set(thirdPartyLibs ${thirdPartyLibs} adiak )
 else()
     if(ENABLE_ADIAK)
         message(WARNING "ENABLE_ADIAK is ON but ADIAK_DIR isn't defined.")

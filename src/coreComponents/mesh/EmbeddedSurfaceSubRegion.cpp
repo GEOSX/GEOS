@@ -343,7 +343,7 @@ localIndex EmbeddedSurfaceSubRegion::unpackUpDownMaps( buffer_unit_type const * 
   localIndex unPackedSize = 0;
 
   string nodeListString;
-  unPackedSize += bufferOps::Unpack( buffer, nodeListString );
+  unPackedSize += bufferOps::Unpack( buffer, nodeListString, MPI_REPLACE );
   GEOS_ERROR_IF_NE( nodeListString, viewKeyStruct::nodeListString() );
   unPackedSize += bufferOps::Unpack( buffer,
                                      m_toNodesRelation,
@@ -353,7 +353,7 @@ localIndex EmbeddedSurfaceSubRegion::unpackUpDownMaps( buffer_unit_type const * 
                                      m_toNodesRelation.relatedObjectGlobalToLocal() );
 
   string elementListString;
-  unPackedSize += bufferOps::Unpack( buffer, elementListString );
+  unPackedSize += bufferOps::Unpack( buffer, elementListString, MPI_REPLACE );
   GEOS_ERROR_IF_NE( elementListString, viewKeyStruct::surfaceElementsToCellRegionsString() );
 
   unPackedSize += bufferOps::Unpack( buffer,

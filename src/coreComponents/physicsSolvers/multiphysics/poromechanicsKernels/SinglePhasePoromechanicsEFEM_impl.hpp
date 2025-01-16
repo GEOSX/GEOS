@@ -123,6 +123,7 @@ kernelLaunch( localIndex const numElems,
                     [=] GEOS_HOST_DEVICE ( localIndex const i )
   {
     localIndex k = kernelComponent.m_fracturedElems[i];
+
     typename KERNEL_TYPE::StackVariables stack;
 
     kernelComponent.setup( k, stack );
@@ -131,12 +132,12 @@ kernelLaunch( localIndex const numElems,
       kernelComponent.quadraturePointKernel( k, q, stack );
     }
     maxResidual.max( kernelComponent.complete( k, stack ) );
+
   } );
 
   return maxResidual.get();
 }
 //END_kernelLauncher
-
 
 template< typename SUBREGION_TYPE,
           typename CONSTITUTIVE_TYPE,
@@ -196,7 +197,6 @@ quadraturePointKernel( localIndex const k,
   // We can either use formulation: sigma_eff_old + stiffness_matrix * incremental_strain - biot * p_m or directly effective_stress_current
   // - biot * p_m
   // The latter one is adopted here.
-
   localIndex const embSurfIndex = m_cellsToEmbeddedSurfaces[k][0];
 
   // Get displacement: (i) basis functions (N), (ii) basis function
@@ -282,6 +282,7 @@ quadraturePointKernel( localIndex const k,
   LvArray::tensorOps::scaledAdd< 3 >( stack.localKwpm, Kwpm_gauss, detJ*biotCoefficient );
 
   kernelOp( eqMatrix, detJ );
+
 }
 
 template< typename SUBREGION_TYPE,

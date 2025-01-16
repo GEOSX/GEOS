@@ -98,12 +98,12 @@ unsigned int ParticleSubRegionBase::particlePack( buffer_type & buffer,
   // Pack particle fields
   if( !doPack ) // doPack == false, so we're just getting the size
   {
-    packedSize += this->packSize( localIndices, 0, false, events );
+    packedSize += this->packSize( localIndices, 0, events );
   }
   else // doPack == true, perform the pack
   {
     buffer_unit_type * bufferPtr = buffer.data();
-    packedSize += this->pack( bufferPtr, localIndices, 0, false, events );
+    packedSize += this->pack( bufferPtr, localIndices, 0, events );
   }
 
   return packedSize;
@@ -126,7 +126,7 @@ void ParticleSubRegionBase::particleUnpack( buffer_type & buffer,
   }
 
   // Unpack
-  this->unpack( receiveBufferPtr, indices, 0, false, events );
+  this->unpack( receiveBufferPtr, indices, 0, events, MPI_REPLACE );
 }
 
 void ParticleSubRegionBase::erase( std::set< localIndex > const & indicesToErase )

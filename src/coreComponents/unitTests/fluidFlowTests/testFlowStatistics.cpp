@@ -17,6 +17,7 @@
 #include "unitTests/testingUtilities/TestingTasks.hpp"
 #include "mainInterface/initialization.hpp"
 #include "mainInterface/GeosxState.hpp"
+#include "mainInterface/ProblemManager.hpp"
 #include "physicsSolvers/fluidFlow/SourceFluxStatistics.hpp"
 #include "physicsSolvers/fluidFlow/SinglePhaseStatistics.hpp"
 
@@ -203,10 +204,10 @@ real64 getTotalFluidMass( ProblemManager & problem, string_view flowSolverPath )
   {
     mesh.getElemManager().forElementRegions( [&]( ElementRegionBase & region )
     {
-      SinglePhaseStatistics::RegionStatistics & regionStats = region.getReference< SinglePhaseStatistics::RegionStatistics >(
-        SinglePhaseStatistics::viewKeyStruct::regionStatisticsString() );
+      SinglePhaseStatistics::RegionStatistics & stats =
+        region.getGroupByPath< SinglePhaseStatistics::RegionStatistics >( SinglePhaseStatistics::viewKeyStruct::regionStatisticsString() );
 
-      totalMass += regionStats.totalMass;
+      totalMass += stats.m_totalMass;
     } );
   } );
   return totalMass;

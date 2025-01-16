@@ -30,6 +30,21 @@ namespace geos
 class PackCollection : public HistoryCollectionBase
 {
 public:
+  /// @cond DO_NOT_DOCUMENT
+  struct viewKeysStruct
+  {
+    static constexpr char const * objectPathString() { return "objectPath"; }
+    static constexpr char const * fieldNameString() { return "fieldName"; }
+    static constexpr char const * setNamesString() { return "setNames"; }
+    static constexpr char const * onlyOnSetChangeString() { return "onlyOnSetChange"; }
+    static constexpr char const * disableCoordCollectionString() { return "disableCoordCollection"; }
+
+    dataRepository::ViewKey objectPath = { "objectPath" };
+    dataRepository::ViewKey fieldName = { "fieldName" };
+    dataRepository::ViewKey setNames = { "setNames" };
+    dataRepository::ViewKey onlyOnSetChange = { "onlyOnSetChange" };
+    dataRepository::ViewKey disableCoordCollection = { "disableCoordCollection" };
+  } viewKeys;
   /**
    * @brief Constructor
    * @copydetails dataRepository::Group::Group( string const & name, Group * parent );
@@ -68,21 +83,6 @@ public:
 
 private:
 
-  /// @cond DO_NOT_DOCUMENT
-  struct viewKeysStruct
-  {
-    static constexpr char const * objectPathString() { return "objectPath"; }
-    static constexpr char const * fieldNameString() { return "fieldName"; }
-    static constexpr char const * setNamesString() { return "setNames"; }
-    static constexpr char const * onlyOnSetChangeString() { return "onlyOnSetChange"; }
-    static constexpr char const * disableCoordCollectionString() { return "disableCoordCollection"; }
-
-    dataRepository::ViewKey objectPath = { "objectPath" };
-    dataRepository::ViewKey fieldName = { "fieldName" };
-    dataRepository::ViewKey setNames = { "setNames" };
-    dataRepository::ViewKey onlyOnSetChange = { "onlyOnSetChange" };
-    dataRepository::ViewKey disableCoordCollection = { "disableCoordCollection" };
-  } viewKeys;
   /// @endcond
 
   /// Construct the metadata collectors for this collector.
@@ -95,7 +95,7 @@ private:
     m_disableCoordCollection = true;
   }
 
-  /// @copydoc geos::HistoryCollection::collect
+  /// @copydoc geos::HistoryCollectionBase::collect
   void collect( DomainPartition const & domain,
                 localIndex const collectionIdx,
                 buffer_unit_type * & buffer ) override;

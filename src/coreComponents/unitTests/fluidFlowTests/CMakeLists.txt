@@ -4,6 +4,7 @@ set( gtest_geosx_tests
      testThermalCompMultiphaseFlow.cpp
      testThermalSinglePhaseFlow.cpp
      testFlowStatistics.cpp
+     testStatOutputController.cpp
      testTransmissibility.cpp )
 
 if( ENABLE_PVTPackage )

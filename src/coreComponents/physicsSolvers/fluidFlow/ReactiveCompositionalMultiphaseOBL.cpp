@@ -552,7 +552,7 @@ void ReactiveCompositionalMultiphaseOBL::applySystemSolution( DofManager const &
     {
       fieldsToBeSync.addElementFields( {  fields::flow::temperature::key() }, regionNames );
     }
-    CommunicationTools::getInstance().synchronizeFields( fieldsToBeSync, mesh, domain.getNeighbors(), true );
+    CommunicationTools::getInstance().synchronizeFields( fieldsToBeSync, mesh, domain.getNeighbors() );
   } );
 }
 
@@ -573,7 +573,7 @@ void ReactiveCompositionalMultiphaseOBL::initializePostInitialConditionsPreSubGr
     fieldsToBeSync.addElementFields( { fields::flow::pressure::key() }, regionNames );
     fieldsToBeSync.addElementFields( { fields::flow::globalCompFraction::key() }, regionNames );
 
-    CommunicationTools::getInstance().synchronizeFields( fieldsToBeSync, mesh, domain.getNeighbors(), false );
+    CommunicationTools::getInstance().synchronizeFields( fieldsToBeSync, mesh, domain.getNeighbors() );
 
     mesh.getElemManager().forElementSubRegions( regionNames, [&]( localIndex const,
                                                                   ElementSubRegionBase & subRegion )

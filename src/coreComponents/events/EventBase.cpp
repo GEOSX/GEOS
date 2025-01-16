@@ -228,6 +228,8 @@ bool EventBase::execute( real64 const time_n,
 {
   bool earlyReturn = false;
 
+  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "Event {} executed!", getName() ) );
+
   // If m_targetExecFlag is set, then the code has resumed at a point
   // after the target has executed.
   if((m_target != nullptr) && (m_targetExecFlag == 0))

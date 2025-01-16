@@ -1416,6 +1416,7 @@
 			<xsd:element name="SolidMechanicsStateReset" type="SolidMechanicsStateResetType" />
 			<xsd:element name="SolidMechanicsStatistics" type="SolidMechanicsStatisticsType" />
 			<xsd:element name="SourceFluxStatistics" type="SourceFluxStatisticsType" />
+			<xsd:element name="StatOutputController" type="StatOutputControllerType" />
 			<xsd:element name="TriaxialDriver" type="TriaxialDriverType" />
 		</xsd:choice>
 	</xsd:complexType>
@@ -1446,6 +1447,12 @@
 	<xsd:complexType name="SolidMechanicsStateResetType" />
 	<xsd:complexType name="SolidMechanicsStatisticsType" />
 	<xsd:complexType name="SourceFluxStatisticsType" />
+	<xsd:complexType name="StatOutputControllerType">
+		<xsd:choice minOccurs="0" maxOccurs="unbounded">
+			<xsd:element name="CompositionalMultiphaseStatistics" type="CompositionalMultiphaseStatisticsType" />
+			<xsd:element name="SinglePhaseStatistics" type="SinglePhaseStatisticsType" />
+		</xsd:choice>
+	</xsd:complexType>
 	<xsd:complexType name="TriaxialDriverType" />
 	<xsd:complexType name="commandLineType">
 		<!--beginFromRestart => Flag to indicate restart run.-->

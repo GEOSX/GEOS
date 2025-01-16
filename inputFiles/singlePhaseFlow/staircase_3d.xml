@@ -63,9 +63,9 @@
       target="/Solvers/SinglePhaseFlow"/>
 
     <PeriodicEvent
-      name="statistics"
-      timeFrequency="5000.0"
-      target="/Tasks/SinglePhaseFlowStatistics"/>
+      name="statisticsController"
+      timeFrequency="5000"
+      target="/Tasks/statController"/>
     
     <PeriodicEvent
       name="restarts"
@@ -165,10 +165,12 @@
   </FieldSpecifications>
 
   <Tasks>
-    <SinglePhaseStatistics
-      name="SinglePhaseFlowStatistics"
-      flowSolverName="SinglePhaseFlow"
-      logLevel="1"/>
+    <StatOutputController name="statController" >
+      <SinglePhaseStatistics
+        name="SinglePhaseFlowStatistics"
+        flowSolverName="SinglePhaseFlow"
+        logLevel="1"/>
+    </StatOutputController>
   </Tasks>
   
   <Outputs>

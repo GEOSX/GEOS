@@ -49,7 +49,7 @@ TEST( testPacking, testPacking )
   buffer_unit_type * buffer = &buf[0];
   bufferOps::Pack< true >( buffer, veloc );
   buffer_unit_type const * cbuffer = &buf[0];
-  bufferOps::Unpack( cbuffer, unpacked );
+  bufferOps::Unpack( cbuffer, unpacked, MPI_REPLACE );
   for( localIndex ii = 0; ii < size; ++ii )
     EXPECT_TRUE( veloc[ii] == unpacked[ii] );
 }
@@ -80,7 +80,7 @@ TEST( testPacking, testPackByIndex )
   buffer_unit_type * buffer = &buf[0];
   bufferOps::PackByIndex< true >( buffer, veloc, indices );
   buffer_unit_type const * cbuffer = &buf[0];
-  bufferOps::UnpackByIndex( cbuffer, unpacked, indices );
+  bufferOps::UnpackByIndex( cbuffer, unpacked, indices, MPI_REPLACE );
   for( localIndex ii = 0; ii < size; ++ii )
   {
     if( std::find( indices.begin(), indices.end(), ii ) != indices.end() )
@@ -108,7 +108,7 @@ TEST( testPacking, testTensorPacking )
   array1d< R1Tensor > unp( 1 );
   buffer_unit_type const * bc = &buf[0];
   parallelDeviceEvents unpackEvents;
-  bufferOps::UnpackDevice( bc, unp.toView(), unpackEvents );
+  bufferOps::UnpackDevice( bc, unp.toView(), unpackEvents, MPI_REPLACE );
   waitAllDeviceEvents( unpackEvents );
   unp.move( hostMemorySpace );
   for( localIndex ii = 0; ii < 3; ++ii )
@@ -170,7 +170,7 @@ TEST( testPacking, testPackingDevice )
 
   buffer_unit_type const * cbuffer = &buf[0];
   parallelDeviceEvents unpackEvents;
-  bufferOps::UnpackDevice( cbuffer, unpacked.toView(), unpackEvents );
+  bufferOps::UnpackDevice( cbuffer, unpacked.toView(), unpackEvents, MPI_REPLACE );
   waitAllDeviceEvents( unpackEvents );
   unpacked.move( hostMemorySpace );
 
@@ -209,7 +209,7 @@ TEST( testPacking, testPackingDeviceHelper )
 
   parallelDeviceEvents unpackEvents;
   buffer_unit_type const * cbuffer = &buf[0];
-  dataRepository::wrapperHelpers::UnpackDevice( cbuffer, unpacked.toView(), unpackEvents );
+  dataRepository::wrapperHelpers::UnpackDevice( cbuffer, unpacked.toView(), unpackEvents, MPI_REPLACE );
   waitAllDeviceEvents( unpackEvents );
   unpacked.move( hostMemorySpace );
   for( localIndex ii = 0; ii < size; ++ii )
@@ -246,7 +246,7 @@ TEST( testPacking, testPackByIndexDevice )
   waitAllDeviceEvents( packEvents );
   buffer_unit_type const * cbuffer = &buf[0];
   parallelDeviceEvents unpackEvents;
-  localIndex unpacked_size = bufferOps::UnpackByIndexDevice( cbuffer, unpacked.toView(), indices.toViewConst(), unpackEvents );
+  localIndex unpacked_size = bufferOps::UnpackByIndexDevice( cbuffer, unpacked.toView(), indices.toViewConst(), unpackEvents, MPI_REPLACE );
   EXPECT_EQ ( unpacked_size, packed_size );
   waitAllDeviceEvents( unpackEvents );
   unpacked.move( hostMemorySpace );

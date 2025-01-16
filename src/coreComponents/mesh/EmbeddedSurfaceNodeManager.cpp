@@ -243,19 +243,19 @@ localIndex EmbeddedSurfaceNodeManager::unpackNewNodesGlobalMaps( buffer_unit_typ
 
   localIndex unpackedSize = 0;
   string groupName;
-  unpackedSize += bufferOps::Unpack( buffer, groupName );
+  unpackedSize += bufferOps::Unpack( buffer, groupName, MPI_REPLACE );
   GEOS_ERROR_IF( groupName != this->getName(), "EmbeddedSurfaceNodeManager::unpackGlobalMaps(): group names do not match" );
 
   string localToGlobalString;
-  unpackedSize += bufferOps::Unpack( buffer, localToGlobalString );
+  unpackedSize += bufferOps::Unpack( buffer, localToGlobalString, MPI_REPLACE );
   GEOS_ERROR_IF( localToGlobalString != viewKeyStruct::localToGlobalMapString(), "ObjectManagerBase::unpack(): label incorrect" );
 
   int const rank = MpiWrapper::commRank( MPI_COMM_GEOS );
   int sendingRank;
-  unpackedSize += bufferOps::Unpack( buffer, sendingRank );
+  unpackedSize += bufferOps::Unpack( buffer, sendingRank, MPI_REPLACE );
 
   localIndex numUnpackedIndices;
-  unpackedSize += bufferOps::Unpack( buffer, numUnpackedIndices );
+  unpackedSize += bufferOps::Unpack( buffer, numUnpackedIndices, MPI_REPLACE );
 
   if( numUnpackedIndices > 0 )
   {
@@ -263,10 +263,10 @@ localIndex EmbeddedSurfaceNodeManager::unpackNewNodesGlobalMaps( buffer_unit_typ
     unpackedLocalIndices.resize( numUnpackedIndices );
 
     globalIndex_array globalIndices;
-    unpackedSize += bufferOps::Unpack( buffer, globalIndices );
+    unpackedSize += bufferOps::Unpack( buffer, globalIndices, MPI_REPLACE );
 
     array1d< integer > ghostRankOnSendingRank;
-    unpackedSize += bufferOps::Unpack( buffer, ghostRankOnSendingRank );
+    unpackedSize += bufferOps::Unpack( buffer, ghostRankOnSendingRank, MPI_REPLACE );
 
     // Unpack referencePosition
     localIndex_array indicesOnBuffer( numUnpackedIndices );
@@ -278,9 +278,9 @@ localIndex EmbeddedSurfaceNodeManager::unpackNewNodesGlobalMaps( buffer_unit_typ
     referencePositionData.resize( numUnpackedIndices );
     arrayView2d< real64, nodes::REFERENCE_POSITION_USD > const & referencePosition = referencePositionData.toView();
     string referencePositionString;
-    unpackedSize += bufferOps::Unpack( buffer, referencePositionString );
+    unpackedSize += bufferOps::Unpack( buffer, referencePositionString, MPI_REPLACE );
     GEOS_ERROR_IF( referencePositionString != viewKeyStruct::referencePositionString(), "EmbeddedSurfaceNodeManager::unpackGlobalMaps(): label incorrect" );
-    unpackedSize += bufferOps::UnpackByIndex( buffer, referencePosition, indicesOnBuffer );
+    unpackedSize += bufferOps::UnpackByIndex( buffer, referencePosition, indicesOnBuffer, MPI_REPLACE );
 
     localIndex numNewIndices = 0;
     globalIndex_array newGlobalIndices;
@@ -408,7 +408,7 @@ localIndex EmbeddedSurfaceNodeManager::unpackUpDownMaps( buffer_unit_type const 
 
   string temp;
 
-  unPackedSize += bufferOps::Unpack( buffer, temp );
+  unPackedSize += bufferOps::Unpack( buffer, temp, MPI_REPLACE );
   GEOS_ERROR_IF( temp != viewKeyStruct::elementListString(), "" );
   unPackedSize += bufferOps::Unpack( buffer,
                                      this->m_toElements,

@@ -228,8 +228,7 @@ void ContactSolverBase::synchronizeFractureState( DomainPartition & domain ) con
 
     CommunicationTools::getInstance().synchronizeFields( fieldsToBeSync,
                                                          mesh,
-                                                         domain.getNeighbors(),
-                                                         true );
+                                                         domain.getNeighbors() );
   } );
 }
 

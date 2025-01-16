@@ -252,7 +252,7 @@ localIndex CellElementSubRegion::unpackFracturedElements( buffer_unit_type const
   localIndex unPackedSize = 0;
 
   string toEmbSurfString;
-  unPackedSize += bufferOps::Unpack( buffer, toEmbSurfString );
+  unPackedSize += bufferOps::Unpack( buffer, toEmbSurfString, MPI_REPLACE );
   GEOS_ERROR_IF_NE( toEmbSurfString, viewKeyStruct::toEmbSurfString() );
 
   // only here to use that packing function
@@ -266,7 +266,7 @@ localIndex CellElementSubRegion::unpackFracturedElements( buffer_unit_type const
                                      embeddedSurfacesGlobalToLocal );
 
   string fracturedCellsString;
-  unPackedSize += bufferOps::Unpack( buffer, fracturedCellsString );
+  unPackedSize += bufferOps::Unpack( buffer, fracturedCellsString, MPI_REPLACE );
   GEOS_ERROR_IF_NE( fracturedCellsString, viewKeyStruct::fracturedCellsString() );
 
   SortedArray< globalIndex > junk;

@@ -85,7 +85,7 @@ UnpackPointerDevice( buffer_unit_type const * & buffer,
 }
 
 template< bool DO_PACKING, typename T, int NDIM, int USD >
-typename std::enable_if< can_memcpy< T >, localIndex >::type
+typename std::enable_if< is_device_packable_v< T >, localIndex >::type
 PackDataDevice( buffer_unit_type * & buffer,
                 ArrayView< T const, NDIM, USD > const & var,
                 parallelDeviceEvents & GEOS_UNUSED_PARAM( events ) )
@@ -108,7 +108,7 @@ PackDataDevice( buffer_unit_type * & buffer,
 }
 
 template< bool DO_PACKING, typename T, int NDIM, int USD >
-typename std::enable_if< can_memcpy< T >, localIndex >::type
+typename std::enable_if< is_device_packable_v< T >, localIndex >::type
 PackDevice( buffer_unit_type * & buffer,
             ArrayView< T const, NDIM, USD > const & var,
             parallelDeviceEvents & events )
@@ -120,10 +120,11 @@ PackDevice( buffer_unit_type * & buffer,
 }
 
 template< typename T, int NDIM, int USD >
-typename std::enable_if< can_memcpy< T >, localIndex >::type
+typename std::enable_if< is_device_packable_v< T >, localIndex >::type
 UnpackDataDevice( buffer_unit_type const * & buffer,
                   ArrayView< T, NDIM, USD > const & var,
-                  parallelDeviceEvents & GEOS_UNUSED_PARAM( events ) )
+                  parallelDeviceEvents & GEOS_UNUSED_PARAM( events ),
+                  MPI_Op GEOS_UNUSED_PARAM( op ) )
 {
   // parallelDeviceStream stream;
   // events.emplace_back( forAll< parallelDeviceAsyncPolicy<> >( stream, var.size(), [=] GEOS_DEVICE ( localIndex ii )
@@ -137,10 +138,11 @@ UnpackDataDevice( buffer_unit_type const * & buffer,
 }
 
 template< typename T, int NDIM, int USD >
-typename std::enable_if< can_memcpy< T >, localIndex >::type
+typename std::enable_if< is_device_packable_v< T >, localIndex >::type
 UnpackDevice( buffer_unit_type const * & buffer,
               ArrayView< T, NDIM, USD > const & var,
-              parallelDeviceEvents & events )
+              parallelDeviceEvents & events,
+              MPI_Op op )
 {
   localIndex dims[NDIM];
   localIndex packedSize = UnpackPointerDevice( buffer, dims, NDIM );
@@ -150,12 +152,12 @@ UnpackDevice( buffer_unit_type const * & buffer,
   {
     GEOS_ERROR_IF_NE( strides[dd], var.strides()[dd] );
   }
-  packedSize += UnpackDataDevice( buffer, var, events );
+  packedSize += UnpackDataDevice( buffer, var, events, op );
   return packedSize;
 }
 
 template< bool DO_PACKING, typename T, int NDIM, int USD, typename T_INDICES >
-typename std::enable_if< can_memcpy< T >, localIndex >::type
+typename std::enable_if< is_device_packable_by_index_v< ArrayView< T const, NDIM, USD > const & >, localIndex >::type
 PackDataByIndexDevice ( buffer_unit_type * & buffer,
                         ArrayView< T const, NDIM, USD > const & var,
                         const T_INDICES & indices,
@@ -185,7 +187,7 @@ PackDataByIndexDevice ( buffer_unit_type * & buffer,
 }
 
 template< bool DO_PACKING, typename T, int NDIM, int USD, typename T_INDICES >
-typename std::enable_if< can_memcpy< T >, localIndex >::type
+typename std::enable_if< is_device_packable_by_index_v< ArrayView< T const, NDIM, USD > const & >, localIndex >::type
 PackByIndexDevice ( buffer_unit_type * & buffer,
                     ArrayView< T const, NDIM, USD > const & var,
                     const T_INDICES & indices,
@@ -209,7 +211,7 @@ PackByIndexDevice ( buffer_unit_type * & buffer,
 }
 
 template< typename T, int NDIM, int USD, typename T_INDICES >
-typename std::enable_if< can_memcpy< T >, localIndex >::type
+typename std::enable_if< is_device_packable_by_index_v< ArrayView< T, NDIM, USD > const & >, localIndex >::type
 UnpackDataByIndexDevice ( buffer_unit_type const * & buffer,
                           ArrayView< T, NDIM, USD > const & var,
                           T_INDICES const & indices,
@@ -289,7 +291,7 @@ UnpackDataByIndexDevice ( buffer_unit_type const * & buffer,
 }
 
 template< typename T, int NDIM, int USD, typename T_INDICES >
-typename std::enable_if< can_memcpy< T >, localIndex >::type
+typename std::enable_if< is_device_packable_by_index_v< ArrayView< T, NDIM, USD > const & >, localIndex >::type
 UnpackByIndexDevice ( buffer_unit_type const * & buffer,
                       ArrayView< T, NDIM, USD > const & var,
                       T_INDICES const & indices,
@@ -322,7 +324,23 @@ UnpackByIndexDevice ( buffer_unit_type const * & buffer,
   template localIndex UnpackDevice< TYPE, NDIM, USD > \
     ( buffer_unit_type const * & buffer, \
     ArrayView< TYPE, NDIM, USD > const & var, \
+    parallelDeviceEvents & events, \
+    MPI_Op op ); \
+\
+  template localIndex PackDataDevice< true, TYPE, NDIM, USD > \
+    ( buffer_unit_type * &buffer, \
+    ArrayView< TYPE const, NDIM, USD > const & var, \
     parallelDeviceEvents & events ); \
+  template localIndex PackDataDevice< false, TYPE, NDIM, USD > \
+    ( buffer_unit_type * &buffer, \
+    ArrayView< TYPE const, NDIM, USD > const & var, \
+    parallelDeviceEvents & events ); \
+  template localIndex UnpackDataDevice< TYPE, NDIM, USD > \
+    ( buffer_unit_type const * & buffer, \
+    ArrayView< TYPE, NDIM, USD > const & var, \
+    parallelDeviceEvents & events, \
+    MPI_Op op ); \
+\
   template localIndex PackByIndexDevice< true, TYPE, NDIM, USD > \
     ( buffer_unit_type * &buffer, \
     ArrayView< TYPE const, NDIM, USD > const & var, \
@@ -339,19 +357,7 @@ UnpackByIndexDevice ( buffer_unit_type const * & buffer,
     arrayView1d< const localIndex > const & indices, \
     parallelDeviceEvents & events, \
     MPI_Op op ); \
-    \
-  template localIndex PackDataDevice< true, TYPE, NDIM, USD > \
-    ( buffer_unit_type * &buffer, \
-    ArrayView< TYPE const, NDIM, USD > const & var, \
-    parallelDeviceEvents & events ); \
-  template localIndex PackDataDevice< false, TYPE, NDIM, USD > \
-    ( buffer_unit_type * &buffer, \
-    ArrayView< TYPE const, NDIM, USD > const & var, \
-    parallelDeviceEvents & events ); \
-  template localIndex UnpackDataDevice< TYPE, NDIM, USD > \
-    ( buffer_unit_type const * & buffer, \
-    ArrayView< TYPE, NDIM, USD > const & var, \
-    parallelDeviceEvents & events ); \
+\
   template localIndex PackDataByIndexDevice< true, TYPE, NDIM, USD > \
     ( buffer_unit_type * &buffer, \
     ArrayView< TYPE const, NDIM, USD > const & var, \
@@ -387,7 +393,7 @@ UnpackByIndexDevice ( buffer_unit_type const * & buffer,
   DECLARE_PACK_UNPACK( TYPE, 4, 2 ); \
   DECLARE_PACK_UNPACK( TYPE, 4, 3 )
 
-#define DECLARE_PACK_UNPACK_UP_TO_5D( TYPE ) \
+#define DECLARE_PACK_UNPACK_UP_TO_5D( TYPE )  \
   DECLARE_PACK_UNPACK_UP_TO_4D( TYPE ); \
   DECLARE_PACK_UNPACK( TYPE, 5, 0 ); \
   DECLARE_PACK_UNPACK( TYPE, 5, 1 ); \

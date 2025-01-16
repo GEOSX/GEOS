@@ -708,8 +708,7 @@ void SolidMechanicsEmbeddedFractures::applySystemSolution( DofManager const & do
 
     CommunicationTools::getInstance().synchronizeFields( fieldsToBeSync,
                                                          mesh,
-                                                         domain.getNeighbors(),
-                                                         true );
+                                                         domain.getNeighbors() );
   } );
 }
 

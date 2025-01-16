@@ -183,11 +183,11 @@ ParticleManager::PackPrivate( buffer_unit_type * & buffer,
       arrayView1d< localIndex const > const particleList = packList[kReg][esr];
       if( DOPACK )
       {
-        packedSize += subRegion.pack( buffer, wrapperNames, particleList, 0, false, events );
+        packedSize += subRegion.pack( buffer, wrapperNames, particleList, 0, events );
       }
       else
       {
-        packedSize += subRegion.packSize( wrapperNames, particleList, 0, false, events );
+        packedSize += subRegion.packSize( wrapperNames, particleList, 0, events );
       }
     } );
   }
@@ -216,33 +216,33 @@ int ParticleManager::unpackPrivate( buffer_unit_type const * & buffer,
   int unpackedSize = 0;
 
   string name;
-  unpackedSize += bufferOps::Unpack( buffer, name );
+  unpackedSize += bufferOps::Unpack( buffer, name, MPI_REPLACE );
 
   GEOS_ERROR_IF( name != this->getName(), "Unpacked name (" << name << ") does not equal object name (" << this->getName() << ")" );
 
   localIndex numRegionsRead;
-  unpackedSize += bufferOps::Unpack( buffer, numRegionsRead );
+  unpackedSize += bufferOps::Unpack( buffer, numRegionsRead, MPI_REPLACE );
 
   parallelDeviceEvents events;
   for( localIndex kReg=0; kReg<numRegionsRead; ++kReg )
   {
     string regionName;
-    unpackedSize += bufferOps::Unpack( buffer, regionName );
+    unpackedSize += bufferOps::Unpack( buffer, regionName, MPI_REPLACE );
 
     ParticleRegionBase & particleRegion = getRegion( regionName );
 
     localIndex numSubRegionsRead;
-    unpackedSize += bufferOps::Unpack( buffer, numSubRegionsRead );
+    unpackedSize += bufferOps::Unpack( buffer, numSubRegionsRead, MPI_REPLACE );
     particleRegion.forParticleSubRegionsIndex< ParticleSubRegionBase >(
       [&]( localIndex const esr, ParticleSubRegionBase & subRegion )
     {
       string subRegionName;
-      unpackedSize += bufferOps::Unpack( buffer, subRegionName );
+      unpackedSize += bufferOps::Unpack( buffer, subRegionName, MPI_REPLACE );
 
       /// THIS IS WRONG??
       arrayView1d< localIndex > & particleList = packList[kReg][esr];
 
-      unpackedSize += subRegion.unpack( buffer, particleList, 0, false, events );
+      unpackedSize += subRegion.unpack( buffer, particleList, 0, events, MPI_REPLACE );
     } );
   }
 
@@ -304,24 +304,24 @@ ParticleManager::UnpackGlobalMaps( buffer_unit_type const * & buffer,
   int unpackedSize = 0;
 
   localIndex numRegionsRead;
-  unpackedSize += bufferOps::Unpack( buffer, numRegionsRead );
+  unpackedSize += bufferOps::Unpack( buffer, numRegionsRead, MPI_REPLACE );
 
   packList.resize( numRegionsRead );
   for( localIndex kReg=0; kReg<numRegionsRead; ++kReg )
   {
     string regionName;
-    unpackedSize += bufferOps::Unpack( buffer, regionName );
+    unpackedSize += bufferOps::Unpack( buffer, regionName, MPI_REPLACE );
 
     ParticleRegionBase & particleRegion = getRegion( regionName );
 
     localIndex numSubRegionsRead;
-    unpackedSize += bufferOps::Unpack( buffer, numSubRegionsRead );
+    unpackedSize += bufferOps::Unpack( buffer, numSubRegionsRead, MPI_REPLACE );
     packList[kReg].resize( numSubRegionsRead );
     particleRegion.forParticleSubRegionsIndex< ParticleSubRegionBase >(
       [&]( localIndex const esr, ParticleSubRegionBase & subRegion )
     {
       string subRegionName;
-      unpackedSize += bufferOps::Unpack( buffer, subRegionName );
+      unpackedSize += bufferOps::Unpack( buffer, subRegionName, MPI_REPLACE );
 
       // CAUTION:
       // This implementation of the particle manager has not been used in

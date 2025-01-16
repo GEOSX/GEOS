@@ -949,7 +949,7 @@ protected:
    * @return the name name of the constitutive model of type CONSTITUTIVE_BASE_TYPE registered on the subregion.
    */
   template< typename CONSTITUTIVE_BASE_TYPE >
-  static string getConstitutiveName( ParticleSubRegionBase const & subRegion ); // particle overload
+  static string getConstitutiveName( ParticleSubRegionBase const & subRegion );
 
   /**
    * @brief This function sets constitutive name fields on an

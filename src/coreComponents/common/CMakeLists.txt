@@ -111,15 +111,7 @@ if ( ENABLE_MKL )
 endif()
 
 if( ENABLE_CALIPER )
-  list( APPEND dependencyList caliper )
-endif()
-
-if( ENABLE_CALIPER )
-  list( APPEND dependencyList caliper )
-
-  if (TARGET adiak::adiak)
-    list( APPEND dependencyList adiak::adiak )
-  endif()
+  set( dependencyList ${dependencyList} caliper )
 
   if (TARGET adiak)
     list( APPEND dependencyList adiak )

@@ -145,21 +145,31 @@ void PackCollection::updateSetsIndices( DomainPartition const & domain )
     return omb;
   };
 
-  Group const * targetGrp = this->getTargetObject( domain, m_objectPath );
+  // If no set or "all" is specified we retrieve the entire field.
+  // If sets are specified we retrieve the field only from those sets.
+  bool const collectAll = this->collectAll();
+  Group const * targetGrp = nullptr;
   try
   {
+    targetGrp = this->getTargetObject( domain, m_objectPath );
     WrapperBase const & targetField = targetGrp->getWrapperBase( m_fieldName );
-    GEOS_ERROR_IF( !targetField.isPackable( false ), "The object targeted for collection must be packable!" );
+    // If we're collecting everything from a mesh target or just collecting an entire non-mesh object
+    // throw if the object isn't packable. Otherwise is the target is a mesh object and we're not collecting
+    // all of it (using sets for indices), throw if we can't pack the object by index.
+    GEOS_ERROR_IF( !( ( !m_targetIsMeshObject && collectAll ) ?
+                      targetField.isPackable( ) :
+                      targetField.isPackableByIndex() ),
+                   GEOS_FMT( "The object targeted for collection ({}: {}, {}: {}) must be packable in its last modified memory space!",
+                             viewKeysStruct::objectPathString(),
+                             m_objectPath,
+                             viewKeysStruct::fieldNameString(),
+                             m_fieldName ) );
   }
   catch( std::exception const & e )
   {
     throw InputError( e, getWrapperDataContext( viewKeysStruct::fieldNameString() ).toString() +
                       ": Target not found !\n" );
   }
-
-  // If no set or "all" is specified we retrieve the entire field.
-  // If sets are specified we retrieve the field only from those sets.
-  bool const collectAll = this->collectAll();
 
   // In the wake of previous trick about `m_setNames`, another small trick not to compute the real set names if they are not needed.
   // This is questionable but lets me define `setNames` as `const` variable.
@@ -307,13 +317,13 @@ void PackCollection::collect( DomainPartition const & domain,
   {
     if( ( ( m_onlyOnSetChange != 0 ) && m_setChanged ) || ( m_onlyOnSetChange == 0 ) )
     {
-      targetField.packByIndex< true >( buffer, m_setsIndices[collectionIdx], false, true, events );
+      targetField.packByIndex< true >( buffer, m_setsIndices[collectionIdx], false, events );
     }
   }
   // If we're not collecting from a set of indices, we're collecting the entire object.
   else if( !m_targetIsMeshObject && collectAll() )
   {
-    targetField.pack< true >( buffer, false, true, events );
+    targetField.pack< true >( buffer, false, events );
   }
   m_setChanged = false;
   GEOS_ASYNC_WAIT( 6000000000, 10, testAllDeviceEvents( events ) );

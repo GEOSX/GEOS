@@ -1247,12 +1247,12 @@ void SolidMechanicsMPM::syncGridFields( std::vector< std::string > const & field
                                         MeshLevel & mesh,
                                         MPI_Op op )
 {
-  // (0) Bring grid fields to host
-  for( auto const & name : fieldNames )
-  {
-    WrapperBase & wrapper = nodeManager.getWrapperBase( name );
-    wrapper.move( LvArray::MemorySpace::host, true );
-  }
+  // // (0) Bring grid fields to host
+  // for( auto const & name : fieldNames )
+  // {
+  //   WrapperBase & wrapper = nodeManager.getWrapperBase( name );
+  //   wrapper.move( LvArray::MemorySpace::host, true );
+  // }
 
   // (1) Initialize
   FieldIdentifiers fieldsToBeSynced;
@@ -1274,14 +1274,14 @@ void SolidMechanicsMPM::syncGridFields( std::vector< std::string > const & field
   }
 
   // (3) Additive sync
-  CommunicationTools::getInstance().synchronizePackSendRecvSizes( fieldsToBeSynced, mesh, neighbors, m_iComm, true );
+  CommunicationTools::getInstance().synchronizePackSendRecvSizes( fieldsToBeSynced, mesh, neighbors, m_iComm );
   parallelDeviceEvents packEvents;
-  CommunicationTools::getInstance().asyncPack( fieldsToBeSynced, mesh, neighbors, m_iComm, true, packEvents );
+  CommunicationTools::getInstance().asyncPack( fieldsToBeSynced, mesh, neighbors, m_iComm, packEvents );
   waitAllDeviceEvents( packEvents );
-  CommunicationTools::getInstance().asyncSendRecv( neighbors, m_iComm, true, packEvents );
+  CommunicationTools::getInstance().asyncSendRecv( neighbors, m_iComm, packEvents );
   parallelDeviceEvents unpackEvents;
-  CommunicationTools::getInstance().finalizeUnpack( mesh, neighbors, m_iComm, true, unpackEvents, op ); // needs an extra argument to
-                                                                                                        // indicate unpack operation
+  CommunicationTools::getInstance().finalizeUnpack( mesh, neighbors, m_iComm, unpackEvents, op );
+  // indicate unpack operation
 
   // (4) Swap send and receive indices back so we can sync from master to ghost
   for( size_t n=0; n<neighbors.size(); n++ )
@@ -1295,13 +1295,13 @@ void SolidMechanicsMPM::syncGridFields( std::vector< std::string > const & field
   }
 
   // (5) Perform sync
-  CommunicationTools::getInstance().synchronizePackSendRecvSizes( fieldsToBeSynced, mesh, neighbors, m_iComm, true );
+  CommunicationTools::getInstance().synchronizePackSendRecvSizes( fieldsToBeSynced, mesh, neighbors, m_iComm );
   parallelDeviceEvents packEvents2;
-  CommunicationTools::getInstance().asyncPack( fieldsToBeSynced, mesh, neighbors, m_iComm, true, packEvents2 );
+  CommunicationTools::getInstance().asyncPack( fieldsToBeSynced, mesh, neighbors, m_iComm, packEvents2 );
   waitAllDeviceEvents( packEvents2 );
-  CommunicationTools::getInstance().asyncSendRecv( neighbors, m_iComm, true, packEvents2 );
+  CommunicationTools::getInstance().asyncSendRecv( neighbors, m_iComm, packEvents2 );
   parallelDeviceEvents unpackEvents2;
-  CommunicationTools::getInstance().finalizeUnpack( mesh, neighbors, m_iComm, true, unpackEvents2 );
+  CommunicationTools::getInstance().finalizeUnpack( mesh, neighbors, m_iComm, unpackEvents2, MPI_REPLACE );
 }
 
 void SolidMechanicsMPM::singleFaceVectorFieldSymmetryBC( const int face,

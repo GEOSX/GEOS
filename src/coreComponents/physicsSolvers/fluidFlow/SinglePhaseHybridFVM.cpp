@@ -611,7 +611,7 @@ void SinglePhaseHybridFVM::applySystemSolution( DofManager const & dofManager,
     fieldsToBeSync.addElementFields( { fields::flow::pressure::key() }, regionNames );
     fieldsToBeSync.addFields( FieldLocation::Face, { fields::flow::facePressure::key() } );
 
-    CommunicationTools::getInstance().synchronizeFields( fieldsToBeSync, mesh, domain.getNeighbors(), true );
+    CommunicationTools::getInstance().synchronizeFields( fieldsToBeSync, mesh, domain.getNeighbors() );
   } );
 }
 

@@ -1,6 +1,9 @@
 include(${CMAKE_CURRENT_LIST_DIR}/../../src/coreComponents/LvArray/host-configs/LLNL/lassen-gcc-8-cuda-11.cmake)
 
 # C++
+# This may be required to compile in DEBUG, depending on the total library/binary size
+# set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -mcmodel=large" CACHE STRING "" FORCE )
+
 # The "-march=native -mtune=native" which LvArray adds breaks the PVT package.
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG" CACHE STRING "" FORCE)
 set(CMAKE_CUDA_FLAGS_RELEASE "-O3 -DNDEBUG -Xcompiler -DNDEBUG -Xcompiler -O3" CACHE STRING "" FORCE)
@@ -17,3 +20,5 @@ set(MPI_Fortran_COMPILER ${MPI_HOME}/bin/mpifort CACHE PATH "")
 set(ENABLE_CUDA_NVTOOLSEXT ON CACHE BOOL "")
 
 include(${CMAKE_CURRENT_LIST_DIR}/lassen-base.cmake)
+
+

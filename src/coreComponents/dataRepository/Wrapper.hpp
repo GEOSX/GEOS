@@ -278,84 +278,38 @@ public:
   ///////////////////////////////////////////////////////////////////////////////////////////////////
   /// @copydoc WrapperBase::isPackable
   virtual
-  bool isPackable( bool onDevice ) const override
+  bool
+  isPackable( ) const override
   {
-    if( onDevice )
-    {
-      // this isn't accurate if array/arraview return false for this, which I think they do
-      return bufferOps::can_memcpy< T >;
-    }
-    else
-    {
-      return bufferOps::is_packable< T >;
-    }
+    return isPackableImpl( );
   }
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////////
+  /// @copydoc WrapperBase::isPackableByIndex
+  virtual
+  bool
+  isPackableByIndex( ) const override
+  {
+    return isPackableByIndexImpl( );
+  }
+
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////
   /// @copydoc WrapperBase::unpack
   virtual
-  localIndex unpack( buffer_unit_type const * & buffer, bool withMetadata, bool onDevice, parallelDeviceEvents & events ) override final
+  localIndex
+  unpack( buffer_unit_type const * & buffer, bool withMetadata, parallelDeviceEvents & events, MPI_Op op ) override final
   {
-    localIndex unpackedSize = 0;
-    if( withMetadata )
-    {
-      string name;
-      unpackedSize += bufferOps::Unpack( buffer, name );
-      GEOS_ERROR_IF( name != getName(), "buffer unpack leads to wrapper names that don't match" );
-    }
-    if( onDevice )
-    {
-      if( withMetadata )
-      {
-        unpackedSize += wrapperHelpers::UnpackDevice( buffer, referenceAsView(), events );
-      }
-      else
-      {
-        unpackedSize += wrapperHelpers::UnpackDataDevice( buffer, referenceAsView(), events );
-      }
-    }
-    else
-    {
-      unpackedSize += bufferOps::Unpack( buffer, *m_data );
-    }
-    return unpackedSize;
+    return unpackImpl( buffer, withMetadata, events, op );
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////
   /// @copydoc WrapperBase::unpackByIndex
   virtual
-  localIndex unpackByIndex( buffer_unit_type const * & buffer,
-                            arrayView1d< localIndex const > const & unpackIndices,
-                            bool withMetadata,
-                            bool onDevice,
-                            parallelDeviceEvents & events,
-                            MPI_Op op ) override final
+  localIndex
+  unpackByIndex( buffer_unit_type const * & buffer, arrayView1d< localIndex const > const & unpackIndices, bool withMetadata, parallelDeviceEvents & events, MPI_Op op ) override final
   {
-    localIndex unpackedSize = 0;
-
-    if( withMetadata )
-    {
-      string name;
-      unpackedSize += bufferOps::Unpack( buffer, name );
-      GEOS_ERROR_IF( name != getName(), "buffer unpack leads to wrapper names that don't match" );
-    }
-    if( onDevice )
-    {
-      if( withMetadata )
-      {
-        unpackedSize += wrapperHelpers::UnpackByIndexDevice( buffer, referenceAsView(), unpackIndices, events, op );
-      }
-      else
-      {
-        unpackedSize += wrapperHelpers::UnpackDataByIndexDevice( buffer, referenceAsView(), unpackIndices, events, op );
-      }
-    }
-    else
-    {
-      unpackedSize += wrapperHelpers::UnpackByIndex( buffer, *m_data, unpackIndices );
-    }
-
-    return unpackedSize;
+    return unpackByIndexImpl( buffer, unpackIndices, withMetadata, events, op );
   }
 
   ///@}
@@ -948,89 +902,226 @@ public:
 
 private:
 
-  /**
-   * @brief Concrete implementation of the packing method.
-   * @tparam DO_PACKING A template parameter to discriminate between actually packing or only computing the packing size.
-   * @param[in,out] buffer The buffer that will receive the packed data.
-   * @param[in] withMetadata Whether to pack string metadata with the underlying data.
-   * @param[in] onDevice Whether to use device-based packing functions
-   *                     (buffer must be either pinned or a device pointer)
-   * @param[out] events A collection of events to poll for completion of async
-   *                    packing kernels ( device packing is incomplete until all
-   *                    events are finalized )
-   * @return The packed size.
-   * @note The @p Impl suffix was used to prevent from a name conflict.
-   */
+  template< typename U = T >
+  typename std::enable_if_t< traits::HasMemorySpaceFunctions< U >, bool >
+  isPackableImpl( ) const
+  {
+    static_assert( std::is_same< T, U >::value, "should only be instantiated for the wrapped type!" );
+    if( reference().getPreviousSpace() == LvArray::MemorySpace::host )
+    {
+      // a type with the mem-space functions, that is not packable on device (e.g. array<string> ), should never be moved to device,
+      //  so it should always have previousSpace == host, and we can then host-pack it if possible (should always be
+      // possible)
+      // if the value *is* device-packable, but we have modified it on host, we have to host-pack
+      return bufferOps::is_host_packable_v< U >;
+    }
+    else
+    {
+      return bufferOps::is_device_packable_v< decltype( referenceAsView() ) >;
+    }
+  }
+
+  template< typename U = T >
+  typename std::enable_if_t< !traits::HasMemorySpaceFunctions< U >, bool >
+  isPackableImpl( ) const
+  {
+    static_assert( std::is_same< T, U >::value, "should only be instantiated for the wrapped type!" );
+    return bufferOps::is_host_packable_v< U >;
+  }
+
+  template< typename U = T >
+  typename std::enable_if_t< traits::HasMemorySpaceFunctions< U >, bool >
+  isPackableByIndexImpl( ) const
+  {
+    static_assert( std::is_same< T, U >::value, "should only be instantiated for the wrapped type!" );
+    if( reference().getPreviousSpace() == LvArray::MemorySpace::host )
+    {
+      return bufferOps::is_host_packable_by_index_v< U >;
+    }
+    else
+    {
+      return bufferOps::is_device_packable_by_index_v< decltype( referenceAsView() ) >;
+    }
+  }
+
+  template< typename U = T >
+  typename std::enable_if_t< !traits::HasMemorySpaceFunctions< U >, bool >
+  isPackableByIndexImpl( ) const
+  {
+    static_assert( std::is_same< T, U >::value, "should only be instantiated for the wrapped type!" );
+    return bufferOps::is_host_packable_by_index_v< U >;
+  }
+
+  localIndex unpackDeviceImpl( buffer_unit_type const * & buffer, bool withMetadata, parallelDeviceEvents & events, MPI_Op op )
+  {
+    localIndex unpackedSize = 0;
+    if( withMetadata )
+    {
+      string name;
+      unpackedSize += bufferOps::Unpack( buffer, name, MPI_REPLACE );
+      GEOS_ERROR_IF( name != getName(), "buffer unpack leads to wrapper names that don't match" );
+      unpackedSize += wrapperHelpers::UnpackDevice( buffer, referenceAsView(), events, op );
+    }
+    else
+    {
+      unpackedSize += wrapperHelpers::UnpackDataDevice( buffer, referenceAsView(), events, op );
+    }
+    return unpackedSize;
+  }
+
+  localIndex unpackHostImpl( buffer_unit_type const * & buffer, bool withMetadata, parallelDeviceEvents &, MPI_Op op )
+  {
+    localIndex unpackedSize = 0;
+    if( withMetadata )
+    {
+      string name;
+      unpackedSize += bufferOps::Unpack( buffer, name, MPI_REPLACE );
+      GEOS_ERROR_IF( name != getName(), "buffer unpack leads to wrapper names that don't match" );
+    }
+    unpackedSize += bufferOps::Unpack( buffer, *m_data, op );
+    return unpackedSize;
+  }
+
+  template< typename U = T >
+  typename std::enable_if_t< traits::HasMemorySpaceFunctions< U >, localIndex >
+  unpackImpl( buffer_unit_type const * & buffer, bool withMetadata, parallelDeviceEvents & events, MPI_Op op )
+  {
+    static_assert( std::is_same< T, U >::value, "should only be instantiated for the wrapped type!" );
+    if( reference().getPreviousSpace() == LvArray::MemorySpace::host )
+    {
+      return unpackHostImpl( buffer, withMetadata, events, op );
+    }
+    else
+    {
+      return unpackDeviceImpl( buffer, withMetadata, events, op );
+    }
+  }
+
+  template< typename U = T >
+  typename std::enable_if_t< !traits::HasMemorySpaceFunctions< U >, localIndex >
+  unpackImpl( buffer_unit_type const * & buffer, bool withMetadata, parallelDeviceEvents & events, MPI_Op op )
+  {
+    static_assert( std::is_same< T, U >::value, "should only be instantiated for the wrapped type!" );
+    return unpackHostImpl( buffer, withMetadata, events, op );
+  }
+
+  localIndex unpackByIndexHostImpl( buffer_unit_type const * & buffer, arrayView1d< localIndex const > const & unpackIndices, bool withMetadata, parallelDeviceEvents &, MPI_Op op )
+  {
+    localIndex unpackedSize = 0;
+    if( withMetadata )
+    {
+      string name;
+      unpackedSize += bufferOps::Unpack( buffer, name, MPI_REPLACE );
+      GEOS_ERROR_IF( name != getName(), "buffer unpack leads to wrapper names that don't match" );
+    }
+    unpackedSize += wrapperHelpers::UnpackByIndex( buffer, *m_data, unpackIndices, op );
+    return unpackedSize;
+  }
+
+  localIndex unpackByIndexDeviceImpl( buffer_unit_type const * & buffer, arrayView1d< localIndex const > const & unpackIndices, bool withMetadata, parallelDeviceEvents & events, MPI_Op op )
+  {
+    localIndex unpackedSize = 0;
+    if( withMetadata )
+    {
+      string name;
+      unpackedSize += bufferOps::Unpack( buffer, name, MPI_REPLACE );
+      GEOS_ERROR_IF( name != getName(), "buffer unpack leads to wrapper names that don't match" );
+      unpackedSize += wrapperHelpers::UnpackByIndexDevice( buffer, referenceAsView(), unpackIndices, events, op );
+    }
+    else
+    {
+      unpackedSize += wrapperHelpers::UnpackDataByIndexDevice( buffer, referenceAsView(), unpackIndices, events, op );
+    }
+    return unpackedSize;
+  }
+
+  template< typename U = T >
+  typename std::enable_if_t< traits::HasMemorySpaceFunctions< U >, localIndex >
+  unpackByIndexImpl( buffer_unit_type const * & buffer, arrayView1d< localIndex const > const & unpackIndices, bool withMetadata, parallelDeviceEvents & events, MPI_Op op )
+  {
+    static_assert( std::is_same< T, U >::value, "should only be instantiated for the wrapped type!" );
+    if( reference().getPreviousSpace() == LvArray::MemorySpace::host )
+    {
+      return unpackByIndexHostImpl( buffer, unpackIndices, withMetadata, events, op );
+    }
+    else
+    {
+      return unpackByIndexDeviceImpl( buffer, unpackIndices, withMetadata, events, op );
+    }
+  }
+
+  template< typename U = T >
+  typename std::enable_if_t< !traits::HasMemorySpaceFunctions< U >, localIndex >
+  unpackByIndexImpl( buffer_unit_type const * & buffer, arrayView1d< localIndex const > const & unpackIndices, bool withMetadata, parallelDeviceEvents & events, MPI_Op op )
+  {
+    static_assert( std::is_same< T, U >::value, "should only be instantiated for the wrapped type!" );
+    return unpackByIndexHostImpl( buffer, unpackIndices, withMetadata, events, op );
+  }
+
+
   template< bool DO_PACKING >
-  localIndex packImpl( buffer_unit_type * & buffer,
-                       bool withMetadata,
-                       bool onDevice,
-                       parallelDeviceEvents & events ) const
+  localIndex packDeviceImpl( buffer_unit_type * & buffer,
+                             bool withMetadata,
+                             parallelDeviceEvents & events ) const
   {
     localIndex packedSize = 0;
 
     if( withMetadata )
-    { packedSize += bufferOps::Pack< DO_PACKING >( buffer, getName() ); }
-    if( onDevice )
     {
-      if( withMetadata )
-      {
-        packedSize += wrapperHelpers::PackDevice< DO_PACKING >( buffer, reference(), events );
-      }
-      else
-      {
-        packedSize += wrapperHelpers::PackDataDevice< DO_PACKING >( buffer, reference(), events );
-      }
+      packedSize += bufferOps::Pack< DO_PACKING >( buffer, getName() );
+      packedSize += wrapperHelpers::PackDevice< DO_PACKING >( buffer, reference(), events );
     }
     else
     {
-      packedSize += bufferOps::Pack< DO_PACKING >( buffer, *m_data );
+      packedSize += wrapperHelpers::PackDataDevice< DO_PACKING >( buffer, reference(), events );
     }
 
     return packedSize;
   }
 
-  /**
-   * @brief Concrete implementation of the packing by index method.
-   * @tparam DO_PACKING A template parameter to discriminate between actually packing or only computing the packing size.
-   * @param[in,out] buffer The buffer that will receive the packed data.
-   * @param[in] packList The element we want packed. If empty, no element will be packed.
-   * @param[in] withMetadata Whether to pack string metadata with the underlying data.
-   * @param[in] onDevice Whether to use device-based packing functions
-   *                     (buffer must be either pinned or a device pointer)
-   * @param[out] events A collection of events to poll for completion of async
-   *                    packing kernels ( device packing is incomplete until all
-   *                    events are finalized )
-   * @return The packed size.
-   */
   template< bool DO_PACKING >
-  localIndex packByIndexImpl( buffer_unit_type * & buffer,
-                              arrayView1d< localIndex const > const & packList,
-                              bool withMetadata,
-                              bool onDevice,
-                              parallelDeviceEvents & events ) const
+  localIndex packHostImpl( buffer_unit_type * & buffer,
+                           bool withMetadata,
+                           parallelDeviceEvents & ) const
   {
     localIndex packedSize = 0;
 
     if( withMetadata )
-    { packedSize += bufferOps::Pack< DO_PACKING >( buffer, getName() ); }
-    if( onDevice )
     {
-      if( withMetadata )
-      {
-        packedSize += wrapperHelpers::PackByIndexDevice< DO_PACKING >( buffer, reference(), packList, events );
-      }
-      else
-      {
-        packedSize += wrapperHelpers::PackDataByIndexDevice< DO_PACKING >( buffer, reference(), packList, events );
-      }
+      packedSize += bufferOps::Pack< DO_PACKING >( buffer, getName() );
+      packedSize += bufferOps::Pack< DO_PACKING >( buffer, *m_data );
     }
     else
     {
-      packedSize += wrapperHelpers::PackByIndex< DO_PACKING >( buffer, *m_data, packList );
+      packedSize += bufferOps::PackData< DO_PACKING >( buffer, *m_data );
     }
 
     return packedSize;
+  }
+
+  template< bool DO_PACKING, typename U = T >
+  typename std::enable_if_t< traits::HasMemorySpaceFunctions< U >, localIndex >
+  packImpl( buffer_unit_type * & buffer,
+            bool withMetadata,
+            parallelDeviceEvents & events ) const
+  {
+    if( reference().getPreviousSpace() == LvArray::MemorySpace::host )
+    {
+      return packHostImpl< DO_PACKING >( buffer, withMetadata, events );
+    }
+    else
+    {
+      return packDeviceImpl< DO_PACKING >( buffer, withMetadata, events );
+    }
+  }
+
+  template< bool DO_PACKING, typename U = T >
+  typename std::enable_if_t< !traits::HasMemorySpaceFunctions< U >, localIndex >
+  packImpl( buffer_unit_type * & buffer,
+            bool withMetadata,
+            parallelDeviceEvents & events ) const
+  {
+    return packHostImpl< DO_PACKING >( buffer, withMetadata, events );
   }
 
   /**
@@ -1038,10 +1129,81 @@ private:
    */
   localIndex packPrivate( buffer_unit_type * & buffer,
                           bool withMetadata,
-                          bool onDevice,
                           parallelDeviceEvents & events ) const override final
   {
-    return this->packImpl< true >( buffer, withMetadata, onDevice, events );
+    return this->packImpl< true >( buffer, withMetadata, events );
+  }
+
+
+  template< bool DO_PACKING >
+  localIndex packByIndexDeviceImpl( buffer_unit_type * & buffer,
+                                    arrayView1d< localIndex const > const & packList,
+                                    bool withMetadata,
+                                    parallelDeviceEvents & events ) const
+  {
+    localIndex packedSize = 0;
+
+    if( withMetadata )
+    {
+      packedSize += bufferOps::Pack< DO_PACKING >( buffer, getName() );
+      packedSize += wrapperHelpers::PackByIndexDevice< DO_PACKING >( buffer, reference(), packList, events );
+    }
+    else
+    {
+      packedSize += wrapperHelpers::PackDataByIndexDevice< DO_PACKING >( buffer, reference(), packList, events );
+    }
+
+    return packedSize;
+  }
+
+  template< bool DO_PACKING >
+  localIndex packByIndexHostImpl( buffer_unit_type * & buffer,
+                                  arrayView1d< localIndex const > const & packList,
+                                  bool withMetadata,
+                                  parallelDeviceEvents & ) const
+  {
+    localIndex packedSize = 0;
+
+    if( withMetadata )
+    {
+      packedSize += bufferOps::Pack< DO_PACKING >( buffer, getName() );
+      packedSize += wrapperHelpers::PackByIndex< DO_PACKING >( buffer, *m_data, packList );
+    }
+    else
+    {
+      packedSize += wrapperHelpers::PackDataByIndex< DO_PACKING >( buffer, *m_data, packList );
+    }
+
+    return packedSize;
+  }
+
+  template< bool DO_PACKING, typename U = T >
+  typename std::enable_if_t< traits::HasMemorySpaceFunctions< U >, localIndex >
+  packByIndexImpl( buffer_unit_type * & buffer,
+                   arrayView1d< localIndex const > const & packList,
+                   bool withMetadata,
+                   parallelDeviceEvents & events ) const
+  {
+    static_assert( std::is_same< T, U >::value, "should only be instantiated for the wrapped type!" );
+    if( reference().getPreviousSpace() == LvArray::MemorySpace::host )
+    {
+      return packByIndexHostImpl< DO_PACKING >( buffer, packList, withMetadata, events );
+    }
+    else
+    {
+      return packByIndexDeviceImpl< DO_PACKING >( buffer, packList, withMetadata, events );
+    }
+  }
+
+  template< bool DO_PACKING, typename U = T >
+  typename std::enable_if_t< !traits::HasMemorySpaceFunctions< U >, localIndex >
+  packByIndexImpl( buffer_unit_type * & buffer,
+                   arrayView1d< localIndex const > const & packList,
+                   bool withMetadata,
+                   parallelDeviceEvents & events ) const
+  {
+    static_assert( std::is_same< T, U >::value, "should only be instantiated for the wrapped type!" );
+    return packByIndexHostImpl< DO_PACKING >( buffer, packList, withMetadata, events );
   }
 
   /**
@@ -1050,21 +1212,19 @@ private:
   localIndex packByIndexPrivate( buffer_unit_type * & buffer,
                                  arrayView1d< localIndex const > const & packList,
                                  bool withMetadata,
-                                 bool onDevice,
                                  parallelDeviceEvents & events ) const override final
   {
-    return this->packByIndexImpl< true >( buffer, packList, withMetadata, onDevice, events );
+    return this->packByIndexImpl< true >( buffer, packList, withMetadata, events );
   }
 
   /**
    * @copydoc WrapperBase::packSizePrivate
    */
   localIndex packSizePrivate( bool withMetadata,
-                              bool onDevice,
                               parallelDeviceEvents & events ) const override final
   {
     buffer_unit_type * dummy;
-    return this->packImpl< false >( dummy, withMetadata, onDevice, events );
+    return this->packImpl< false >( dummy, withMetadata, events );
   }
 
   /**
@@ -1072,11 +1232,10 @@ private:
    */
   localIndex packByIndexSizePrivate( arrayView1d< localIndex const > const & packList,
                                      bool withMetadata,
-                                     bool onDevice,
                                      parallelDeviceEvents & events ) const override final
   {
     buffer_unit_type * dummy;
-    return this->packByIndexImpl< false >( dummy, packList, withMetadata, onDevice, events );
+    return this->packByIndexImpl< false >( dummy, packList, withMetadata, events );
   }
 
   /// flag to indicate whether or not this wrapper is responsible for allocation/deallocation of the object at the

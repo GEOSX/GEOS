@@ -60,6 +60,84 @@ public:
                         integer const eventCounter,
                         real64 const eventProgress,
                         DomainPartition & domain ) override;
+  /**@}*/
+  struct RegionStatistics : public dataRepository::Group
+  {
+
+    /**
+     * @brief Constructor for the RegionStatistics struct
+     * @param[in] name the name of the task coming from the xml
+     * @param[in] parent the parent group of the task
+     */
+    RegionStatistics( const string & name,
+                      Group * const parent );
+
+    struct viewKeyStruct
+    {
+      constexpr static char const * averagePressureString() { return "averagePressure"; }
+      constexpr static char const * minPressureString() { return "minPressure"; }
+      constexpr static char const * maxPressureString() { return "maxPressure"; }
+
+      constexpr static char const * minDeltaPressureString() { return "minDeltaPressure"; }
+      constexpr static char const * maxDeltaPressureString() { return "maxDeltaPressure"; }
+
+      constexpr static char const * averageTemperatureString() { return "averageTemperature"; }
+      constexpr static char const * minTemperatureString() { return "minTemperature"; }
+      constexpr static char const * maxTemperatureString() { return "maxTemperature"; }
+
+      constexpr static char const * totalPoreVolumeString() { return "totalPoreVolume"; }
+      constexpr static char const * totalUncompactedPoreVolumeString() { return "totalUncompactedPoreVolume"; }
+
+      constexpr static char const * phasePoreVolumeString() { return "phasePoreVolume"; }
+      constexpr static char const * phaseMassString() { return "phaseMass"; }
+      constexpr static char const * trappedPhaseMassString() { return "trappedPhaseMass"; }
+      constexpr static char const * immobilePhaseMassString() { return "immobilePhaseMass"; }
+      constexpr static char const * dissolvedComponentMassString() { return "dissolvedComponentMass"; }
+    };
+
+    /**
+     * @brief Intialiaze region statistics
+     * @param numPhases The number of fluid phases
+     * @param numComps The number of components
+     */
+    void init( integer const numPhases, integer const numComps );
+
+    RegionStatistics() = delete;
+    /// average region pressure
+    real64 m_averagePressure;
+    /// minimum region pressure
+    real64 m_minPressure;
+    /// maximum region pressure
+    real64 m_maxPressure;
+
+    /// minimum region delta pressure
+    real64 m_minDeltaPressure;
+    /// maximum region delta pressure
+    real64 m_maxDeltaPressure;
+
+    /// average region temperature
+    real64 m_averageTemperature;
+    /// minimum region temperature
+    real64 m_minTemperature;
+    /// maximum region temperature
+    real64 m_maxTemperature;
+
+    /// total region pore volume
+    real64 m_totalPoreVolume;
+    /// total region uncompacted pore volume
+    real64 m_totalUncompactedPoreVolume;
+    /// phase region phase pore volume
+    array1d< real64 > m_phasePoreVolume;
+
+    /// region phase mass (trapped and non-trapped, immobile and mobile)
+    array1d< real64 > m_phaseMass;
+    /// trapped region phase mass
+    array1d< real64 > m_trappedPhaseMass;
+    /// immobile region phase mass
+    array1d< real64 > m_immobilePhaseMass;
+    /// dissolved region component mass
+    array2d< real64 > m_dissolvedComponentMass;
+  };
 
   /**@}*/
 
@@ -79,48 +157,9 @@ private:
     /// String for the region statistics
     constexpr static char const * regionStatisticsString() { return "regionStatistics"; }
     /// String for the relperm threshold
-    constexpr static char const * relpermThresholdString() { return "relpermThreshold"; }
+    constexpr static char const * relpermThresholdString() { return "relpermThreshold";}
   };
 
-  struct RegionStatistics
-  {
-    /// average region pressure
-    real64 averagePressure;
-    /// minimum region pressure
-    real64 minPressure;
-    /// maximum region pressure
-    real64 maxPressure;
-
-    /// minimum region delta pressure
-    real64 minDeltaPressure;
-    /// maximum region delta pressure
-    real64 maxDeltaPressure;
-
-    /// average region temperature
-    real64 averageTemperature;
-    /// minimum region temperature
-    real64 minTemperature;
-    /// maximum region temperature
-    real64 maxTemperature;
-
-    /// total region pore volume
-    real64 totalPoreVolume;
-    /// total region uncompacted pore volume
-    real64 totalUncompactedPoreVolume;
-    /// phase region phase pore volume
-    array1d< real64 > phasePoreVolume;
-
-    /// region phase mass (trapped and non-trapped, immobile and mobile)
-    array1d< real64 > phaseMass;
-    /// trapped region phase mass
-    array1d< real64 > trappedPhaseMass;
-    /// immobile region phase mass
-    array1d< real64 > immobilePhaseMass;
-    /// region component mass
-    array2d< real64 > componentMass;
-
-
-  };
 
   /**
    * @brief Compute some statistics on the reservoir (average field pressure, etc)
@@ -130,7 +169,7 @@ private:
    */
   void computeRegionStatistics( real64 const time,
                                 MeshLevel & mesh,
-                                arrayView1d< string const > const & regionNames ) const;
+                                arrayView1d< string const > const & regionNames );
 
   /**
    * @brief Compute CFL numbers
@@ -157,6 +196,7 @@ private:
 
 };
 
+using RegionCompStatsClass = CompositionalMultiphaseStatistics::RegionStatistics;
 
 } /* namespace geos */
 

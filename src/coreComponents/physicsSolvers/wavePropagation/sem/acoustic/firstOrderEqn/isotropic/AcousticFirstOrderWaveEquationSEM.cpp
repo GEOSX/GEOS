@@ -517,8 +517,7 @@ real64 AcousticFirstOrderWaveEquationSEM::explicitStepInternal( real64 const & t
     CommunicationTools & syncFields = CommunicationTools::getInstance();
     syncFields.synchronizeFields( fieldsToBeSync,
                                   mesh,
-                                  domain.getNeighbors(),
-                                  true );
+                                  domain.getNeighbors() );
 
     // compute the seismic traces since last step.
     arrayView2d< real32 > const pReceivers = m_pressureNp1AtReceivers.toView();

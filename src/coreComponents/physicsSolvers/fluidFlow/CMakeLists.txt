@@ -18,6 +18,7 @@ set( physicsSolvers_headers
      fluidFlow/SinglePhaseFVM.hpp
      fluidFlow/SinglePhaseHybridFVM.hpp
      fluidFlow/SinglePhaseProppantBase.hpp
+     fluidFlow/StatOutputController.hpp
      fluidFlow/StencilAccessors.hpp
      fluidFlow/StencilDataCollection.hpp
      fluidFlow/LogLevelsInfo.hpp
@@ -118,6 +119,7 @@ set( physicsSolvers_sources
      fluidFlow/SinglePhaseHybridFVM.cpp
      fluidFlow/SinglePhaseProppantBase.cpp
      fluidFlow/SourceFluxStatistics.cpp
+     fluidFlow/StatOutputController.cpp
      fluidFlow/StencilDataCollection.cpp
      fluidFlow/kernels/singlePhase/proppant/ProppantFluxKernels.cpp
      fluidFlow/kernels/compositional/AquiferBCKernel.cpp
@@ -133,5 +135,4 @@ set( physicsSolvers_sources
      fluidFlow/proppantTransport/ProppantTransport.cpp
      fluidFlow/proppantTransport/ProppantTransportKernels.cpp
      PARENT_SCOPE )
-
-
+     

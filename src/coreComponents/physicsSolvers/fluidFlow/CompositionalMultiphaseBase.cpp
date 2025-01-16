@@ -1231,7 +1231,7 @@ void CompositionalMultiphaseBase::initializePostInitialConditionsPreSubGroups()
     fieldsToBeSync.addElementFields( { fields::flow::globalCompDensity::key() },
                                      regionNames );
 
-    CommunicationTools::getInstance().synchronizeFields( fieldsToBeSync, mesh, domain.getNeighbors(), false );
+    CommunicationTools::getInstance().synchronizeFields( fieldsToBeSync, mesh, domain.getNeighbors() );
 
     mesh.getElemManager().forElementSubRegions< CellElementSubRegion, SurfaceElementSubRegion >( regionNames,
                                                                                                  [&]( localIndex const,

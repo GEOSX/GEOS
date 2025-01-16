@@ -392,6 +392,9 @@ public:
     constexpr static char const * beginTimeString() { return "beginTime"; }
     /// @return The key for endTime
     constexpr static char const * endTimeString() { return "endTime"; }
+    /// @return The key for outputDirectory. Only exists for statistics that are computed for regions
+    constexpr static char const * outputDirString() { return "outputDirectory"; }
+
   };
 
   /**
