@@ -1533,7 +1533,7 @@ CompositionalMultiphaseWell::checkSystemSolution( DomainPartition & domain,
           compositionalMultiphaseWellKernels::
             SolutionCheckKernelFactory::
             createAndLaunch< parallelDevicePolicy<> >( m_allowCompDensChopping,
-                                                       CompositionalMultiphaseFVM::ScalingType::Global,
+                                                       compositionalMultiphaseUtilities::ScalingType::Global,
                                                        scalingFactor,
                                                        pressure,
                                                        compDens,
@@ -1571,7 +1571,7 @@ CompositionalMultiphaseWell::checkSystemSolution( DomainPartition & domain,
       {
         //integer const m_allowCompDensChopping(true);
         integer const m_allowNegativePressure( false );
-        CompositionalMultiphaseFVM::ScalingType const m_scalingType( CompositionalMultiphaseFVM::ScalingType::Global );
+        compositionalMultiphaseUtilities::ScalingType const m_scalingType( compositionalMultiphaseUtilities::ScalingType::Global );
         arrayView1d< real64 const > const pressure =
           subRegion.getField< fields::well::pressure >();
         arrayView1d< real64 const > const temperature =

@@ -54,12 +54,14 @@
 #include "physicsSolvers/fluidFlow/kernels/compositional/ThermalPhaseMobilityKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/AquiferBCKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/CFLKernel.hpp"
+#include "physicsSolvers/multiphysics/poromechanicsKernels/MultiphasePoromechanicsConformingFractures.hpp"
 
 namespace geos
 {
 
 using namespace dataRepository;
 using namespace constitutive;
+using namespace compositionalMultiphaseUtilities; // for ScalingType
 
 CompositionalMultiphaseFVM::CompositionalMultiphaseFVM( const string & name,
                                                         Group * const parent )
@@ -1262,6 +1264,87 @@ void CompositionalMultiphaseFVM::applyAquiferBC( real64 const time,
     } );
   } );
 
+}
+
+void CompositionalMultiphaseFVM::assembleHydrofracFluxTerms( real64 const GEOS_UNUSED_PARAM ( time_n ),
+                                                             real64 const dt,
+                                                             DomainPartition const & domain,
+                                                             DofManager const & dofManager,
+                                                             CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                                                             arrayView1d< real64 > const & localRhs,
+                                                             CRSMatrixView< real64, localIndex const > const & dR_dAper )
+{
+  GEOS_MARK_FUNCTION;
+
+  NumericalMethodsManager const & numericalMethodManager = domain.getNumericalMethodManager();
+  FiniteVolumeManager const & fvManager = numericalMethodManager.getFiniteVolumeManager();
+  FluxApproximationBase const & fluxApprox = fvManager.getFluxApproximation( m_discretizationName );
+
+  string const & elemDofKey = dofManager.getKey( viewKeyStruct::elemDofFieldString() );
+
+  using namespace isothermalCompositionalMultiphaseFVMKernels;
+
+  BitFlags< KernelFlags > kernelFlags;
+  if( m_hasCapPressure )
+    kernelFlags.set( KernelFlags::CapPressure );
+  if( m_useTotalMassEquation )
+    kernelFlags.set( KernelFlags::TotalMassEquation );
+  if( m_gravityDensityScheme == GravityDensityScheme::PhasePresence )
+    kernelFlags.set( KernelFlags::CheckPhasePresenceInGravity );
+
+  if( m_isThermal )
+  {
+    // should not end up here but just in case
+    GEOS_ERROR( "Thermal not yet supported in CompositionalMultiphaseFVM::assembleHydrofracFluxTerms" );
+  }
+  if( fluxApprox.upwindingParams().upwindingScheme != UpwindingScheme::PPU )
+  {
+    // a bit tricky to check in advance
+    GEOS_ERROR( "Only PPU upwinding is supported in CompositionalMultiphaseFVM::assembleHydrofracFluxTerms" );
+  }
+
+  this->forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
+                                                                      MeshLevel const & mesh,
+                                                                      arrayView1d< string const > const & )
+  {
+    fluxApprox.forStencils< CellElementStencilTPFA, FaceElementToCellStencil >( mesh, [&]( auto & stencil )
+    {
+      typename TYPEOFREF( stencil ) ::KernelWrapper stencilWrapper = stencil.createKernelWrapper();
+
+      isothermalCompositionalMultiphaseFVMKernels::
+        FluxComputeKernelFactory::
+        createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
+                                                   m_numPhases,
+                                                   dofManager.rankOffset(),
+                                                   elemDofKey,
+                                                   kernelFlags,
+                                                   getName(),
+                                                   mesh.getElemManager(),
+                                                   stencilWrapper,
+                                                   dt,
+                                                   localMatrix.toViewConstSizes(),
+                                                   localRhs.toView() );
+    } );
+
+    fluxApprox.forStencils< SurfaceElementStencil >( mesh, [&]( auto & stencil )
+    {
+      typename TYPEOFREF( stencil ) ::KernelWrapper stencilWrapper = stencil.createKernelWrapper();
+
+      multiphasePoromechanicsConformingFracturesKernels::
+        FluxComputeKernelFactory::createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
+                                                                             m_numPhases,
+                                                                             dofManager.rankOffset(),
+                                                                             elemDofKey,
+                                                                             kernelFlags,
+                                                                             getName(),
+                                                                             mesh.getElemManager(),
+                                                                             stencilWrapper,
+                                                                             dt,
+                                                                             localMatrix.toViewConstSizes(),
+                                                                             localRhs.toView(),
+                                                                             dR_dAper );
+    } );
+  } );
 }
 
 real64 CompositionalMultiphaseFVM::setNextDt( real64 const & currentTime,
