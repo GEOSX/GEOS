@@ -29,6 +29,9 @@
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/StatisticsKernel.hpp"
 #include "physicsSolvers/fluidFlow/LogLevelsInfo.hpp"
+#include "common/format/table/TableData.hpp"
+#include "common/format/table/TableFormatter.hpp"
+#include "common/format/table/TableLayout.hpp"
 
 
 namespace geos
@@ -104,41 +107,75 @@ void CompositionalMultiphaseStatistics::registerDataOnMesh( Group & meshBodies )
         region.registerWrapper< RegionStatistics >( viewKeyStruct::regionStatisticsString() ).
           setRestartFlags( RestartFlags::NO_WRITE );
         region.excludeWrappersFromPacking( { viewKeyStruct::regionStatisticsString() } );
-        RegionStatistics & regionStatistics = region.getReference< RegionStatistics >( viewKeyStruct::regionStatisticsString() );
+        RegionStatistics & stats = region.getReference< RegionStatistics >( viewKeyStruct::regionStatisticsString() );
 
-        regionStatistics.phasePoreVolume.resizeDimension< 0 >( numPhases );
-        regionStatistics.phaseMass.resizeDimension< 0 >( numPhases );
-        regionStatistics.trappedPhaseMass.resizeDimension< 0 >( numPhases );
-        regionStatistics.immobilePhaseMass.resizeDimension< 0 >( numPhases );
-        regionStatistics.componentMass.resizeDimension< 0, 1 >( numPhases, numComps );
+        stats.phasePoreVolume.resizeDimension< 0 >( numPhases );
+        stats.phaseMass.resizeDimension< 0 >( numPhases );
+        stats.trappedPhaseMass.resizeDimension< 0 >( numPhases );
+        stats.immobilePhaseMass.resizeDimension< 0 >( numPhases );
+        stats.componentMass.resizeDimension< 0, 1 >( numPhases, numComps );
 
-        // write output header
         if( m_writeCSV > 0 && MpiWrapper::commRank() == 0 )
         {
-          std::ofstream outputFile( m_outputDir + "/" + regionNames[i] + ".csv" );
-          string_view massUnit = units::getSymbol( m_solver->getMassUnit() );
-          outputFile <<
-            "Time [s],Min pressure [Pa],Average pressure [Pa],Max pressure [Pa],Min delta pressure [Pa],Max delta pressure [Pa]," <<
-            "Min temperature [Pa],Average temperature [Pa],Max temperature [Pa],Total dynamic pore volume [rm^3]";
-          for( integer ip = 0; ip < numPhases; ++ip )
-            outputFile << ",Phase " << ip << " dynamic pore volume [rm^3]";
-          for( integer ip = 0; ip < numPhases; ++ip )
-            outputFile << ",Phase " << ip << " mass [" << massUnit << "]";
-          for( integer ip = 0; ip < numPhases; ++ip )
-            outputFile << ",Trapped phase " << ip << " mass (metric 1) [" << massUnit << "]";
-          for( integer ip = 0; ip < numPhases; ++ip )
-            outputFile << ",Non-trapped phase " << ip << " mass (metric 1) [" << massUnit << "]";
-          for( integer ip = 0; ip < numPhases; ++ip )
-            outputFile << ",Immobile phase " << ip << " mass (metric 2) [" << massUnit << "]";
-          for( integer ip = 0; ip < numPhases; ++ip )
-            outputFile << ",Mobile phase " << ip << " mass (metric 2) [" << massUnit << "]";
-          for( integer ip = 0; ip < numPhases; ++ip )
+          auto addStatsValue = []( std::ostringstream & pstatsLayout, TableLayout & ptableLayout,
+                                   string const & description, string_view pmassUnit,
+                                   integer pnumPhases, integer pnumComps = 0 )
           {
-            for( integer ic = 0; ic < numComps; ++ic )
-              outputFile << ",Component " << ic << " (phase " << ip << ") mass [" << massUnit << "]";
-          }
-          outputFile << std::endl;
-          outputFile.close();
+            for( int ip = 0; ip < pnumPhases; ++ip )
+            {
+              if( pnumComps == 0 )
+              {
+                pstatsLayout << description << " (phase " << ip << ") [" << pmassUnit << "]";
+              }
+              else
+              {
+                for( int ic = 0; ic < pnumComps; ++ic )
+                {
+                  pstatsLayout << "Component " << ic << " (phase " << ip << ") mass [" << pmassUnit << "]";
+                  if( ic == 0 )
+                  {
+                    pstatsLayout << ",";
+                  }
+                }
+              }
+              if( ip == 0 )
+              {
+                pstatsLayout << ",";
+              }
+            }
+
+            ptableLayout.addToColumns( pstatsLayout.str());
+            pstatsLayout.str( "" );
+          };
+
+          string_view massUnit = units::getSymbol( m_solver->getMassUnit() );
+
+          TableLayout tableLayout( {
+              TableLayout::Column().setName( "Time [s]" ),
+              TableLayout::Column().setName( "Min pressure [Pa]" ),
+              TableLayout::Column().setName( "Average pressure [Pa]" ),
+              TableLayout::Column().setName( "Max pressure [Pa]" ),
+              TableLayout::Column().setName( "Min delta pressure [Pa]" ),
+              TableLayout::Column().setName( "Max delta pressure [Pa]" ),
+              TableLayout::Column().setName( "Min temperature [Pa]" ),
+              TableLayout::Column().setName( "Average temperature [Pa]" ),
+              TableLayout::Column().setName( "Max temperature [Pa]" ),
+              TableLayout::Column().setName( "Total dynamic pore volume [rm^3]" ),
+              TableLayout::Column().setName( GEOS_FMT( "Phase mass [{}] dynamic pore volume [rm^3]", massUnit ) ),
+            } );
+
+          std::ostringstream statsLayout;
+          addStatsValue( statsLayout, tableLayout, "Phase dynamic pore volume", massUnit, numPhases );
+          addStatsValue( statsLayout, tableLayout, "Phase", massUnit, numPhases );
+          addStatsValue( statsLayout, tableLayout, "Trapped phase mass (metric 1)", massUnit, numPhases );
+          addStatsValue( statsLayout, tableLayout, "Non-trapped phase mass (metric 1)", massUnit, numPhases );
+          addStatsValue( statsLayout, tableLayout, "Immobile phase mass (metric 2)", massUnit, numPhases );
+          addStatsValue( statsLayout, tableLayout, "Mobile phase mass (metric 2)", massUnit, numPhases );
+          addStatsValue( statsLayout, tableLayout, "Component", massUnit, numPhases, numComps );
+
+          std::ofstream outputFile( m_outputDir + "/" + regionNames[i] + ".csv" );
+          TableCSVFormatter csvFormatter( tableLayout );
+          outputFile << csvFormatter.headerToString();
         }
       }
     }
@@ -192,27 +229,27 @@ void CompositionalMultiphaseStatistics::computeRegionStatistics( real64 const ti
   for( integer i = 0; i < regionNames.size(); ++i )
   {
     ElementRegionBase & region = elemManager.getRegion( regionNames[i] );
-    RegionStatistics & regionStatistics = region.getReference< RegionStatistics >( viewKeyStruct::regionStatisticsString() );
+    RegionStatistics & stats = region.getReference< RegionStatistics >( viewKeyStruct::regionStatisticsString() );
 
-    regionStatistics.averagePressure = 0.0;
-    regionStatistics.maxPressure = 0.0;
-    regionStatistics.minPressure = LvArray::NumericLimits< real64 >::max;
+    stats.averagePressure = 0.0;
+    stats.maxPressure = 0.0;
+    stats.minPressure = LvArray::NumericLimits< real64 >::max;
 
-    regionStatistics.maxDeltaPressure = -LvArray::NumericLimits< real64 >::max;
-    regionStatistics.minDeltaPressure = LvArray::NumericLimits< real64 >::max;
+    stats.maxDeltaPressure = -LvArray::NumericLimits< real64 >::max;
+    stats.minDeltaPressure = LvArray::NumericLimits< real64 >::max;
 
-    regionStatistics.averageTemperature = 0.0;
-    regionStatistics.maxTemperature = 0.0;
-    regionStatistics.minTemperature = LvArray::NumericLimits< real64 >::max;
+    stats.averageTemperature = 0.0;
+    stats.maxTemperature = 0.0;
+    stats.minTemperature = LvArray::NumericLimits< real64 >::max;
 
-    regionStatistics.totalPoreVolume = 0.0;
-    regionStatistics.totalUncompactedPoreVolume = 0.0;
-    regionStatistics.phasePoreVolume.setValues< serialPolicy >( 0.0 );
+    stats.totalPoreVolume = 0.0;
+    stats.totalUncompactedPoreVolume = 0.0;
+    stats.phasePoreVolume.setValues< serialPolicy >( 0.0 );
 
-    regionStatistics.phaseMass.setValues< serialPolicy >( 0.0 );
-    regionStatistics.trappedPhaseMass.setValues< serialPolicy >( 0.0 );
-    regionStatistics.immobilePhaseMass.setValues< serialPolicy >( 0.0 );
-    regionStatistics.componentMass.setValues< serialPolicy >( 0.0 );
+    stats.phaseMass.setValues< serialPolicy >( 0.0 );
+    stats.trappedPhaseMass.setValues< serialPolicy >( 0.0 );
+    stats.immobilePhaseMass.setValues< serialPolicy >( 0.0 );
+    stats.componentMass.setValues< serialPolicy >( 0.0 );
   }
 
   // Step 2: increment the average/min/max quantities for all the subRegions
@@ -297,48 +334,48 @@ void CompositionalMultiphaseStatistics::computeRegionStatistics( real64 const ti
                                         subRegionComponentMass.toView() );
 
     ElementRegionBase & region = elemManager.getRegion( ElementRegionBase::getParentRegion( subRegion ).getName() );
-    RegionStatistics & regionStatistics = region.getReference< RegionStatistics >( viewKeyStruct::regionStatisticsString() );
+    RegionStatistics & stats = region.getReference< RegionStatistics >( viewKeyStruct::regionStatisticsString() );
 
-    regionStatistics.averagePressure += subRegionAvgPresNumerator;
-    if( subRegionMinPres < regionStatistics.minPressure )
+    stats.averagePressure += subRegionAvgPresNumerator;
+    if( subRegionMinPres < stats.minPressure )
     {
-      regionStatistics.minPressure = subRegionMinPres;
+      stats.minPressure = subRegionMinPres;
     }
-    if( subRegionMaxPres > regionStatistics.maxPressure )
+    if( subRegionMaxPres > stats.maxPressure )
     {
-      regionStatistics.maxPressure = subRegionMaxPres;
-    }
-
-    if( subRegionMinDeltaPres < regionStatistics.minDeltaPressure )
-    {
-      regionStatistics.minDeltaPressure = subRegionMinDeltaPres;
-    }
-    if( subRegionMaxDeltaPres > regionStatistics.maxDeltaPressure )
-    {
-      regionStatistics.maxDeltaPressure = subRegionMaxDeltaPres;
+      stats.maxPressure = subRegionMaxPres;
     }
 
-    regionStatistics.averageTemperature += subRegionAvgTempNumerator;
-    if( subRegionMinTemp < regionStatistics.minTemperature )
+    if( subRegionMinDeltaPres < stats.minDeltaPressure )
     {
-      regionStatistics.minTemperature = subRegionMinTemp;
+      stats.minDeltaPressure = subRegionMinDeltaPres;
     }
-    if( subRegionMaxTemp > regionStatistics.maxTemperature )
+    if( subRegionMaxDeltaPres > stats.maxDeltaPressure )
     {
-      regionStatistics.maxTemperature = subRegionMaxTemp;
+      stats.maxDeltaPressure = subRegionMaxDeltaPres;
     }
 
-    regionStatistics.totalUncompactedPoreVolume += subRegionTotalUncompactedPoreVol;
+    stats.averageTemperature += subRegionAvgTempNumerator;
+    if( subRegionMinTemp < stats.minTemperature )
+    {
+      stats.minTemperature = subRegionMinTemp;
+    }
+    if( subRegionMaxTemp > stats.maxTemperature )
+    {
+      stats.maxTemperature = subRegionMaxTemp;
+    }
+
+    stats.totalUncompactedPoreVolume += subRegionTotalUncompactedPoreVol;
     for( integer ip = 0; ip < numPhases; ++ip )
     {
-      regionStatistics.phasePoreVolume[ip] += subRegionPhaseDynamicPoreVol[ip];
-      regionStatistics.phaseMass[ip] += subRegionPhaseMass[ip];
-      regionStatistics.trappedPhaseMass[ip] += subRegionTrappedPhaseMass[ip];
-      regionStatistics.immobilePhaseMass[ip] += subRegionImmobilePhaseMass[ip];
+      stats.phasePoreVolume[ip] += subRegionPhaseDynamicPoreVol[ip];
+      stats.phaseMass[ip] += subRegionPhaseMass[ip];
+      stats.trappedPhaseMass[ip] += subRegionTrappedPhaseMass[ip];
+      stats.immobilePhaseMass[ip] += subRegionImmobilePhaseMass[ip];
 
       for( integer ic = 0; ic < numComps; ++ic )
       {
-        regionStatistics.componentMass[ip][ic] += subRegionComponentMass[ip][ic];
+        stats.componentMass[ip][ic] += subRegionComponentMass[ip][ic];
       }
     }
 
@@ -348,40 +385,40 @@ void CompositionalMultiphaseStatistics::computeRegionStatistics( real64 const ti
   for( integer i = 0; i < regionNames.size(); ++i )
   {
     ElementRegionBase & region = elemManager.getRegion( regionNames[i] );
-    RegionStatistics & regionStatistics = region.getReference< RegionStatistics >( viewKeyStruct::regionStatisticsString() );
+    RegionStatistics & stats = region.getReference< RegionStatistics >( viewKeyStruct::regionStatisticsString() );
 
-    regionStatistics.minPressure = MpiWrapper::min( regionStatistics.minPressure );
-    regionStatistics.maxPressure = MpiWrapper::max( regionStatistics.maxPressure );
-    regionStatistics.minDeltaPressure = MpiWrapper::min( regionStatistics.minDeltaPressure );
-    regionStatistics.maxDeltaPressure = MpiWrapper::max( regionStatistics.maxDeltaPressure );
-    regionStatistics.minTemperature = MpiWrapper::min( regionStatistics.minTemperature );
-    regionStatistics.maxTemperature = MpiWrapper::max( regionStatistics.maxTemperature );
-    regionStatistics.totalUncompactedPoreVolume = MpiWrapper::sum( regionStatistics.totalUncompactedPoreVolume );
-    regionStatistics.totalPoreVolume = 0.0;
+    stats.minPressure = MpiWrapper::min( stats.minPressure );
+    stats.maxPressure = MpiWrapper::max( stats.maxPressure );
+    stats.minDeltaPressure = MpiWrapper::min( stats.minDeltaPressure );
+    stats.maxDeltaPressure = MpiWrapper::max( stats.maxDeltaPressure );
+    stats.minTemperature = MpiWrapper::min( stats.minTemperature );
+    stats.maxTemperature = MpiWrapper::max( stats.maxTemperature );
+    stats.totalUncompactedPoreVolume = MpiWrapper::sum( stats.totalUncompactedPoreVolume );
+    stats.totalPoreVolume = 0.0;
     for( integer ip = 0; ip < numPhases; ++ip )
     {
-      regionStatistics.phasePoreVolume[ip] = MpiWrapper::sum( regionStatistics.phasePoreVolume[ip] );
-      regionStatistics.phaseMass[ip] = MpiWrapper::sum( regionStatistics.phaseMass[ip] );
-      regionStatistics.trappedPhaseMass[ip] = MpiWrapper::sum( regionStatistics.trappedPhaseMass[ip] );
-      regionStatistics.immobilePhaseMass[ip] = MpiWrapper::sum( regionStatistics.immobilePhaseMass[ip] );
-      regionStatistics.totalPoreVolume += regionStatistics.phasePoreVolume[ip];
+      stats.phasePoreVolume[ip] = MpiWrapper::sum( stats.phasePoreVolume[ip] );
+      stats.phaseMass[ip] = MpiWrapper::sum( stats.phaseMass[ip] );
+      stats.trappedPhaseMass[ip] = MpiWrapper::sum( stats.trappedPhaseMass[ip] );
+      stats.immobilePhaseMass[ip] = MpiWrapper::sum( stats.immobilePhaseMass[ip] );
+      stats.totalPoreVolume += stats.phasePoreVolume[ip];
       for( integer ic = 0; ic < numComps; ++ic )
       {
-        regionStatistics.componentMass[ip][ic] = MpiWrapper::sum( regionStatistics.componentMass[ip][ic] );
+        stats.componentMass[ip][ic] = MpiWrapper::sum( stats.componentMass[ip][ic] );
       }
     }
-    regionStatistics.averagePressure = MpiWrapper::sum( regionStatistics.averagePressure );
-    regionStatistics.averageTemperature = MpiWrapper::sum( regionStatistics.averageTemperature );
-    if( regionStatistics.totalUncompactedPoreVolume > 0 )
+    stats.averagePressure = MpiWrapper::sum( stats.averagePressure );
+    stats.averageTemperature = MpiWrapper::sum( stats.averageTemperature );
+    if( stats.totalUncompactedPoreVolume > 0 )
     {
-      float invTotalUncompactedPoreVolume = 1.0 / regionStatistics.totalUncompactedPoreVolume;
-      regionStatistics.averagePressure *= invTotalUncompactedPoreVolume;
-      regionStatistics.averageTemperature *= invTotalUncompactedPoreVolume;
+      float invTotalUncompactedPoreVolume = 1.0 / stats.totalUncompactedPoreVolume;
+      stats.averagePressure *= invTotalUncompactedPoreVolume;
+      stats.averageTemperature *= invTotalUncompactedPoreVolume;
     }
     else
     {
-      regionStatistics.averagePressure = 0.0;
-      regionStatistics.averageTemperature = 0.0;
+      stats.averagePressure = 0.0;
+      stats.averageTemperature = 0.0;
       GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Statistics,
                                   GEOS_FMT( "{}, {}: Cannot compute average pressure because region pore volume is zero.", getName(), regionNames[i] ) );
     }
@@ -392,79 +429,108 @@ void CompositionalMultiphaseStatistics::computeRegionStatistics( real64 const ti
     array1d< real64 > mobilePhaseMass( numPhases );
     for( integer ip = 0; ip < numPhases; ++ip )
     {
-      nonTrappedPhaseMass[ip] = regionStatistics.phaseMass[ip] - regionStatistics.trappedPhaseMass[ip];
-      mobilePhaseMass[ip] = regionStatistics.phaseMass[ip] - regionStatistics.immobilePhaseMass[ip];
+      nonTrappedPhaseMass[ip] = stats.phaseMass[ip] - stats.trappedPhaseMass[ip];
+      mobilePhaseMass[ip] = stats.phaseMass[ip] - stats.immobilePhaseMass[ip];
     }
 
     string_view massUnit = units::getSymbol( m_solver->getMassUnit() );
-    string statPrefix = GEOS_FMT( "{}, {} (time {} s):", getName(), regionNames[i], time );
-    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Statistics,
-                                GEOS_FMT( "{} Pressure (min, average, max): {}, {}, {} Pa",
-                                          statPrefix, regionStatistics.minPressure, regionStatistics.averagePressure, regionStatistics.maxPressure ) );
-    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Statistics,
-                                GEOS_FMT( "{} Delta pressure (min, max): {}, {} Pa",
-                                          statPrefix, regionStatistics.minDeltaPressure, regionStatistics.maxDeltaPressure ) );
-    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Statistics,
-                                GEOS_FMT( "{} Temperature (min, average, max): {}, {}, {} K",
-                                          statPrefix, regionStatistics.minTemperature, regionStatistics.averageTemperature,
-                                          regionStatistics.maxTemperature ) );
-    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Statistics,
-                                GEOS_FMT( "{} Total dynamic pore volume: {} rm^3",
-                                          statPrefix, regionStatistics.totalPoreVolume ) );
-    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Statistics,
-                                GEOS_FMT( "{} Phase dynamic pore volume: {} rm^3",
-                                          statPrefix, regionStatistics.phasePoreVolume ) );
-    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Statistics,
-                                GEOS_FMT( "{} Phase mass: {} {}",
-                                          statPrefix, regionStatistics.phaseMass, massUnit ) );
 
-    // metric 1: trapping computed with the Land trapping coefficient
-    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Statistics,
-                                GEOS_FMT( "{} Trapped phase mass (metric 1): {} {}",
-                                          statPrefix, regionStatistics.trappedPhaseMass, massUnit ) );
-    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Statistics,
-                                GEOS_FMT( "{} Non-trapped phase mass (metric 1): {} {}",
-                                          statPrefix, nonTrappedPhaseMass, massUnit ) );
+    std::vector< string > phaseCompName;
+    phaseCompName.reserve( numPhases*numComps );
+    std::vector< string > massValues;
+    phaseCompName.reserve( numPhases*numComps );
 
-    // metric 2: immobile phase mass computed with a threshold on relative permeability
-    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Statistics,
-                                GEOS_FMT( "{} Immobile phase mass (metric 2): {} {}",
-                                          statPrefix, regionStatistics.immobilePhaseMass, massUnit ) );
-    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Statistics,
-                                GEOS_FMT( "{} Mobile phase mass (metric 2): {} {}",
-                                          statPrefix, mobilePhaseMass, massUnit ) );
+    ConstitutiveManager const & constitutiveManager = this->getGroupByPath< ConstitutiveManager >( "/Problem/domain/Constitutive" );
+    MultiFluidBase const & fluid = constitutiveManager.getGroup< MultiFluidBase >( m_solver->referenceFluidModelName() );
+    auto const phaseNames = fluid.phaseNames();
+    auto const componentNames = fluid.componentNames();
+    for( integer ip = 0; ip < numPhases; ++ip )
+    {
+      for( integer ic = 0; ic < numComps; ++ic )
+      {
+        std::stringstream ss;
+        ss << phaseNames[ip]<< ", " <<componentNames[ic];
+        phaseCompName.push_back( ss.str() );
+        massValues.push_back( GEOS_FMT( "{}", stats.componentMass[ip][ic] ) );
+      }
+    }
 
-    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Statistics,
-                                GEOS_FMT( "{} Component mass: {} {}",
-                                          statPrefix, regionStatistics.componentMass, massUnit ) );
+    TableData compPhaseStatsData;
+    compPhaseStatsData.addRow( "Pressure[Pa]", stats.minPressure, stats.averagePressure, stats.maxPressure );
+    compPhaseStatsData.addRow( "Delta pressure [Pa]", stats.minDeltaPressure, "/", stats.maxDeltaPressure );
+    compPhaseStatsData.addRow( "Temperature [K]", stats.minTemperature, stats.averageTemperature, stats.maxTemperature );
+    compPhaseStatsData.addSeparator();
+
+    compPhaseStatsData.addSeparator();
+    compPhaseStatsData.addRow( "statistics", "phase/component", CellType::MergeNext, "value" );
+    compPhaseStatsData.addSeparator();
+
+    compPhaseStatsData.addRow( "Total dynamic pore volume [rm^3]", "all", CellType::MergeNext, stats.totalPoreVolume );
+    compPhaseStatsData.addSeparator();
+    compPhaseStatsData.addRow( "Phase dynamic pore volume: [rm^3]",
+                               stringutilities::joinLambda( phaseNames, "\n", []( auto data ) { return data[0]; } ),
+                               CellType::MergeNext,
+                               stringutilities::joinLambda( stats.phasePoreVolume, "\n", []( auto data ) { return data[0]; } ) );
+    compPhaseStatsData.addSeparator();
+
+    compPhaseStatsData.addRow( GEOS_FMT( "Phase mass [{}]", massUnit ),
+                               stringutilities::joinLambda( phaseNames, "\n", []( auto data ) { return data[0]; } ),
+                               CellType::MergeNext,
+                               stringutilities::joinLambda( stats.phaseMass, "\n", []( auto data ) { return data[0]; } ) );
+    compPhaseStatsData.addSeparator();
+
+    compPhaseStatsData.addRow( GEOS_FMT( "Trapped phase mass (metric 1) [{}]", massUnit ),
+                               stringutilities::joinLambda( phaseNames, "\n", []( auto value ) { return value[0]; } ),
+                               CellType::MergeNext,
+                               stringutilities::joinLambda( stats.trappedPhaseMass, "\n", []( auto value ) { return value[0]; } ) );
+    compPhaseStatsData.addSeparator();
+    compPhaseStatsData.addRow( GEOS_FMT( "nonTrappedPhaseMass [{}]", massUnit ),
+                               stringutilities::joinLambda( phaseNames, "\n", []( auto value ) { return value[0]; } ),
+                               CellType::MergeNext,
+                               stringutilities::joinLambda( nonTrappedPhaseMass, "\n", []( auto value ) { return value[0]; } ) );
+    compPhaseStatsData.addSeparator();
+
+    compPhaseStatsData.addRow( GEOS_FMT( "Immobile phase mass (metric 2) [{}]", massUnit ),
+                               stringutilities::joinLambda( phaseNames, "\n", []( auto value ) { return value[0]; } ),
+                               CellType::MergeNext,
+                               stringutilities::joinLambda( stats.immobilePhaseMass, "\n", []( auto value ) { return value[0]; } )  );
+    compPhaseStatsData.addSeparator();
+    compPhaseStatsData.addRow( GEOS_FMT( "Mobile phase mass (metric 2) [{}]", massUnit ),
+                               stringutilities::joinLambda( phaseNames, "\n", []( auto value ) { return value[0]; } ),
+                               CellType::MergeNext,
+                               stringutilities::joinLambda( mobilePhaseMass, "\n", []( auto value ) { return value[0]; } ) );
+    compPhaseStatsData.addSeparator();
+
+    compPhaseStatsData.addRow( GEOS_FMT( "Component mass [{}]", massUnit ),
+                               stringutilities::join( phaseCompName, '\n' ),
+                               CellType::MergeNext,
+                               stringutilities::join( massValues, '\n' ) );
+
+    string const title = GEOS_FMT( "{}, {} (time {} s):", getName(), regionNames[i], time );
+    TableLayout const compPhaseStatsLayout( title, { "statistics", "min", "average", "max" } );
+    TableTextFormatter tableFormatter( compPhaseStatsLayout );
+    GEOS_LOG_RANK_0( tableFormatter.toString( compPhaseStatsData ) );
 
     if( m_writeCSV > 0 && MpiWrapper::commRank() == 0 )
     {
+      TableData tableData;
+      tableData.addRow( time, stats.minPressure, stats.averagePressure, stats.maxPressure, stats.minDeltaPressure, stats.maxDeltaPressure,
+                        stats.minTemperature, stats.averageTemperature, stats.maxTemperature, stats.totalPoreVolume,
+                        stringutilities::joinLambda( stats.phasePoreVolume, "\n", []( auto data ) { return data[0]; } ),
+                        stringutilities::joinLambda( stats.phaseMass, "\n", []( auto data ) { return data[0]; } ),
+                        stringutilities::joinLambda( stats.trappedPhaseMass, "\n", []( auto value ) { return value[0]; } ),
+                        stringutilities::joinLambda( nonTrappedPhaseMass, "\n", []( auto value ) { return value[0]; } ),
+                        stringutilities::joinLambda( stats.immobilePhaseMass, "\n", []( auto value ) { return value[0]; } ),
+                        stringutilities::joinLambda( mobilePhaseMass, "\n", []( auto value ) { return value[0]; } ),
+                        stringutilities::join( massValues, '\n' ) );
+
       std::ofstream outputFile( m_outputDir + "/" + regionNames[i] + ".csv", std::ios_base::app );
-      outputFile << time << "," << regionStatistics.minPressure << "," << regionStatistics.averagePressure << "," << regionStatistics.maxPressure << "," <<
-        regionStatistics.minDeltaPressure << "," << regionStatistics.maxDeltaPressure << "," << regionStatistics.minTemperature << "," <<
-        regionStatistics.averageTemperature << "," << regionStatistics.maxTemperature << "," << regionStatistics.totalPoreVolume;
-      for( integer ip = 0; ip < numPhases; ++ip )
-        outputFile << "," << regionStatistics.phasePoreVolume[ip];
-      for( integer ip = 0; ip < numPhases; ++ip )
-        outputFile << "," << regionStatistics.phaseMass[ip];
-      for( integer ip = 0; ip < numPhases; ++ip )
-        outputFile << "," << regionStatistics.trappedPhaseMass[ip];
-      for( integer ip = 0; ip < numPhases; ++ip )
-        outputFile << "," << nonTrappedPhaseMass[ip];
-      for( integer ip = 0; ip < numPhases; ++ip )
-        outputFile << "," << regionStatistics.immobilePhaseMass[ip];
-      for( integer ip = 0; ip < numPhases; ++ip )
-        outputFile << "," << mobilePhaseMass[ip];
-      for( integer ip = 0; ip < numPhases; ++ip )
-      {
-        for( integer ic = 0; ic < numComps; ++ic )
-          outputFile << "," << regionStatistics.componentMass[ip][ic];
-      }
-      outputFile << std::endl;
+      TableCSVFormatter const csvOutput;
+      outputFile << csvOutput.dataToString( tableData );
       outputFile.close();
     }
   }
+
 }
 
 void CompositionalMultiphaseStatistics::computeCFLNumbers( real64 const time,
