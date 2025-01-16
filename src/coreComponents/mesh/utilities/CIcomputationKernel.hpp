@@ -232,10 +232,11 @@ private:
   arrayView1d< real64 > const m_connectivityIndex;
 };
 
-using KernelVariant = std::variant< CIcomputationKernel< H1_Hexahedron_Lagrange1_GaussLegendre2  >,
-                                    CIcomputationKernel< H1_Wedge_Lagrange1_Gauss6 >,
-                                    CIcomputationKernel< H1_Tetrahedron_Lagrange1_Gauss1 >,
-                                    CIcomputationKernel< H1_Pyramid_Lagrange1_Gauss5 > >;
+using KernelVariant = std::variant< CIcomputationKernel< finiteElement::H1_Hexahedron_Lagrange1_GaussLegendre2 >,
+                                    CIcomputationKernel< finiteElement::H1_Wedge_Lagrange1_Gauss6 >,
+                                    CIcomputationKernel< finiteElement::H1_Tetrahedron_Lagrange1_Gauss1 >,
+                                    CIcomputationKernel< finiteElement::H1_Pyramid_Lagrange1_Gauss5 > >;
+
 
 KernelVariant createKernel( ElementType elemType, 
                             NodeManager const & nodeManager,
@@ -245,16 +246,15 @@ KernelVariant createKernel( ElementType elemType,
     switch ( elemType ) 
     {
       case ElementType::Tetrahedron:
-        return CIcomputationKernel<H1_Tetrahedron_Lagrange1_Gauss1>( nodeManager, subRegion, esr );
+        return CIcomputationKernel<finiteElement::H1_Tetrahedron_Lagrange1_Gauss1>( nodeManager, subRegion, esr );
       case ElementType::Hexahedron:
-        return CIcomputationKernel<H1_Hexahedron_Lagrange1_GaussLegendre2>( nodeManager, subRegion, esr );
-      case ElementType::Pyramid
-        return CIcomputationKernel<H1_Pyramid_Lagrange1_Gauss5>( nodeManager, subRegion, esr );
-      case ElementType::Wedge
-        return CIcomputationKernel<H1_Wedge_VEM_Gauss1>( nodeManager, subRegion, esr );  
+        return CIcomputationKernel<finiteElement::H1_Hexahedron_Lagrange1_GaussLegendre2>( nodeManager, subRegion, esr );
+      case ElementType::Pyramid:
+        return CIcomputationKernel<finiteElement::H1_Pyramid_Lagrange1_Gauss5>( nodeManager, subRegion, esr );
+      case ElementType::Wedge:
+        return CIcomputationKernel<finiteElement::H1_Wedge_Lagrange1_Gauss6>( nodeManager, subRegion, esr );  
       default:
-        GEOS_ERROR( "Unknown element type" );
-        return {};
+        GEOS_THROW( "Element type not supported", std::runtime_error );
     }
 }
 

@@ -92,7 +92,7 @@ void TwoPointFluxApproximation::computeFractureStencil( MeshLevel & mesh ) const
       string const & regionName = region.getName();
       addFractureFractureConnectionsDFM( mesh, regionName );
       addFractureMatrixConnectionsDFM( mesh, regionName );
-    } else if ( region.subRegionType() == SurfaceElementRegion::SurfaceSubRegionType::embeddedSurfaceElement )
+    } else if ( region.subRegionType() == SurfaceElementRegion::SurfaceSubRegionType::embeddedElement )
     {
       string const & regionName = region.getName();
       addFractureFractureConnectionsEDFM( mesh, regionName );
@@ -553,7 +553,7 @@ void TwoPointFluxApproximation::addFractureMatrixConnectionsEDFM( MeshLevel & me
 
   EmbeddedSurfaceSubRegion & fractureSubRegion = fractureRegion.getUniqueSubRegion< EmbeddedSurfaceSubRegion >();
 
-  computeConnectivityIndex( elemManager, mesh.getNodeManager();, embeddedSurfaceSubRegion );
+  computeConnectivityIndex( elemManager, mesh.getNodeManager(), fractureSubRegion );
 
   ElementRegionManager::ElementViewAccessor< arrayView1d< real64 const > > hydraulicAperture =
     elemManager.constructViewAccessor< array1d< real64 >, arrayView1d< real64 const > >( fields::flow::hydraulicAperture::key() );
@@ -623,7 +623,7 @@ void TwoPointFluxApproximation::computeConnectivityIndex( ElementRegionManager &
   {
     auto kernelVariant = createKernel( subRegion.getElementType(), nodeManager, subRegion, embeddedSurfaceSubRegion ); 
     
-    std::visit( [&] ( auto & kernel ) 
+    std::visit( [&] ( auto kernel ) 
     {
       using KERNEL_TYPE = decltype( kernel );
       KERNEL_TYPE::template launchCIComputationKernel< parallelDevicePolicy< >, KERNEL_TYPE >( kernel );
