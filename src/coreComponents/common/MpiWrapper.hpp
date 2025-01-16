@@ -479,9 +479,13 @@ public:
    * @param[in] comm The MPI_Comm over which the gather operates.
    * @return
    */
-  template< typename T, typename DST_CONTAINER >
+  template< typename T, typename DST_CONTAINER,
+            typename = std::enable_if_t<
+              std::is_trivially_copyable_v< T > &&
+              std::is_same_v< decltype(std::declval< DST_CONTAINER >().size()), std::size_t > &&
+              std::is_same_v< decltype(std::declval< DST_CONTAINER >().data()), T * > > >
   static int gather( T const & value,
-                     DST_CONTAINER< T > const destValuesBuffer,
+                     DST_CONTAINER const & destValuesBuffer,
                      int root,
                      MPI_Comm comm = MPI_COMM_GEOS );
 
@@ -917,9 +921,9 @@ int MpiWrapper::gather( TS const * const sendbuf,
 #endif
 }
 
-template< typename T, typename DST_CONTAINER >
+template< typename T, typename DST_CONTAINER, typename >
 int MpiWrapper::gather( T const & value,
-                        DST_CONTAINER< T > const destValuesBuffer,
+                        DST_CONTAINER const & destValuesBuffer,
                         int root,
                         MPI_Comm MPI_PARAM( comm ) )
 {
