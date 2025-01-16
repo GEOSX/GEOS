@@ -178,9 +178,6 @@ private:
   /// Inverse of the mass plus damping matrix in the reference element for each boundary element
   ArrayOfArrays< array3d< real64 > > m_boundaryInvMassPlusDamping;
 
-  /// Index for each boundary element to m_boundaryInvMassPlusDamping
-  array3d< real64 > m_indexToBoundaryMatrix;
-
 };
 
 } /* namespace geos */

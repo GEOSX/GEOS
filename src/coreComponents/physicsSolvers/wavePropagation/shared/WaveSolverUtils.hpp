@@ -442,6 +442,55 @@ struct WaveSolverUtils
     return dasVector;
   }
 
+  /**
+   * @brief Compute the reference size used for the tetrahederal DG penalty coefficient.
+   *   This implementation uses the radius of the sphere inscribed to the tetrahedron.
+   * @param[in] elemsToNodes element to node map for the base mesh
+   * @param[in] nodeCoords array of base mesh nodes coordinates
+   * @return the radius of the inscribed sphere
+   */
+  GEOS_HOST_DEVICE
+  static real32
+  computeReferenceLengthForPenalty( arraySlice1d< localIndex const, cells::NODE_MAP_USD - 1 > const elemsToNodes,
+                                    arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const nodeCoords )
+  {
+    //Loop over the element faces
+    real64 inradius = 0;
+    real64 hs = 0;
+    real64 spxf[ 3 ][ 2 ] {};
+    real64 spx[ 3 ][ 3 ] {};
+    real64 m[ 6 ] {};
+    for( int i = 0; i < 4; i++ )
+    {
+      int cf = 0;
+      int jstart = ( i + 1 ) % 4;
+      int j = ( jstart + 1 ) % 4;
+      do
+      {
+        for( int k = 0; k < 3; k ++ )
+        {
+          spxf[ k ][ cf ] = nodeCoords( elemsToNodes[ j ], k )  - nodeCoords( elemsToNodes[ jstart ], k );
+        }
+        j = (j + 1 ) % 4;
+        cf++;
+      } while( i != j );
+      m[ 0 ] = LvArray::tensorOps::AiBi< 2 >( spxf[ 0 ], spxf[ 0 ] ); 
+      m[ 1 ] = LvArray::tensorOps::AiBi< 2 >( spxf[ 1 ], spxf[ 1 ] ); 
+      m[ 2 ] = LvArray::tensorOps::AiBi< 2 >( spxf[ 2 ], spxf[ 2 ] ); 
+      m[ 3 ] = LvArray::tensorOps::AiBi< 2 >( spxf[ 1 ], spxf[ 2 ] ); 
+      m[ 4 ] = LvArray::tensorOps::AiBi< 2 >( spxf[ 0 ], spxf[ 2 ] ); 
+      m[ 5 ] = LvArray::tensorOps::AiBi< 2 >( spxf[ 0 ], spxf[ 1 ] ); 
+      hs = hs + LvArray::math::sqrt( LvArray::tensorOps::symDeterminant< 3 >( m ) );
+    }
+    for( int i = 0; i < 3; i++ )
+    {
+      for( int k = 0; k < 3; k ++ )
+      {
+        spx[ i ][ k ] = nodeCoords( elemsToNodes[ i ], k )  - nodeCoords( elemsToNodes[ 3 ], k );
+      }
+    }
+    return LvArray::tensorOps::determinant< 3 >( spx ) / hs;
+  }
 };
 
 /// Declare strings associated with enumeration values.
