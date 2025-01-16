@@ -338,6 +338,8 @@ struct PressureComputation
          arrayView2d< localIndex const, cells::NODE_MAP_USD > const & elemsToNodes,
          arrayView2d< real32 const > const p_n,
          arrayView2d< real32 const > const p_nm1,
+         arrayView2d< localIndex > const & elemsToOpposite,
+         arrayView2d< integer > const & elemsToOppositePermutation,
          real64 const dt,
          arrayView2d< real32 > const p_np1 )
 
@@ -389,11 +391,100 @@ struct PressureComputation
          flowx[j] -= dt2*val*p_n[k][i];
       } );
 
-
-      for (localIndex f = 0; f < 4; ++f)
+      
+      m_finiteElement.template computeSurfaceTerms(xLocal, [&] (const int c1, const int c2, const int f1, const int i2, const int j2, const int k2, real64 val)
       {
-        //Surface terms computation
-      }
+        //We take the neighbour element
+        const localIndex k2 = elemsToOpposite(k,f1);
+
+        // Now we seek the degree of freedom on the neighbour element to use for the computation of the flux (or the penalty) 
+        // First, we compute the four possible values of the permutation of the degrees of freedom depending on the the fixed 
+        // permutation value contained inside elemsToOppositePermutation permutation 
+
+        const int perm = elemsToOppositePermutation(k2,f1);
+
+        const int p1 = perm%4-1;
+        const int p2 = (perm/4)%4-1;
+        const int p3 = (perm/16)%4-1;
+        const int p4 = (perm/64)-1;
+
+        // Then we transform the 3 indices returned by the callback (i2,j2,k2) using the permutations. One of this permutation, will be 0 (depending on which 
+        // degree of freedom is the one at the opposite of the face shared with the neighbour element) and will correspond to the one where p* will be negative
+
+        const int Indices[3] = {i2,j2,k2};
+
+        const int ii2 = p1 < 0 ? 0 : Indices[p1];
+        const int jj2 = p2 < 0 ? 0 : Indices[p2];
+        const int kk2 = p3 < 0 ? 0 : Indices[p3];
+        const int ll2 = p4 < 0 ? 0 : Indices[p4];
+
+        // Finally, using the dofIndex function, we compute the number of the global degree of freedom on the element
+
+        const int neighDof = dofIndex< ii2, jj2, kk2 > ();
+
+        //Flux computation
+
+        flowx[c1] += 0.5*dt2*p_n[k][c2];
+        flowx[c1] -= 0.5*dt2*p_n[k2][neighDof];
+        
+ 
+      },
+      [&] (const int c1, const int c2, const int f1, const int i2, const int j2, const int k2, real64 val)
+      {
+        //We take the neighbour element
+        const localIndex k2 = elemsToOpposite(k,f1);
+
+        // Now we seek the degree of freedom on the neighbour element to use for the computation of the flux (or the penalty) 
+        // First, we compute the four possible values of the permutation of the degrees of freedom depending on the the fixed 
+        // permutation value contained inside elemsToOppositePermutation permutation 
+
+        const int perm = elemsToOppositePermutation(k2,f1);
+
+        const int p1 = perm%4-1;
+        const int p2 = (perm/4)%4-1;
+        const int p3 = (perm/16)%4-1;
+        const int p4 = (perm/64)-1;
+
+        // Then we transform the 3 indices returned by the callback (i2,j2,k2) using the permutations. One of this permutation, will be 0 (depending on which 
+        // degree of freedom is the one at the opposite of the face shared with the neighbour element) and will correspond to the one where p* will be negative
+
+        const int Indices[3] = {i2,j2,k2};
+
+        const int ii2 = p1 < 0 ? 0 : Indices[p1];
+        const int jj2 = p2 < 0 ? 0 : Indices[p2];
+        const int kk2 = p3 < 0 ? 0 : Indices[p3];
+        const int ll2 = p4 < 0 ? 0 : Indices[p4];
+
+        // Finally, using the dofIndex function, we compute the number of the global degree of freedom on the element
+
+        const int neighDof = dofIndex< ii2, jj2, kk2 > ();
+
+        //Flux computation
+
+        flowx[c1] -= 0.5*dt2*p_n[k2][neighDof];
+        flowx[c1] += 0.5*dt2*p_n[k][c2];
+
+        //Then we need a second time where we take the transpose of the previous values: 
+        
+
+        const int IndicesTranspose[3] = {i1,j1,k1};
+
+        const int ii1 = p1 < 0 ? 0 : IndicesTranspose[p1];
+        const int jj1 = p2 < 0 ? 0 : IndicesTranspose[p2];
+        const int kk1 = p3 < 0 ? 0 : IndicesTranspose[p3];
+        const int ll1 = p4 < 0 ? 0 : IndicesTranspose[p4];
+
+        // Finally, using the dofIndex function, we compute the number of the global degree of freedom on the element
+
+        const int neighDof = dofIndex< ii1, jj1, kk1 > ();
+
+        //Flux computation
+
+        flowx[c2] -= 0.5*dt2*p_n[k2][neighDof];
+        flowx[c2] += 0.5*dt2*p_n[k][c1];
+
+
+      } ); 
 
 
 
