@@ -20,7 +20,7 @@
 #ifndef GEOS_COMMON_MPIWRAPPER_HPP_
 #define GEOS_COMMON_MPIWRAPPER_HPP_
 
-#include "common/DataTypeGs.hpp"
+#include "common/DataTypes.hpp"
 #include "common/Span.hpp"
 
 #if defined(GEOS_USE_MPI)
