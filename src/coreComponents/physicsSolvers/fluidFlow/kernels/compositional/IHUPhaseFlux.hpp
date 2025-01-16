@@ -1760,7 +1760,7 @@ struct IHUPhaseFlux
     real64 dummy[numComp];
     real64 dDummy_dP[numFluxSupportPoints][numComp];
     real64 dDummy_dC[numFluxSupportPoints][numComp][numComp];
-
+    real64 dDummy_dTrans[numComp];
 
     for( integer jp = 0; jp < numPhase; ++jp )
     {
@@ -1777,7 +1777,7 @@ struct IHUPhaseFlux
                              phaseCapPressure, dPhaseCapPressure_dPhaseVolFrac,
                              k_up_ppu, potGrad,
                              phaseFlux, dPhaseFlux_dP, dPhaseFlux_dC,
-                             dummy, dDummy_dP, dDummy_dC );
+                             dummy, dDummy_dP, dDummy_dC, dDummy_dTrans );
 
       totFlux += phaseFlux;
 

@@ -1,0 +1,207 @@
+<Problem>
+  <Constitutive>
+    <PorousElasticIsotropic
+      name="porousRock"
+      permeabilityModelName="rockPerm"
+      porosityModelName="rockPorosity"
+      solidModelName="rock" />
+
+    <ElasticIsotropic
+      name="rock"
+      defaultDensity="2927"
+      defaultPoissonRatio="0.15"
+      defaultYoungModulus="14950000000" />
+
+    <CO2BrinePhillipsFluid
+      name="fluid"
+      logLevel="1"
+      phaseNames="{ gas, water }"
+      componentNames="{ co2, water }"
+      componentMolarWeight="{ 44e-3, 18e-3 }"
+      phasePVTParaFiles="{ pvtgas.txt, pvtliquid.txt }"
+      flashModelParaFile="co2flash.txt"/>
+
+    <BiotPorosity
+      name="rockPorosity"
+      defaultReferencePorosity="0.3"
+      defaultGrainBulkModulus="7.12e30" />
+
+    <ConstantPermeability
+      name="rockPerm"
+      permeabilityComponents="{ 1.0e-12, 1.0e-12, 1.0e-12 }" />
+      <!-- Material inside the fault -->
+    <CompressibleSolidParallelPlatesPermeability
+      name="faultFilling"
+      solidModelName="nullSolid"
+      porosityModelName="fracturePorosity"
+      permeabilityModelName="fracturePerm"/>
+
+    <PressurePorosity
+      name="fracturePorosity"
+      defaultReferencePorosity="1.00"
+      referencePressure="0e6"
+      compressibility="0.0"/>
+
+    <ParallelPlatesPermeability
+      name="fracturePerm"/>
+
+    <Coulomb
+      name="fractureContact"
+      cohesion="40.0e6"
+      frictionCoefficient="0.01"/>
+
+    <HydraulicApertureTable
+    name="hApertureModel"
+    apertureTableName="apertureTable"/>   
+
+    <NullModel
+      name="nullSolid"/>
+
+    <TableRelativePermeability
+      name="relperm"
+      phaseNames="{ gas, water }"
+      wettingNonWettingRelPermTableNames="{ waterRelativePermeabilityTable,
+                                            gasRelativePermeabilityTable }"/>
+
+  </Constitutive>
+
+  <FieldSpecifications>
+
+    <FieldSpecification
+      name="fracPorosity"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Fault"
+      fieldName="fracturePorosity_porosity"
+      scale="1.00"/>
+
+    <FieldSpecification
+      name="xconstraint"
+      component="0"
+      fieldName="totalDisplacement"
+      objectPath="nodeManager"
+      scale="0.0"
+      setNames="{ xnegFace, xposFace }" />
+
+    <FieldSpecification
+      name="yconstraint"
+      component="1"
+      fieldName="totalDisplacement"
+      objectPath="nodeManager"
+      scale="0.0"
+      setNames="{ ynegFace, yposFace }" />
+
+    <FieldSpecification
+      name="zconstraint"
+      component="2"
+      fieldName="totalDisplacement"
+      objectPath="nodeManager"
+      scale="0.0"
+      setNames="{ znegFace }" /> 
+
+    <Traction
+      name="tractionTop"
+      objectPath="faceManager"
+      tractionType="normal"
+      scale="-1e7"      
+      setNames="{ zposFace }"/>
+
+    <HydrostaticEquilibrium
+      name="equil"
+      objectPath="ElementRegions"      
+      datumElevation="-2000"
+      datumPressure="2e7"
+      initialPhaseName="water"
+      componentNames="{ co2, water }"
+      componentFractionVsElevationTableNames="{ initCO2CompFracTable,
+                                                initWaterCompFracTable }"
+      temperatureVsElevationTableName="initTempTable"/>
+
+    <SourceFlux
+      name="sourceTerm"
+      objectPath="ElementRegions"
+      component="0"
+      scale="-1e5"
+      setNames="{ source }"/>
+
+  </FieldSpecifications>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="Region"
+      cellBlocks="{ 2_hexahedra, 1_hexahedra, 0_hexahedra }"
+      materialList="{ fluid, relperm, porousRock }"/>  
+
+    <SurfaceElementRegion
+      name="Fault"
+      faceBlock="fracture"
+      materialList="{ fluid, relperm, faultFilling, fractureContact, hApertureModel }"
+      defaultAperture="1e-3"/>
+  </ElementRegions>
+
+  <NumericalMethods>
+    <FiniteElements>
+      <FiniteElementSpace
+        name="FE1"
+        order="1" />
+    </FiniteElements>
+
+    <FiniteVolume>
+      <TwoPointFluxApproximation
+        name="TPFA"/>
+      <TwoPointFluxApproximation
+        name="TPFA_stab"/>  
+    </FiniteVolume>
+  </NumericalMethods>
+
+  <Tasks>
+      <MultiphasePoromechanicsConformingFracturesInitialization 
+        logLevel="1" 
+        name="poroelasticityPreEquilibrationStep"  
+        poromechanicsSolverName="poroFractureSolver"/>
+  </Tasks>
+
+  <Outputs>
+    <VTK
+      name="vtkOutput"
+      fieldNames="{ initialPressure}" />
+
+    <Restart
+      name="restartOutput"/>
+  </Outputs>
+
+  <Functions>
+
+    <TableFunction
+      name="initCO2CompFracTable"
+      coordinateFiles="{ elevation.txt }"
+      voxelFile="initCO2CompFrac.txt"/>
+
+    <TableFunction
+      name="initWaterCompFracTable"
+      coordinateFiles="{ elevation.txt }"
+      voxelFile="initWaterCompFrac.txt"/>       
+    
+    <TableFunction
+      name="initTempTable"
+      coordinateFiles="{ elevation.txt }"
+      voxelFile="initTemp.txt"/>        
+
+    <TableFunction
+      name="apertureTable"
+      coordinates="{ -1.0e-3, 0.0 }"
+      values="{ 1.0e-3, 1.0e-3 }"
+    />
+
+    <TableFunction
+      name="waterRelativePermeabilityTable"
+      coordinateFiles="{ phaseVolFraction_water.txt }"
+      voxelFile="relPerm_water.txt"/>
+
+    <TableFunction
+      name="gasRelativePermeabilityTable"
+      coordinateFiles="{ phaseVolFraction_gas.txt }"
+      voxelFile="relPerm_gas.txt"/>       
+
+  </Functions>
+</Problem>
