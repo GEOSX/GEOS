@@ -477,8 +477,8 @@ void DomainPartition::outputPartitionInformation() const
 
           for( size_t statId = 0; statId < RankMeshStats::Count; ++statId )
           {
-            localTotalMinRatio[statId] = std::numeric_limits< globalIndex >::max();
-            localTotalMaxRatio[statId] = std::numeric_limits< globalIndex >::min();
+            localTotalMinRatio[statId] = std::numeric_limits< double >::max();
+            localTotalMaxRatio[statId] = std::numeric_limits< double >::min();
           }
 
           for( size_t statId = 0; statId < RankMeshStats::Count; ++statId )
