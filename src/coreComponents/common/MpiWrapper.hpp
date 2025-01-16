@@ -318,7 +318,7 @@ public:
                         int sendcount,
                         T_RECV * recvbuf,
                         int recvcount,
-                        MPI_Comm comm );
+                        MPI_Comm comm = MPI_COMM_GEOS );
 
   /**
    * @brief Strongly typed wrapper around MPI_Allgatherv.
@@ -338,7 +338,7 @@ public:
                          T_RECV * recvbuf,
                          int * recvcounts,
                          int * displacements,
-                         MPI_Comm comm );
+                         MPI_Comm comm = MPI_COMM_GEOS );
 
   /**
    * @brief Convenience function for MPI_Allgather.
@@ -436,10 +436,10 @@ public:
 
 
   template< typename T >
-  static int scan( T const * sendbuf, T * recvbuf, int count, MPI_Op op, MPI_Comm comm );
+  static int scan( T const * sendbuf, T * recvbuf, int count, MPI_Op op, MPI_Comm comm = MPI_COMM_GEOS );
 
   template< typename T >
-  static int exscan( T const * sendbuf, T * recvbuf, int count, MPI_Op op, MPI_Comm comm );
+  static int exscan( T const * sendbuf, T * recvbuf, int count, MPI_Op op, MPI_Comm comm = MPI_COMM_GEOS );
 
   /**
    * @brief Strongly typed wrapper around MPI_Bcast.
@@ -450,7 +450,7 @@ public:
    * @return The return value of the underlying call to MPI_Bcast().
    */
   template< typename T >
-  static int bcast( T * buffer, int count, int root, MPI_Comm comm );
+  static int bcast( T * buffer, int count, int root, MPI_Comm comm = MPI_COMM_GEOS );
 
 
   /**
@@ -480,7 +480,28 @@ public:
                      TR * const recvbuf,
                      int recvcount,
                      int root,
-                     MPI_Comm comm );
+                     MPI_Comm comm = MPI_COMM_GEOS );
+
+  /**
+   * @brief Strongly typed wrapper around MPI_Gather().
+   * @tparam TS The pointer type for \p sendbuf
+   * @tparam TR The pointer type for \p recvbuf
+   * @param[in] sendbuf The pointer to the sending buffer.
+   * @param[out] recvbuf The pointer to the receive buffer.
+   * @param[in] recvcount The number of values to receive.
+   * @param[in] root The rank recieving the data.
+   * @param[in] comm The MPI_Comm over which the gather operates.
+   * @return
+   */
+  template< typename T, typename DST_CONTAINER,
+            typename = std::enable_if_t<
+              std::is_trivially_copyable_v< T > &&
+              std::is_same_v< decltype(std::declval< DST_CONTAINER >().size()), std::size_t > &&
+              std::is_same_v< decltype(std::declval< DST_CONTAINER >().data()), T * > > >
+  static int gather( T const & value,
+                     DST_CONTAINER & destValuesBuffer,
+                     int root,
+                     MPI_Comm comm = MPI_COMM_GEOS );
 
   /**
    * @brief Strongly typed wrapper around MPI_Gatherv.
@@ -503,7 +524,7 @@ public:
                       const int * recvcounts,
                       const int * displs,
                       int root,
-                      MPI_Comm comm );
+                      MPI_Comm comm = MPI_COMM_GEOS );
 
   /**
    * @brief Returns an MPI_Op associated with our strongly typed Reduction enum.
@@ -931,6 +952,25 @@ int MpiWrapper::gather( TS const * const sendbuf,
   std::size_t const recvBufferSize = recvcount * sizeof(TR);
   GEOS_ERROR_IF_NE_MSG( sendBufferSize, recvBufferSize, "size of send buffer and receive buffer are not equal" );
   memcpy( recvbuf, sendbuf, sendBufferSize );
+  return 0;
+#endif
+}
+
+template< typename T, typename DST_CONTAINER, typename >
+int MpiWrapper::gather( T const & value,
+                        DST_CONTAINER & destValuesBuffer,
+                        int root,
+                        MPI_Comm MPI_PARAM( comm ) )
+{
+  if( commRank() == 0 )
+    GEOS_ERROR_IF_LT_MSG( destValuesBuffer.size(), size_t( commSize() ),
+                          "Receive buffer is not large enough to contain the values to receive." );
+#ifdef GEOS_USE_MPI
+  return MPI_Gather( &value, sizeof( T ), internal::getMpiType< uint8_t >(),
+                     destValuesBuffer.data(), sizeof( T ), internal::getMpiType< uint8_t >(),
+                     root, comm );
+#else
+  memcpy( destValuesBuffer.data(), &value, sendBufferSize );
   return 0;
 #endif
 }
