@@ -61,7 +61,7 @@ public:
    */
   SolutionCheckKernel( integer const allowCompDensChopping,
                        integer const allowNegativePressure,
-                       CompositionalMultiphaseFVM::ScalingType const scalingType,
+                       compositionalMultiphaseUtilities::ScalingType const scalingType,
                        real64 const scalingFactor,
                        arrayView1d< real64 const > const pressure,
                        arrayView2d< real64 const, compflow::USD_COMP > const compDens,
@@ -217,7 +217,7 @@ public:
                              StackVariables & stack,
                              FUNC && kernelOp = NoOpFunc{} ) const
   {
-    bool const localScaling = m_scalingType == CompositionalMultiphaseFVM::ScalingType::Local;
+    bool const localScaling = m_scalingType == compositionalMultiphaseUtilities::ScalingType::Local;
 
     real64 const newPres = m_pressure[ei] + (localScaling ? m_pressureScalingFactor[ei] : m_scalingFactor) * m_localSolution[stack.localRow];
     if( newPres < 0 )
@@ -280,7 +280,7 @@ protected:
   real64 const m_scalingFactor;
 
   /// scaling type (global or local)
-  CompositionalMultiphaseFVM::ScalingType const m_scalingType;
+  compositionalMultiphaseUtilities::ScalingType const m_scalingType;
 
 };
 
@@ -306,7 +306,7 @@ public:
   static SolutionCheckKernel::StackVariables
   createAndLaunch( integer const allowCompDensChopping,
                    integer const allowNegativePressure,
-                   CompositionalMultiphaseFVM::ScalingType const scalingType,
+                   compositionalMultiphaseUtilities::ScalingType const scalingType,
                    real64 const scalingFactor,
                    arrayView1d< real64 const > const pressure,
                    arrayView2d< real64 const, compflow::USD_COMP > const compDens,
