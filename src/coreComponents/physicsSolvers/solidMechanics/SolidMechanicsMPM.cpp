@@ -2028,7 +2028,7 @@ void SolidMechanicsMPM::initialize( NodeManager & nodeManager,
 
   // Create element map
   m_ijkMap.resize( m_nEl[0] + 1, m_nEl[1] + 1, m_nEl[2] + 1 );
-  for( int g=0; g<numNodes; g++ )
+  for( localIndex g=0; g<numNodes; g++ )
   {
     int i = std::round( ( gridPosition[g][0] - m_xLocalMin[0] ) / m_hEl[0] );
     int j = std::round( ( gridPosition[g][1] - m_xLocalMin[1] ) / m_hEl[1] );
@@ -3786,7 +3786,7 @@ void SolidMechanicsMPM::singleFaceVectorFieldSymmetryBC( const int face,
   LvArray::tensorOps::copy< 3 >( hEl, m_hEl );
   real64 xLocalMin[3] = { 0.0 };
   LvArray::tensorOps::copy< 3 >( xLocalMin, m_xLocalMin );
-  arrayView3d< int const > const ijkMap = m_ijkMap;
+  arrayView3d< localIndex const > const ijkMap = m_ijkMap;
 
   array1d< SortedArray< localIndex > > & boundaryNodes = nodeSets.getReference< array1d< SortedArray< localIndex > > >( viewKeyStruct::boundaryNodesString() );
   array1d< SortedArray< localIndex > > & bufferNodes = nodeSets.getReference< array1d< SortedArray< localIndex > > >( viewKeyStruct::bufferNodesString() );
@@ -4110,20 +4110,15 @@ void SolidMechanicsMPM::computeGridSurfaceNormals( ParticleManager & particleMan
   LvArray::tensorOps::copy< 3 >( hEl, m_hEl );
   real64 xLocalMin[3] = { 0.0 };
   LvArray::tensorOps::copy< 3 >( xLocalMin, m_xLocalMin );
-  arrayView3d< int const > const ijkMap = m_ijkMap;
+  arrayView3d< localIndex const > const ijkMap = m_ijkMap;
 
   // Grid fields
   arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const gridPosition = nodeManager.referencePosition();
-  arrayView2d< real64 > const gridMass = nodeManager.getReference< array2d< real64 > >( viewKeyStruct::gridMassString() );
-  arrayView2d< real64 const > const gridDamageGradient = nodeManager.getReference< array2d< real64 > >( viewKeyStruct::gridDamageGradientString() );
-  arrayView3d< real64 > const gridMomentum = nodeManager.getReference< array3d< real64 > >( viewKeyStruct::gridMomentumString() );
-  arrayView3d< real64 > const gridInternalForce = nodeManager.getReference< array3d< real64 > >( viewKeyStruct::gridInternalForceString() );
-  // arrayView3d< real64 > const gridMaterialPosition = nodeManager.getReference< array3d< real64 > >( viewKeyStruct::gridMaterialPositionString() );
-  arrayView2d< real64 > const gridDamage = nodeManager.getReference< array2d< real64 > >( viewKeyStruct::gridDamageString() );
-  arrayView2d< real64 > const gridMaxDamage = nodeManager.getReference< array2d< real64 > >( viewKeyStruct::gridMaxDamageString() );
+  // arrayView2d< real64 > const gridMass = nodeManager.getReference< array2d< real64 > >( viewKeyStruct::gridMassString() );
   // arrayView2d< real64 > const gridSurfaceNormalWeights = nodeManager.getReference< array2d< real64 > >( viewKeyStruct::gridSurfaceNormalWeightsString() );
   // arrayView2d< real64 > const gridSurfaceNormalWeightNormalization = nodeManager.getReference< array2d< real64 > >( viewKeyStruct::gridSurfaceNormalWeightNormalizationString() );
   arrayView3d< real64 > const gridSurfaceNormal = nodeManager.getReference< array3d< real64 > >( viewKeyStruct::gridSurfaceNormalString() );
+  arrayView2d< real64 const > const gridDamageGradient = nodeManager.getReference< array2d< real64 > >( viewKeyStruct::gridDamageGradientString() );
 
   localIndex subRegionIndex = 0;
   particleManager.forParticleSubRegions( [&]( ParticleSubRegion & subRegion )
@@ -4131,15 +4126,12 @@ void SolidMechanicsMPM::computeGridSurfaceNormals( ParticleManager & particleMan
     // Particle fields
     arrayView2d< real64 > const particlePosition = subRegion.getParticleCenter();
     arrayView1d< int const > const particleGroup = subRegion.getParticleGroup();
-    // arrayView1d< real64 const > const particleMass = subRegion.getField< mpm::fields::particleMass >();
     arrayView1d< real64 const > const particleVolume = subRegion.getParticleVolume();
     arrayView2d< real64 const > const particleDamageGradient = subRegion.getField< fields::mpm::particleDamageGradient >();
-    // arrayView1d< real64 const > const particleDamage = subRegion.getParticleDamage();
     arrayView3d< real64 const > const particleRVectors = subRegion.getParticleRVectors();
 
     arrayView1d< int const > particleSurfaceFlag = subRegion.getParticleSurfaceFlag(); 
     arrayView2d< real64 const > const particleSurfaceNormal = subRegion.getParticleSurfaceNormal();
-
 
     // Get views to mapping arrays
     int const numberOfVerticesPerParticle = subRegion.numberOfVerticesPerParticle();
@@ -4208,7 +4200,7 @@ void SolidMechanicsMPM::computeGridSurfacePositions( ParticleManager & particleM
   LvArray::tensorOps::copy< 3 >( hEl, m_hEl );
   real64 xLocalMin[3] = { 0.0 };
   LvArray::tensorOps::copy< 3 >( xLocalMin, m_xLocalMin);
-  arrayView3d< int const > const ijkMap = m_ijkMap;
+  arrayView3d< localIndex const > const ijkMap = m_ijkMap;
 
   // Grid fields
   arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const gridPosition = nodeManager.referencePosition();
@@ -4377,7 +4369,7 @@ void SolidMechanicsMPM::computeGridSurfaceNormalWeights( ParticleManager & parti
   LvArray::tensorOps::copy< 3 >( hEl, m_hEl );
   real64 xLocalMin[3] = { 0.0 };
   LvArray::tensorOps::copy< 3 >( xLocalMin, m_xLocalMin );
-  // arrayView3d< int const > const ijkMap = m_ijkMap;
+  // arrayView3d< localIndex const > const ijkMap = m_ijkMap;
 
   // Grid fields
   arrayView2d< real64 > const gridSurfaceNormalWeights = nodeManager.getReference< array2d< real64 > >( viewKeyStruct::gridSurfaceNormalWeightsString() );
@@ -8454,7 +8446,7 @@ void SolidMechanicsMPM::particleToGrid( real64 const time_n,
   LvArray::tensorOps::copy< 3 >( hEl, m_hEl );
   real64 xLocalMin[3] = { 0.0 };
   LvArray::tensorOps::copy< 3 >( xLocalMin, m_xLocalMin );
-  arrayView3d< int const > const ijkMap = m_ijkMap;
+  arrayView3d< localIndex const > const ijkMap = m_ijkMap;
 
   // Grid fields
   arrayView2d< real64 const > const gridDamageGradient = nodeManager.getReference< array2d< real64 > >( viewKeyStruct::gridDamageGradientString() );
@@ -8645,7 +8637,7 @@ void SolidMechanicsMPM::particleToGrid_noAtomics( real64 const time_n,
   LvArray::tensorOps::copy< 3 >( hEl, m_hEl );
   real64 xLocalMin[3] = { 0.0 };
   LvArray::tensorOps::copy< 3 >( xLocalMin, m_xLocalMin );
-  arrayView3d< int const > const ijkMap = m_ijkMap;
+  arrayView3d< localIndex const > const ijkMap = m_ijkMap;
 
   // Grid fields
   arrayView2d< real64 const > const gridDamageGradient = nodeManager.getReference< array2d< real64 > >( viewKeyStruct::gridDamageGradientString() );
@@ -8793,7 +8785,7 @@ void SolidMechanicsMPM::particleToGrid_randomMix( real64 const time_n,
   LvArray::tensorOps::copy< 3 >( hEl, m_hEl );
   real64 xLocalMin[3] = { 0.0 };
   LvArray::tensorOps::copy< 3 >( xLocalMin, m_xLocalMin );
-  arrayView3d< int const > const ijkMap = m_ijkMap;
+  arrayView3d< localIndex const > const ijkMap = m_ijkMap;
 
   // Grid fields
   arrayView2d< real64 const > const gridDamageGradient = nodeManager.getReference< array2d< real64 > >( viewKeyStruct::gridDamageGradientString() );
@@ -8967,7 +8959,7 @@ void SolidMechanicsMPM::particleToGrid_minimalAtomics( real64 const time_n,
   LvArray::tensorOps::copy< 3 >( hEl, m_hEl );
   real64 xLocalMin[3] = { 0.0 };
   LvArray::tensorOps::copy< 3 >( xLocalMin, m_xLocalMin );
-  arrayView3d< int const > const ijkMap = m_ijkMap;
+  arrayView3d< localIndex const > const ijkMap = m_ijkMap;
 
   // Grid fields
   arrayView2d< real64 const > const gridDamageGradient = nodeManager.getReference< array2d< real64 > >( viewKeyStruct::gridDamageGradientString() );
@@ -9234,7 +9226,7 @@ void SolidMechanicsMPM::particleToGrid_reduction( real64 const time_n,
   // LvArray::tensorOps::copy< 3 >( hEl, m_hEl );
   // real64 xLocalMin[3] = { 0.0 };
   // LvArray::tensorOps::copy< 3 >( xLocalMin, m_xLocalMin );
-  // arrayView3d< int const > const ijkMap = m_ijkMap;
+  // arrayView3d< localIndex const > const ijkMap = m_ijkMap;
 
   // // Grid fields
   // arrayView2d< real64 const > const gridDamageGradient = nodeManager.getReference< array2d< real64 > >( viewKeyStruct::gridDamageGradientString() );
@@ -9430,14 +9422,14 @@ void SolidMechanicsMPM::particleToGrid_reduction( real64 const time_n,
 void SolidMechanicsMPM::particleColorSort( ParticleManager & particleManager )
 {
   GEOS_UNUSED_VAR( particleManager ); 
-  
+
   // real64 nEl[3] = { 0.0 };
   // LvArray::tensorOps::copy< 3 >( nEl, m_nEl );
   // real64 hEl[3] = { 0.0 };
   // LvArray::tensorOps::copy< 3 >( hEl, m_hEl );
   // real64 xLocalMin[3] = { 0.0 };
   // LvArray::tensorOps::copy< 3 >( xLocalMin, m_xLocalMin );
-  // // arrayView3d< int const > const ijkMap = m_ijkMap;
+  // // arrayView3d< localIndex const > const ijkMap = m_ijkMap;
 
   // int colorDims[3];
   // colorDims[0] = 4;
@@ -9492,7 +9484,7 @@ void SolidMechanicsMPM::particleToGrid_colors( real64 const time_n,
   LvArray::tensorOps::copy< 3 >( hEl, m_hEl );
   real64 xLocalMin[3] = { 0.0 };
   LvArray::tensorOps::copy< 3 >( xLocalMin, m_xLocalMin );
-  arrayView3d< int const > const ijkMap = m_ijkMap;
+  arrayView3d< localIndex const > const ijkMap = m_ijkMap;
 
   // Grid fields
   arrayView2d< real64 const > const gridDamageGradient = nodeManager.getReference< array2d< real64 > >( viewKeyStruct::gridDamageGradientString() );
@@ -9739,6 +9731,7 @@ void SolidMechanicsMPM::enforceContact( real64 dt,
                                    nodeManager );
 
   // Apply symmetry boundary conditions to material position
+  // TODO also enforce symmetry boundary conditions on grid center of volume
   enforceGridVectorFieldSymmetryBC( gridCenterOfMass, gridPosition, nodeManager.sets() );
 
   // Project particle surface positions to grid
@@ -9975,7 +9968,7 @@ void SolidMechanicsMPM::performFLIPUpdate( real64 dt,
   LvArray::tensorOps::copy< 3 >( xLocalMin, m_xLocalMin );
   real64 hEl[3] = {0};
   LvArray::tensorOps::copy< 3 >( hEl, m_hEl );
-  arrayView3d< int const > const ijkMap = m_ijkMap;
+  arrayView3d< localIndex const > const ijkMap = m_ijkMap;
 
   // Grid fields
   arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const gridPosition = nodeManager.referencePosition();
@@ -10103,7 +10096,7 @@ void SolidMechanicsMPM::performPICUpdate(  real64 dt,
   LvArray::tensorOps::copy< 3 >( hEl, m_hEl );
   real64 xLocalMin[3] = { 0.0 };
   LvArray::tensorOps::copy< 3 >( xLocalMin, m_xLocalMin );
-  arrayView3d< int const > const ijkMap = m_ijkMap;
+  arrayView3d< localIndex const > const ijkMap = m_ijkMap;
 
   // Grid fields
   arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const gridPosition = nodeManager.referencePosition();
@@ -10205,7 +10198,7 @@ void SolidMechanicsMPM::performXPICUpdate( real64 dt,
                                            DomainPartition & domain, 
                                            MeshLevel & mesh )
 {
-  arrayView3d< int const > const ijkMap = m_ijkMap;
+  arrayView3d< localIndex const > const ijkMap = m_ijkMap;
   real64 hEl[3] = { 0.0 };
   LvArray::tensorOps::copy< 3 >( hEl, m_hEl );
   real64 xLocalMin[3] = { 0.0 };
@@ -10558,7 +10551,7 @@ void SolidMechanicsMPM::performFMPMUpdate(  real64 dt,
   LvArray::tensorOps::copy< 3 >( xLocalMin, m_xLocalMin );
   real64 xLocalMax[3] = { 0.0 };
   LvArray::tensorOps::copy< 3 >( xLocalMax, m_xLocalMax);
-  arrayView3d< int const > const ijkMap = m_ijkMap;
+  arrayView3d< localIndex const > const ijkMap = m_ijkMap;
 
   // Grid fields
   arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const gridPosition = nodeManager.referencePosition();
@@ -12067,7 +12060,7 @@ void SolidMechanicsMPM::populateMappingArrays( ParticleManager & particleManager
   LvArray::tensorOps::copy< 3 >( xLocalMin, m_xLocalMin );
   real64 xLocalMax[3] = { 0.0 };
   LvArray::tensorOps::copy< 3 >( xLocalMax, m_xLocalMax);
-  arrayView3d< int const > const ijkMap = m_ijkMap;
+  arrayView3d< localIndex const > const ijkMap = m_ijkMap;
 
   arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const gridPosition = nodeManager.referencePosition();
 
@@ -12306,7 +12299,7 @@ void SolidMechanicsMPM::computeCPDIShapeFunctions( arrayView2d< real64 const, no
 // For on the fly computations
 GEOS_DEVICE
 GEOS_FORCE_INLINE
-void SolidMechanicsMPM::mapNodesAndComputeShapeFunctions( arrayView3d< int const > const ijkMap,
+void SolidMechanicsMPM::mapNodesAndComputeShapeFunctions( arrayView3d< localIndex const > const ijkMap,
                                                           real64 const (& xLocalMin)[3],
                                                           real64 const (& hEl)[3],
                                                           ParticleType particleType,

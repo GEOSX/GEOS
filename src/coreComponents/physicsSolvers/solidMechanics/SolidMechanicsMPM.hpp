@@ -340,7 +340,7 @@ public:
 
   GEOS_FORCE_INLINE
   GEOS_HOST_DEVICE 
-  void mapNodesAndComputeShapeFunctions( arrayView3d< int const > const ijkMap,
+  void mapNodesAndComputeShapeFunctions( arrayView3d< localIndex const > const ijkMap,
                                          real64 const (& xLocalMin)[3],
                                          real64 const (& hEl)[3],
                                          ParticleType particleType,
@@ -1027,7 +1027,7 @@ protected:
   array1d< real64 > m_partitionExtent;    // Length of each edge of partition including buffer and ghost cells
   array1d< real64 > m_domainExtent;       // Length of each edge of global domain excluding buffer cells
   array1d< int > m_nEl;                   // Number of elements in each grid direction including buffer and ghost cells
-  array3d< int > m_ijkMap;        // Map from indices in each spatial dimension to local node ID
+  array3d< localIndex > m_ijkMap;        // Map from indices in each spatial dimension to local node ID
 
   int m_useEvents;                   // Events flag
   MPMEventManager* m_mpmEventManager;
