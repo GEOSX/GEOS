@@ -332,7 +332,7 @@ void DomainPartition::outputPartitionInformation() const
     // Table rows will follow this enum ordering
     enum StatIndex
     {
-      Node = 0, Edge, Face, Elem
+      Node = 0, Edge, Face, Elem, Count
     };
     std::array< globalIndex, 4 > localCount;
     std::array< globalIndex, 4 > ghostCount;
@@ -349,7 +349,7 @@ void DomainPartition::outputPartitionInformation() const
 
   auto computeRatios = []( RankMeshStats & stat )
   {
-    for( size_t i = 0; i < RankMeshStats::Count; ++i )
+    for( size_t i = 0; i < RankMeshStats::StatIndex::Count; ++i )
     {
       stat.ratio[i] = stat.localCount[i] + stat.ghostCount[i] == 0 ? 0 :
                       stat.localCount[i] / (stat.localCount[i] + stat.ghostCount[i]);
@@ -358,20 +358,20 @@ void DomainPartition::outputPartitionInformation() const
 
   auto addLocalGhostRow = []( TableData & tableData, RankMeshStats const & stat, string_view heading )
   {
-    dataPartition.addRow( heading,
-                          addCommaSeparators( stat.localCount[0] ), addCommaSeparators( stat.ghostCount[0] ),
-                          addCommaSeparators( stat.localCount[1] ), addCommaSeparators( stat.ghostCount[1] ),
-                          addCommaSeparators( stat.localCount[2] ), addCommaSeparators( stat.ghostCount[2] ),
-                          addCommaSeparators( stat.localCount[3] ), addCommaSeparators( stat.ghostCount[3] ) );
+    tableData.addRow( heading,
+                      addCommaSeparators( stat.localCount[0] ), addCommaSeparators( stat.ghostCount[0] ),
+                      addCommaSeparators( stat.localCount[1] ), addCommaSeparators( stat.ghostCount[1] ),
+                      addCommaSeparators( stat.localCount[2] ), addCommaSeparators( stat.ghostCount[2] ),
+                      addCommaSeparators( stat.localCount[3] ), addCommaSeparators( stat.ghostCount[3] ) );
   };
 
   auto addSummaryRow = []( TableData & tableData, std::array< globalIndex, 4 > stats, string_view heading )
   {
-    dataPartition.addRow( heading,
-                          CellType::MergeNext, addCommaSeparators( stats[0] ),
-                          CellType::MergeNext, addCommaSeparators( stats[1] ),
-                          CellType::MergeNext, addCommaSeparators( stats[2] ),
-                          CellType::MergeNext, addCommaSeparators( stats[3] ) );
+    tableData.addRow( heading,
+                      CellType::MergeNext, addCommaSeparators( stats[0] ),
+                      CellType::MergeNext, addCommaSeparators( stats[1] ),
+                      CellType::MergeNext, addCommaSeparators( stats[2] ),
+                      CellType::MergeNext, addCommaSeparators( stats[3] ) );
   };
 
   GEOS_LOG_RANK_0( "MPI Partitioning information:" );
@@ -383,7 +383,7 @@ void DomainPartition::outputPartitionInformation() const
       if( level!=0 )
       {
         // formatting is done on rank 0
-        vector< RankMeshStats > allRankStats;
+        std::vector< RankMeshStats > allRankStats;
         allRankStats.resize( MpiWrapper::commSize() );
 
         { // Compute stats of the current rank, then gather it on rank 0
@@ -396,11 +396,12 @@ void DomainPartition::outputPartitionInformation() const
           meshLevel.getElemManager().forElementSubRegions< CellElementSubRegion >(
             [&]( CellElementSubRegion const & subRegion )
           {
-            fillStats( rankStats, subRegion.getElemManager() );
+            fillStats( rankStats, RankMeshStats::Elem, subRegion );
           } );
 
           computeRatios( rankStats );
-          MpiWrapper::gather( rankStats, 1, allRankStats.data(), allRankStats.size(), 0 );
+
+          MpiWrapper::gather( rankStats, allRankStats, 0 );
         }
 
 
@@ -429,13 +430,26 @@ void DomainPartition::outputPartitionInformation() const
             if( rankId == 1 )
               tableData.addSeparator();
 
-            addLocalGhostRow( tableData, allRankStats[rankId], std::to_string( rank ) );
+            addLocalGhostRow( tableData, allRankStats[rankId], std::to_string( rankId ) );
           }
 
           RankMeshStats sumStats{};
           RankMeshStats minStats{};
           RankMeshStats maxStats{};
-          // TODO : set minStats attributs @ maxvalues
+
+          for( auto localValue : minStats.localCount )
+          {
+            localValue = std::numeric_limits< decltype(localValue) >::max();
+          }
+          for( auto ghostValue : minStats.ghostCount )
+          {
+            ghostValue = std::numeric_limits< decltype(ghostValue) >::max();
+          }
+          for( auto ratioValue : minStats.ratio )
+          {
+            ratioValue = std::numeric_limits< decltype(ratioValue) >::max();
+          }
+
           for( int rankId = 0; rankId < MpiWrapper::commSize(); ++rankId )
           {
             for( size_t statId = 0; statId < RankMeshStats::Count; ++statId )
@@ -460,8 +474,8 @@ void DomainPartition::outputPartitionInformation() const
           addLocalGhostRow( tableData, maxStats, "max" );
 
           std::array< globalIndex, 4 > localGhostSum;
-          std::array< double, 4 > localTotalMinRatio;
-          std::array< double, 4 > localTotalMaxRatio;
+          std::array< globalIndex, 4 > localTotalMinRatio;
+          std::array< globalIndex, 4 > localTotalMaxRatio;
           for( size_t statId = 0; statId < RankMeshStats::Count; ++statId )
           {
             localGhostSum[statId] = sumStats.localCount[statId] + sumStats.ghostCount[statId];
@@ -472,10 +486,11 @@ void DomainPartition::outputPartitionInformation() const
           addSummaryRow( tableData, localGhostSum, "sum(total)" );
           addSummaryRow( tableData, localTotalMinRatio, "min(local/total)" );
           addSummaryRow( tableData, localTotalMaxRatio, "max(local/total)" );
+
+          TableTextFormatter logPartition( layout );
+          GEOS_LOG_RANK_0( logPartition.toString( tableData ));
         }
 
-        TableTextFormatter logPartition( layout );
-        GEOS_LOG_RANK_0( logPartition.toString( tableData ));
       }
     } );
   } );
