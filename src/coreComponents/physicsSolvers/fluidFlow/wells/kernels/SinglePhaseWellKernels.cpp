@@ -84,6 +84,7 @@ ControlEquationHelper::
   }
 }
 
+template< integer IS_THERMAL >
 GEOS_HOST_DEVICE
 inline
 void
@@ -147,7 +148,23 @@ ControlEquationHelper::
 }
 
 /******************************** FluxKernel ********************************/
+#define INST_FluxKernel( IS_THERMAL ) \
+  template \
+  void  \
+  FluxKernel::  \
+    launch< IS_THERMAL >( localIndex const size,  \
+                          globalIndex const rankOffset,  \
+                          arrayView1d< globalIndex const > const & wellElemDofNumber,  \
+                          arrayView1d< localIndex const > const & nextWellElemIndex,  \
+                          arrayView1d< real64 const > const & connRate,  \
+                          real64 const & dt,  \
+                          CRSMatrixView< real64, globalIndex const > const & localMatrix,  \
+                          arrayView1d< real64 > const & localRhs )
 
+INST_FluxKernel( 0 );
+INST_FluxKernel( 1 );
+
+template< integer IS_THERMAL >
 void
 FluxKernel::
   launch( localIndex const size,
@@ -236,6 +253,29 @@ FluxKernel::
 
 /******************************** PressureRelationKernel ********************************/
 
+#define INST_PressureRelationKernel( IS_THERMAL ) \
+  template \
+  localIndex \
+  PressureRelationKernel:: \
+    launch< IS_THERMAL >( localIndex const size, \
+                          globalIndex const rankOffset, \
+                          bool const isLocallyOwned, \
+                          localIndex const iwelemControl, \
+                          WellControls const & wellControls, \
+                          real64 const & timeAtEndOfStep, \
+                          arrayView1d< globalIndex const > const & wellElemDofNumber, \
+                          arrayView1d< real64 const > const & wellElemGravCoef, \
+                          arrayView1d< localIndex const > const & nextWellElemIndex, \
+                          arrayView1d< real64 const > const & wellElemPressure, \
+                          arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const & wellElemDensity, \
+                          arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > const & dWellElemDensity, \
+                          CRSMatrixView< real64, globalIndex const > const & localMatrix, \
+                          arrayView1d< real64 > const & localRhs )
+
+INST_PressureRelationKernel( 0 );
+INST_PressureRelationKernel( 1 );
+
+template< integer IS_THERMAL >
 localIndex
 PressureRelationKernel::
   launch( localIndex const size,
@@ -296,18 +336,18 @@ PressureRelationKernel::
         switchControl.max( 1 );
       }
 
-      ControlEquationHelper::compute( rankOffset,
-                                      newControl,
-                                      targetBHP,
-                                      targetRate,
-                                      currentBHP,
-                                      dCurrentBHP_dPres,
-                                      currentVolRate,
-                                      dCurrentVolRate_dPres,
-                                      dCurrentVolRate_dRate,
-                                      wellElemDofNumber[iwelemControl],
-                                      localMatrix,
-                                      localRhs );
+      ControlEquationHelper::compute< IS_THERMAL >( rankOffset,
+                                                    newControl,
+                                                    targetBHP,
+                                                    targetRate,
+                                                    currentBHP,
+                                                    dCurrentBHP_dPres,
+                                                    currentVolRate,
+                                                    dCurrentVolRate_dPres,
+                                                    dCurrentVolRate_dRate,
+                                                    wellElemDofNumber[iwelemControl],
+                                                    localMatrix,
+                                                    localRhs );
     }
     else if( iwelemNext >= 0 )  // if iwelemNext >= 0, form momentum equation
     {
@@ -355,6 +395,7 @@ PressureRelationKernel::
 
 /******************************** PerforationKernel ********************************/
 
+template< integer IS_THERMAL >
 GEOS_HOST_DEVICE
 inline
 void
@@ -458,7 +499,36 @@ PerforationKernel::
   }
   dPerfRate_dPres[k_up] += dMobilityUp_dP * potDif;
 }
+#define INST_PerforationKernel( IS_THERMAL ) \
+  template  \
+  void \
+  PerforationKernel:: \
+    launch< IS_THERMAL >( localIndex const size, \
+                          ElementViewConst< arrayView1d< real64 const > > const & resPressure, \
+                          ElementViewConst< arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > > const & resDensity, \
+                          ElementViewConst< arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > > const & dResDensity, \
+                          ElementViewConst< arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > > const & resViscosity, \
+                          ElementViewConst< arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > > const & dResViscosity, \
+                          arrayView1d< real64 const > const & wellElemGravCoef, \
+                          arrayView1d< real64 const > const & wellElemPressure, \
+                          arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const & wellElemDensity, \
+                          arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > const & dWellElemDensity, \
+                          arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const & wellElemViscosity, \
+                          arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > const & dWellElemViscosity, \
+                          arrayView1d< real64 const > const & perfGravCoef, \
+                          arrayView1d< localIndex const > const & perfWellElemIndex, \
+                          arrayView1d< real64 const > const & perfTransmissibility, \
+                          arrayView1d< localIndex const > const & resElementRegion, \
+                          arrayView1d< localIndex const > const & resElementSubRegion, \
+                          arrayView1d< localIndex const > const & resElementIndex, \
+                          arrayView1d< real64 > const & perfRate, \
+                          arrayView2d< real64 > const & dPerfRate_dPres )
 
+INST_PerforationKernel( 0 );
+INST_PerforationKernel( 1 );
+
+
+template< integer IS_THERMAL >
 void
 PerforationKernel::
   launch( localIndex const size,
@@ -494,21 +564,21 @@ PerforationKernel::
     // get the local index of the well element
     localIndex const iwelem = perfWellElemIndex[iperf];
 
-    compute( resPressure[er][esr][ei],
-             resDensity[er][esr][ei][0],
-             dResDensity[er][esr][ei][0][Deriv::dP],
-             resViscosity[er][esr][ei][0],
-             dResViscosity[er][esr][ei][0][Deriv::dP],
-             wellElemGravCoef[iwelem],
-             wellElemPressure[iwelem],
-             wellElemDensity[iwelem][0],
-             dWellElemDensity[iwelem][0][Deriv::dP],
-             wellElemViscosity[iwelem][0],
-             dWellElemViscosity[iwelem][0][Deriv::dP],
-             perfGravCoef[iperf],
-             perfTransmissibility[iperf],
-             perfRate[iperf],
-             dPerfRate_dPres[iperf] );
+    compute< IS_THERMAL >( resPressure[er][esr][ei],
+                           resDensity[er][esr][ei][0],
+                           dResDensity[er][esr][ei][0][Deriv::dP],
+                           resViscosity[er][esr][ei][0],
+                           dResViscosity[er][esr][ei][0][Deriv::dP],
+                           wellElemGravCoef[iwelem],
+                           wellElemPressure[iwelem],
+                           wellElemDensity[iwelem][0],
+                           dWellElemDensity[iwelem][0][Deriv::dP],
+                           wellElemViscosity[iwelem][0],
+                           dWellElemViscosity[iwelem][0][Deriv::dP],
+                           perfGravCoef[iperf],
+                           perfTransmissibility[iperf],
+                           perfRate[iperf],
+                           dPerfRate_dPres[iperf] );
 
 
   } );
@@ -555,20 +625,22 @@ AccumulationKernel::
 /******************************** PressureInitializationKernel ********************************/
 
 void
-PresInitializationKernel::
+PresTempInitializationKernel::
   launch( localIndex const perforationSize,
           localIndex const subRegionSize,
           localIndex const numPerforations,
           WellControls const & wellControls,
           real64 const & currentTime,
           ElementViewConst< arrayView1d< real64 const > > const & resPressure,
+          ElementViewConst< arrayView1d< real64 const > > const & resTemp,
           ElementViewConst< arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > > const & resDensity,
           arrayView1d< localIndex const > const & resElementRegion,
           arrayView1d< localIndex const > const & resElementSubRegion,
           arrayView1d< localIndex const > const & resElementIndex,
           arrayView1d< real64 const > const & perfGravCoef,
           arrayView1d< real64 const > const & wellElemGravCoef,
-          arrayView1d< real64 > const & wellElemPressure )
+          arrayView1d< real64 > const & wellElemPressure,
+          arrayView1d< real64 > const & wellElemTemperature )
 {
   real64 const targetBHP = wellControls.getTargetBHP( currentTime );
   real64 const refWellElemGravCoef = wellControls.getReferenceGravityCoef();
@@ -584,6 +656,7 @@ PresInitializationKernel::
   // Note that we use gravCoef instead of depth for the (unlikely) case in which the gravityVector is not aligned with z
 
   RAJA::ReduceSum< parallelDeviceReduce, real64 > sumDensity( 0 );
+  RAJA::ReduceSum< parallelDeviceReduce, real64 > sumTemp( 0 );
   RAJA::ReduceMin< parallelDeviceReduce, real64 > localMinGravCoefDiff( 1e9 );
 
   forAll< parallelDevicePolicy<> >( perforationSize, [=] GEOS_HOST_DEVICE ( localIndex const iperf )
@@ -598,7 +671,11 @@ PresInitializationKernel::
 
     // increment the fluid density
     sumDensity += resDensity[er][esr][ei][0];
+
+    // increment the temperature
+    sumTemp += resTemp[er][esr][ei];
   } );
+
   real64 const minGravCoefDiff = MpiWrapper::min( localMinGravCoefDiff.get() );
 
 
@@ -607,13 +684,25 @@ PresInitializationKernel::
 
   real64 const avgDensity = MpiWrapper::sum( sumDensity.get() ) / numPerforations;
 
-
-
   // Step 3: we compute the approximate pressure at the reference depth
   // We make a distinction between pressure-controlled wells and rate-controlled wells
 
   real64 refPres = 0.0;
+  real64 avgTemp = 0;
 
+
+  // for a producer, we use the temperature and component fractions from the reservoir
+  if( isProducer )
+  {
+    // use average temperature from reservoir
+    avgTemp = MpiWrapper::sum( sumTemp.get() ) / numPerforations;
+  }
+  // for an injector, we use the injection stream values
+  else
+  {
+    // use temperature from injection stream
+    avgTemp = wellControls.getInjectionTemperature();
+  }
   // if the well is controlled by pressure, initialize the reference pressure at the target pressure
   if( currentControl == WellControls::Control::BHP )
   {
@@ -648,20 +737,27 @@ PresInitializationKernel::
   //  - pressure: hydrostatic pressure using our crude approximation of the total mass density
 
   RAJA::ReduceMax< parallelDeviceReduce, integer > foundNegativePressure( 0 );
+  RAJA::ReduceMax< parallelDeviceReduce, integer > foundNegativeTemp( 0 );
 
   forAll< parallelDevicePolicy<> >( subRegionSize, [=] GEOS_HOST_DEVICE ( localIndex const iwelem )
   {
     wellElemPressure[iwelem] = refPres + avgDensity * ( wellElemGravCoef[iwelem] - refWellElemGravCoef );
-
+    wellElemTemperature[iwelem] = avgTemp;
     if( wellElemPressure[iwelem] <= 0 )
     {
       foundNegativePressure.max( 1 );
     }
+    if( wellElemTemperature[iwelem] <= 0 )
+    {
+      foundNegativeTemp.max( 1 );
+    }
   } );
-
 
   GEOS_THROW_IF( foundNegativePressure.get() == 1,
                  wellControls.getDataContext() << ": Invalid well initialization, negative pressure was found.",
+                 InputError );
+  GEOS_THROW_IF( foundNegativeTemp.get() == 1,
+                 wellControls.getDataContext() << "Invalid well initialization, negative temperature was found.",
                  InputError );
 }
 

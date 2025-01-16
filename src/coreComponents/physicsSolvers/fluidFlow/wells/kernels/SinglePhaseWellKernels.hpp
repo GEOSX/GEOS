@@ -58,6 +58,28 @@ struct ColOffset
   static constexpr integer DRATE = 1;
 };
 
+template< integer IS_THERMAL >
+struct ColOffset_WellJac;
+
+template<>
+struct ColOffset_WellJac< 0 >
+{
+  static constexpr integer dP = 0;
+  static constexpr integer dQ = dP + 1;
+  static integer constexpr nDer =  dQ + 1;
+
+};
+
+template<>
+struct ColOffset_WellJac< 1 >
+{
+  static constexpr integer dP = 0;
+  static constexpr integer dQ = dP + 1;
+  static constexpr integer dT = dQ+1;
+/// number of derivatives
+  static integer constexpr nDer =  dT + 1;
+};
+
 // define the row offset of the residual equations
 struct RowOffset
 {
@@ -65,7 +87,25 @@ struct RowOffset
   static constexpr integer MASSBAL = 1;
 };
 
+template< integer IS_THERMAL >
+struct RowOffset_WellJac;
 
+template<>
+struct RowOffset_WellJac< 0 >
+{
+  static constexpr integer CONTROL   = 0;
+  static constexpr integer MASSBAL   = 1;
+  static constexpr integer nEqn      = MASSBAL+1;
+};
+template<>
+struct RowOffset_WellJac< 1 >
+{
+  static constexpr integer CONTROL   = 0;
+  static constexpr integer MASSBAL   = 1;
+  static constexpr integer ENERGYBAL = MASSBAL+1;
+  static constexpr integer nEqn      = ENERGYBAL+1;
+
+};
 /******************************** ControlEquationHelper ********************************/
 
 struct ControlEquationHelper
@@ -89,6 +129,7 @@ struct ControlEquationHelper
                  real64 const & currentVolRate,
                  WellControls::Control & newControl );
 
+  template< integer IS_THERMAL >
   GEOS_HOST_DEVICE
   inline
   static
@@ -118,6 +159,7 @@ struct FluxKernel
   using COFFSET = singlePhaseWellKernels::ColOffset;
   using TAG = singlePhaseWellKernels::ElemTag;
 
+  template< integer IS_THERMAL >
   static void
   launch( localIndex const size,
           globalIndex const rankOffset,
@@ -140,6 +182,7 @@ struct PressureRelationKernel
   using COFFSET = singlePhaseWellKernels::ColOffset;
   using TAG = singlePhaseWellKernels::ElemTag;
 
+  template< integer IS_THERMAL >
   static localIndex
   launch( localIndex const size,
           globalIndex const rankOffset,
@@ -186,6 +229,7 @@ struct PerforationKernel
   template< typename VIEWTYPE >
   using ElementViewConst = ElementRegionManager::ElementViewConst< VIEWTYPE >;
 
+  template< integer IS_THERMAL >
   GEOS_HOST_DEVICE
   inline
   static
@@ -206,6 +250,7 @@ struct PerforationKernel
            real64 & perfRate,
            arraySlice1d< real64 > const & dPerfRate_dPres );
 
+  template< integer IS_THERMAL >
   static void
   launch( localIndex const size,
           ElementViewConst< arrayView1d< real64 const > > const & resPressure,
@@ -252,13 +297,14 @@ struct AccumulationKernel
 
 };
 
-/******************************** PressureInitializationKernel ********************************/
+/******************************** PressureTemperatyrInitializationKernel ********************************/
 
-struct PresInitializationKernel
+struct PresTempInitializationKernel
 {
 
   using SinglePhaseFlowAccessors =
-    StencilAccessors< fields::flow::pressure >;
+    StencilAccessors< fields::flow::pressure,
+                      fields::flow::temperature >;
 
   using SingleFluidAccessors =
     StencilMaterialAccessors< constitutive::SingleFluidBase,
@@ -281,13 +327,15 @@ struct PresInitializationKernel
           WellControls const & wellControls,
           real64 const & currentTime,
           ElementViewConst< arrayView1d< real64 const > > const & resPressure,
+          ElementViewConst< arrayView1d< real64 const > > const & resTemperature,
           ElementViewConst< arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > > const & resDensity,
           arrayView1d< localIndex const > const & resElementRegion,
           arrayView1d< localIndex const > const & resElementSubRegion,
           arrayView1d< localIndex const > const & resElementIndex,
           arrayView1d< real64 const > const & perfGravCoef,
           arrayView1d< real64 const > const & wellElemGravCoef,
-          arrayView1d< real64 > const & wellElemPressure );
+          arrayView1d< real64 > const & wellElemPressure,
+          arrayView1d< real64 > const & wellElemTemperature );
 
 };
 
