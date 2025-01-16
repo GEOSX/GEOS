@@ -618,6 +618,27 @@ public:
   }
 
   /**
+   * @brief Computes the local degree of freedom index given the shape function indices (i, j, k, l) for each vertex.
+   *   Only i, j and k are needed since i + j + k + l = order
+   *   This version takes indices as parameters and can be called with non-constexpr index values.
+   * @param i The index with respect to the first vertex
+   * @param j The index with respect to the second vertex
+   * @param k The index with respect to the third vertex
+   * @return The local degree of freedom index
+   */
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
+  static
+  constexpr
+  int
+  dofIndex(const int i, const int j, const int k)
+  {
+    return ( ORDER - i ) * ( ORDER - i + 1 ) * ( ORDER - i + 2) / 6 +
+           ( ORDER - i - j ) * ( ORDER - i - j + 1 ) / 2 +
+           ( ORDER - i - j - k );
+  }
+
+  /**
    * @brief Computes the local degree of freedom index given the shape function indices for each vertex
    * @tparam C The dof index in the element
    * @tparam VTX the vertex with respect to
@@ -942,10 +963,12 @@ public:
    *   the superposition integral of the derivative of a function with the value of the other, used for the flux terms.
    * @param X Array containing the coordinates of the support points.
    * @param funcP Callback function for non-zero penalty-type terms, accepting seven parameters:
-   *   c1, c2 (local d.o.f. inside the element), f1 (index of the face, i.e., index of the opposite vertex for this element),
+   *   c1, c2 (local d.o.f. inside the element), f (index of the face, i.e., index of the opposite vertex for this element),
+   *   i1, j1 and k1 (local indices for the first shape function) and value
    *   i2, j2 and k2 (local indices for the second shape function) and value
    * @param funcF Callback function for non-zero flux-type terms, accepting four parameters:
-   *   c2, c2 (local d.o.f. inside the element), f1 (index of the face, i.e., index of the opposite vertex for this element), and value
+   *   c2, c2 (local d.o.f. inside the element), f (index of the face, i.e., index of the opposite vertex for this element), and value
+   *   i1, j1 and k1 (local indices for the first shape function) and value
    *   i2, j2 and k2 (local indices for the second shape function) and value
    */
   template< typename FUNC >
@@ -970,13 +993,13 @@ public:
           if constexpr( d == 0 )
           {
             constexpr real64 val = computeFaceSuperpositionIntegral( i1, j1, k1, i2, j2, k2 );
-            funcP( c1, c2, f1, i2, j2, k2, val * detJf[ f1 ] );
+            funcP( c1, c2, f1, i1, j1, k1, i2, j2, k2, val * detJf[ f1 ] );
           }
           else if constexpr ( d == 1 )
           {
             constexpr real64 factor = ( i1 + j1 + k1 + 4 )/( i1 + j1 + k1 + 3 );
             constexpr real64 val = computeFaceSuperpositionIntegral( i1, j1, k1, i2, j2, k2 ) * factor;
-            funcF( c1, c2, f1, i2, j2, k2, val * detJf[ f1 ] );
+            funcF( c1, c2, f1, i1, j1, k1, i2, j2, k2, val * detJf[ f1 ] );
           }
         }
       } );

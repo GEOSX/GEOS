@@ -105,6 +105,9 @@ void AcousticWaveEquationDG::registerDataOnMesh( Group & meshBodies )
       subRegion.registerField< acousticfieldsdg::ElementToOpposite >( this->getName() );
       subRegion.registerField< acousticfieldsdg::ElementToOppositePermutation >( this->getName() );
 
+      subRegion.registerField< acousticfieldsdg::CharacteristicSize >( this->getName() );
+      subRegion.registerField< acousticfieldsdg::MassPlusDampingInvIndex>( this->getName() );
+
       finiteElement::FiniteElementBase const & fe = subRegion.getReference< finiteElement::FiniteElementBase >( getDiscretizationName() );
 
       finiteElement::FiniteElementDispatchHandler< DG_FE_TYPES >::dispatch3D( fe, [&] ( auto const finiteElement )
@@ -275,6 +278,8 @@ void AcousticWaveEquationDG::initializePostInitialConditionsPreSubGroups()
         arrayView2d< localIndex > const elemsToOpposite = elementSubRegion.getField< acousticfieldsdg::ElementToOpposite >();
         arrayView2d< integer > const elemsToOppositePermutation = elementSubRegion.getField< acousticfieldsdg::ElementToOppositePermutation >();
 
+        arrayView2d< real32 > const characteristicSize = elementSubRegion.getField< acousticfieldsdg::CharacteristicSize >();
+
         /// Partial gradient if gradient as to be computed
 
         finiteElement::FiniteElementDispatchHandler< DG_FE_TYPES >::dispatch3D( fe, [&] ( auto const finiteElement )
@@ -294,6 +299,7 @@ void AcousticWaveEquationDG::initializePostInitialConditionsPreSubGroups()
               freeSurfaceFaceIndicator,
               elemsToOpposite,
               elemsToOppositePermutation );
+ 
 
           // Precompute reference mass matrix for non-boundary elements
           m_referenceInvMassMatrix[ regionIndex ][ subRegionIndex ].resizeDimension< 0, 1 >( FE_TYPE::numNodes, FE_TYPE::numNodes );
@@ -301,7 +307,25 @@ void AcousticWaveEquationDG::initializePostInitialConditionsPreSubGroups()
           massMatrix.resize( FE_TYPE::numNodes, FE_TYPE::numNodes );
           massMatrix.zero();
           FE_TYPE::computeReferenceMassMatrix( massMatrix );
-          BlasLapackLA::matrixInverse( massMatrix, m_referenceInvMassMatrix[ regionIndex ][ subRegionIndex ] ); 
+          BlasLapackLA::matrixInverse( massMatrix, m_referenceInvMassMatrix[ regionIndex ][ subRegionIndex ] );
+
+          // Pre-compute inverse of mass + damping matrix for each boundary element
+          localIndex nAbsBdryElems = 0;
+          forAll< EXEC_POLICY >( elementSubRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
+          {
+            characteristicSize[ k ] = WaveSolverUtils::computeReferenceLengthForPenalty( elemsToNodes, nodeCoords, k );
+            bool bdry = false;
+            for( int i = 0; i < 4; i++ )
+            {
+              if( elemsToOpposite( k, i ) == -1 )
+              {
+                bdry = true;
+                break;
+              }
+            }
+            RAJA::atomicInc< ATOMIC_POLICY >( &m_indexToBoundaryMatrix[ k ])
+          } ); 
+          m_boundaryInvMassPlusDamping[ regionIndex ][ subRegionIndex ].resizeDimension< 0, 1, 2 >( nAbsBdryElems, FE_TYPE::numNodes, FE_TYPE::numNodes );
 
           // AcousticMatricesSEM::MassMatrix< FE_TYPE > kernelM( finiteElement );
           // kernelM.template computeMassMatrix< EXEC_POLICY, ATOMIC_POLICY >( elementSubRegion.size(),
