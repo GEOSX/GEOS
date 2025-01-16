@@ -485,7 +485,7 @@ public:
               std::is_same_v< decltype(std::declval< DST_CONTAINER >().size()), std::size_t > &&
               std::is_same_v< decltype(std::declval< DST_CONTAINER >().data()), T * > > >
   static int gather( T const & value,
-                     DST_CONTAINER const & destValuesBuffer,
+                     DST_CONTAINER & destValuesBuffer,
                      int root,
                      MPI_Comm comm = MPI_COMM_GEOS );
 
@@ -923,7 +923,7 @@ int MpiWrapper::gather( TS const * const sendbuf,
 
 template< typename T, typename DST_CONTAINER, typename >
 int MpiWrapper::gather( T const & value,
-                        DST_CONTAINER const & destValuesBuffer,
+                        DST_CONTAINER & destValuesBuffer,
                         int root,
                         MPI_Comm MPI_PARAM( comm ) )
 {
