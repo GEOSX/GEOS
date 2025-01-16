@@ -260,7 +260,7 @@ Geomechanics::Geomechanics( string const & name, Group * const parent ):
     setDescription( "Porosity" );
 
   registerWrapper( viewKeyStruct::damageString(), &m_damage ).
-    setApplyDefaultValue( 0.0 ).
+    setApplyDeaultValue( 0.0 ).
     setPlotLevel( PlotLevel::LEVEL_0 ).
     setDescription( "Array of quadrature point damage values" );
 
@@ -268,6 +268,11 @@ Geomechanics::Geomechanics( string const & name, Group * const parent ):
     setApplyDefaultValue( DBL_MIN ).
     setPlotLevel( PlotLevel::NOPLOT ).
     setDescription( "Array of quadrature point length scale values" );
+
+  registerWrapper( viewKeyStruct::fractureEnergyReleaseRateString(), &m_fractureEnergyReleaseRate ).
+    setApplyDefaultValue( DBL_MIN ).
+    setPlotLevel( PlotLevel::NOPLOT ).
+    setDescription( "fracture energy release rate" );
 }
 
 
