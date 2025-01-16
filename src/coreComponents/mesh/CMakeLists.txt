@@ -38,6 +38,7 @@ set( mesh_headers
      ExternalDataSourceBase.hpp
      ExternalDataSourceManager.hpp
      EmbeddedSurfaceNodeManager.hpp
+     EmbeddedSurfacesParallelSynchronization.hpp
      EmbeddedSurfaceSubRegion.hpp
      MeshFields.hpp
      FaceElementSubRegion.hpp
@@ -128,6 +129,7 @@ set( mesh_sources
      ElementRegionManager.cpp
      ElementSubRegionBase.cpp
      EmbeddedSurfaceNodeManager.cpp
+     EmbeddedSurfacesParallelSynchronization.cpp
      EmbeddedSurfaceSubRegion.cpp
      ExternalDataSourceBase.cpp
      ExternalDataSourceManager.cpp

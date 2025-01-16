@@ -145,6 +145,17 @@ private:
    */
   void initNewFractureFieldsDFM( MeshLevel & mesh,
                                  string const & faceElementRegionName ) const;
+  
+  /**
+   * @brief Compute connectivity index.
+   * 
+   * @param elemManager The elementRegionManager
+   * @param nodeManager The nodeManager
+   * @param embeddedSurfaceSubRegion The embeddeSurfaceSubRegion
+   */
+  void computeConnectivityIndex( ElementRegionManager & elemManager, 
+                                 NodeManager & nodeManager, 
+                                 EmbeddedSurfaceSubRegion & embeddedSurfaceSubRegion ) const;                               
 
   /// mean permeability coefficient
   real64 m_meanPermCoefficient;

@@ -21,10 +21,19 @@
 #ifndef GEOS_PHYSICSSOLVERS_SURFACEGENERATION_EMBEDDEDSURFACESPARALLELSYNCHRONIZATION_HPP_
 #define GEOS_PHYSICSSOLVERS_SURFACEGENERATION_EMBEDDEDSURFACESPARALLELSYNCHRONIZATION_HPP_
 
-#include "physicsSolvers/surfaceGeneration/EmbeddedSurfaceGenerator.hpp"
 
 namespace geos
 {
+
+struct NewObjectLists
+{
+  std::set< localIndex > newNodes;
+  std::set< localIndex > newEdges;
+  map< std::pair< localIndex, localIndex >, std::set< localIndex > > newElements;
+
+  void insert( NewObjectLists const & lists );
+};
+
 class MeshLevel;
 class NeighborCommunicator;
 struct ModifiedObjectLists;

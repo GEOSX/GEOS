@@ -18,8 +18,7 @@
  */
 
 #include "EmbeddedSurfaceGenerator.hpp"
-#include "EmbeddedSurfacesParallelSynchronization.hpp"
-
+#include "mesh/EmbeddedSurfacesParallelSynchronization.hpp"
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
 #include "mesh/mpiCommunications/NeighborCommunicator.hpp"
 #include "mesh/mpiCommunications/SpatialPartition.hpp"
@@ -31,7 +30,6 @@
 #include "mesh/SurfaceElementRegion.hpp"
 #include "mesh/MeshFields.hpp"
 #include "mesh/utilities/ComputationalGeometry.hpp"
-#include "mesh/utilities/CIcomputationKernel.hpp"
 #include "physicsSolvers/solidMechanics/kernels/SolidMechanicsLagrangianFEMKernels.hpp"
 #include "mesh/simpleGeometricObjects/GeometricObjectManager.hpp"
 #include "mesh/simpleGeometricObjects/Rectangle.hpp"
@@ -205,27 +203,6 @@ void EmbeddedSurfaceGenerator::initializePostSubGroups()
       } );// end loop over cells
     } );// end loop over subregions
   } );// end loop over planes
-
-  // Launch kernel to compute connectivity index of each fractured element.
-  elemManager.forElementSubRegionsComplete< CellElementSubRegion >(
-    [&]( localIndex const, localIndex const, ElementRegionBase &, CellElementSubRegion & subRegion )
-  {
-    finiteElement::FiniteElementBase & subRegionFE = subRegion.template getReference< finiteElement::FiniteElementBase >( getDiscretizationName() );
-
-    finiteElement::dispatchlowOrder3D( subRegionFE, [&] ( auto const finiteElement )
-    {
-      using FE_TYPE = decltype( finiteElement );
-
-      auto kernel = CIcomputationKernel< FE_TYPE >( finiteElement,
-                                                    nodeManager,
-                                                    subRegion,
-                                                    embeddedSurfaceSubRegion );
-
-      using KERNEL_TYPE = decltype( kernel );
-
-      KERNEL_TYPE::template launchCIComputationKernel< parallelDevicePolicy< >, KERNEL_TYPE >( kernel );
-    } );
-  } );
 
   // add all new nodes to newObject list
   for( localIndex ni = 0; ni < embSurfNodeManager.size(); ni++ )
