@@ -163,6 +163,14 @@ public:
                                CRSMatrixView< real64, globalIndex const > const & localMatrix,
                                arrayView1d< real64 > const & localRhs ) const override;
 
+  virtual void
+  assembleHydrofracFluxTerms( real64 const time_n,
+                              real64 const dt,
+                              DomainPartition const & domain,
+                              DofManager const & dofManager,
+                              CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                              arrayView1d< real64 > const & localRhs,
+                              CRSMatrixView< real64, localIndex const > const & dR_dAper ) override final;
 
   virtual void
   updatePhaseMobility( ObjectManagerBase & dataGroup ) const override;
@@ -206,15 +214,6 @@ public:
   };
 
   /**
-   * @brief Solution scaling type
-   */
-  enum class ScalingType : integer
-  {
-    Global,         ///< Scale the Newton update with a unique scaling factor
-    Local            ///< Scale the Newton update locally (modifies the Newton direction)
-  };
-
-  /**
    * @brief Storage for value and element location, used to determine global max + location
    */
   template< typename VALUE_TYPE, typename INDEX_TYPE >
@@ -255,7 +254,7 @@ protected:
   } m_dbcParams;
 
   /// Solution scaling type
-  ScalingType m_scalingType;
+  compositionalMultiphaseUtilities::ScalingType m_scalingType;
 
   /// scheme for density treatment in gravity
   GravityDensityScheme m_gravityDensityScheme;
@@ -292,10 +291,6 @@ private:
   // no data needed here, see CompositionalMultiphaseBase
 
 };
-
-ENUM_STRINGS( CompositionalMultiphaseFVM::ScalingType,
-              "Global",
-              "Local" );
 
 } // namespace geos
 
