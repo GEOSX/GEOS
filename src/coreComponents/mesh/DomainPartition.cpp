@@ -334,9 +334,9 @@ void DomainPartition::outputPartitionInformation() const
     {
       Node = 0, Edge, Face, Elem, Count
     };
-    std::array< globalIndex, 4 > localCount;
-    std::array< globalIndex, 4 > ghostCount;
-    std::array< double, 4 > ratio;
+    std::array< globalIndex, 4 > localCount = {};
+    std::array< globalIndex, 4 > ghostCount = {};
+    std::array< double, 4 > ratio = {};
   };
 
   auto fillStats = []( RankMeshStats & stat,
@@ -388,7 +388,6 @@ void DomainPartition::outputPartitionInformation() const
 
         { // Compute stats of the current rank, then gather it on rank 0
           RankMeshStats rankStats{};
-          //TODO be sure that everything is init at 0
           fillStats( rankStats, RankMeshStats::Node, meshLevel.getNodeManager() );
           fillStats( rankStats, RankMeshStats::Edge, meshLevel.getEdgeManager() );
           fillStats( rankStats, RankMeshStats::Face, meshLevel.getFaceManager() );
@@ -409,8 +408,7 @@ void DomainPartition::outputPartitionInformation() const
         {
           TableLayout const layout( "Mesh partitioning over ranks",
                                     {TableLayout::Column()
-                                       .setName( "" )
-                                       .addSubColumns( {  "Ranks" } ),
+                                       .setName( "Ranks" ),
                                      TableLayout::Column()
                                        .setName( "Nodes" )
                                        .addSubColumns( {  "Local", "Ghost" } ),
@@ -437,17 +435,17 @@ void DomainPartition::outputPartitionInformation() const
           RankMeshStats minStats{};
           RankMeshStats maxStats{};
 
-          for( auto localValue : minStats.localCount )
+          for( globalIndex & localValue : minStats.localCount )
           {
-            localValue = std::numeric_limits< decltype(localValue) >::max();
+            localValue = std::numeric_limits< globalIndex >::max();
           }
-          for( auto ghostValue : minStats.ghostCount )
+          for( globalIndex & ghostValue : minStats.ghostCount )
           {
-            ghostValue = std::numeric_limits< decltype(ghostValue) >::max();
+            ghostValue = std::numeric_limits< globalIndex >::max();
           }
-          for( auto ratioValue : minStats.ratio )
+          for( double & ratioValue : minStats.ratio )
           {
-            ratioValue = std::numeric_limits< decltype(ratioValue) >::max();
+            ratioValue = std::numeric_limits< double >::max();
           }
 
           for( int rankId = 0; rankId < MpiWrapper::commSize(); ++rankId )
