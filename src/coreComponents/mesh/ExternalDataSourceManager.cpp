@@ -36,7 +36,8 @@ ExternalDataSourceManager::~ExternalDataSourceManager()
 Group * ExternalDataSourceManager::createChild( string const & childKey, string const & childName )
 {
   GEOS_LOG_RANK_0( GEOS_FMT( "{}: adding {} {}", getName(), childKey, childName ) );
-  std::unique_ptr< ExternalDataSourceBase > externalDataSource = ExternalDataSourceBase::CatalogInterface::factory( childKey, childName, this );
+  std::unique_ptr< ExternalDataSourceBase > externalDataSource =
+    ExternalDataSourceBase::CatalogInterface::factory( childKey, getDataContext(), childName, this );
   return &this->registerGroup< ExternalDataSourceBase >( childName, std::move( externalDataSource ) );
 }
 
