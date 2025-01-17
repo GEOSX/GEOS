@@ -127,11 +127,6 @@ void WellSolverBase::registerDataOnMesh( Group & meshBodies )
 
       subRegion.registerField< fields::well::gravityCoefficient >( getName() );
 
-      subRegion.registerWrapper< string >( viewKeyStruct::fluidNamesString() ).
-        setPlotLevel( PlotLevel::NOPLOT ).
-        setRestartFlags( RestartFlags::NO_WRITE ).
-        setSizedFromParent( 0 );
-
       PerforationData * const perforationData = subRegion.getPerforationData();
       perforationData->registerField< fields::well::gravityCoefficient >( getName() );
     } );
@@ -153,15 +148,6 @@ void WellSolverBase::initializePostSubGroups()
       validateWellConstraints( 0, 0, subRegion );
     } );
   } );
-}
-
-void WellSolverBase::setConstitutiveNamesCallSuper( ElementSubRegionBase & subRegion ) const
-{
-  PhysicsSolverBase::setConstitutiveNamesCallSuper( subRegion );
-  subRegion.registerWrapper< string >( viewKeyStruct::fluidNamesString() ).
-    setPlotLevel( PlotLevel::NOPLOT ).
-    setRestartFlags( RestartFlags::NO_WRITE ).
-    setSizedFromParent( 0 );
 }
 
 void WellSolverBase::setupDofs( DomainPartition const & domain,

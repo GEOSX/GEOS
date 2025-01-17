@@ -773,8 +773,7 @@ void SinglePhaseFVM< BASE >::applyFaceDirichletBC( real64 const time_n,
         localIndex const er = stencil.getElementRegionIndices()( 0, 0 );
         localIndex const esr = stencil.getElementSubRegionIndices()( 0, 0 );
         ElementSubRegionBase & subRegion = mesh.getElemManager().getRegion( er ).getSubRegion( esr );
-        string const & fluidName = subRegion.getReference< string >( BASE::viewKeyStruct::fluidNamesString() );
-        SingleFluidBase & fluidBase = subRegion.getConstitutiveModel< SingleFluidBase >( fluidName );
+        SingleFluidBase & fluidBase = getConstitutiveModel< SingleFluidBase >( subRegion );
 
         thermalSinglePhaseFVMKernels::
           DirichletFluxComputeKernelFactory::
@@ -832,8 +831,7 @@ void SinglePhaseFVM< BASE >::applyFaceDirichletBC( real64 const time_n,
         localIndex const er = stencil.getElementRegionIndices()( 0, 0 );
         localIndex const esr = stencil.getElementSubRegionIndices()( 0, 0 );
         ElementSubRegionBase & subRegion = mesh.getElemManager().getRegion( er ).getSubRegion( esr );
-        string const & fluidName = subRegion.getReference< string >( BASE::viewKeyStruct::fluidNamesString() );
-        SingleFluidBase & fluidBase = subRegion.getConstitutiveModel< SingleFluidBase >( fluidName );
+        SingleFluidBase & fluidBase = getConstitutiveModel< SingleFluidBase >( subRegion );
 
         BoundaryStencilWrapper const stencilWrapper = stencil.createKernelWrapper();
 

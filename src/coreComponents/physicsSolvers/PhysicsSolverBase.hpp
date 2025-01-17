@@ -990,6 +990,30 @@ protected:
     return constitutiveModels.getGroup< BASETYPE >( key );
   }
 
+  /**
+   * @brief Get the Constitutive Model object
+   * @tparam BASETYPE the base type of the constitutive model.
+   * @param @param subRegion the element subregion on which the constitutive model is registered.
+   * @return the constitutive model of type @p BASETYPE registered on the @p subRegion.
+   */
+  template< typename BASETYPE = constitutive::ConstitutiveBase >
+  static BASETYPE const & getConstitutiveModel( ElementSubRegionBase const & subRegion )
+  {
+    return getConstitutiveModel< BASETYPE >( subRegion, getConstitutiveName< BASETYPE >( subRegion ) );
+  }
+
+  /**
+   * @brief Get the Constitutive Model object
+   * @tparam BASETYPE the base type of the constitutive model.
+   * @param @param subRegion the element subregion on which the constitutive model is registered.
+   * @return the constitutive model of type @p BASETYPE registered on the @p subRegion.
+   */
+  template< typename BASETYPE = constitutive::ConstitutiveBase >
+  static BASETYPE & getConstitutiveModel( ElementSubRegionBase & subRegion )
+  {
+    string const name = getConstitutiveName< BASETYPE >( subRegion );
+    return getConstitutiveModel< BASETYPE >( subRegion, name );
+  }
 
 
   /// Courant–Friedrichs–Lewy factor for the timestep
@@ -1100,6 +1124,7 @@ string PhysicsSolverBase::getConstitutiveName( ElementSubRegionBase const & subR
     GEOS_ERROR_IF( !validName.empty(), "A valid constitutive model was already found." );
     validName = model.getName();
   } );
+
   return validName;
 }
 

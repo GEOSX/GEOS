@@ -146,6 +146,24 @@ private:
 
   void registerDataOnMesh( Group & meshBodies ) override;
 
+  template< typename CONSTITUTIVE_BASE_TYPE >
+  CONSTITUTIVE_BASE_TYPE const & getConstitutive( Group const & constitutiveModels ) const
+  {
+    CONSTITUTIVE_BASE_TYPE const * constitutive = nullptr;
+
+    constitutiveModels.forSubGroups< CONSTITUTIVE_BASE_TYPE >( [&]( auto const & model )
+    {
+      constitutive = &model;
+    } );
+
+    if (!constitutive)
+    {
+      GEOS_ERROR( GEOS_FMT( "{}: constitutive model not found", getDataContext() ) );
+    }
+
+    return *constitutive;
+  }
+
   /// Flag to decide whether CFL numbers are computed or not
   integer m_computeCFLNumbers;
 

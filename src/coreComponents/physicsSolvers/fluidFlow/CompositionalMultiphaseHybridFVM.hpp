@@ -142,7 +142,7 @@ public:
                                arrayView1d< real64 > const & localRhs ) const override;
 
   virtual void
-  updatePhaseMobility( ObjectManagerBase & dataGroup ) const override;
+  updatePhaseMobility( ElementSubRegionBase & subRegion ) const override;
 
   virtual void
   applyAquiferBC( real64 const time,

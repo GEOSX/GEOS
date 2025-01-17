@@ -25,6 +25,7 @@
 #include "constitutive/fluid/singlefluid/SingleFluidBase.hpp"
 #include "constitutive/solid/CoupledSolidBase.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
+#include "physicsSolvers/fluidFlow/SinglePhaseBaseFields.hpp"
 #include "codingUtilities/Utilities.hpp"
 
 namespace geos

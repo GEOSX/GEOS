@@ -130,6 +130,8 @@ FlowSolverBase::FlowSolverBase( string const & name,
 
 void FlowSolverBase::registerDataOnMesh( Group & meshBodies )
 {
+  using namespace fields::flow;
+
   PhysicsSolverBase::registerDataOnMesh( meshBodies );
 
   forDiscretizationOnMeshTargets( meshBodies, [&] ( string const &,
@@ -143,33 +145,32 @@ void FlowSolverBase::registerDataOnMesh( Group & meshBodies )
                                                               [&]( localIndex const,
                                                                    ElementSubRegionBase & subRegion )
     {
-      subRegion.registerField< fields::flow::deltaVolume >( getName() );
-      subRegion.registerField< fields::flow::gravityCoefficient >( getName() ).
-        setApplyDefaultValue( 0.0 );
-      subRegion.registerField< fields::flow::netToGross >( getName() );
+      subRegion.registerField< deltaVolume >( getName() );
+      subRegion.registerField< gravityCoefficient >( getName() );
+      subRegion.registerField< netToGross >( getName() );
 
-      subRegion.registerField< fields::flow::pressure >( getName() );
-      subRegion.registerField< fields::flow::pressure_n >( getName() );
-      subRegion.registerField< fields::flow::initialPressure >( getName() );
-      subRegion.registerField< fields::flow::deltaPressure >( getName() ); // for reporting/stats purposes
-      subRegion.registerField< fields::flow::bcPressure >( getName() ); // needed for the application of boundary conditions
+      subRegion.registerField< pressure >( getName() );
+      subRegion.registerField< pressure_n >( getName() );
+      subRegion.registerField< initialPressure >( getName() );
+      subRegion.registerField< deltaPressure >( getName() ); // for reporting/stats purposes
+      subRegion.registerField< bcPressure >( getName() ); // needed for the application of boundary conditions
       if( m_isFixedStressPoromechanicsUpdate )
       {
-        subRegion.registerField< fields::flow::pressure_k >( getName() ); // needed for the fixed-stress porosity update
+        subRegion.registerField< pressure_k >( getName() ); // needed for the fixed-stress porosity update
       }
 
-      subRegion.registerField< fields::flow::temperature >( getName() );
-      subRegion.registerField< fields::flow::temperature_n >( getName() );
-      subRegion.registerField< fields::flow::initialTemperature >( getName() );
-      subRegion.registerField< fields::flow::bcTemperature >( getName() ); // needed for the application of boundary conditions
+      subRegion.registerField< temperature >( getName() );
+      subRegion.registerField< temperature_n >( getName() );
+      subRegion.registerField< initialTemperature >( getName() );
+      subRegion.registerField< bcTemperature >( getName() ); // needed for the application of boundary conditions
       if( m_isFixedStressPoromechanicsUpdate )
       {
-        subRegion.registerField< fields::flow::temperature_k >( getName() ); // needed for the fixed-stress porosity update
+        subRegion.registerField< temperature_k >( getName() ); // needed for the fixed-stress porosity update
       }
       if( m_isThermal )
       {
-        subRegion.registerField< fields::flow::energy >( getName() );
-        subRegion.registerField< fields::flow::energy_n >( getName() );
+        subRegion.registerField< energy >( getName() );
+        subRegion.registerField< energy_n >( getName() );
       }
     } );
 
@@ -180,20 +181,20 @@ void FlowSolverBase::registerDataOnMesh( Group & meshBodies )
     {
       SurfaceElementRegion & faceRegion = dynamicCast< SurfaceElementRegion & >( region );
 
-      subRegion.registerField< fields::flow::gravityCoefficient >( getName() );
-
-      subRegion.registerField< fields::flow::aperture0 >( getName() ).
+      subRegion.registerField< aperture0 >( getName() ).
         setApplyDefaultValue( faceRegion.getDefaultAperture() );
 
-      subRegion.registerField< fields::flow::hydraulicAperture >( getName() ).
+      subRegion.registerField< hydraulicAperture >( getName() ).
         setApplyDefaultValue( faceRegion.getDefaultAperture() );
 
     } );
 
     FaceManager & faceManager = mesh.getFaceManager();
-    faceManager.registerField< fields::flow::gravityCoefficient >( getName() ).
-      setApplyDefaultValue( 0.0 );
-    faceManager.registerField< fields::flow::transMultiplier >( getName() );
+    {
+      faceManager.registerField< facePressure >( getName() );
+      faceManager.registerField< gravityCoefficient >( getName() );
+      faceManager.registerField< transMultiplier >( getName() );
+    }
 
   } );
 
@@ -291,45 +292,20 @@ void FlowSolverBase::setConstitutiveNamesCallSuper( ElementSubRegionBase & subRe
 {
   PhysicsSolverBase::setConstitutiveNamesCallSuper( subRegion );
 
-  subRegion.registerWrapper< string >( viewKeyStruct::fluidNamesString() ).
-    setPlotLevel( PlotLevel::NOPLOT ).
-    setRestartFlags( RestartFlags::NO_WRITE ).
-    setSizedFromParent( 0 );
-
-  subRegion.registerWrapper< string >( viewKeyStruct::solidNamesString() ).
-    setPlotLevel( PlotLevel::NOPLOT ).
-    setRestartFlags( RestartFlags::NO_WRITE ).
-    setSizedFromParent( 0 );
-
-  string & solidName = subRegion.getReference< string >( viewKeyStruct::solidNamesString() );
-  solidName = getConstitutiveName< CoupledSolidBase >( subRegion );
+  string const solidName = getConstitutiveName< CoupledSolidBase >( subRegion );
   GEOS_ERROR_IF( solidName.empty(), GEOS_FMT( "{}: Solid model not found on subregion {}",
                                               getDataContext(), subRegion.getName() ) );
 
-  subRegion.registerWrapper< string >( viewKeyStruct::permeabilityNamesString() ).
-    setPlotLevel( PlotLevel::NOPLOT ).
-    setRestartFlags( RestartFlags::NO_WRITE ).
-    setSizedFromParent( 0 );
-
-  string & permName = subRegion.getReference< string >( viewKeyStruct::permeabilityNamesString() );
-  permName = getConstitutiveName< PermeabilityBase >( subRegion );
+  string const permName = getConstitutiveName< PermeabilityBase >( subRegion );
   GEOS_ERROR_IF( permName.empty(), GEOS_FMT( "{}: Permeability model not found on subregion {}",
                                              getDataContext(), subRegion.getName() ) );
 
   if( m_isThermal )
   {
-    string & solidInternalEnergyName = subRegion.registerWrapper< string >( viewKeyStruct::solidInternalEnergyNamesString() ).
-                                         setPlotLevel( PlotLevel::NOPLOT ).
-                                         setRestartFlags( RestartFlags::NO_WRITE ).
-                                         setSizedFromParent( 0 ).
-                                         setDescription( "Name of the solid internal energy constitutive model to use" ).
-                                         reference();
-
-    solidInternalEnergyName = getConstitutiveName< SolidInternalEnergy >( subRegion );
-    GEOS_THROW_IF( solidInternalEnergyName.empty(),
+    string const solidInternalEnergyName = getConstitutiveName< SolidInternalEnergy >( subRegion );
+    GEOS_ERROR_IF( solidInternalEnergyName.empty(),
                    GEOS_FMT( "{}: Solid internal energy model not found on subregion {}",
-                             getDataContext(), subRegion.getName() ),
-                   InputError );
+                             getDataContext(), subRegion.getName() ) );
   }
 }
 

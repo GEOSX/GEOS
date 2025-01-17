@@ -244,24 +244,12 @@ void ReactiveCompositionalMultiphaseOBL::registerDataOnMesh( Group & meshBodies 
     {
       string const solverName = getName();
 
-      subRegion.registerField< pressure >( solverName );
-      subRegion.registerField< initialPressure >( solverName );
-      subRegion.registerField< pressure_n >( solverName );
-      subRegion.registerField< bcPressure >( solverName );
-
-      subRegion.registerField< temperature >( solverName );
-      subRegion.registerField< bcTemperature >( solverName );
-
       subRegion.registerField< OBLOperatorValues >( solverName ).
         reference().resizeDimension< 1 >( m_numOBLOperators );
       subRegion.registerField< OBLOperatorValues_n >( solverName ).
         reference().resizeDimension< 1 >( m_numOBLOperators );
       subRegion.registerField< OBLOperatorDerivatives >( solverName ).
         reference().resizeDimension< 1, 2 >( m_numOBLOperators, m_numDofPerCell );
-
-      // we need to register this fiels in any case (if energy balance is enabled or not)
-      // to be able to pass the view to OBLOperatorsKernel
-      subRegion.registerField< temperature_n >( solverName );
 
       // The resizing of the arrays needs to happen here, before the call to initializePreSubGroups,
       // to make sure that the dimensions are properly set before the timeHistoryOutput starts its initialization.
@@ -294,11 +282,6 @@ void ReactiveCompositionalMultiphaseOBL::registerDataOnMesh( Group & meshBodies 
       subRegion.registerField< rockKineticRateFactor >( solverName );
 
     } );
-
-    FaceManager & faceManager = mesh.getFaceManager();
-    {
-      faceManager.registerField< facePressure >( getName() );
-    }
 
   } );
 }

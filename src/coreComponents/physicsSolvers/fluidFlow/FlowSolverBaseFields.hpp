@@ -241,22 +241,6 @@ DECLARE_FIELD( temperatureScalingFactor,
                NO_WRITE,
                "Scaling factors for temperature" );
 
-DECLARE_FIELD( mass,
-               "mass",
-               array1d< real64 >,
-               0,
-               LEVEL_0,
-               WRITE_AND_READ,
-               "Mass" );
-
-DECLARE_FIELD( mass_n,
-               "mass_n",
-               array1d< real64 >,
-               0,
-               NOPLOT,
-               WRITE_AND_READ,
-               "Mass at the previous converged time step" );
-
 DECLARE_FIELD( energy,
                "energy",
                array1d< real64 >,

@@ -274,10 +274,10 @@ public:
 
   /**
    * @brief Function to update all constitutive models
-   * @param dataGroup group that contains the fields
+   * @param subRegion subregion that contains the fields
    */
   virtual void
-  updateFluidModel( ObjectManagerBase & dataGroup ) const;
+  updateFluidModel( ElementSubRegionBase & subRegion ) const;
 
   /**
    * @brief Function to update fluid mass
@@ -307,10 +307,9 @@ public:
 
   /**
    * @brief Function to update fluid mobility
-   * @param dataGroup group that contains the fields
+   * @param subRegion the group storing the required fields
    */
-  void
-  updateMobility( ObjectManagerBase & dataGroup ) const;
+  void updateMobility( ElementSubRegionBase & subRegion ) const;
 
   virtual void initializePreSubGroups() override;
 
@@ -420,10 +419,10 @@ void SinglePhaseBase::accumulationAssemblyLaunch( DofManager const & dofManager,
                                                   arrayView1d< real64 > const & localRhs )
 {
   geos::constitutive::SingleFluidBase const & fluid =
-    getConstitutiveModel< geos::constitutive::SingleFluidBase >( subRegion, subRegion.template getReference< string >( viewKeyStruct::fluidNamesString() ) );
+    getConstitutiveModel< geos::constitutive::SingleFluidBase >( subRegion );
   //START_SPHINX_INCLUDE_COUPLEDSOLID
   geos::constitutive::CoupledSolidBase const & solid =
-    getConstitutiveModel< geos::constitutive::CoupledSolidBase >( subRegion, subRegion.template getReference< string >( viewKeyStruct::solidNamesString() ) );
+    getConstitutiveModel< geos::constitutive::CoupledSolidBase >( subRegion );
   //END_SPHINX_INCLUDE_COUPLEDSOLID
 
   string const dofKey = dofManager.getKey( viewKeyStruct::elemDofFieldString() );

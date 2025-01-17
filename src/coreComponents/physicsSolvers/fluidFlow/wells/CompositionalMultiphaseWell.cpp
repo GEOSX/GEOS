@@ -183,7 +183,7 @@ void CompositionalMultiphaseWell::registerDataOnMesh( Group & meshBodies )
                                                               [&]( localIndex const,
                                                                    WellElementSubRegion & subRegion )
     {
-      string const & fluidName = getConstitutiveName< MultiFluidBase >( subRegion );
+      string const fluidName = getConstitutiveName< MultiFluidBase >( subRegion );
       GEOS_ERROR_IF( fluidName.empty(), GEOS_FMT( "{}: Fluid model not found on subregion {}",
                                                   getDataContext(), subRegion.getName() ) );
 
@@ -287,29 +287,19 @@ void CompositionalMultiphaseWell::registerDataOnMesh( Group & meshBodies )
 
 void CompositionalMultiphaseWell::setConstitutiveNames( ElementSubRegionBase & subRegion ) const
 {
-
-  string & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
-  fluidName = getConstitutiveName< MultiFluidBase >( subRegion );
+  string const fluidName = getConstitutiveName< MultiFluidBase >( subRegion );
   GEOS_THROW_IF( fluidName.empty(),
                  GEOS_FMT( "{}: Fluid model not found on subregion {}",
                            getDataContext(), subRegion.getName() ),
                  InputError );
 
-  string & relPermName = subRegion.registerWrapper< string >( viewKeyStruct::relPermNamesString() ).
-                           setPlotLevel( PlotLevel::NOPLOT ).
-                           setRestartFlags( RestartFlags::NO_WRITE ).
-                           setSizedFromParent( 0 ).
-                           setDescription( "Name of the relative permeability constitutive model to use" ).
-                           reference();
-
-  relPermName = getConstitutiveName< RelativePermeabilityBase >( subRegion );
-
+  string const relPermName = getConstitutiveName< RelativePermeabilityBase >( subRegion );
   GEOS_THROW_IF( relPermName.empty(),
                  GEOS_FMT( "{}: Relative permeability model not found on subregion {}",
                            getDataContext(), subRegion.getName() ),
                  InputError );
-
 }
+
 namespace
 {
 
@@ -388,13 +378,11 @@ void CompositionalMultiphaseWell::validateConstitutiveModels( DomainPartition co
     mesh.getElemManager().forElementSubRegions< WellElementSubRegion >( regionNames, [&]( localIndex const,
                                                                                           WellElementSubRegion const & subRegion )
     {
-      string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
-      MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( subRegion, fluidName );
+      MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( subRegion );
       compareMultiphaseModels( fluid, referenceFluid );
       compareMulticomponentModels( fluid, referenceFluid );
 
-      string const & relpermName = subRegion.getReference< string >( viewKeyStruct::relPermNamesString() );
-      RelativePermeabilityBase const & relPerm = getConstitutiveModel< RelativePermeabilityBase >( subRegion, relpermName );
+      RelativePermeabilityBase const & relPerm = getConstitutiveModel< RelativePermeabilityBase >( subRegion );
       compareMultiphaseModels( relPerm, referenceFluid );
 
       WellControls const & wellControls = getWellControls( subRegion );
@@ -446,8 +434,7 @@ void CompositionalMultiphaseWell::validateWellConstraints( real64 const & time_n
                                                            real64 const & dt,
                                                            WellElementSubRegion const & subRegion )
 {
-  string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString());
-  MultiFluidBase const & fluid = subRegion.getConstitutiveModel< MultiFluidBase >( fluidName );
+  MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( subRegion );
 
   // now that we know we are single-phase, we can check a few things in the constraints
   WellControls const & wellControls = getWellControls( subRegion );
@@ -525,8 +512,7 @@ void CompositionalMultiphaseWell::initializePostSubGroups()
     mesh.getElemManager().forElementSubRegions< WellElementSubRegion >( regionNames, [&]( localIndex const,
                                                                                           WellElementSubRegion & subRegion )
     {
-      string & relPermName = subRegion.getReference< string >( viewKeyStruct::relPermNamesString() );
-      relPermName = getConstitutiveName< RelativePermeabilityBase >( subRegion );
+      const string relPermName = getConstitutiveName< RelativePermeabilityBase >( subRegion );
       GEOS_THROW_IF( relPermName.empty(),
                      GEOS_FMT( "{}: Relative permeability not found on subregion {}",
                                getDataContext(), subRegion.getName() ),
@@ -551,8 +537,7 @@ void CompositionalMultiphaseWell::initializePostInitialConditionsPreSubGroups()
     mesh.getElemManager().forElementSubRegions< WellElementSubRegion >( regionNames, [&]( localIndex const,
                                                                                           WellElementSubRegion & subRegion )
     {
-      string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
-      MultiFluidBase & fluid = subRegion.getConstitutiveModel< MultiFluidBase >( fluidName );
+      MultiFluidBase & fluid = getConstitutiveModel< MultiFluidBase >( subRegion );
       fluid.setMassFlag( m_useMass );
     } );
   } );
@@ -583,9 +568,7 @@ void CompositionalMultiphaseWell::updateBHPForConstraint( WellElementSubRegion &
   integer const numComp = m_numComponents;
   localIndex const iwelemRef = subRegion.getTopWellElementIndex();
 
-  string & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
-  fluidName = getConstitutiveName< MultiFluidBase >( subRegion );
-  MultiFluidBase const & fluid = subRegion.getConstitutiveModel< MultiFluidBase >( fluidName );
+  MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( subRegion );
   integer isThermal = fluid.isThermal();
   // subRegion data
 
@@ -671,8 +654,7 @@ void CompositionalMultiphaseWell::updateVolRatesForConstraint( WellElementSubReg
 
   // fluid data
 
-  string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
-  MultiFluidBase & fluid = subRegion.getConstitutiveModel< MultiFluidBase >( fluidName );
+  MultiFluidBase & fluid = getConstitutiveModel< MultiFluidBase >( subRegion );
   integer isThermal = fluid.isThermal();
   arrayView3d< real64 const, multifluid::USD_PHASE > const & phaseFrac = fluid.phaseFraction();
   arrayView4d< real64 const, multifluid::USD_PHASE_DC > const & dPhaseFrac = fluid.dPhaseFraction();
@@ -870,8 +852,7 @@ void CompositionalMultiphaseWell::updateFluidModel( WellElementSubRegion & subRe
   arrayView1d< real64 const > const & temp = subRegion.getField< fields::well::temperature >();
   arrayView2d< real64 const, compflow::USD_COMP > const & compFrac = subRegion.getField< fields::well::globalCompFraction >();
 
-  string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
-  MultiFluidBase & fluid = subRegion.getConstitutiveModel< MultiFluidBase >( fluidName );
+  MultiFluidBase & fluid = getConstitutiveModel< MultiFluidBase >( subRegion );
 
   constitutive::constitutiveUpdatePassThru( fluid, [&] ( auto & castedFluid )
   {
@@ -893,8 +874,7 @@ real64 CompositionalMultiphaseWell::updatePhaseVolumeFraction( WellElementSubReg
 {
   GEOS_MARK_FUNCTION;
 
-  string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
-  MultiFluidBase & fluid = subRegion.getConstitutiveModel< MultiFluidBase >( fluidName );
+  MultiFluidBase & fluid = getConstitutiveModel< MultiFluidBase >( subRegion );
 
   real64 maxDeltaPhaseVolFrac  =
     m_isThermal ?
@@ -918,8 +898,7 @@ void CompositionalMultiphaseWell::updateTotalMassDensity( WellElementSubRegion &
 {
   GEOS_MARK_FUNCTION;
 
-  string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
-  MultiFluidBase & fluid = subRegion.getConstitutiveModel< MultiFluidBase >( fluidName );
+  MultiFluidBase & fluid = getConstitutiveModel< MultiFluidBase >( subRegion );
   fluid.isThermal() ?
   thermalCompositionalMultiphaseWellKernels::
     TotalMassDensityKernelFactory::
@@ -1056,8 +1035,7 @@ void CompositionalMultiphaseWell::initializeWells( DomainPartition & domain, rea
                   wellElemCompFrac );
 
         // get well secondary variables on well elements
-        string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
-        MultiFluidBase & fluid = getConstitutiveModel< MultiFluidBase >( subRegion, fluidName );
+        MultiFluidBase & fluid = getConstitutiveModel< MultiFluidBase >( subRegion );
         arrayView3d< real64 const, multifluid::USD_PHASE > const & wellElemPhaseDens = fluid.phaseDensity();
         arrayView2d< real64 const, multifluid::USD_FLUID > const & wellElemTotalDens = fluid.totalDensity();
 
@@ -1127,9 +1105,8 @@ void CompositionalMultiphaseWell::assembleFluxTerms( real64 const & time,
       WellControls const & well_controls = getWellControls( subRegion );
       if( well_controls.isWellOpen( time + dt ) && !m_keepVariablesConstantDuringInitStep )
       {
-        string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString());
-        MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( subRegion, fluidName );
-        int numComponents = fluid.numFluidComponents();
+        MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( subRegion );
+        int const numComponents = fluid.numFluidComponents();
 
         if( isThermal() )
         {
@@ -1190,10 +1167,9 @@ void CompositionalMultiphaseWell::assembleAccumulationTerms( real64 const & time
                                                                         [&]( localIndex const,
                                                                              WellElementSubRegion & subRegion )
     {
-      string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString());
-      MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( subRegion, fluidName );
-      int numPhases = fluid.numFluidPhases();
-      int numComponents = fluid.numFluidComponents();
+      MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( subRegion );
+      int const numPhases = fluid.numFluidPhases();
+      int const numComponents = fluid.numFluidComponents();
       WellControls const & wellControls = getWellControls( subRegion );
       if( wellControls.isWellOpen( time+ dt ) && !m_keepVariablesConstantDuringInitStep )
       {
@@ -1301,10 +1277,7 @@ CompositionalMultiphaseWell::calculateResidualNorm( real64 const & time_n,
                                                               [&]( localIndex const,
                                                                    WellElementSubRegion const & subRegion )
     {
-
-
-      string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
-      MultiFluidBase const & fluid = subRegion.getConstitutiveModel< MultiFluidBase >( fluidName );
+      MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( subRegion );
 
       WellControls const & wellControls = getWellControls( subRegion );
 
@@ -1680,9 +1653,8 @@ void CompositionalMultiphaseWell::computePerforationRates( real64 const & time_n
 
         bool const disableReservoirToWellFlow = wellControls.isInjector() and !wellControls.isCrossflowEnabled();
 
-        string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
-        MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( subRegion, fluidName );
-        bool isThermal = fluid.isThermal();
+        MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( subRegion );
+        bool const isThermal = fluid.isThermal();
 
         if( isThermal )
         {
@@ -1921,9 +1893,8 @@ void CompositionalMultiphaseWell::assemblePressureRelations( real64 const & time
 
       if( wellControls.isWellOpen( time_n + dt ) && !m_keepVariablesConstantDuringInitStep )
       {
-        string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
-        MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( subRegion, fluidName );
-        bool isThermal = fluid.isThermal();
+        MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( subRegion );
+        bool const isThermal = fluid.isThermal();
         // get the degrees of freedom, depth info, next welem index
         string const wellDofKey = dofManager.getKey( wellElementDofName() );
         arrayView1d< globalIndex const > const & wellElemDofNumber =
@@ -2060,8 +2031,7 @@ void CompositionalMultiphaseWell::implicitStepSetup( real64 const & time_n,
         subRegion.getField< fields::well::phaseVolumeFraction_n >();
       wellElemPhaseVolFrac_n.setValues< parallelDevicePolicy<> >( wellElemPhaseVolFrac );
 
-      string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
-      MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( subRegion, fluidName );
+      MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( subRegion );
       fluid.saveConvergedState();
 
       validateWellConstraints( time_n, dt, subRegion );

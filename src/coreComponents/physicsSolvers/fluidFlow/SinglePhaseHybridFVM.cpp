@@ -63,32 +63,29 @@ void SinglePhaseHybridFVM::registerDataOnMesh( Group & meshBodies )
 {
   using namespace fields::flow;
 
-  // 1) Register the cell-centered data
   SinglePhaseBase::registerDataOnMesh( meshBodies );
 
-  // pressureGradient is specific for HybridFVM
   forDiscretizationOnMeshTargets( meshBodies, [&] ( string const &,
                                                     MeshLevel & mesh,
                                                     arrayView1d< string const > const & regionNames )
   {
+    // 1) Register the cell-centered data
     ElementRegionManager & elemManager = mesh.getElemManager();
     elemManager.forElementSubRegions< ElementSubRegionBase >( regionNames,
                                                               [&]( localIndex const,
                                                                    ElementSubRegionBase & subRegion )
     {
+      // pressureGradient is specific for HybridFVM
       subRegion.registerField< pressureGradient >( getName() ).
         reference().resizeDimension< 1 >( 3 );
     } );
-  } );
 
-  // 2) Register the face data
-  meshBodies.forSubGroups< MeshBody >( [&] ( MeshBody & meshBody )
-  {
-    MeshLevel & meshLevel = meshBody.getBaseDiscretization();
-    FaceManager & faceManager = meshLevel.getFaceManager();
-
-    // primary variables: face pressures at the previous converged time step
-    faceManager.registerField< fields::flow::facePressure_n >( getName() );
+    // 2) Register the face data
+    FaceManager & faceManager = mesh.getFaceManager();
+    {
+      // primary variables: face pressures at the previous converged time step
+      faceManager.registerField< facePressure_n >( getName() );
+    }
   } );
 }
 
@@ -249,12 +246,8 @@ void SinglePhaseHybridFVM::assembleFluxTerms( real64 const dt,
                                                                                      ElementRegionBase const &,
                                                                                      CellElementSubRegion const & subRegion )
     {
-      string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
-      SingleFluidBase const & fluid = getConstitutiveModel< SingleFluidBase >( subRegion, fluidName );
-
-
-      string const & permName = subRegion.getReference< string >( viewKeyStruct::permeabilityNamesString() );
-      PermeabilityBase const & permeability = getConstitutiveModel< PermeabilityBase >( subRegion, permName );
+      SingleFluidBase const & fluid = getConstitutiveModel< SingleFluidBase >( subRegion );
+      PermeabilityBase const & permeability = getConstitutiveModel< PermeabilityBase >( subRegion );
 
       singlePhaseHybridFVMKernels::
         ElementBasedAssemblyKernelFactory::
@@ -481,8 +474,7 @@ real64 SinglePhaseHybridFVM::calculateResidualNorm( real64 const & GEOS_UNUSED_P
       real64 subRegionResidualNorm[1]{};
       real64 subRegionResidualNormalizer[1]{};
 
-      string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
-      SingleFluidBase const & fluid = getConstitutiveModel< SingleFluidBase >( subRegion, fluidName );
+      SingleFluidBase const & fluid = getConstitutiveModel< SingleFluidBase >( subRegion );
       defaultViscosity += fluid.defaultViscosity();
       subRegionCounter++;
 

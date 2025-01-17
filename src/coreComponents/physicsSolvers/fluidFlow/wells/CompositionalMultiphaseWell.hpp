@@ -259,8 +259,6 @@ public:
 
     static constexpr char const * useTotalMassEquationString() { return CompositionalMultiphaseBase::viewKeyStruct::useTotalMassEquationString(); }
 
-    static constexpr char const * relPermNamesString() { return CompositionalMultiphaseBase::viewKeyStruct::relPermNamesString(); }
-
     static constexpr char const * maxCompFracChangeString() { return CompositionalMultiphaseBase::viewKeyStruct::maxCompFracChangeString(); }
 
     static constexpr char const * maxRelativePresChangeString() { return "maxRelativePressureChange"; }
