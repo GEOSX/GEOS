@@ -48,7 +48,7 @@ DECLARE_FIELD( dEnergyPerforationFlux,
                0,
                NOPLOT,
                NO_WRITE,
-               "Derivative of energy perforation flux with respect to pressure temperature and global component density" );
+               "Derivative of energy perforation flux with respect to pressure temperature and global component density (compositional only)" );
 
 
 }

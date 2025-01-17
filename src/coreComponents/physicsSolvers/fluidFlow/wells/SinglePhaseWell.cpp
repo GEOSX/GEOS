@@ -33,6 +33,7 @@
 #include "physicsSolvers/KernelLaunchSelectors.hpp"
 #include "physicsSolvers/fluidFlow/SinglePhaseBase.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
+#include "physicsSolvers/fluidFlow/wells/WellFields.hpp"
 #include "physicsSolvers/fluidFlow/wells/WellSolverBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/wells/SinglePhaseWellFields.hpp"
 #include "physicsSolvers/fluidFlow/wells/WellControls.hpp"
@@ -89,6 +90,15 @@ void SinglePhaseWell::registerDataOnMesh( Group & meshBodies )
 
       PerforationData & perforationData = *subRegion.getPerforationData();
       perforationData.registerField< fields::well::perforationRate >( getName() );
+            perforationData.registerField< fields::well::dPerforationRate >( getName() ).reference().resizeDimension< 1, 2 >( 2,  2 );
+      if( isThermal() )
+      {
+        perforationData.registerField< fields::well::energyPerforationFlux >( getName() );
+        perforationData.registerField< fields::well::dEnergyPerforationFlux >( getName() ).
+          reference().resizeDimension< 1, 2 >( 2, 2 );
+      }
+
+      //tjb remove
       perforationData.registerField< fields::well::dPerforationRate_dPres >( getName() ).
         reference().resizeDimension< 1 >( 2 );
 
@@ -702,6 +712,9 @@ void SinglePhaseWell::computePerforationRates( real64 const & time_n,
 
       arrayView1d< real64 > const perfRate =
         perforationData->getField< fields::well::perforationRate >();
+      arrayView3d< real64 > const dPerfRate =
+        perforationData->getField< fields::well::dPerforationRate >();
+      // tjb remove
       arrayView2d< real64 > const dPerfRate_dPres =
         perforationData->getField< fields::well::dPerforationRate_dPres >();
 
@@ -734,6 +747,7 @@ void SinglePhaseWell::computePerforationRates( real64 const & time_n,
                                                          resElementSubRegion,
                                                          resElementIndex,
                                                          perfRate,
+                                                         dPerfRate,
                                                          dPerfRate_dPres );
       } );
 

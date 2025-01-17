@@ -248,6 +248,7 @@ struct PerforationKernel
            real64 const & perfGravCoef,
            real64 const & trans,
            real64 & perfRate,
+           arraySlice2d< real64 > const & dPerfRate,
            arraySlice1d< real64 > const & dPerfRate_dPres );
 
   template< integer IS_THERMAL >
@@ -271,6 +272,7 @@ struct PerforationKernel
           arrayView1d< localIndex const > const & resElementSubRegion,
           arrayView1d< localIndex const > const & resElementIndex,
           arrayView1d< real64 > const & perfRate,
+          arrayView3d< real64 > const & dPerfRate,
           arrayView2d< real64 > const & dPerfRate_dPres );
 
 };
