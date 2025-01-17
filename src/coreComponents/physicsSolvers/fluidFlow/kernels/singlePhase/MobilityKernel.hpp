@@ -34,20 +34,6 @@ namespace singlePhaseBaseKernels
 
 struct MobilityKernel
 {
-  // Isothermal version
-  GEOS_HOST_DEVICE
-  inline
-  static void
-  compute( real64 const & dens,
-           real64 const & dDens_dP,
-           real64 const & visc,
-           real64 const & dVisc_dP,  //tjb
-           real64 & mob,
-           real64 & dMob_dPres )
-  {
-    mob = dens / visc;
-    dMob_dPres = dDens_dP / visc - mob / visc * dVisc_dP;  // tjb keep
-  }
 
 // Value-only (no derivatives) version
   GEOS_HOST_DEVICE
@@ -60,35 +46,13 @@ struct MobilityKernel
     mob = dens / visc;
   }
 
-  // Isothermal version
-  template< typename POLICY >
-  static void launch( localIndex const size,
-                      arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const & dens,
-                      arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > const & dDens,
-                      arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const & visc,
-                      arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > const & dVisc,
-                      arrayView1d< real64 > const & mob,
-                      arrayView1d< real64 > const & dMob_dPres )
-  {
-    using DerivOffset = constitutive::singlefluid::DerivativeOffsetC< 0 >;
-    forAll< POLICY >( size, [=] GEOS_HOST_DEVICE ( localIndex const a )
-    {
-      compute( dens[a][0],
-               dDens[a][0][DerivOffset::dP],
-               visc[a][0],
-               dVisc[a][0][DerivOffset::dP],
-               mob[a],
-               dMob_dPres[a] );
-    } );
-  }
-
-  // Generic version
+  // Computes mobility and derivtives
   template< typename POLICY, integer NUMDOF >
   static void compute_value_and_derivatives( localIndex const size,
                                              arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const & density,
-                                             arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > const & dDensity,
+                                             arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > const & dDensity,
                                              arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const & viscosity,
-                                             arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > const & dViscosity,
+                                             arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > const & dViscosity,
                                              arrayView1d< real64 > const & mobility,
                                              arrayView2d< real64, constitutive::singlefluid::USD_FLUID > const & dMobility )
   {
@@ -103,8 +67,7 @@ struct MobilityKernel
     } );
   }
 
-
-// Value-only (no derivatives) version
+  // Value-only (no derivatives) version
   template< typename POLICY >
   static void launch( localIndex const size,
                       arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const & dens,

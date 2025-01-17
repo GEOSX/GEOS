@@ -32,7 +32,7 @@ namespace fields
 namespace slurryfluid
 {
 using array2dLayoutFluid = array2d< real64, constitutive::singlefluid::LAYOUT_FLUID >;
-using array3dLayoutFluid_dC = array3d< real64, constitutive::singlefluid::LAYOUT_FLUID_DC >;
+using array3dLayoutFluid_der = array3d< real64, constitutive::singlefluid::LAYOUT_FLUID_DER >;
 
 DECLARE_FIELD( dDensity_dProppantConcentration,
                "dDens_dProppantConc",
@@ -84,7 +84,7 @@ DECLARE_FIELD( fluidDensity,
 
 DECLARE_FIELD( dFluidDensity,
                "dFluidDensity",
-               array3dLayoutFluid_dC,
+               array3dLayoutFluid_der,
                0,
                LEVEL_0,
                WRITE_AND_READ,

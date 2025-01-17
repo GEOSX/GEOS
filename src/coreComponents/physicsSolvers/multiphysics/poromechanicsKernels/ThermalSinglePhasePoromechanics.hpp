@@ -283,7 +283,7 @@ protected:
   /// Views on fluid internal energy
   arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const m_fluidInternalEnergy_n;
   arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const m_fluidInternalEnergy;
-  arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > const m_dFluidInternalEnergy;
+  arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > const m_dFluidInternalEnergy;
 
 
   /// Views on rock internal energy

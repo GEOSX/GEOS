@@ -34,7 +34,7 @@ namespace constitutive
 class ProppantSlurryFluidUpdate final : public SlurryFluidBaseUpdate
 {
 public:
-  using SingleFluidProp = SingleFluidVar< real64, 2, constitutive::singlefluid::LAYOUT_FLUID, constitutive::singlefluid::LAYOUT_FLUID_DC >;
+  using SingleFluidProp = SingleFluidVar< real64, 2, constitutive::singlefluid::LAYOUT_FLUID, constitutive::singlefluid::LAYOUT_FLUID_DER >;
   using DerivOffset = constitutive::singlefluid::DerivativeOffsetC< 0 >;
 
   /**
@@ -82,7 +82,7 @@ public:
                              arrayView1d< real64 const > const & Ks,
                              bool const isNewtonianFluid,
                              arrayView2d< real64, constitutive::singlefluid::USD_FLUID > const & density,
-                             arrayView3d< real64, constitutive::singlefluid::USD_FLUID_DC > const & dDensity,
+                             arrayView3d< real64, constitutive::singlefluid::USD_FLUID_DER > const & dDensity,
                              arrayView2d< real64 > const & dDens_dProppantConc,
                              arrayView3d< real64 > const & dDens_dCompConc,
                              arrayView3d< real64 > const & componentDensity,
@@ -95,7 +95,7 @@ public:
                              arrayView2d< real64 > const & dFluidVisc_dPres,
                              arrayView3d< real64 > const & dFluidVisc_dCompConc,
                              arrayView2d< real64, constitutive::singlefluid::USD_FLUID > const & viscosity,
-                             arrayView3d< real64, constitutive::singlefluid::USD_FLUID_DC > const & dViscosity,
+                             arrayView3d< real64, constitutive::singlefluid::USD_FLUID_DER > const & dViscosity,
                              arrayView2d< real64 > const & dVisc_dProppantConc,
                              arrayView3d< real64 > const & dVisc_dCompConc )
     : SlurryFluidBaseUpdate( defaultComponentDensity,

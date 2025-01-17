@@ -24,7 +24,6 @@
 #include "common/GEOS_RAJA_Interface.hpp"
 #include "constitutive/fluid/singlefluid/SingleFluidBase.hpp"
 #include "constitutive/fluid/singlefluid/SingleFluidUtils.hpp"
-///#include "constitutive/fluid/singlefluid/SingleFluidLayouts.hpp"
 #include "constitutive/solid/CoupledSolidBase.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
 #include "codingUtilities/Utilities.hpp"
@@ -46,7 +45,7 @@ class AccumulationKernel
 {
 
 public:
-  using SingleFluidProp = constitutive::SingleFluidVar< real64, 2, constitutive::singlefluid::LAYOUT_FLUID, constitutive::singlefluid::LAYOUT_FLUID_DC >;
+  using SingleFluidProp = constitutive::SingleFluidVar< real64, 2, constitutive::singlefluid::LAYOUT_FLUID, constitutive::singlefluid::LAYOUT_FLUID_DER >;
 
   /// Compute time value for the number of degrees of freedom
   static constexpr integer numDof = NUM_DOF;
@@ -242,7 +241,7 @@ protected:
 
   /// Views on density
   arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID >  const m_density;
-  arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > const m_dDensity;
+  arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > const m_dDensity;
 
   /// View on mass
   arrayView1d< real64 const > const m_mass_n;

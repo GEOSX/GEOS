@@ -312,7 +312,7 @@ private:
   ElementViewConst< arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > > const m_enthalpy;
 
   /// Views on enthalpies
-  ElementViewConst< arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > > const m_dEnthalpy;
+  ElementViewConst< arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > > const m_dEnthalpy;
 
   /// View on thermal conductivity
   ElementViewConst< arrayView3d< real64 const > > m_thermalConductivity;

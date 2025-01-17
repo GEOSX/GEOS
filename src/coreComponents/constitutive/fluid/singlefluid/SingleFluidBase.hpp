@@ -35,7 +35,7 @@ namespace constitutive
 class SingleFluidBaseUpdate
 {
 public:
-  using SingleFluidProp = SingleFluidVar< real64, 2, constitutive::singlefluid::LAYOUT_FLUID, constitutive::singlefluid::LAYOUT_FLUID_DC >;
+  using SingleFluidProp = SingleFluidVar< real64, 2, constitutive::singlefluid::LAYOUT_FLUID, constitutive::singlefluid::LAYOUT_FLUID_DER >;
 
   /**
    * @brief Get number of elements in this wrapper.
@@ -61,9 +61,9 @@ protected:
    * @param dVisc_dPres derivative of viscosity w.r.t. pressure
    */
   SingleFluidBaseUpdate( arrayView2d< real64, constitutive::singlefluid::USD_FLUID >  const & density,
-                         arrayView3d< real64, constitutive::singlefluid::USD_FLUID_DC >  const & dDensity,
+                         arrayView3d< real64, constitutive::singlefluid::USD_FLUID_DER >  const & dDensity,
                          arrayView2d< real64, constitutive::singlefluid::USD_FLUID > const & viscosity,
-                         arrayView3d< real64, constitutive::singlefluid::USD_FLUID_DC >  const & dViscosity )
+                         arrayView3d< real64, constitutive::singlefluid::USD_FLUID_DER >  const & dViscosity )
     :
     m_density( density ),
     m_dDensity( dDensity ),
@@ -96,11 +96,11 @@ protected:
 
   /// Fluid density property and derivatives
   arrayView2d< real64, constitutive::singlefluid::USD_FLUID >  m_density;
-  arrayView3d< real64, constitutive::singlefluid::USD_FLUID_DC >  m_dDensity;
+  arrayView3d< real64, constitutive::singlefluid::USD_FLUID_DER >  m_dDensity;
 
   /// Fluid viscosity property and derivatives
   arrayView2d< real64, constitutive::singlefluid::USD_FLUID > m_viscosity;
-  arrayView3d< real64, constitutive::singlefluid::USD_FLUID_DC > m_dViscosity;
+  arrayView3d< real64, constitutive::singlefluid::USD_FLUID_DER > m_dViscosity;
 
 
 //END_SPHINX_INCLUDE_01
@@ -215,7 +215,7 @@ class SingleFluidBase : public ConstitutiveBase
 {
 public:
 
-  using SingleFluidProp = SingleFluidVar< real64, 2, constitutive::singlefluid::LAYOUT_FLUID, constitutive::singlefluid::LAYOUT_FLUID_DC >;
+  using SingleFluidProp = SingleFluidVar< real64, 2, constitutive::singlefluid::LAYOUT_FLUID, constitutive::singlefluid::LAYOUT_FLUID_DER >;
 
   /**
    * @brief Constructor.
@@ -241,7 +241,7 @@ public:
   arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > density() const { return m_density.value; }
   arrayView2d< real64, constitutive::singlefluid::USD_FLUID > density() { return m_density.value; }
 
-  arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > dDensity() const
+  arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > dDensity() const
   { return m_density.derivs; }
 
   arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > density_n() const { return m_density_n; }
@@ -250,16 +250,16 @@ public:
   arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > viscosity() const { return m_viscosity.value; }
   arrayView2d< real64, constitutive::singlefluid::USD_FLUID > viscosity() { return m_viscosity.value; }
 
-  arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > dViscosity() const
+  arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > dViscosity() const
   { return m_viscosity.derivs; }
 
   arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > internalEnergy() const { return m_internalEnergy.value; }
   arrayView2d< real64, constitutive::singlefluid::USD_FLUID > internalEnergy() { return m_internalEnergy.value; }
 
-  arrayView3d< real64, constitutive::singlefluid::USD_FLUID_DC > dInternalEnergy()
+  arrayView3d< real64, constitutive::singlefluid::USD_FLUID_DER > dInternalEnergy()
   { return m_internalEnergy.derivs; }
 
-  arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > dInternalEnergy() const
+  arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > dInternalEnergy() const
   { return m_internalEnergy.derivs; }
 
   arrayView2d< real64, constitutive::singlefluid::USD_FLUID > internalEnergy_n() { return m_internalEnergy_n; }
@@ -268,9 +268,9 @@ public:
   arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > enthalpy() const { return m_enthalpy.value; }
   arrayView2d< real64, constitutive::singlefluid::USD_FLUID > enthalpy() { return m_enthalpy.value; }
 
-  arrayView3d< real64, constitutive::singlefluid::USD_FLUID_DC > dEnthalpy()
+  arrayView3d< real64, constitutive::singlefluid::USD_FLUID_DER > dEnthalpy()
   { return m_enthalpy.derivs; }
-  arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > dEnthalpy() const
+  arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > dEnthalpy() const
   { return m_enthalpy.derivs; }
 
 

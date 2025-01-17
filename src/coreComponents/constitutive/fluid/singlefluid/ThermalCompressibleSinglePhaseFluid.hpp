@@ -51,13 +51,13 @@ public:
                                         ViscRelationType const & viscRelation,
                                         IntEnergyRelationType const & intEnergyRelation,
                                         arrayView2d< real64, constitutive::singlefluid::USD_FLUID > const & density,
-                                        arrayView3d< real64, constitutive::singlefluid::USD_FLUID_DC > const & dDensity,
+                                        arrayView3d< real64, constitutive::singlefluid::USD_FLUID_DER > const & dDensity,
                                         arrayView2d< real64, constitutive::singlefluid::USD_FLUID > const & viscosity,
-                                        arrayView3d< real64, constitutive::singlefluid::USD_FLUID_DC > const & dViscosity,
+                                        arrayView3d< real64, constitutive::singlefluid::USD_FLUID_DER > const & dViscosity,
                                         arrayView2d< real64, constitutive::singlefluid::USD_FLUID > const & internalEnergy,
-                                        arrayView3d< real64, constitutive::singlefluid::USD_FLUID_DC > const & dInternalEnergy,
+                                        arrayView3d< real64, constitutive::singlefluid::USD_FLUID_DER > const & dInternalEnergy,
                                         arrayView2d< real64, constitutive::singlefluid::USD_FLUID > const & enthalpy,
-                                        arrayView3d< real64, constitutive::singlefluid::USD_FLUID_DC > const & dEnthalpy,
+                                        arrayView3d< real64, constitutive::singlefluid::USD_FLUID_DER > const & dEnthalpy,
                                         real64 const & refIntEnergy )
     : SingleFluidBaseUpdate( density,
                              dDensity,
@@ -169,11 +169,11 @@ private:
 
   /// Fluid internal energy and derivatives
   arrayView2d< real64, constitutive::singlefluid::USD_FLUID > m_internalEnergy;
-  arrayView3d< real64, constitutive::singlefluid::USD_FLUID_DC > m_dInternalEnergy;
+  arrayView3d< real64, constitutive::singlefluid::USD_FLUID_DER > m_dInternalEnergy;
 
   /// Fluid enthalpy and derivatives
   arrayView2d< real64, constitutive::singlefluid::USD_FLUID > m_enthalpy;
-  arrayView3d< real64, constitutive::singlefluid::USD_FLUID_DC > m_dEnthalpy;
+  arrayView3d< real64, constitutive::singlefluid::USD_FLUID_DER > m_dEnthalpy;
 
   /// Relationship between the fluid density and pressure & temperature
   DensRelationType m_densRelation;

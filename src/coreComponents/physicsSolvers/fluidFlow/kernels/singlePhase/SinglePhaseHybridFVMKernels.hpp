@@ -661,7 +661,7 @@ protected:
   arrayView1d< real64 const > const m_elemPres;
   arrayView1d< real64 const > const m_facePres;
   arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const m_elemDens;
-  arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > const m_dElemDens;
+  arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > const m_dElemDens;
   ElementViewConst< arrayView1d< real64 const > > const m_mob;
   ElementViewConst< arrayView2d< real64 const > > const m_dMob;
 
