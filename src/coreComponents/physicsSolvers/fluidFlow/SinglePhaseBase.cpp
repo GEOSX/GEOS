@@ -1024,7 +1024,7 @@ void SinglePhaseBase::applySourceFluxBC( real64 const time_n,
           getConstitutiveModel< SingleFluidBase >( subRegion, subRegion.template getReference< string >( viewKeyStruct::fluidNamesString() ) );
 
         arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const enthalpy = fluid.enthalpy();
-        arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > const dEnthalpy = fluid.dEnthalpy();
+        arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > const dEnthalpy = fluid.dEnthalpy();
         forAll< parallelDevicePolicy<> >( targetSet.size(), [sizeScalingFactor,
                                                              targetSet,
                                                              rankOffset,

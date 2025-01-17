@@ -64,9 +64,9 @@ struct MobilityKernel
   template< typename POLICY >
   static void launch( localIndex const size,
                       arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const & dens,
-                      arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > const & dDens,
+                      arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > const & dDens,
                       arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const & visc,
-                      arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > const & dVisc,
+                      arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > const & dVisc,
                       arrayView1d< real64 > const & mob,
                       arrayView1d< real64 > const & dMob_dPres )
   {
@@ -86,9 +86,9 @@ struct MobilityKernel
   template< typename POLICY, integer NUMDOF >
   static void compute_value_and_derivatives( localIndex const size,
                                              arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const & density,
-                                             arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > const & dDensity,
+                                             arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > const & dDensity,
                                              arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const & viscosity,
-                                             arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > const & dViscosity,
+                                             arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > const & dViscosity,
                                              arrayView1d< real64 > const & mobility,
                                              arrayView2d< real64, constitutive::singlefluid::USD_FLUID > const & dMobility )
   {

@@ -62,7 +62,7 @@ public:
 
   using DofNumberAccessor = ElementRegionManager::ElementViewAccessor< arrayView1d< globalIndex const > >;
 
-  using SingleFluidProp = constitutive::SingleFluidVar< real64, 2, constitutive::singlefluid::LAYOUT_FLUID, constitutive::singlefluid::LAYOUT_FLUID_DC >;
+  using SingleFluidProp = constitutive::SingleFluidVar< real64, 2, constitutive::singlefluid::LAYOUT_FLUID, constitutive::singlefluid::LAYOUT_FLUID_DER >;
 
   using SinglePhaseFlowAccessors =
     StencilAccessors< fields::ghostRank,
@@ -159,7 +159,7 @@ protected:
 
   /// Views on fluid density
   ElementViewConst< arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > > const m_dens;
-  ElementViewConst< arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > > const m_dDens;
+  ElementViewConst< arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > > const m_dDens;
 
   // Residual and jacobian
 

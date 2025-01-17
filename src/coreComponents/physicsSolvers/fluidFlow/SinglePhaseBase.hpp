@@ -47,7 +47,7 @@ class ConstitutiveBase;
 class SinglePhaseBase : public FlowSolverBase
 {
 public:
-  using SingleFluidProp = constitutive::SingleFluidVar< real64, 2, constitutive::singlefluid::LAYOUT_FLUID, constitutive::singlefluid::LAYOUT_FLUID_DC >;
+  using SingleFluidProp = constitutive::SingleFluidVar< real64, 2, constitutive::singlefluid::LAYOUT_FLUID, constitutive::singlefluid::LAYOUT_FLUID_DER >;
 
   /**
    * @brief main constructor for Group Objects
@@ -401,9 +401,9 @@ protected:
   struct FluidPropViews
   {
     arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const dens;             ///< density
-    arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > const dDens;             ///< density derivatives
+    arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > const dDens;             ///< density derivatives
     arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const visc;             ///< viscosity
-    arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DC > const dVisc;             ///< viscosity derivatives
+    arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > const dVisc;             ///< viscosity derivatives
     real64 const defaultDensity;                     ///< default density to use for new elements
     real64 const defaultViscosity;                    ///< default vi to use for new elements
   };
