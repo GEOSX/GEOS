@@ -90,7 +90,7 @@ void SinglePhaseWell::registerDataOnMesh( Group & meshBodies )
 
       PerforationData & perforationData = *subRegion.getPerforationData();
       perforationData.registerField< fields::well::perforationRate >( getName() );
-            perforationData.registerField< fields::well::dPerforationRate >( getName() ).reference().resizeDimension< 1, 2 >( 2,  2 );
+      perforationData.registerField< fields::well::dPerforationRate >( getName() ).reference().resizeDimension< 1, 2 >( 2, 2 );
       if( isThermal() )
       {
         perforationData.registerField< fields::well::energyPerforationFlux >( getName() );
