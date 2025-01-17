@@ -155,6 +155,10 @@ Geomechanics::Geomechanics( string const & name, Group * const parent ):
     setInputFlag( InputFlags::REQUIRED ).
     setDescription( "Rate dependence parameter 2" );
 
+  registerWrapper( viewKeyStruct::fractureEnergyReleaseRateString(), &m_fractureEnergyReleaseRate ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Fracture energy release rate parameter" );
+
   registerWrapper( viewKeyStruct::peakT1String(), &m_peakT1 ).
     setInputFlag( InputFlags::REQUIRED ).
     setDescription( "Peak T1 shear limit parameter" );
@@ -269,10 +273,6 @@ Geomechanics::Geomechanics( string const & name, Group * const parent ):
     setPlotLevel( PlotLevel::NOPLOT ).
     setDescription( "Array of quadrature point length scale values" );
 
-  registerWrapper( viewKeyStruct::fractureEnergyReleaseRateString(), &m_fractureEnergyReleaseRate ).
-    setApplyDefaultValue( 0.0 ).
-    setPlotLevel( PlotLevel::NOPLOT ).
-    setDescription( "fracture energy release rate" );
 }
 
 

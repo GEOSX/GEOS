@@ -1446,7 +1446,7 @@ void GeomechanicsUpdates::computeCoher( const real64 & lch,       // length scal
 ) const
 {
 	coher_new = coher_old;
-	if( Gf > 0 )
+	if( Gf > 1.e-16 )
 	{
 		// real64 d_I1 = I1_trial - I1_0; // Seemed unused
 		if ( d_evp > 0 && ( I1_trial - I1_0 ) > 0 )
@@ -2635,6 +2635,9 @@ public:
     /// string/key for rate dependence parameter 2
     static constexpr char const * t2RateDependenceString() { return "t2RateDependence"; }
 
+    /// string/key for fracture energy release rate
+    static constexpr char const * fractureEnergyReleaseRateString() { return "fractureEnergyReleaseRate"; }
+
     /// string/key for peak t1 shear limit parameter
     static constexpr char const * peakT1String() { return "peakT1"; }
 
@@ -2649,9 +2652,6 @@ public:
 
     /// string/key for nonassociativity parameter
     static constexpr char const * betaString() { return "beta"; }
-
-    /// string/key for fracture energy release rate
-    static constexpr char const * fractureEnergyReleaseRateString() { return "fractureEnergyReleaseRate"; }
 
     /// string/key for creep flag
     static constexpr char const * creepString() { return "enableCreep"; }
