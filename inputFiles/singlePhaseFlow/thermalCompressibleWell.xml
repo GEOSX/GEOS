@@ -1,0 +1,53 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Included>
+    <File name="./thermalCompressibleWell_base.xml" />
+  </Included>
+
+  <Mesh>
+    <InternalMesh
+      name="mesh1"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0, 100 }"
+      yCoords="{ 0, 100 }"
+      zCoords="{ 0, 100 }"
+      nx="{ 10 }"
+      ny="{ 10 }"
+      nz="{ 10 }"
+      cellBlockNames="{ cb }">
+      <InternalWell
+        name="well_injector1"
+        wellRegionName="wellRegion2"
+        wellControlsName="wellControls2"
+        polylineNodeCoords="{ { 5.0,5.0, .99 },
+                              { 5.0, 5.0, .01 } }"
+        polylineSegmentConn="{ { 0, 1 } }"
+        radius="0.1"
+        numElementsPerSegment="2">
+        <Perforation
+          name="injector1_perf1"
+          distanceFromHead="0.5"/>
+      </InternalWell>
+    </InternalMesh>
+  </Mesh>
+
+  <Events
+    maxTime="1.5e7">
+    <PeriodicEvent
+      name="outputs"
+      timeFrequency="2.5e6"
+      target="/Outputs/vtkOutput"/>
+
+    <PeriodicEvent
+      name="solverApplications"
+      maxEventDt="2.5e6"
+      target="/Solvers/coupledFlowAndWells"/>
+
+    <PeriodicEvent
+      name="restarts"
+      timeFrequency="7.5e6"
+      target="/Outputs/restartOutput"/>
+  </Events>
+
+</Problem>

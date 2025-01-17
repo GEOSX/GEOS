@@ -1,0 +1,173 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Solvers>
+    <SinglePhaseReservoir
+      name="coupledFlowAndWells"
+      flowSolverName="singlePhaseFlow"
+      wellSolverName="singlePhaseWell"
+      logLevel="1"
+      initialDt="1e3"
+      targetRegions="{region , wellRegion2 }">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-3"
+        maxTimeStepCuts="10"
+        lineSearchAction="None"
+        timeStepIncreaseIterLimit="0.3"
+        timeStepDecreaseIterLimit="0.6"
+        maxSubSteps="20"
+        newtonMaxIter="15"/>
+      <LinearSolverParameters
+        solverType="fgmres"
+        krylovMaxIter="100"
+        krylovTol="1e-6"
+        logLevel="1"/>
+    </SinglePhaseReservoir>
+
+    <SinglePhaseFVM
+      name="singlePhaseFlow"
+      logLevel="1"
+      discretization="tpfaFlow"
+      temperature="353.0"
+      isThermal="1"
+      targetRegions="{ region }">
+    </SinglePhaseFVM>
+
+    <SinglePhaseWell
+      name="singlePhaseWell"
+      logLevel="1"
+      isThermal="1"
+      targetRegions="{ wellRegion2 }">
+      <WellControls
+        name="wellControls2"
+        type="injector"
+        control="BHP"
+        referenceElevation="-0.01"
+        targetBHP="1.45e7"
+        enableCrossflow="0"
+        useSurfaceConditions="1"
+        surfacePressure="1.45e7"
+        surfaceTemperature="300.15"
+        targetTotalRate="15"
+        injectionTemperature="323"
+        injectionStream="{1.0,0.0}"/>
+    </SinglePhaseWell>
+  </Solvers>
+
+  <Geometry>
+    <Box
+      name="sink"
+      xMin="{ 89.99, 89.99, 89.99 }"
+      xMax="{ 100.01, 100.01, 100.01 }"/>
+
+    <Box
+      name="source"
+      xMin="{ -0.01, -0.01, -0.01 }"
+      xMax="{ 10.01, 10.01, 10.01 }"/>
+  </Geometry>
+
+  <NumericalMethods>
+    <FiniteVolume>
+      <TwoPointFluxApproximation
+        name="tpfaFlow"/>
+    </FiniteVolume>
+  </NumericalMethods>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="region"
+      cellBlocks="{ * }"
+      materialList="{ fluid, rock, thermalCond }"/>
+    <WellElementRegion
+      name="wellRegion2"
+      materialList="{ fluid }"/>
+  </ElementRegions>
+
+  <Constitutive>
+
+    <CompressibleSolidConstantPermeability
+      name="rock"
+      solidModelName="nullSolid"
+      porosityModelName="rockPorosity"
+      permeabilityModelName="rockPerm"
+      solidInternalEnergyModelName="rockInternalEnergy"/>
+
+    <NullModel
+      name="nullSolid"/>
+
+    <PressurePorosity
+      name="rockPorosity"
+      defaultReferencePorosity="0.01"
+      referencePressure="0.0"
+      compressibility="3.0e-11"/>
+
+    <SolidInternalEnergy
+      name="rockInternalEnergy"
+      referenceVolumetricHeatCapacity="1.95e6"
+      referenceTemperature="273.0"
+      referenceInternalEnergy="5.33e8"/>
+
+    <ConstantPermeability
+      name="rockPerm"
+      permeabilityComponents="{ 1.0e-18, 1.0e-18, 1.0e-18 }"/>
+
+    <ThermalCompressibleSinglePhaseFluid
+      name="fluid"
+      defaultDensity="1000"
+      defaultViscosity="1e-4"
+      referencePressure="0.0"
+      referenceTemperature="273.0"
+      compressibility="5e-10"
+      thermalExpansionCoeff="3e-4"
+      viscosibility="0.0"
+      specificHeatCapacity="4.0e3"
+      referenceInternalEnergy="1.1e6"/>
+
+    <SinglePhaseThermalConductivity
+      name="thermalCond"
+      defaultThermalConductivityComponents="{ 3.5, 3.5, 3.5 }"/>
+    
+  </Constitutive>
+
+  <FieldSpecifications>
+
+    <FieldSpecification
+      name="initialPressure"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/region/cb"
+      fieldName="pressure"
+      scale="9e6"/>
+
+    <FieldSpecification
+      name="initialTemperature"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/region/cb"
+      fieldName="temperature"
+      scale="353.0"/>
+
+    <FieldSpecification
+      name="sinkPressure"
+      setNames="{ sink }"       
+      objectPath="ElementRegions/region/cb"
+      fieldName="pressure"
+      scale="7e6"/>
+
+    <FieldSpecification
+      name="sinkTemperature"
+      setNames="{ sink }"       
+      objectPath="ElementRegions/region/cb"
+      fieldName="temperature"
+      scale="473.0"/>
+
+  </FieldSpecifications>
+
+  <Outputs>
+    <VTK
+      name="vtkOutput"/>
+
+    <Restart
+      name="restartOutput"/>
+  </Outputs>
+</Problem>
