@@ -255,6 +255,7 @@ public:
         real64 compFlux[numComp]{};
         real64 dCompFlux_dP[numFluxSupportPoints][numComp]{};
         real64 dCompFlux_dC[numFluxSupportPoints][numComp][numComp]{};
+        real64 dCompFlux_dTrans[numComp]{};
 
         real64 const trans[numFluxSupportPoints] = { stack.transmissibility[connectionIndex][0],
                                                      stack.transmissibility[connectionIndex][1] };
@@ -271,6 +272,7 @@ public:
           real64 phaseFlux = 0.0;
           real64 dPhaseFlux_dP[numFluxSupportPoints]{};
           real64 dPhaseFlux_dC[numFluxSupportPoints][numComp]{};
+          real64 dPhaseFlux_dTrans = 0.0; // not really used
 
           if( m_kernelFlags.isSet( KernelFlags::C1PPU ) )
           {
@@ -358,15 +360,18 @@ public:
               potGrad,
               phaseFlux,
               dPhaseFlux_dP,
-              dPhaseFlux_dC );
+              dPhaseFlux_dC,
+              dPhaseFlux_dTrans );
           }
 
           // choose upstream cell for composition upwinding
           localIndex const k_up = (phaseFlux >= 0) ? 0 : 1;
 
-          //distribute on phaseComponentFlux here
-          PhaseComponentFlux::compute( ip, k_up, seri, sesri, sei, m_phaseCompFrac, m_dPhaseCompFrac, m_dCompFrac_dCompDens,
-                                       phaseFlux, dPhaseFlux_dP, dPhaseFlux_dC, compFlux, dCompFlux_dP, dCompFlux_dC );
+          // distribute on phaseComponentFlux here
+          PhaseComponentFlux::compute( ip, k_up, seri, sesri, sei,
+                                       m_phaseCompFrac, m_dPhaseCompFrac, m_dCompFrac_dCompDens,
+                                       phaseFlux, dPhaseFlux_dP, dPhaseFlux_dC, dPhaseFlux_dTrans,
+                                       compFlux, dCompFlux_dP, dCompFlux_dC, dCompFlux_dTrans );
 
           // call the lambda in the phase loop to allow the reuse of the phase fluxes and their derivatives
           // possible use: assemble the derivatives wrt temperature, and the flux term of the energy equation for this phase

@@ -1551,6 +1551,9 @@ struct IHUPhaseFlux
     real64 dTotMob_dP[numFluxSupportPoints]{};
     real64 dTotMob_dC[numFluxSupportPoints][numComp]{};
 
+    //unelegant but need dummy when forming PPU total velocity
+    real64 dPhaseFlux_dTrans;
+
     for( integer jp = 0; jp < numPhase; ++jp )
     {
       PPUPhaseFlux::compute( numPhase, jp,
@@ -1563,7 +1566,7 @@ struct IHUPhaseFlux
                              dCompFrac_dCompDens,
                              phaseMassDens, dPhaseMassDens,
                              phaseCapPressure, dPhaseCapPressure_dPhaseVolFrac,
-                             potGrad, phaseFlux, dPhaseFlux_dP, dPhaseFlux_dC );
+                             potGrad, phaseFlux, dPhaseFlux_dP, dPhaseFlux_dC, dPhaseFlux_dTrans );
 
       // accumulate into total flux
       UpwindHelpers::addToValueAndDerivatives( phaseFlux, dPhaseFlux_dP, dPhaseFlux_dC,

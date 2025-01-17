@@ -99,6 +99,7 @@ struct C1PPUPhaseFlux
            real64 ( & dPhaseFlux_dP )[numFluxSupportPoints],
            real64 ( & dPhaseFlux_dC )[numFluxSupportPoints][numComp] )
   {
+    real64 dPotGrad_dTrans = 0.0;
     real64 dPresGrad_dP[numFluxSupportPoints]{};
     real64 dPresGrad_dC[numFluxSupportPoints][numComp]{};
     real64 dGravHead_dP[numFluxSupportPoints]{};
@@ -106,7 +107,8 @@ struct C1PPUPhaseFlux
     PotGrad::compute< numComp, numFluxSupportPoints >( numPhase, ip, hasCapPressure, checkPhasePresenceInGravity,
                                                        seri, sesri, sei, trans, dTrans_dPres, pres, gravCoef,
                                                        phaseVolFrac, dPhaseVolFrac, dCompFrac_dCompDens, phaseMassDens, dPhaseMassDens,
-                                                       phaseCapPressure, dPhaseCapPressure_dPhaseVolFrac, potGrad, dPresGrad_dP,
+                                                       phaseCapPressure, dPhaseCapPressure_dPhaseVolFrac,
+                                                       potGrad, dPotGrad_dTrans, dPresGrad_dP,
                                                        dPresGrad_dC, dGravHead_dP, dGravHead_dC );
 
     // gravity head

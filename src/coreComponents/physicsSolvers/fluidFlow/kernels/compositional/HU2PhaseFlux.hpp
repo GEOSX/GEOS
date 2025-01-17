@@ -443,6 +443,7 @@ protected:
       real64 phaseFlux{};
       real64 dPhaseFlux_dP[numFluxSupportPoints]{};
       real64 dPhaseFlux_dC[numFluxSupportPoints][numComp]{};
+      real64 dPhaseFlux_dTrans{};
       PPUPhaseFlux::compute( numPhase, jp,
                              hasCapPressure,
                              checkPhasePresenceInGravity,
@@ -454,7 +455,7 @@ protected:
                              dCompFrac_dCompDens,
                              phaseMassDens, dPhaseMassDens,
                              phaseCapPressure, dPhaseCapPressure_dPhaseVolFrac,
-                             potGrad, phaseFlux, dPhaseFlux_dP, dPhaseFlux_dC );
+                             potGrad, phaseFlux, dPhaseFlux_dP, dPhaseFlux_dC, dPhaseFlux_dTrans );
 
       UpwindHelpers::addToValueAndDerivatives( phaseFlux, dPhaseFlux_dP, dPhaseFlux_dC,
                                                totFlux, dTotFlux_dP, dTotFlux_dC );
