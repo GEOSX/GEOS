@@ -134,7 +134,7 @@ struct SolverSteps
 struct StencilConnection
 {
   static constexpr int getMinLogLevel() { return 1; }
-  static constexpr std::string_view getDescription() { return "Log strencil stored connection"; }
+  static constexpr std::string_view getDescription() { return "Log stencil stored connection"; }
 };
 
 struct StencilInitialization
