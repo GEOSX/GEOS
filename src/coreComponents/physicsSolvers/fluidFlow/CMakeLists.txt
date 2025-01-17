@@ -1,7 +1,6 @@
 # Specify solver headers
 set( physicsSolvers_headers
      ${physicsSolvers_headers}
-     fluidFlow/LogLevelsInfo.hpp
      fluidFlow/FlowSolverBase.hpp
      fluidFlow/FlowSolverBaseFields.hpp
      fluidFlow/CompositionalMultiphaseBase.hpp
