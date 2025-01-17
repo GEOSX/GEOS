@@ -378,12 +378,10 @@ template< typename FLOW_SOLVER, typename MECHANICS_SOLVER >
 void SinglePhasePoromechanics< FLOW_SOLVER, MECHANICS_SOLVER >::updateBulkDensity( ElementSubRegionBase & subRegion )
 {
   // get the fluid model (to access fluid density)
-  string const fluidName = subRegion.getReference< string >( FlowSolverBase::viewKeyStruct::fluidNamesString() );
-  SingleFluidBase const & fluid = this->template getConstitutiveModel< SingleFluidBase >( subRegion, fluidName );
+  SingleFluidBase const & fluid = this->template getConstitutiveModel< SingleFluidBase >( subRegion );
 
   // get the solid model (to access porosity and solid density)
-  string const solidName = subRegion.getReference< string >( viewKeyStruct::porousMaterialNamesString() );
-  CoupledSolidBase const & solid = this->template getConstitutiveModel< CoupledSolidBase >( subRegion, solidName );
+  CoupledSolidBase const & solid = this->template getConstitutiveModel< CoupledSolidBase >( subRegion );
 
   // update the bulk density
   poromechanicsKernels::

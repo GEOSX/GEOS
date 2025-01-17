@@ -400,19 +400,71 @@ void CompositionalMultiphaseBase::registerDataOnMesh( Group & meshBodies )
 
 void CompositionalMultiphaseBase::setConstitutiveNames( ElementSubRegionBase & subRegion ) const
 {
-  string const fluidName = getConstitutiveName< MultiFluidBase >( subRegion );
-  GEOS_LOG("fluidName=" << fluidName);
+  string & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
+  fluidName = getConstitutiveName< MultiFluidBase >( subRegion );
   GEOS_THROW_IF( fluidName.empty(),
                  GEOS_FMT( "{}: multiphase fluid model not found on subregion {}",
                            getDataContext(), subRegion.getDataContext() ),
                  InputError );
 
-  string const relPermName = getConstitutiveName< RelativePermeabilityBase >( subRegion );
-  GEOS_LOG("relPermName=" << relPermName);
+  string & relPermName = subRegion.registerWrapper< string >( viewKeyStruct::relPermNamesString() ).
+                           setPlotLevel( PlotLevel::NOPLOT ).
+                           setRestartFlags( RestartFlags::NO_WRITE ).
+                           setSizedFromParent( 0 ).
+                           setDescription( "Name of the relative permeability constitutive model to use" ).
+                           reference();
+  relPermName = getConstitutiveName< RelativePermeabilityBase >( subRegion );
   GEOS_THROW_IF( relPermName.empty(),
                  GEOS_FMT( "{}: Relative permeability model not found on subregion {}",
                            getDataContext(), subRegion.getDataContext() ),
                  InputError );
+
+  if( m_hasCapPressure )
+  {
+    subRegion.registerWrapper< string >( viewKeyStruct::capPressureNamesString() ).
+      setPlotLevel( PlotLevel::NOPLOT ).
+      setRestartFlags( RestartFlags::NO_WRITE ).
+      setSizedFromParent( 0 ).
+      setDescription( "Name of the capillary pressure constitutive model to use" ).
+      reference();
+
+    string & capPresName = subRegion.getReference< string >( viewKeyStruct::capPressureNamesString() );
+    capPresName = getConstitutiveName< CapillaryPressureBase >( subRegion );
+    GEOS_THROW_IF( capPresName.empty(),
+                    GEOS_FMT( "{}: Capillary pressure model not found on subregion {}",
+                              getDataContext(), subRegion.getDataContext() ),
+                    InputError );
+  }
+
+  if( m_hasDiffusion )
+  {
+    subRegion.registerWrapper< string >( viewKeyStruct::diffusionNamesString() ).
+      setPlotLevel( PlotLevel::NOPLOT ).
+      setRestartFlags( RestartFlags::NO_WRITE ).
+      setSizedFromParent( 0 ).
+      setDescription( "Name of the diffusion constitutive model to use" );
+
+    string & diffusionName = subRegion.getReference< string >( viewKeyStruct::diffusionNamesString() );
+    diffusionName = getConstitutiveName< DiffusionBase >( subRegion );
+    GEOS_THROW_IF( diffusionName.empty(),
+                    GEOS_FMT( "Diffusion model not found on subregion {}", subRegion.getName() ),
+                    InputError );
+  }
+
+  if( m_hasDispersion )
+  {
+    subRegion.registerWrapper< string >( viewKeyStruct::dispersionNamesString() ).
+      setPlotLevel( PlotLevel::NOPLOT ).
+      setRestartFlags( RestartFlags::NO_WRITE ).
+      setSizedFromParent( 0 ).
+      setDescription( "Name of the dispersion constitutive model to use" );
+
+    string & dispersionName = subRegion.getReference< string >( viewKeyStruct::dispersionNamesString() );
+    dispersionName = getConstitutiveName< DispersionBase >( subRegion );
+    GEOS_THROW_IF( dispersionName.empty(),
+                    GEOS_FMT( "Dispersion model not found on subregion {}", subRegion.getName() ),
+                    InputError );
+  }
 
   if( m_isThermal )
   {
