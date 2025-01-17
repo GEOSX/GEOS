@@ -21,11 +21,11 @@
 #include "mesh/DomainPartition.hpp"
 #include "SolidMechanicsLagrangeContactBubbleStab.hpp"
 
+#include "physicsSolvers/LogLevelsInfo.hpp"
 #include "physicsSolvers/contact/kernels/SolidMechanicsConformingContactKernelsBase.hpp"
 #include "physicsSolvers/contact/kernels/SolidMechanicsLagrangeContactKernels.hpp"
 #include "physicsSolvers/contact/kernels/SolidMechanicsDisplacementJumpUpdateKernels.hpp"
 #include "physicsSolvers/contact/kernels/SolidMechanicsContactFaceBubbleKernels.hpp"
-#include "physicsSolvers/contact/LogLevelsInfo.hpp"
 
 #include "constitutive/ConstitutiveManager.hpp"
 #include "constitutive/contact/FrictionSelector.hpp"

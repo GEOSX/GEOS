@@ -25,7 +25,7 @@
 #include "physicsSolvers/solidMechanics/SolidMechanicsLagrangianFEM.hpp"
 #include "fileIO/Outputs/OutputBase.hpp"
 #include "mesh/DomainPartition.hpp"
-#include "physicsSolvers/solidMechanics/LogLevelsInfo.hpp"
+#include "physicsSolvers/LogLevelsInfo.hpp"
 
 namespace geos
 {

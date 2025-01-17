@@ -24,8 +24,8 @@
 #include "finiteVolume/TwoPointFluxApproximation.hpp"
 #include "constitutive/permeability/PermeabilityBase.hpp"
 #include "constitutive/permeability/PermeabilityFields.hpp"
+#include "physicsSolvers/LogLevelsInfo.hpp"
 #include "physicsSolvers/fluidFlow/StencilAccessors.hpp"
-#include "physicsSolvers/fluidFlow/LogLevelsInfo.hpp"
 #include "physicsSolvers/PhysicsSolverManager.hpp"
 #include "common/format/table/TableFormatter.hpp"
 
@@ -60,6 +60,7 @@ StencilDataCollection::StencilDataCollection( const string & name,
   registerWrapper( viewKeyStruct::transmissibilityBAString(), &m_transmissibilityBA );
 
   addLogLevel< logInfo::StencilConnection >();
+  addLogLevel< logInfo::StencilInitialization >();
 }
 
 void StencilDataCollection::postInputInitialization()
@@ -110,7 +111,7 @@ void StencilDataCollection::initializePostInitialConditionsPostSubGroups()
     m_cellBGlobalId.resize( connCount );
     m_transmissibilityAB.resize( connCount );
     m_transmissibilityBA.resize( connCount );
-    GEOS_LOG_LEVEL_INFO_BY_RANK( logInfo::Initialization, GEOS_FMT( "{}: initialized {} connection buffer for '{}'.",
+    GEOS_LOG_LEVEL_INFO_BY_RANK( logInfo::StencilInitialization, GEOS_FMT( "{}: initialized {} connection buffer for '{}'.",
                                                                     getName(), connCount, m_discretization->getName() ) );
     ++supportedStencilCount;
   } );

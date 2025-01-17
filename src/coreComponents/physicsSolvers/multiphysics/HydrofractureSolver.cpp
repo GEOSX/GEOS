@@ -27,8 +27,7 @@
 #include "physicsSolvers/multiphysics/SinglePhasePoromechanics.hpp"
 #include "physicsSolvers/multiphysics/MultiphasePoromechanics.hpp"
 #include "physicsSolvers/fluidFlow/SinglePhaseBase.hpp"
-#include "physicsSolvers/surfaceGeneration/LogLevelsInfo.hpp"
-#include "dataRepository/LogLevelsInfo.hpp"
+#include "physicsSolvers/LogLevelsInfo.hpp"
 #include "mesh/MeshFields.hpp"
 #include "finiteVolume/FluxApproximationBase.hpp"
 

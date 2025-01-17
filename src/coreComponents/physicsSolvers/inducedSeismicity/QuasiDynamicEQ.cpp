@@ -23,8 +23,7 @@
 #include "mesh/DomainPartition.hpp"
 #include "kernels/RateAndStateKernels.hpp"
 #include "rateAndStateFields.hpp"
-#include "LogLevelsInfo.hpp"
-#include "physicsSolvers/inducedSeismicity/LogLevelsInfo.hpp"
+#include "physicsSolvers/LogLevelsInfo.hpp"
 #include "physicsSolvers/contact/ContactFields.hpp"
 #include "fieldSpecification/FieldSpecificationManager.hpp"
 

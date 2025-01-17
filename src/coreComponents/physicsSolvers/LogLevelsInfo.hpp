@@ -42,6 +42,12 @@ struct CFL
   static constexpr std::string_view getDescription() { return "CFL information"; }
 };
 
+struct Configuration
+{
+  static constexpr int getMinLogLevel() { return 2; }
+  static constexpr std::string_view getDescription() { return "Configuration information"; }
+};
+
 struct Convergence
 {
   static constexpr int getMinLogLevel() { return 1; }
@@ -78,10 +84,22 @@ struct LineSearch
   static constexpr std::string_view getDescription() { return "Line search information"; }
 };
 
+struct Mapping
+{
+  static constexpr int getMinLogLevel() { return 2; }
+  static constexpr std::string_view getDescription() { return "Mapping information"; }
+};
+
 struct NonlinearSolver
 {
   static constexpr int getMinLogLevel() { return 1; }
   static constexpr std::string_view getDescription() { return "Nonlinear solver information"; }
+};
+
+struct RuptureRate
+{
+  static constexpr int getMinLogLevel() { return 3; }
+  static constexpr std::string_view getDescription() { return "Rupture rate information"; }
 };
 
 struct Solution
@@ -107,16 +125,34 @@ struct SolverExecutionDetails
   static constexpr std::string_view getDescription() { return "More precise information on solver execution"; }
 };
 
+struct SolverSteps
+{
+  static constexpr int getMinLogLevel() { return 1; }
+  static constexpr std::string_view getDescription() { return "Solver step Information"; }
+};
+
 struct StencilConnection
 {
   static constexpr int getMinLogLevel() { return 1; }
   static constexpr std::string_view getDescription() { return "Log strencil stored connection"; }
 };
 
+struct StencilInitialization
+{
+  static constexpr int getMinLogLevel() { return 1; }
+  static constexpr std::string_view getDescription() { return "Information on stencil Initialization"; }
+};
+
 struct Statistics
 {
   static constexpr int getMinLogLevel() { return 1; }
   static constexpr std::string_view getDescription() { return "Print statistics"; }
+};
+
+struct SurfaceGenerator
+{
+  static constexpr int getMinLogLevel() { return 1; }
+  static constexpr std::string_view getDescription() { return "Fracture generation information"; }
 };
 
 struct TimeStep

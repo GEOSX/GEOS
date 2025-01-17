@@ -22,7 +22,7 @@
 #define GEOS_PHYSICSSOLVERS_MULTIPHYSICS_COUPLEDSOLVER_HPP_
 
 #include "physicsSolvers/PhysicsSolverBase.hpp"
-#include "physicsSolvers/multiphysics/LogLevelsInfo.hpp"
+#include "physicsSolvers/LogLevelsInfo.hpp"
 
 #include <tuple>
 

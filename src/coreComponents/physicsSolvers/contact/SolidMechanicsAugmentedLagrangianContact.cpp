@@ -26,7 +26,6 @@
 #include "physicsSolvers/contact/kernels/SolidMechanicsALMSimultaneousKernels.hpp"
 #include "physicsSolvers/contact/kernels/SolidMechanicsDisplacementJumpUpdateKernels.hpp"
 #include "physicsSolvers/contact/kernels/SolidMechanicsContactFaceBubbleKernels.hpp"
-#include "physicsSolvers/contact/LogLevelsInfo.hpp"
 
 #include "constitutive/ConstitutiveManager.hpp"
 #include "constitutive/contact/FrictionSelector.hpp"
