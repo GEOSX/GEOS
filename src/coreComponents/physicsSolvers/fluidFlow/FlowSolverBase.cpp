@@ -292,20 +292,13 @@ void FlowSolverBase::setConstitutiveNamesCallSuper( ElementSubRegionBase & subRe
 {
   PhysicsSolverBase::setConstitutiveNamesCallSuper( subRegion );
 
-  string const solidName = getConstitutiveName< CoupledSolidBase >( subRegion );
-  GEOS_ERROR_IF( solidName.empty(), GEOS_FMT( "{}: Solid model not found on subregion {}",
-                                              getDataContext(), subRegion.getName() ) );
+  setConstitutiveName< CoupledSolidBase >( subRegion, viewKeyStruct::solidNamesString());
 
-  string const permName = getConstitutiveName< PermeabilityBase >( subRegion );
-  GEOS_ERROR_IF( permName.empty(), GEOS_FMT( "{}: Permeability model not found on subregion {}",
-                                             getDataContext(), subRegion.getName() ) );
+  setConstitutiveName< PermeabilityBase >( subRegion, viewKeyStruct::permeabilityNamesString());
 
   if( m_isThermal )
   {
-    string const solidInternalEnergyName = getConstitutiveName< SolidInternalEnergy >( subRegion );
-    GEOS_ERROR_IF( solidInternalEnergyName.empty(),
-                   GEOS_FMT( "{}: Solid internal energy model not found on subregion {}",
-                             getDataContext(), subRegion.getName() ) );
+    setConstitutiveName< SolidInternalEnergy >( subRegion, viewKeyStruct::solidInternalEnergyNamesString());
   }
 }
 

@@ -592,7 +592,9 @@ assembleFluidMassResidualDerivativeWrtDisplacement( MeshLevel const & mesh,
                                                             [&]( localIndex const,
                                                                  FaceElementSubRegion const & subRegion )
   {
-    SingleFluidBase const & fluid = this->template getConstitutiveModel< SingleFluidBase >( subRegion );
+    string const & fluidName = subRegion.getReference< string >( FlowSolverBase::viewKeyStruct::fluidNamesString() );
+
+    SingleFluidBase const & fluid = this->template getConstitutiveModel< SingleFluidBase >( subRegion, fluidName );
     arrayView2d< real64 const > const & density = fluid.density();
 
     arrayView1d< globalIndex const > const & presDofNumber = subRegion.getReference< array1d< globalIndex > >( presDofKey );

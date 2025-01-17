@@ -78,7 +78,8 @@ void SinglePhaseWell::registerDataOnMesh( Group & meshBodies )
                                                               [&]( localIndex const,
                                                                    WellElementSubRegion & subRegion )
     {
-      string const fluidName = getConstitutiveName< SingleFluidBase >( subRegion );
+      string & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
+      fluidName = getConstitutiveName< SingleFluidBase >( subRegion );
       GEOS_ERROR_IF( fluidName.empty(), GEOS_FMT( "{}: Fluid model not found on subregion {}",
                                                   getDataContext(), subRegion.getName() ) );
 
@@ -164,7 +165,8 @@ void SinglePhaseWell::updateBHPForConstraint( WellElementSubRegion & subRegion )
     subRegion.getField< fields::well::gravityCoefficient >();
 
   // fluid data
-  SingleFluidBase & fluid = getConstitutiveModel< SingleFluidBase >( subRegion );
+  string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
+  SingleFluidBase & fluid = subRegion.getConstitutiveModel< SingleFluidBase >( fluidName );
   arrayView2d< real64 const > const & dens = fluid.density();
   arrayView2d< real64 const > const & dDens_dPres = fluid.dDensity_dPressure();
 
@@ -216,12 +218,15 @@ void SinglePhaseWell::updateVolRateForConstraint( WellElementSubRegion & subRegi
 
   // subRegion data
 
-  arrayView1d< real64 const > const pres = subRegion.getField< fields::well::pressure >();
-  arrayView1d< real64 const > const & connRate = subRegion.getField< fields::well::connectionRate >();
+  arrayView1d< real64 const > const pres =
+    subRegion.getField< fields::well::pressure >();
+  arrayView1d< real64 const > const & connRate =
+    subRegion.getField< fields::well::connectionRate >();
 
   // fluid data
 
-  SingleFluidBase & fluid = getConstitutiveModel< SingleFluidBase >( subRegion );
+  string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
+  SingleFluidBase & fluid = subRegion.getConstitutiveModel< SingleFluidBase >( fluidName );
   arrayView2d< real64 const > const & dens = fluid.density();
   arrayView2d< real64 const > const & dDens_dPres = fluid.dDensity_dPressure();
 
@@ -303,7 +308,8 @@ void SinglePhaseWell::updateFluidModel( WellElementSubRegion & subRegion ) const
   arrayView1d< real64 const > const pres = subRegion.getField< fields::well::pressure >();
   arrayView1d< real64 const > const temp = subRegion.getField< fields::well::temperature >();
 
-  SingleFluidBase & fluid = getConstitutiveModel< SingleFluidBase >( subRegion );
+  string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
+  SingleFluidBase & fluid = subRegion.getConstitutiveModel< SingleFluidBase >( fluidName );
 
   constitutiveUpdatePassThru( fluid, [&]( auto & castedFluid )
   {
@@ -403,7 +409,8 @@ void SinglePhaseWell::initializeWells( DomainPartition & domain, real64 const & 
       //       to better initialize the rates
       updateSubRegionState( subRegion );
 
-      SingleFluidBase & fluid = getConstitutiveModel< SingleFluidBase >( subRegion );
+      string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
+      SingleFluidBase & fluid = subRegion.getConstitutiveModel< SingleFluidBase >( fluidName );
       arrayView2d< real64 const > const & wellElemDens = fluid.density();
 
       // 5) Estimate the well rates
@@ -503,7 +510,8 @@ void SinglePhaseWell::assemblePressureRelations( real64 const & time_n,
         subRegion.getField< fields::well::pressure >();
 
       // get well constitutive data
-      SingleFluidBase const & fluid = getConstitutiveModel< SingleFluidBase >( subRegion );
+      string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
+      SingleFluidBase const & fluid = subRegion.getConstitutiveModel< SingleFluidBase >( fluidName );
       arrayView2d< real64 const > const & wellElemDensity = fluid.density();
       arrayView2d< real64 const > const & dWellElemDensity_dPres = fluid.dDensity_dPressure();
 
@@ -575,7 +583,8 @@ void SinglePhaseWell::assembleAccumulationTerms( real64 const & time_n,
 
       arrayView1d< real64 const > const wellElemVolume = subRegion.getElementVolume();
 
-      SingleFluidBase const & fluid = getConstitutiveModel< SingleFluidBase >( subRegion );
+      string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
+      SingleFluidBase const & fluid = subRegion.getConstitutiveModel< SingleFluidBase >( fluidName );
       arrayView2d< real64 const > const wellElemDensity = fluid.density();
       arrayView2d< real64 const > const dWellElemDensity_dPres = fluid.dDensity_dPressure();
       arrayView2d< real64 const > const wellElemDensity_n = fluid.density_n();
@@ -637,8 +646,8 @@ void SinglePhaseWell::computePerforationRates( real64 const & time_n,
         subRegion.getField< fields::well::pressure >();
 
       // get well constitutive data
-      SingleFluidBase const & fluid = getConstitutiveModel< SingleFluidBase >( subRegion );  
-      arrayView2d< real64 const > const wellElemDensity = fluid.density();
+      string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
+      SingleFluidBase const & fluid = subRegion.getConstitutiveModel< SingleFluidBase >( fluidName );  arrayView2d< real64 const > const wellElemDensity = fluid.density();
       arrayView2d< real64 const > const dWellElemDensity_dPres = fluid.dDensity_dPressure();
       arrayView2d< real64 const > const wellElemViscosity = fluid.viscosity();
       arrayView2d< real64 const > const dWellElemViscosity_dPres = fluid.dViscosity_dPressure();
@@ -716,7 +725,8 @@ SinglePhaseWell::calculateResidualNorm( real64 const & time_n,
     {
       real64 subRegionResidualNorm[1]{};
 
-      SingleFluidBase const & fluid = getConstitutiveModel< SingleFluidBase >( subRegion );
+      string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
+      SingleFluidBase const & fluid = subRegion.getConstitutiveModel< SingleFluidBase >( fluidName );
 
       WellControls const & wellControls = getWellControls( subRegion );
 
@@ -902,7 +912,8 @@ void SinglePhaseWell::implicitStepSetup( real64 const & time,
       arrayView1d< real64 > const connRate_n = subRegion.getField< fields::well::connectionRate_n >();
       connRate_n.setValues< parallelDevicePolicy<> >( connRate );
 
-      SingleFluidBase const & fluid = getConstitutiveModel< SingleFluidBase >( subRegion );
+      SingleFluidBase const & fluid =
+        getConstitutiveModel< SingleFluidBase >( subRegion, subRegion.getReference< string >( viewKeyStruct::fluidNamesString() ) );
       fluid.saveConvergedState();
 
       validateWellConstraints( time, dt, subRegion );

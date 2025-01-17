@@ -264,7 +264,7 @@ public:
 
   struct viewKeyStruct : PhysicsSolverBase::viewKeyStruct
   {
-    //static constexpr char const * fluidNamesString() { return "fluidNames"; }
+    static constexpr char const * fluidNamesString() { return "fluidNames"; }
     static constexpr char const * isThermalString() { return "isThermal"; }
     static constexpr char const * writeCSVFlagString() { return "writeCSV"; }
   };

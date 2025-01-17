@@ -141,19 +141,19 @@ public:
    * @brief Update all relevant fluid models using current values of pressure and composition
    * @param dataGroup the group storing the required fields
    */
-  void updateFluidModel( ElementSubRegionBase & subRegion ) const;
+  void updateFluidModel( ObjectManagerBase & dataGroup ) const;
 
   /**
    * @brief Update all relevant relperm models using current values of phase volume fraction
-   * @param subRegion the subregion storing the required fields
+   * @param dataGroup the group storing the required fields
    */
-  void updateRelPermModel( ElementSubRegionBase & subRegion ) const;
+  void updateRelPermModel( ObjectManagerBase & dataGroup ) const;
 
   /**
    * @brief Update all relevant capillary pressure models using current values of phase volume fraction
-   * @param subRegion the subregion storing the required fields
+   * @param dataGroup the group storing the required fields
    */
-  void updateCapPressureModel( ElementSubRegionBase & subRegion ) const;
+  void updateCapPressureModel( ObjectManagerBase & dataGroup ) const;
 
   /**
    * @brief Update components mass/moles
@@ -175,9 +175,9 @@ public:
 
   /**
    * @brief Recompute phase mobility from constitutive and primary variables
-   * @param subRegion the subregion storing the required fields
+   * @param dataGroup the group storing the required field
    */
-  virtual void updatePhaseMobility( ElementSubRegionBase & subRegion ) const = 0;
+  virtual void updatePhaseMobility( ObjectManagerBase & dataGroup ) const = 0;
 
   real64 updateFluidState( ElementSubRegionBase & subRegion ) const;
 
@@ -264,6 +264,10 @@ public:
     // inputs
 
     static constexpr char const * useMassFlagString() { return "useMass"; }
+    static constexpr char const * relPermNamesString() { return "relPermNames"; }
+    static constexpr char const * capPressureNamesString() { return "capPressureNames"; }
+    static constexpr char const * diffusionNamesString() { return "diffusionNames"; }
+    static constexpr char const * dispersionNamesString() { return "dispersionNames"; }
 
 
     // time stepping controls
@@ -562,8 +566,10 @@ void CompositionalMultiphaseBase::accumulationAssemblyLaunch( DofManager const &
                                                               CRSMatrixView< real64, globalIndex const > const & localMatrix,
                                                               arrayView1d< real64 > const & localRhs )
 {
-  constitutive::MultiFluidBase const & fluid = getConstitutiveModel< constitutive::MultiFluidBase >( subRegion );
-  constitutive::CoupledSolidBase const & solid = getConstitutiveModel< constitutive::CoupledSolidBase >( subRegion );
+  constitutive::MultiFluidBase const & fluid =
+    getConstitutiveModel< constitutive::MultiFluidBase >( subRegion, subRegion.template getReference< string >( viewKeyStruct::fluidNamesString() ) );
+  constitutive::CoupledSolidBase const & solid =
+    getConstitutiveModel< constitutive::CoupledSolidBase >( subRegion, subRegion.template getReference< string >( viewKeyStruct::solidNamesString() ) );
 
   string const dofKey = dofManager.getKey( viewKeyStruct::elemDofFieldString() );
 

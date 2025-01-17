@@ -225,11 +225,11 @@ private:
    * @brief Function to update fluid properties
    * @param domain the domain
    */
-  void updateFluidModel( ElementSubRegionBase & subRegion );
+  void updateFluidModel( ObjectManagerBase & dataGroup );
 
-  void updateComponentDensity( ElementSubRegionBase & subRegion );
+  void updateComponentDensity( ObjectManagerBase & dataGroup );
 
-  void updateProppantModel( ElementSubRegionBase & subRegion );
+  void updateProppantModel( ObjectManagerBase & dataGroup );
 
   /**
    * @brief Function to update cell-based fluid flux

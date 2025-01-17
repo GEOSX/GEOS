@@ -69,8 +69,6 @@ void ContactSolverBase::registerDataOnMesh( dataRepository::Group & meshBodies )
 
     fractureRegion.forElementSubRegions< SurfaceElementSubRegion >( [&]( SurfaceElementSubRegion & subRegion )
     {
-      setConstitutiveNamesCallSuper( subRegion );
-
       subRegion.registerField< fields::contact::dispJump >( getName() ).
         setDimLabels( 1, labels ).
         reference().resizeDimension< 1 >( 3 );
@@ -241,15 +239,9 @@ void ContactSolverBase::setConstitutiveNamesCallSuper( ElementSubRegionBase & su
   }
   else if( dynamic_cast< SurfaceElementSubRegion * >( &subRegion ) )
   {
-    subRegion.registerWrapper< string >( viewKeyStruct::frictionLawNameString() ).
-      setPlotLevel( PlotLevel::NOPLOT ).
-      setRestartFlags( RestartFlags::NO_WRITE ).
-      setSizedFromParent( 0 );
+    PhysicsSolverBase::setConstitutiveNamesCallSuper( subRegion );
 
-    string & frictionLawName = subRegion.getReference< string >( viewKeyStruct::frictionLawNameString() );
-    frictionLawName = PhysicsSolverBase::getConstitutiveName< FrictionBase >( subRegion );
-    GEOS_ERROR_IF( frictionLawName.empty(), GEOS_FMT( "{}: FrictionBase model not found on subregion {}",
-                                                      getDataContext(), subRegion.getDataContext() ) );
+    setConstitutiveName< FrictionBase >( subRegion, viewKeyStruct::frictionLawNameString());
   }
 }
 

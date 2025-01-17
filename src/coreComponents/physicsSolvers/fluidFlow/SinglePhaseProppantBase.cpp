@@ -66,9 +66,7 @@ SinglePhaseProppantBase::~SinglePhaseProppantBase()
 
 void SinglePhaseProppantBase::setConstitutiveNames( ElementSubRegionBase & subRegion ) const
 {
-  string const fluidMaterialName = getConstitutiveName< SlurryFluidBase >( subRegion );
-  GEOS_ERROR_IF( fluidMaterialName.empty(), GEOS_FMT( "{}: Fluid model not found on subregion {}",
-                                                      getDataContext(), subRegion.getName() ) );
+  setConstitutiveName< SlurryFluidBase >( subRegion, viewKeyStruct::fluidNamesString() );
 }
 
 void SinglePhaseProppantBase::validateConstitutiveModels( DomainPartition & domain ) const
@@ -81,7 +79,8 @@ void SinglePhaseProppantBase::validateConstitutiveModels( DomainPartition & doma
     mesh.getElemManager().forElementSubRegions( regionNames, [&]( localIndex const,
                                                                   ElementSubRegionBase & subRegion )
     {
-      string const fluidName = getConstitutiveName< SlurryFluidBase >( subRegion );
+      string & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
+      fluidName = getConstitutiveName< SlurryFluidBase >( subRegion );
       GEOS_THROW_IF( fluidName.empty(),
                      GEOS_FMT( "{}: Fluid model not found on subregion {}",
                                getDataContext(), subRegion.getName() ),

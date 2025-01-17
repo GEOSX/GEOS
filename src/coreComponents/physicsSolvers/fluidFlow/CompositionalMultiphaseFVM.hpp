@@ -173,7 +173,7 @@ public:
                               CRSMatrixView< real64, localIndex const > const & dR_dAper ) override final;
 
   virtual void
-  updatePhaseMobility( ElementSubRegionBase & subRegion ) const override;
+  updatePhaseMobility( ObjectManagerBase & dataGroup ) const override;
 
   virtual void
   applyAquiferBC( real64 const time,

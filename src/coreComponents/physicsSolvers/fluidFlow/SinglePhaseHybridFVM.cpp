@@ -246,8 +246,12 @@ void SinglePhaseHybridFVM::assembleFluxTerms( real64 const dt,
                                                                                      ElementRegionBase const &,
                                                                                      CellElementSubRegion const & subRegion )
     {
-      SingleFluidBase const & fluid = getConstitutiveModel< SingleFluidBase >( subRegion );
-      PermeabilityBase const & permeability = getConstitutiveModel< PermeabilityBase >( subRegion );
+      string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
+      SingleFluidBase const & fluid = getConstitutiveModel< SingleFluidBase >( subRegion, fluidName );
+
+
+      string const & permName = subRegion.getReference< string >( viewKeyStruct::permeabilityNamesString() );
+      PermeabilityBase const & permeability = getConstitutiveModel< PermeabilityBase >( subRegion, permName );
 
       singlePhaseHybridFVMKernels::
         ElementBasedAssemblyKernelFactory::
@@ -474,7 +478,8 @@ real64 SinglePhaseHybridFVM::calculateResidualNorm( real64 const & GEOS_UNUSED_P
       real64 subRegionResidualNorm[1]{};
       real64 subRegionResidualNormalizer[1]{};
 
-      SingleFluidBase const & fluid = getConstitutiveModel< SingleFluidBase >( subRegion );
+      string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
+      SingleFluidBase const & fluid = getConstitutiveModel< SingleFluidBase >( subRegion, fluidName );
       defaultViscosity += fluid.defaultViscosity();
       subRegionCounter++;
 

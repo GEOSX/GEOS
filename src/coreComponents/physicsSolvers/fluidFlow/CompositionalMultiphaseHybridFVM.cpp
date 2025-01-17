@@ -634,8 +634,11 @@ real64 CompositionalMultiphaseHybridFVM::calculateResidualNorm( real64 const & G
       real64 subRegionResidualNorm[2]{};
       real64 subRegionResidualNormalizer[2]{};
 
-      MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( subRegion );
-      CoupledSolidBase const & solid = getConstitutiveModel< CoupledSolidBase >( subRegion );
+      string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
+      MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( subRegion, fluidName );
+
+      string const & solidName = subRegion.getReference< string >( viewKeyStruct::solidNamesString() );
+      CoupledSolidBase const & solid = getConstitutiveModel< CoupledSolidBase >( subRegion, solidName );
 
       // step 1.1: compute the norm in the subRegion
 
@@ -813,18 +816,22 @@ void CompositionalMultiphaseHybridFVM::resetStateToBeginningOfStep( DomainPartit
   } );
 }
 
-void CompositionalMultiphaseHybridFVM::updatePhaseMobility( ElementSubRegionBase & subRegion ) const
+void CompositionalMultiphaseHybridFVM::updatePhaseMobility( ObjectManagerBase & dataGroup ) const
 {
   GEOS_MARK_FUNCTION;
 
-  MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( subRegion );
-  RelativePermeabilityBase const & relperm = getConstitutiveModel< RelativePermeabilityBase >( subRegion );
+  MultiFluidBase const & fluid =
+    getConstitutiveModel< MultiFluidBase >( dataGroup,
+                                            dataGroup.getReference< string >( viewKeyStruct::fluidNamesString() ) );
+  RelativePermeabilityBase const & relperm =
+    getConstitutiveModel< RelativePermeabilityBase >( dataGroup,
+                                                      dataGroup.getReference< string >( viewKeyStruct::relPermNamesString() ) );
 
   compositionalMultiphaseHybridFVMKernels::
     PhaseMobilityKernelFactory::
     createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
                                                m_numPhases,
-                                               subRegion,
+                                               dataGroup,
                                                fluid,
                                                relperm );
 }

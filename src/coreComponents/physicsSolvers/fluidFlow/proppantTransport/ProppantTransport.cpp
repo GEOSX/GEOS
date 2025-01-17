@@ -99,9 +99,9 @@ void ProppantTransport::registerDataOnMesh( Group & meshBodies )
                                                    arrayView1d< string const > const & regionNames )
   {
 
-    mesh.getElemManager().forElementSubRegions< CellElementSubRegion >( regionNames,
+    mesh.getElemManager().forElementSubRegions< ElementSubRegionBase >( regionNames,
                                                                         [&]( localIndex const,
-                                                                             CellElementSubRegion & subRegion )
+                                                                             ElementSubRegionBase & subRegion )
     {
       subRegion.registerField< proppantConcentration >( getName() );
       subRegion.registerField< proppantConcentration_n >( getName() );
@@ -111,30 +111,16 @@ void ProppantTransport::registerDataOnMesh( Group & meshBodies )
       subRegion.registerField< cellBasedFlux >( getName() ).
         reference().resizeDimension< 1 >( 3 );
       subRegion.registerField< isProppantBoundary >( getName() );
-
-      setConstitutiveNames( subRegion );
     } );
 
     mesh.getElemManager().forElementSubRegions< FaceElementSubRegion >( regionNames, [&]( localIndex const,
                                                                                           FaceElementSubRegion & subRegion )
     {
-      subRegion.registerField< proppantConcentration >( getName() );
-      subRegion.registerField< proppantConcentration_n >( getName() );
-      subRegion.registerField< componentConcentration >( getName() );
-      subRegion.registerField< componentConcentration_n >( getName() );
-      subRegion.registerField< bcComponentConcentration >( getName() );
       subRegion.registerField< componentDensity_n >( getName() );
-      subRegion.registerField< cellBasedFlux >( getName() ).
-        reference().resizeDimension< 1 >( 3 );
-
-      subRegion.registerField< isProppantBoundary >( getName() );
       subRegion.registerField< isProppantMobile >( getName() );
       subRegion.registerField< proppantPackVolumeFraction >( getName() );
       subRegion.registerField< proppantExcessPackVolume >( getName() );
       subRegion.registerField< proppantLiftFlux >( getName() );
-
-      setConstitutiveNames( subRegion );
-
     } );
   } );
 }
@@ -142,18 +128,9 @@ void ProppantTransport::registerDataOnMesh( Group & meshBodies )
 
 void ProppantTransport::setConstitutiveNames( ElementSubRegionBase & subRegion ) const
 {
-  string const fluidName = getConstitutiveName< SlurryFluidBase >( subRegion );
-  GEOS_THROW_IF( fluidName.empty(),
-                 GEOS_FMT( "{}: Fluid model not found on subregion {}",
-                           getDataContext(), subRegion.getName() ),
-                 InputError );
+  setConstitutiveName< SlurryFluidBase >( subRegion, viewKeyStruct::fluidNamesString());
 
-  string const proppantName = getConstitutiveName< ParticleFluidBase >( subRegion );
-  GEOS_THROW_IF( proppantName.empty(),
-                 GEOS_FMT( "{}: Proppant model not found on subregion {}",
-                           getDataContext(), subRegion.getName() ),
-                 InputError );
-
+  setConstitutiveName< ParticleFluidBase >( subRegion, viewKeyStruct::proppantNamesString());
 }
 
 
@@ -175,7 +152,7 @@ void ProppantTransport::initializePreSubGroups()
     {
       if( m_numDofPerCell < 1 )
       {
-        SlurryFluidBase const & fluid0 = getConstitutiveModel< SlurryFluidBase >( subRegion );
+        SlurryFluidBase const & fluid0 = cm.getConstitutiveRelation< SlurryFluidBase >( subRegion.template getReference< string >( viewKeyStruct::fluidNamesString() ) );
 
         m_numComponents = fluid0.numFluidComponents();
 
@@ -211,15 +188,15 @@ void ProppantTransport::resizeFractureFields( MeshLevel & mesh, arrayView1d< str
   }
 }
 
-void ProppantTransport::updateFluidModel( ElementSubRegionBase & subRegion )
+void ProppantTransport::updateFluidModel( ObjectManagerBase & dataGroup )
 {
   GEOS_MARK_FUNCTION;
 
-  arrayView1d< real64 const > const pres  = subRegion.getField< fields::flow::pressure >();
+  arrayView1d< real64 const > const pres  = dataGroup.getField< fields::flow::pressure >();
 
-  arrayView2d< real64 const > const componentConc  = subRegion.getField< fields::proppant::componentConcentration >();
+  arrayView2d< real64 const > const componentConc  = dataGroup.getField< fields::proppant::componentConcentration >();
 
-  SlurryFluidBase & fluid = getConstitutiveModel< SlurryFluidBase >( subRegion );
+  SlurryFluidBase & fluid = getConstitutiveModel< SlurryFluidBase >( dataGroup, dataGroup.getReference< string >( viewKeyStruct::fluidNamesString() ) );
 
   constitutive::constitutiveUpdatePassThru( fluid, [&]( auto & castedFluid )
   {
@@ -230,15 +207,15 @@ void ProppantTransport::updateFluidModel( ElementSubRegionBase & subRegion )
   } );
 }
 
-void ProppantTransport::updateComponentDensity( ElementSubRegionBase & subRegion )
+void ProppantTransport::updateComponentDensity( ObjectManagerBase & dataGroup )
 {
   GEOS_MARK_FUNCTION;
 
-  arrayView1d< real64 const > const pres  = subRegion.getField< fields::flow::pressure >();
+  arrayView1d< real64 const > const pres  = dataGroup.getField< fields::flow::pressure >();
 
-  arrayView2d< real64 const > const componentConc  = subRegion.getField< fields::proppant::componentConcentration >();
+  arrayView2d< real64 const > const componentConc  = dataGroup.getField< fields::proppant::componentConcentration >();
 
-  SlurryFluidBase & fluid = getConstitutiveModel< SlurryFluidBase >( subRegion );
+  SlurryFluidBase & fluid = getConstitutiveModel< SlurryFluidBase >( dataGroup, dataGroup.getReference< string >( viewKeyStruct::fluidNamesString() ) );
 
   constitutive::constitutiveUpdatePassThru( fluid, [&]( auto & castedFluid )
   {
@@ -250,13 +227,13 @@ void ProppantTransport::updateComponentDensity( ElementSubRegionBase & subRegion
 }
 
 
-void ProppantTransport::updateProppantModel( ElementSubRegionBase & subRegion )
+void ProppantTransport::updateProppantModel( ObjectManagerBase & dataGroup )
 {
   GEOS_MARK_FUNCTION;
 
-  arrayView1d< real64 const > const proppantConc  = subRegion.getField< fields::proppant::proppantConcentration >();
+  arrayView1d< real64 const > const proppantConc  = dataGroup.getField< fields::proppant::proppantConcentration >();
 
-  SlurryFluidBase const & fluid = getConstitutiveModel< SlurryFluidBase >( subRegion );
+  SlurryFluidBase const & fluid = getConstitutiveModel< SlurryFluidBase >( dataGroup, dataGroup.getReference< string >( viewKeyStruct::fluidNamesString() ) );
 
   arrayView2d< real64 const > const fluidDens            = fluid.fluidDensity();
   arrayView2d< real64 const > const dFluidDens_dPres     = fluid.dFluidDensity_dPressure();
@@ -265,7 +242,7 @@ void ProppantTransport::updateProppantModel( ElementSubRegionBase & subRegion )
   arrayView2d< real64 const > const dFluidVisc_dPres     = fluid.dFluidViscosity_dPressure();
   arrayView3d< real64 const > const dFluidVisc_dCompConc = fluid.dFluidViscosity_dComponentConcentration();
 
-  ParticleFluidBase & proppant = getConstitutiveModel< ParticleFluidBase >( subRegion );
+  ParticleFluidBase & proppant = getConstitutiveModel< ParticleFluidBase >( dataGroup, dataGroup.getReference< string >( viewKeyStruct::proppantNamesString() ) );
 
   constitutiveUpdatePassThru( proppant, [&]( auto & castedProppant )
   {
@@ -337,7 +314,8 @@ void ProppantTransport::initializePostInitialConditionsPreSubGroups()
       // We have to redo the below loop after fractures are generated
       updateState( subRegion );
 
-      SlurryFluidBase const & fluid = getConstitutiveModel< SlurryFluidBase >( subRegion );
+      SlurryFluidBase const & fluid =
+        getConstitutiveModel< SlurryFluidBase >( subRegion, subRegion.getReference< string >( viewKeyStruct::fluidNamesString() ) );
       arrayView3d< real64 const > const componentDens = fluid.componentDensity();
       arrayView2d< real64 > const componentDens_n = subRegion.getField< fields::proppant::componentDensity_n >();
       forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const ei )
@@ -377,7 +355,7 @@ void ProppantTransport::preStepUpdate( real64 const & time,
     mesh.getElemManager().forElementSubRegions( regionNames, [&]( localIndex const,
                                                                   ElementSubRegionBase & subRegion )
     {
-      SlurryFluidBase const & fluid = getConstitutiveModel< SlurryFluidBase >( subRegion );
+      SlurryFluidBase const & fluid = getConstitutiveModel< SlurryFluidBase >( subRegion, subRegion.getReference< string >( viewKeyStruct::fluidNamesString() ) );
 
       arrayView3d< real64 const > const componentDens = fluid.componentDensity();
       arrayView2d< real64 > const componentDens_n = subRegion.getField< fields::proppant::componentDensity_n >();
@@ -555,7 +533,8 @@ void ProppantTransport::assembleAccumulationTerms( real64 const dt,
       arrayView1d< real64 const > const proppantPackVolFrac = subRegion.getField< fields::proppant::proppantPackVolumeFraction >();
       arrayView1d< real64 const > const proppantLiftFlux = subRegion.getField< fields::proppant::proppantLiftFlux >();
 
-      SlurryFluidBase const & fluid = getConstitutiveModel< SlurryFluidBase >( subRegion );
+      SlurryFluidBase const & fluid =
+        getConstitutiveModel< SlurryFluidBase >( subRegion, subRegion.getReference< string >( viewKeyStruct::fluidNamesString() ) );
 
       arrayView3d< real64 const > const componentDens = fluid.componentDensity();
       arrayView3d< real64 const > const dCompDens_dPres = fluid.dComponentDensity_dPressure();

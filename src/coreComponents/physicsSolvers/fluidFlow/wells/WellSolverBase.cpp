@@ -127,6 +127,11 @@ void WellSolverBase::registerDataOnMesh( Group & meshBodies )
 
       subRegion.registerField< fields::well::gravityCoefficient >( getName() );
 
+      subRegion.registerWrapper< string >( viewKeyStruct::fluidNamesString() ).
+        setPlotLevel( PlotLevel::NOPLOT ).
+        setRestartFlags( RestartFlags::NO_WRITE ).
+        setSizedFromParent( 0 );
+
       PerforationData * const perforationData = subRegion.getPerforationData();
       perforationData->registerField< fields::well::gravityCoefficient >( getName() );
     } );

@@ -428,8 +428,11 @@ real64 CompositionalMultiphaseFVM::calculateResidualNorm( real64 const & GEOS_UN
       real64 subRegionResidualNorm[numNorm]{};
       real64 subRegionResidualNormalizer[numNorm]{};
 
-      MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( subRegion );
-      CoupledSolidBase const & solid = getConstitutiveModel< CoupledSolidBase >( subRegion );
+      string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
+      MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( subRegion, fluidName );
+
+      string const & solidName = subRegion.getReference< string >( viewKeyStruct::solidNamesString() );
+      CoupledSolidBase const & solid = getConstitutiveModel< CoupledSolidBase >( subRegion, solidName );
 
       // step 1: compute the norm in the subRegion
 
@@ -874,14 +877,16 @@ void CompositionalMultiphaseFVM::applySystemSolution( DofManager const & dofMana
   } );
 }
 
-void CompositionalMultiphaseFVM::updatePhaseMobility( ElementSubRegionBase & subRegion ) const
+void CompositionalMultiphaseFVM::updatePhaseMobility( ObjectManagerBase & dataGroup ) const
 {
   GEOS_MARK_FUNCTION;
 
   // note that the phase mobility computed here also includes phase density
-  MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( subRegion );
+  string const & fluidName = dataGroup.getReference< string >( viewKeyStruct::fluidNamesString() );
+  MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( dataGroup, fluidName );
 
-  RelativePermeabilityBase const & relperm = getConstitutiveModel< RelativePermeabilityBase >( subRegion );
+  string const & relpermName = dataGroup.getReference< string >( viewKeyStruct::relPermNamesString() );
+  RelativePermeabilityBase const & relperm = getConstitutiveModel< RelativePermeabilityBase >( dataGroup, relpermName );
 
   if( m_isThermal )
   {
@@ -889,7 +894,7 @@ void CompositionalMultiphaseFVM::updatePhaseMobility( ElementSubRegionBase & sub
       PhaseMobilityKernelFactory::
       createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
                                                  m_numPhases,
-                                                 subRegion,
+                                                 dataGroup,
                                                  fluid,
                                                  relperm );
   }
@@ -899,7 +904,7 @@ void CompositionalMultiphaseFVM::updatePhaseMobility( ElementSubRegionBase & sub
       PhaseMobilityKernelFactory::
       createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
                                                  m_numPhases,
-                                                 subRegion,
+                                                 dataGroup,
                                                  fluid,
                                                  relperm );
   }
@@ -1120,7 +1125,8 @@ void CompositionalMultiphaseFVM::applyFaceDirichletBC( real64 const time_n,
       localIndex const er = stencil.getElementRegionIndices()( 0, 0 );
       localIndex const esr = stencil.getElementSubRegionIndices()( 0, 0 );
       ElementSubRegionBase & subRegion = elemManager.getRegion( er ).getSubRegion( esr );
-      MultiFluidBase & multiFluidBase = getConstitutiveModel< MultiFluidBase >( subRegion );
+      string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
+      MultiFluidBase & multiFluidBase = subRegion.getConstitutiveModel< MultiFluidBase >( fluidName );
 
       BoundaryStencilWrapper const stencilWrapper = stencil.createKernelWrapper();
 
@@ -1469,11 +1475,12 @@ void CompositionalMultiphaseFVM::computeCFLNumbers( geos::DomainPartition & doma
 
       Group const & constitutiveModels = subRegion.getGroup( ElementSubRegionBase::groupKeyStruct::constitutiveModelsString() );
 
-      MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( subRegion );
+      string const & fluidName = subRegion.getReference< string >( CompositionalMultiphaseBase::viewKeyStruct::fluidNamesString() );
+      MultiFluidBase const & fluid = constitutiveModels.getGroup< MultiFluidBase >( fluidName );
       arrayView3d< real64 const, multifluid::USD_PHASE > const & phaseVisc = fluid.phaseViscosity();
 
-      string const relPermName = getConstitutiveName< RelativePermeabilityBase >( subRegion );
-      RelativePermeabilityBase const & relperm = constitutiveModels.getGroup< RelativePermeabilityBase >( relPermName );
+      string const & relpermName = subRegion.getReference< string >( CompositionalMultiphaseBase::viewKeyStruct::relPermNamesString() );
+      RelativePermeabilityBase const & relperm = constitutiveModels.getGroup< RelativePermeabilityBase >( relpermName );
       arrayView3d< real64 const, relperm::USD_RELPERM > const & phaseRelPerm = relperm.phaseRelPerm();
       arrayView4d< real64 const, relperm::USD_RELPERM_DS > const & dPhaseRelPerm_dPhaseVolFrac = relperm.dPhaseRelPerm_dPhaseVolFraction();
 

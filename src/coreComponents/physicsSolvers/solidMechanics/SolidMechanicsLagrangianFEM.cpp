@@ -159,11 +159,8 @@ void SolidMechanicsLagrangianFEM::registerDataOnMesh( Group & meshBodies )
                                                               [&]( localIndex const,
                                                                    ElementSubRegionBase & subRegion )
     {
-      setConstitutiveNamesCallSuper( subRegion );
-
       subRegion.registerField< solidMechanics::strain >( getName() ).setDimLabels( 1, voightLabels ).reference().resizeDimension< 1 >( 6 );
       subRegion.registerField< solidMechanics::plasticStrain >( getName() ).setDimLabels( 1, voightLabels ).reference().resizeDimension< 1 >( 6 );
-
     } );
 
     NodeManager & nodes = meshLevel.getNodeManager();
@@ -234,15 +231,7 @@ void SolidMechanicsLagrangianFEM::setConstitutiveNamesCallSuper( ElementSubRegio
 {
   PhysicsSolverBase::setConstitutiveNamesCallSuper( subRegion );
 
-  subRegion.registerWrapper< string >( viewKeyStruct::solidMaterialNamesString() ).
-    setPlotLevel( PlotLevel::NOPLOT ).
-    setRestartFlags( RestartFlags::NO_WRITE ).
-    setSizedFromParent( 0 );
-
-  string & solidMaterialName = subRegion.getReference< string >( viewKeyStruct::solidMaterialNamesString() );
-  solidMaterialName = PhysicsSolverBase::getConstitutiveName< SolidBase >( subRegion );
-  GEOS_ERROR_IF( solidMaterialName.empty(), GEOS_FMT( "{}: SolidBase model not found on subregion {}",
-                                                      getDataContext(), subRegion.getDataContext() ) );
+  setConstitutiveName< SolidBase >( subRegion, viewKeyStruct::solidMaterialNamesString() );
 
 }
 

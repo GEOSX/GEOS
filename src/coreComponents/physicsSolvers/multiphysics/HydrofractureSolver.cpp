@@ -814,7 +814,8 @@ assembleFluidMassResidualDerivativeWrtDisplacement( DomainPartition const & doma
       string const & hydraulicApertureRelationName = subRegion.template getReference< string >( viewKeyStruct::hydraulicApertureRelationNameString()  );
       HydraulicApertureBase const & hydraulicApertureModel = this->template getConstitutiveModel< HydraulicApertureBase >( subRegion, hydraulicApertureRelationName );
 
-      SingleFluidBase const & fluid = this->template getConstitutiveModel< SingleFluidBase >( subRegion );
+      string const & fluidName = subRegion.getReference< string >( FlowSolverBase::viewKeyStruct::fluidNamesString() );
+      SingleFluidBase const & fluid = this->template getConstitutiveModel< SingleFluidBase >( subRegion, fluidName );
 
       arrayView1d< globalIndex const > const presDofNumber = subRegion.getReference< array1d< globalIndex > >( presDofKey );
       arrayView1d< globalIndex const > const dispDofNumber = nodeManager.getReference< array1d< globalIndex > >( dispDofKey );
@@ -1033,7 +1034,8 @@ void HydrofractureSolver< POROMECHANICS_SOLVER >::initializeNewFractureFields( D
 
         arrayView1d< real64 > const fluidPressure_n = subRegion.getField< fields::flow::pressure_n >();
         arrayView1d< real64 > const fluidPressure = subRegion.getField< fields::flow::pressure >();
-        SingleFluidBase const & fluid = getConstitutiveModel< SingleFluidBase >( subRegion );
+        string const & fluidName = subRegion.getReference< string >( FlowSolverBase::viewKeyStruct::fluidNamesString() );
+        SingleFluidBase const & fluid = subRegion.getConstitutiveModel< SingleFluidBase >( fluidName );
         real64 const defaultDensity = fluid.defaultDensity();
         arrayView1d< real64 > const massCreated  = subRegion.getField< fields::flow::massCreated >();
 

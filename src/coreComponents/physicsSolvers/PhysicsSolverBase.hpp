@@ -23,6 +23,7 @@
 #include "codingUtilities/traits.hpp"
 #include "common/DataTypes.hpp"
 #include "dataRepository/ExecutableGroup.hpp"
+#include "dataRepository/RestartFlags.hpp"
 #include "linearAlgebra/interfaces/InterfaceTypes.hpp"
 #include "linearAlgebra/utilities/LinearSolverResult.hpp"
 #include "linearAlgebra/DofManager.hpp"
@@ -951,6 +952,9 @@ protected:
   template< typename CONSTITUTIVE_BASE_TYPE >
   static string getConstitutiveName( ParticleSubRegionBase const & subRegion ); // particle overload
 
+  template< typename CONSTITUTIVE_BASE_TYPE >
+  void setConstitutiveName( ElementSubRegionBase & subRegion, string const & name ) const;
+
   /**
    * @brief This function sets constitutive name fields on an
    *  ElementSubRegionBase, and calls the base function it overrides.
@@ -1142,6 +1146,18 @@ string PhysicsSolverBase::getConstitutiveName( ParticleSubRegionBase const & sub
   return validName;
 }
 
+template< typename CONSTITUTIVE_BASE_TYPE >
+void PhysicsSolverBase::setConstitutiveName( ElementSubRegionBase & subRegion, string const & name ) const
+{
+  string & constitutiveName = subRegion.registerWrapper< string >( name ).
+                                setPlotLevel( dataRepository::PlotLevel::NOPLOT ).
+                                setRestartFlags( dataRepository::RestartFlags::NO_WRITE ).
+                                setSizedFromParent( 0 ).
+                                reference();
+  constitutiveName = getConstitutiveName< CONSTITUTIVE_BASE_TYPE >( subRegion );
+  GEOS_ERROR_IF( constitutiveName.empty(), GEOS_FMT( "{}: {} not found on subregion {}",
+                                                     getDataContext(), typeid(CONSTITUTIVE_BASE_TYPE).name(), subRegion.getDataContext() ) );
+}
 
 } // namespace geos
 

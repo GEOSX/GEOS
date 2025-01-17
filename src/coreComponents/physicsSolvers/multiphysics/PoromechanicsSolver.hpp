@@ -122,19 +122,13 @@ public:
 
   virtual void setConstitutiveNamesCallSuper( ElementSubRegionBase & subRegion ) const override final
   {
+    Base::setConstitutiveNamesCallSuper( subRegion );
+
     if( dynamic_cast< SurfaceElementSubRegion * >( &subRegion ) )
     {
-      subRegion.registerWrapper< string >( viewKeyStruct::hydraulicApertureRelationNameString() ).
-        setPlotLevel( dataRepository::PlotLevel::NOPLOT ).
-        setRestartFlags( dataRepository::RestartFlags::NO_WRITE ).
-        setSizedFromParent( 0 );
-
-      string & hydraulicApertureModelName = subRegion.getReference< string >( viewKeyStruct::hydraulicApertureRelationNameString() );
-      hydraulicApertureModelName = PhysicsSolverBase::getConstitutiveName< constitutive::HydraulicApertureBase >( subRegion );
-      GEOS_ERROR_IF( hydraulicApertureModelName.empty(), GEOS_FMT( "{}: HydraulicApertureBase model not found on subregion {}",
-                                                                   this->getDataContext(), subRegion.getDataContext() ) );
+      this->template setConstitutiveName< constitutive::HydraulicApertureBase >( subRegion,
+                                                                                 viewKeyStruct::hydraulicApertureRelationNameString() );
     }
-
   }
 
   virtual void initializePreSubGroups() override

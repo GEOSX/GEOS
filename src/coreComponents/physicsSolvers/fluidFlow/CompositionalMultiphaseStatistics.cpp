@@ -265,20 +265,22 @@ void CompositionalMultiphaseStatistics::computeRegionStatistics( real64 const ti
       subRegion.getField< fields::flow::phaseVolumeFraction >();
     arrayView1d< real64 const > const deltaPres = subRegion.getField< fields::flow::deltaPressure >();
 
-    Group const & constitutiveModels = subRegion.getConstitutiveModels();
+    Group const & constitutiveModels = subRegion.getGroup( ElementSubRegionBase::groupKeyStruct::constitutiveModelsString() );
 
     string const & solidName = subRegion.getReference< string >( CompositionalMultiphaseBase::viewKeyStruct::solidNamesString() );
     CoupledSolidBase const & solid = constitutiveModels.getGroup< CoupledSolidBase >( solidName );
     arrayView1d< real64 const > const refPorosity = solid.getReferencePorosity();
     arrayView2d< real64 const > const porosity = solid.getPorosity();
 
-    MultiFluidBase const & fluid = getConstitutive< MultiFluidBase >( constitutiveModels );
+    string const & fluidName = subRegion.getReference< string >( CompositionalMultiphaseBase::viewKeyStruct::fluidNamesString() );
+    MultiFluidBase const & fluid = constitutiveModels.getGroup< MultiFluidBase >( fluidName );
     arrayView3d< real64 const, multifluid::USD_PHASE > const phaseDensity = fluid.phaseDensity();
     arrayView4d< real64 const, multifluid::USD_PHASE_COMP > const phaseCompFraction = fluid.phaseCompFraction();
 
 
     //get min vol fraction for each phase to dispactche immobile/mobile mass
-    RelativePermeabilityBase const & relperm = getConstitutive< RelativePermeabilityBase >( constitutiveModels );
+    string const & relpermName = subRegion.getReference< string >( CompositionalMultiphaseBase::viewKeyStruct::relPermNamesString() );
+    RelativePermeabilityBase const & relperm = constitutiveModels.getGroup< RelativePermeabilityBase >( relpermName );
     arrayView3d< real64 const, relperm::USD_RELPERM > const phaseTrappedVolFrac = relperm.phaseTrappedVolFraction();
     arrayView3d< real64 const, relperm::USD_RELPERM > const phaseRelperm = relperm.phaseRelPerm();
 
@@ -542,6 +544,7 @@ void CompositionalMultiphaseStatistics::computeCFLNumbers( real64 const time,
   GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::CFL, GEOS_FMT( "{} (time {} s): Max phase CFL number: {}", getName(), time, maxPhaseCFL ) );
   GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::CFL, GEOS_FMT( "{} (time {} s): Max component CFL number: {}", getName(), time, maxCompCFL ) );
 }
+
 
 REGISTER_CATALOG_ENTRY( TaskBase,
                         CompositionalMultiphaseStatistics,
