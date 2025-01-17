@@ -22,10 +22,9 @@
         lineSearchMaxCuts="2"
         maxTimeStepCuts="1"/>
       <LinearSolverParameters
-        preconditionerType="mgr"
-        solverType="gmres"
+        solverType="direct"
         directParallel="0"
-        logLevel="1"/>
+        logLevel="0"/>
     </SolidMechanicsLagrangeContactBubbleStab>
     
     <SurfaceGenerator

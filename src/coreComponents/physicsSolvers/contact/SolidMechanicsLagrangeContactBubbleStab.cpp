@@ -254,7 +254,6 @@ void SolidMechanicsLagrangeContactBubbleStab::setupSystem( DomainPartition & dom
 
   computeRotationMatrices( domain );
 
-  dofManager.printFieldInfo();
 }
 
 void SolidMechanicsLagrangeContactBubbleStab::computeRotationMatrices( DomainPartition & domain ) const
