@@ -13,9 +13,7 @@ configure_file( ${CMAKE_SOURCE_DIR}/${kernelPath}/policies.hpp.in
 
 set( kernelNames PoromechanicsKernels ThermoPoromechanicsKernels )
 set( subregionList CellElementSubRegion )
-set( porousSolidDispatch PorousSolid<DruckerPragerExtended>
-                         PorousSolid<ModifiedCamClay>
-                         PorousSolid<DelftEgg>
+set( porousSolidDispatch PorousSolid<ModifiedCamClay>
                          PorousSolid<DruckerPrager>
                          PorousSolid<ElasticIsotropic>
                          PorousSolid<ElasticTransverseIsotropic>
