@@ -83,7 +83,7 @@ SolidMechanicsAugmentedLagrangianContact::SolidMechanicsAugmentedLagrangianConta
 
   registerWrapper( viewKeyStruct::tolTauLimitString(), &m_slidingCheckTolerance ).
     setInputFlag( InputFlags::OPTIONAL ).
-    setApplyDefaultValue( 1.e-05 ).
+    setApplyDefaultValue( 5.e-02 ).
     setDescription( "Tolerance for the sliding check" );
 
   // Set the default linear solver parameters
