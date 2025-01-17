@@ -1060,7 +1060,7 @@ void SinglePhaseBase::applySourceFluxBC( real64 const time_n,
             localRhs[energyRowIndex] += enthalpy[ei][0] * rhsValue;
 
             globalIndex dofIndices[2]{pressureDofIndex, temperatureDofIndex};
-            real64 jacobian[2]{rhsValue * dEnthalpy[ei][0][DerivOffset::dP], rhsValue * dEnthalpy[ei][0][DerivOffset::dT]};  
+            real64 jacobian[2]{rhsValue * dEnthalpy[ei][0][DerivOffset::dP], rhsValue * dEnthalpy[ei][0][DerivOffset::dT]};
 
             localMatrix.template addToRow< serialAtomic >( energyRowIndex,
                                                            dofIndices,
