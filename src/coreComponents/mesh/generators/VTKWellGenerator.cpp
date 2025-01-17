@@ -20,6 +20,7 @@
 
 #include "VTKWellGenerator.hpp"
 
+#include "mesh/LogLevelsInfo.hpp"
 #include "mesh/generators/VTKUtilities.hpp"
 #include <vtkPolyData.h>
 #include <vtkCellData.h>

@@ -1735,7 +1735,8 @@ void SurfaceGenerator::performFracture( const localIndex nodeID,
     {
       s << *i << " ";
     }
-    GEOS_LOG_LEVEL_INFO_BY_RANK( logInfo::SurfaceGenerator, GEOS_FMT( "Splitting node {} along separation plane faces: {}", nodeID, s.str() ) );
+    GEOS_LOG_LEVEL_INFO_BY_RANK( logInfo::SurfaceGenerator,
+                                 GEOS_FMT( "Splitting node {} along separation plane faces: {}", nodeID, s.str() ) );
   }
 
 
@@ -1774,7 +1775,8 @@ void SurfaceGenerator::performFracture( const localIndex nodeID,
 // >("usedFaces")[newNodeIndex];
 //  usedFacesNew = usedFaces[nodeID];
 
-  GEOS_LOG_LEVEL_INFO_BY_RANK( logInfo::SurfaceGenerator, GEOS_FMT( "Done splitting node {} into nodes {} and {}", nodeID, nodeID, newNodeIndex ) );
+  GEOS_LOG_LEVEL_INFO_BY_RANK( logInfo::SurfaceGenerator,
+                               GEOS_FMT( "Done splitting node {} into nodes {} and {}", nodeID, nodeID, newNodeIndex ) );
 
   // split edges
   map< localIndex, localIndex > splitEdges;
@@ -1795,7 +1797,8 @@ void SurfaceGenerator::performFracture( const localIndex nodeID,
 
       edgeToFaceMap.clearSet( newEdgeIndex );
 
-      GEOS_LOG_LEVEL_INFO_BY_RANK( logInfo::SurfaceGenerator, GEOS_FMT ( "Split edge {} into edges {} and {}", parentEdgeIndex, parentEdgeIndex, newEdgeIndex ) );
+      GEOS_LOG_LEVEL_INFO_BY_RANK( logInfo::SurfaceGenerator,
+                                   GEOS_FMT ( "Split edge {} into edges {} and {}", parentEdgeIndex, parentEdgeIndex, newEdgeIndex ) );
 
       splitEdges[parentEdgeIndex] = newEdgeIndex;
       modifiedObjects.newEdges.insert( newEdgeIndex );
@@ -1851,7 +1854,8 @@ void SurfaceGenerator::performFracture( const localIndex nodeID,
 
       if( faceManager.splitObject( faceIndex, rank, newFaceIndex ) )
       {
-        GEOS_LOG_LEVEL_INFO_BY_RANK( logInfo::SurfaceGenerator, GEOS_FMT ( "Split face {} into faces {} and {}", faceIndex, faceIndex, newFaceIndex ) );
+        GEOS_LOG_LEVEL_INFO_BY_RANK( logInfo::SurfaceGenerator,
+                                     GEOS_FMT ( "Split face {} into faces {} and {}", faceIndex, faceIndex, newFaceIndex ) );
 
         splitFaces[faceIndex] = newFaceIndex;
         modifiedObjects.newFaces.insert( newFaceIndex );
@@ -1936,7 +1940,9 @@ void SurfaceGenerator::performFracture( const localIndex nodeID,
                                                                     this->m_originalFaceToEdges.toViewConst(),
                                                                     faceIndices );
           m_faceElemsRupturedThisSolve.insert( newFaceElement );
-          GEOS_LOG_LEVEL_INFO_BY_RANK( logInfo::SurfaceGenerator, GEOS_FMT ( "Created new FaceElement {} when creating face {} from {}", newFaceElement, newFaceIndex, faceIndex ) );
+          GEOS_LOG_LEVEL_INFO_BY_RANK( logInfo::SurfaceGenerator,
+                                       GEOS_FMT ( "Created new FaceElement {} when creating face {} from {}",
+                                                  newFaceElement, newFaceIndex, faceIndex ) );
           modifiedObjects.newElements[ {fractureElementRegion.getIndexInParent(), 0} ].insert( newFaceElement );
         }
       } // if( faceManager.SplitObject( faceIndex, newFaceIndex ) )

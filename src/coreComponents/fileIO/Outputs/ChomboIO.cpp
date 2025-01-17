@@ -77,7 +77,7 @@ ChomboIO::ChomboIO( string const & name, Group * const parent ):
     setDefaultValue( 0 ).
     setDescription( "True iff geos should use the pressures chombo writes out." );
 
-  addLogLevel< logInfo::OutputEvents >();
+  addLogLevel< logInfo::ChomboIOInitialization >();
 }
 
 ChomboIO::~ChomboIO()
@@ -103,7 +103,7 @@ bool ChomboIO::execute( real64 const GEOS_UNUSED_PARAM( time_n ),
   {
     GEOS_ERROR_IF( m_waitForInput && m_inputPath == "/INVALID_INPUT_PATH", "Waiting for input but no input path was specified." );
 
-    GEOS_LOG_LEVEL_INFO( logInfo::OutputEvents, "Initializing chombo coupling" );
+    GEOS_LOG_LEVEL_INFO( logInfo::ChomboIOInitialization, "Initializing chombo coupling" );
 
     m_coupler = new ChomboCoupler( MPI_COMM_GEOS, m_outputPath, m_inputPath, domain.getMeshBody( 0 ).getBaseDiscretization() );
 

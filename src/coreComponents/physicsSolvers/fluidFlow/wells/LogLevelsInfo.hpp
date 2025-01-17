@@ -56,7 +56,7 @@ struct WellControl
 
 struct WellValidity
 {
-  static constexpr int getMinLogLevel() { return 2; }
+  static constexpr int getMinLogLevel() { return 1; }
   static constexpr std::string_view getDescription() { return "Well validity information"; }
 };
 

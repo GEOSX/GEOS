@@ -35,14 +35,26 @@ namespace logInfo
 
 /// @cond DO_NOT_DOCUMENT
 
-struct OutputEvents
+struct DataCollectorInitialization
+{
+  static constexpr int getMinLogLevel() { return 3; }
+  static constexpr std::string_view getDescription() { return "Information on Time history Initialization"; }
+};
+
+struct ChomboIOInitialization
 {
   static constexpr int getMinLogLevel() { return 1; }
+  static constexpr std::string_view getDescription() { return "Information on chomboIO coupling Initialization"; }
+};
+
+struct OutputEvents
+{
+  static constexpr int getMinLogLevel() { return 2; }
   static constexpr std::string_view getDescription() { return "Information on output events, VTK/ChomboIO"; }
 };
 
 
-struct Writing
+struct HDF5Writing
 {
   static constexpr int getMinLogLevel() { return 3; }
   static constexpr std::string_view getDescription() { return "Information on buffered data in an HDF5 file "; }

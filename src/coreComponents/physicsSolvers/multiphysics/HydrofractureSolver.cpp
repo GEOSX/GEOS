@@ -377,12 +377,18 @@ void HydrofractureSolver< POROMECHANICS_SOLVER >::updateHydraulicApertureAndFrac
   minHydraulicAperture  = MpiWrapper::min( minHydraulicAperture );
   maxHydraulicAperture  = MpiWrapper::max( maxHydraulicAperture );
 
-  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution, GEOS_FMT( "        {}: Max aperture change: {} m, max hydraulic aperture change: {} m",
-                                                           this->getName(), fmt::format( "{:.{}e}", maxApertureChange, 6 ), fmt::format( "{:.{}e}", maxHydraulicApertureChange, 6 ) ) );
-  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution, GEOS_FMT( "        {}: Min aperture: {} m, max aperture: {} m",
-                                                           this->getName(), fmt::format( "{:.{}e}", minAperture, 6 ), fmt::format( "{:.{}e}", maxAperture, 6 ) ) );
-  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution, GEOS_FMT( "        {}: Min hydraulic aperture: {} m, max hydraulic aperture: {} m",
-                                                           this->getName(), fmt::format( "{:.{}e}", minHydraulicAperture, 6 ), fmt::format( "{:.{}e}", maxHydraulicAperture, 6 ) ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution,
+                              GEOS_FMT( "        {}: Max aperture change: {} m, max hydraulic aperture change: {} m",
+                                        this->getName(),
+                                        fmt::format( "{:.{}e}", maxApertureChange, 6 ), fmt::format( "{:.{}e}", maxHydraulicApertureChange, 6 ) ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution,
+                              GEOS_FMT( "        {}: Min aperture: {} m, max aperture: {} m",
+                                        this->getName(),
+                                        fmt::format( "{:.{}e}", minAperture, 6 ), fmt::format( "{:.{}e}", maxAperture, 6 ) ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution,
+                              GEOS_FMT( "        {}: Min hydraulic aperture: {} m, max hydraulic aperture: {} m",
+                                        this->getName(),
+                                        fmt::format( "{:.{}e}", minHydraulicAperture, 6 ), fmt::format( "{:.{}e}", maxHydraulicAperture, 6 ) ) );
 }
 template< typename POROMECHANICS_SOLVER >
 void HydrofractureSolver< POROMECHANICS_SOLVER >::setupCoupling( DomainPartition const & domain,

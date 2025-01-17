@@ -2341,7 +2341,8 @@ bool SolidMechanicsLagrangeContact::updateConfiguration( DomainPartition & domai
   // and total area of fracture elements
   totalArea = MpiWrapper::sum( totalArea );
 
-  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Configuration, GEOS_FMT( "  {}: changed area {} out of {}", getName(), changedArea, totalArea ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Configuration,
+                              GEOS_FMT( "  {}: changed area {} out of {}", getName(), changedArea, totalArea ) );
 
   // Assume converged if changed area is below certain fraction of total area
   return changedArea <= m_nonlinearSolverParameters.m_configurationTolerance * totalArea;

@@ -70,8 +70,6 @@ WellGeneratorBase::WellGeneratorBase( string const & name, Group * const parent 
     setInputFlag( InputFlags::REQUIRED ).
     setSizedFromParent( 0 ).
     setDescription( "Name of the set of constraints associated with this well" );
-
-  addLogLevel< logInfo::VTKSteps >();
 }
 
 Group * WellGeneratorBase::createChild( string const & childKey, string const & childName )

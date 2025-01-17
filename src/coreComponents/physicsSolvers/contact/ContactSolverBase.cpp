@@ -24,7 +24,6 @@
 #include "mesh/DomainPartition.hpp"
 #include "mesh/SurfaceElementRegion.hpp"
 #include "physicsSolvers/solidMechanics/SolidMechanicsLagrangianFEM.hpp"
-#include "physicsSolvers/contact/LogLevelsInfo.hpp"
 #include "common/GEOS_RAJA_Interface.hpp"
 
 namespace geos

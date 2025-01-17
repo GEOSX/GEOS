@@ -72,7 +72,7 @@ TimeHistoryOutput::TimeHistoryOutput( string const & name,
     setRestartFlags( RestartFlags::WRITE_AND_READ ).
     setDescription( "The current history record to be written, on restart from an earlier time allows use to remove invalid future history." );
 
-  addLogLevel< logInfo::Initialization >();
+  addLogLevel< logInfo::DataCollectorInitialization >();
 }
 
 void TimeHistoryOutput::initCollectorParallel( DomainPartition const & domain, HistoryCollection & collector )
@@ -145,7 +145,7 @@ void TimeHistoryOutput::initializePostInitialConditionsPostSubGroups()
   }
 
   DomainPartition & domain = this->getGroupByPath< DomainPartition >( "/Problem/domain" );
-  GEOS_LOG_LEVEL_INFO_BY_RANK( logInfo::Initialization, GEOS_FMT( "TimeHistory: '{}' initializing data collectors.", this->getName() ) );
+  GEOS_LOG_LEVEL_INFO_BY_RANK( logInfo::DataCollectorInitialization, GEOS_FMT( "TimeHistory: '{}' initializing data collectors.", this->getName() ) );//3
   for( auto collectorPath : m_collectorPaths )
   {
     try

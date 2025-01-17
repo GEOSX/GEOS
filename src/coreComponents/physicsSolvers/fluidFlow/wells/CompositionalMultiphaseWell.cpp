@@ -958,7 +958,9 @@ void CompositionalMultiphaseWell::updateState( DomainPartition & domain )
   } );
   maxPhaseVolFrac = MpiWrapper::max( maxPhaseVolFrac );
 
-  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::WellComponents, GEOS_FMT( "        {}: Max well phase volume fraction change = {}", getName(), fmt::format( "{:.{}f}", maxPhaseVolFrac, 4 ) ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::WellComponents,
+                              GEOS_FMT( "        {}: Max well phase volume fraction change = {}",
+                                        getName(), fmt::format( "{:.{}f}", maxPhaseVolFrac, 4 ) ) );
 
 }
 
@@ -1480,25 +1482,34 @@ CompositionalMultiphaseWell::scalingForSystemSolution( DomainPartition & domain,
   minCompDensScalingFactor = MpiWrapper::min( minCompDensScalingFactor );
 
   string const massUnit = m_useMass ? "kg/m3" : "mol/m3";
-  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::WellComponents, GEOS_FMT( "        {}: Max well pressure change: {} Pa (before scaling)",
-                                                                 getName(), GEOS_FMT( "{:.{}f}", maxDeltaPres, 3 ) ) );
-  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::WellComponents, GEOS_FMT( "        {}: Max well component density change: {} {} (before scaling)",
-                                                                 getName(), GEOS_FMT( "{:.{}f}", maxDeltaCompDens, 3 ), massUnit ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::WellComponents,
+                              GEOS_FMT( "        {}: Max well pressure change: {} Pa (before scaling)",
+                                        getName(),GEOS_FMT( "{:.{}f}", maxDeltaPres, 3 ) ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::WellComponents,
+                              GEOS_FMT( "        {}: Max well component density change: {} {} (before scaling)",
+                                        getName(),GEOS_FMT( "{:.{}f}", maxDeltaCompDens, 3 ), massUnit ) );
 
   if( m_isThermal )
   {
     maxDeltaTemp = MpiWrapper::max( maxDeltaTemp );
     minTempScalingFactor = MpiWrapper::min( minTempScalingFactor );
-    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::WellComponents, GEOS_FMT( "        {}: Max well temperature change: {} K (before scaling)",
-                                                                   getName(), GEOS_FMT( "{:.{}f}", maxDeltaTemp, 3 ) ) );
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::WellComponents,
+                                GEOS_FMT( "        {}: Max well temperature change: {} K (before scaling)",
+                                          getName(),GEOS_FMT( "{:.{}f}", maxDeltaTemp, 3 ) ) );
   }
 
 
-  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::WellComponents, GEOS_FMT( "        {}: Min well pressure scaling factor: {}", getName(), minPresScalingFactor ) );
-  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::WellComponents, GEOS_FMT( "        {}: Min well component density scaling factor: {}", getName(), minCompDensScalingFactor ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::WellComponents,
+                              GEOS_FMT( "        {}: Min well pressure scaling factor: {}",
+                                        getName(), minPresScalingFactor ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::WellComponents,
+                              GEOS_FMT( "        {}: Min well component density scaling factor: {}",
+                                        getName(), minCompDensScalingFactor ) );
   if( m_isThermal )
   {
-    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::WellComponents, GEOS_FMT( "        {}: Min well temperature scaling factor: {}", getName(), minTempScalingFactor ) );
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::WellComponents,
+                                GEOS_FMT( "        {}: Min well temperature scaling factor: {}",
+                                          getName(), minTempScalingFactor ) );
   }
 
 
@@ -1645,15 +1656,18 @@ CompositionalMultiphaseWell::checkSystemSolution( DomainPartition & domain,
     numNegTotalDens = MpiWrapper::sum( numNegTotalDens );
 
     if( numNegPres > 0 )
-      GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::WellValidity, GEOS_FMT( "        {}: Number of negative well pressure values: {}, minimum value: {} Pa",
-                                                                   getName(), numNegPres, fmt::format( "{:.{}f}", minPres, 3 ) ) );
+      GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::WellValidity,
+                                  GEOS_FMT( "        {}: Number of negative well pressure values: {}, minimum value: {} Pa",
+                                            getName(), numNegPres, fmt::format( "{:.{}f}", minPres, 3 ) ) );
     string const massUnit = m_useMass ? "kg/m3" : "mol/m3";
     if( numNegDens > 0 )
-      GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::WellValidity, GEOS_FMT( "        {}: Number of negative well component density values: {}, minimum value: {} {} ",
-                                                                   getName(), numNegDens, fmt::format( "{:.{}f}", minDens, 3 ), massUnit ) );
+      GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::WellValidity,
+                                  GEOS_FMT( "        {}: Number of negative well component density values: {}, minimum value: {} {} ",
+                                            getName(), numNegDens, fmt::format( "{:.{}f}", minDens, 3 ), massUnit ) );
     if( minTotalDens > 0 )
-      GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::WellValidity, GEOS_FMT( "        {}: Number of negative total well density values: {}, minimum value: {} {} ",
-                                                                   getName(), minTotalDens, fmt::format( "{:.{}f}", minDens, 3 ), massUnit ) );
+      GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::WellValidity,
+                                  GEOS_FMT( "        {}: Number of negative total well density values: {}, minimum value: {} {} ",
+                                            getName(), minTotalDens, fmt::format( "{:.{}f}", minDens, 3 ), massUnit ) );
 
   }
 

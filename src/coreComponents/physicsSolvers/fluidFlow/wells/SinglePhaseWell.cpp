@@ -543,12 +543,14 @@ void SinglePhaseWell::assemblePressureRelations( real64 const & time_n,
         if( wellControls.getControl() == WellControls::Control::BHP )
         {
           wellControls.switchToTotalRateControl( wellControls.getTargetTotalRate( timeAtEndOfStep ) );
-          GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::WellControl, GEOS_FMT( "Control switch for well {} from BHP constraint to rate constraint", subRegion.getName()) );
+          GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::WellControl,
+                                      GEOS_FMT( "Control switch for well {} from BHP constraint to rate constraint", subRegion.getName()) );
         }
         else
         {
           wellControls.switchToBHPControl( wellControls.getTargetBHP( timeAtEndOfStep ) );
-          GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::WellControl, GEOS_FMT( "Control switch for well {} from rate constraint to BHP constraint", subRegion.getName()) );
+          GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::WellControl,
+                                      GEOS_FMT( "Control switch for well {} from rate constraint to BHP constraint", subRegion.getName()) );
         }
       }
 

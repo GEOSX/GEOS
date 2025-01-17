@@ -22,7 +22,6 @@
 
 
 #include <limits>
-#include "events/LogLevelsInfo.hpp"
 #include "dataRepository/ExecutableGroup.hpp"
 #include "common/DataTypes.hpp"
 namespace geos

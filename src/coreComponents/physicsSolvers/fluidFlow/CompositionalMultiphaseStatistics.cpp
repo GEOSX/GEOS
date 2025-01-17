@@ -475,8 +475,10 @@ void CompositionalMultiphaseStatistics::computeCFLNumbers( real64 const time,
   real64 maxPhaseCFL, maxCompCFL;
   m_solver->computeCFLNumbers( domain, dt, maxPhaseCFL, maxCompCFL );
 
-  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::CFL, GEOS_FMT( "{} (time {} s): Max phase CFL number: {}", getName(), time, maxPhaseCFL ) );
-  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::CFL, GEOS_FMT( "{} (time {} s): Max component CFL number: {}", getName(), time, maxCompCFL ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::CFL,
+                              GEOS_FMT( "{} (time {} s): Max phase CFL number: {}", getName(), time, maxPhaseCFL ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::CFL,
+                              GEOS_FMT( "{} (time {} s): Max component CFL number: {}", getName(), time, maxCompCFL ) );
 }
 
 

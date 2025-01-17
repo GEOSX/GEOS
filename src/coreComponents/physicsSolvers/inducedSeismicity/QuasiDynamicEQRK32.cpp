@@ -467,12 +467,14 @@ real64 QuasiDynamicEQRK32::setNextDt( real64 const & currentDt, DomainPartition 
     m_controller.errors[2] = m_controller.errors[1];
     m_controller.errors[1] = m_controller.errors[0];
     GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::SolverSteps,
-                                GEOS_FMT( "Adaptive time step successful. The next dt will be {:.2e} s", nextDt ));
+                                GEOS_FMT( "Adaptive time step successful. The next dt will be {:.2e} s",
+                                          nextDt ));
   }
   else
   {
     GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::SolverSteps,
-                                GEOS_FMT( "Adaptive time step failed. The next dt will be {:.2e} s", nextDt ));
+                                GEOS_FMT( "Adaptive time step failed. The next dt will be {:.2e} s",
+                                          nextDt ));
   }
 
   return nextDt;

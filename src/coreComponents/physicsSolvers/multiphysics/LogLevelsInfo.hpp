@@ -36,11 +36,6 @@ namespace logInfo
 
 /// @cond DO_NOT_DOCUMENT
 
-struct Coupling
-{
-  static constexpr int getMinLogLevel() { return 1; }
-  static constexpr std::string_view getDescription() { return "Coupling information"; }
-};
 
 /// @endcond
 ///@}

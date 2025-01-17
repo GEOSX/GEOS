@@ -36,29 +36,6 @@ namespace logInfo
 
 /// @cond DO_NOT_DOCUMENT
 
-struct Crossflow
-{
-  static constexpr int getMinLogLevel() { return 1; }
-  static constexpr std::string_view getDescription() { return "Crossflow information"; }
-};
-
-struct CFL
-{
-  static constexpr int getMinLogLevel() { return 1; }
-  static constexpr std::string_view getDescription() { return "CFL information"; }
-};
-
-struct Statistics
-{
-  static constexpr int getMinLogLevel() { return 1; }
-  static constexpr std::string_view getDescription() { return "Print statistics"; }
-};
-
-struct StencilConnection
-{
-  static constexpr int getMinLogLevel() { return 1; }
-  static constexpr std::string_view getDescription() { return "Log strencil stored connection"; }
-};
 
 /// @endcond
 ///@}

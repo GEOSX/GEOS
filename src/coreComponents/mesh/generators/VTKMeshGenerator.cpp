@@ -20,6 +20,7 @@
 #include "VTKMeshGenerator.hpp"
 
 #include "mesh/ExternalDataSourceManager.hpp"
+#include "mesh/LogLevelsInfo.hpp"
 #include "mesh/generators/VTKFaceBlockUtilities.hpp"
 #include "mesh/generators/VTKMeshGeneratorTools.hpp"
 #include "mesh/generators/CellBlockManager.hpp"

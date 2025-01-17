@@ -35,16 +35,10 @@ namespace logInfo
 
 /// @cond DO_NOT_DOCUMENT
 
-struct Initialization
-{
-  static constexpr int getMinLogLevel() { return 3; }
-  static constexpr std::string_view getDescription() { return "Information on Initialization"; }
-};
-
 struct EventExecution
 {
   static constexpr int getMinLogLevel() { return 1; }
-  static constexpr std::string_view getDescription() { return "Informations on events executed"; }
+  static constexpr std::string_view getDescription() { return "Informations on events execution"; }
 };
 
 /// @endcond
