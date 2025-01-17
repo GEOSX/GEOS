@@ -129,6 +129,21 @@ The logic for generating the host-configs can be found in the `GEOS spack recipe
   The host-config generation is currently based on LC systems, and the generated host-config may be missing or have incorrect details for your system (e.g. choice of ``MPIEXEC_NUMPROC_FLAG``). Please modify the python functions and/or host-configs generated as needed.
 
 
+LC TPL Build Script
+-------------------
+
+On LC systems, it is necessary to update the third-party library installations after a change to the configuration. The ``setupLC-TPL-uberenv.bash`` `script <https://github.com/GEOS-DEV/thirdPartyLibs/blob/master/scripts/setupLC-TPL-uberenv.bash>`_ is used to build the third-party libraries on multiple LC systems using uberenv:
+
+.. code-block:: console
+
+    ./setupLC-TPL-uberenv.bash /path/to/shared/installation/directory
+
+This command will also generate a LvArray and GEOS host-config for each specified machine and compiler combination.
+
+.. note::
+  The terminal output from the command may fail to update. In that case, you can track the progress of the builds by looking at the generated \*.log file associated with each machine and compiler combination (e.g. ruby-gcc-12.log).
+
+
 Adding a Dependency (Advanced)
 ------------------------------
 
