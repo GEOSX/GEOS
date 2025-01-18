@@ -30,6 +30,7 @@
 #include "physicsSolvers/fluidFlow/StencilAccessors.hpp"
 #include "physicsSolvers/fluidFlow/wells/WellControls.hpp"
 #include "physicsSolvers/PhysicsSolverBaseKernels.hpp"
+#include "physicsSolvers/KernelLaunchSelectors.hpp"
 
 namespace geos
 {
@@ -301,6 +302,190 @@ struct AccumulationKernel
           CRSMatrixView< real64, globalIndex const > const & localMatrix,
           arrayView1d< real64 > const & localRhs );
 
+};
+
+/******************************** ElementBasedAssemblyKernel ********************************/
+
+/**
+ * @class ElementBasedAssemblyKernel
+ * @tparam IS_THERMAL thermal switch
+ * @brief Define the interface for the assembly kernel in charge of accumulation
+ */
+template< integer IS_THERMAL >
+class ElementBasedAssemblyKernel
+{
+public:
+  using COFFSET = singlePhaseWellKernels::ColOffset;
+  using ROFFSET = singlePhaseWellKernels::RowOffset;
+
+  // Well jacobian column and row indicies
+  using FLUID_PROP_COFFSET = constitutive::singlefluid::DerivativeOffsetC< IS_THERMAL >;
+  using WJ_COFFSET = singlePhaseWellKernels::ColOffset_WellJac< IS_THERMAL >;
+  using WJ_ROFFSET = singlePhaseWellKernels::RowOffset_WellJac< IS_THERMAL >;
+
+  /// Number of Dof's set in this kernal   - no dQ in accum
+  static constexpr integer numDof = 1 + IS_THERMAL;
+
+  /// Compute time value for the number of equations  mass bal + vol bal + energy bal
+  static constexpr integer numEqn =  1 + IS_THERMAL;
+
+
+  /**
+   * @brief Constructor
+   * @param[in] rankOffset the offset of my MPI rank
+   * @param[in] dofKey the string key to retrieve the degress of freedom numbers
+   * @param[in] subRegion the element subregion
+   * @param[in] fluid the fluid model
+   * @param[inout] localMatrix the local CRS matrix
+   * @param[inout] localRhs the local right-hand side vector
+   */
+  ElementBasedAssemblyKernel( integer const isProducer,
+                              globalIndex const rankOffset,
+                              string const dofKey,
+                              WellElementSubRegion const & subRegion,
+                              constitutive::SingleFluidBase const & fluid,
+                              CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                              arrayView1d< real64 > const & localRhs )
+    : m_isProducer( isProducer ),
+    m_rankOffset( rankOffset ),
+    m_iwelemControl( subRegion.getTopWellElementIndex() ),
+    m_dofNumber( subRegion.getReference< array1d< globalIndex > >( dofKey ) ),
+    m_elemGhostRank( subRegion.ghostRank() ),
+    m_wellElemVolume( subRegion.getElementVolume() ),
+    m_wellElemDensity_n( fluid.density_n() ),
+    m_wellElemDensity( fluid.density() ),
+    m_dWellElemDensity( fluid.dDensity() ),
+    m_localMatrix( localMatrix ),
+    m_localRhs( localRhs )
+  {}
+
+
+  /**
+   * @brief Getter for the ghost rank of an element
+   * @param[in] ei the element index
+   * @return the ghost rank of the element
+   */
+  GEOS_HOST_DEVICE
+  integer elemGhostRank( localIndex const ei ) const
+  { return m_elemGhostRank( ei ); }
+
+
+
+  /**
+   * @brief Compute the local accumulation contributions to the residual and Jacobian
+   * @tparam FUNC the type of the function that can be used to customize the kernel
+   * @param[in] ei the element index
+   * @param[inout] stack the stack variables
+   * @param[in] phaseAmountKernelOp the function used to customize the kernel
+   */
+  template< typename FUNC = NoOpFunc >
+  GEOS_HOST_DEVICE
+  void computeAccumulation( localIndex const ei,
+                            FUNC && kernelOp = NoOpFunc{} ) const
+  {  }
+
+
+
+  /**
+   * @brief Performs the kernel launch
+   * @tparam POLICY the policy used in the RAJA kernels
+   * @tparam KERNEL_TYPE the kernel type
+   * @param[in] numElems the number of elements
+   * @param[inout] kernelComponent the kernel component providing access to setup/compute/complete functions and stack variables
+   */
+  template< typename POLICY, typename KERNEL_TYPE >
+  static void
+  launch( localIndex const numElems,
+          KERNEL_TYPE const & kernelComponent )
+  {
+    GEOS_MARK_FUNCTION;
+
+    forAll< POLICY >( numElems, [=] GEOS_HOST_DEVICE ( localIndex const ei )
+    {
+      if( kernelComponent.elemGhostRank( ei ) >= 0 )
+      {
+        return;
+      }
+
+      //typename KERNEL_TYPE::StackVariables stack;
+
+      //kernelComponent.setup( ei, stack );
+      //kernelComponent.computeAccumulation( ei, stack );
+      //kernelComponent.computeVolumeBalance( ei, stack );
+      //kernelComponent.complete( ei, stack );
+    } );
+  }
+
+protected:
+
+  /// Well type
+  integer const m_isProducer;
+
+  /// Offset for my MPI rank
+  globalIndex const m_rankOffset;
+
+  /// Index of the element where the control is enforced
+  localIndex const m_iwelemControl;
+
+  /// View on the dof numbers
+  arrayView1d< globalIndex const > const m_dofNumber;
+
+  /// View on the ghost ranks
+  arrayView1d< integer const > const m_elemGhostRank;
+
+  /// View on the element volumes
+  arrayView1d< real64 const > const m_wellElemVolume;
+
+  /// Views on the density
+  arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const m_wellElemDensity;
+  arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > const m_dWellElemDensity;
+  arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const m_wellElemDensity_n;
+
+  /// View on the local CRS matrix
+  CRSMatrixView< real64, globalIndex const > const m_localMatrix;
+  /// View on the local RHS
+  arrayView1d< real64 > const m_localRhs;
+
+};
+
+/**
+ * @class ElementBasedAssemblyKernelFactory
+ */
+class ElementBasedAssemblyKernelFactory
+{
+public:
+  /**
+   * @brief Create a new kernel and launch
+   * @tparam POLICY the policy used in the RAJA kernel
+   * @param[in] rankOffset the offset of my MPI rank
+   * @param[in] dofKey the string key to retrieve the degress of freedom numbers
+   * @param[in] subRegion the element subregion
+   * @param[in] fluid the fluid model
+   * @param[inout] localMatrix the local CRS matrix
+   * @param[inout] localRhs the local right-hand side vector
+   */
+  template< typename POLICY >
+  static void
+  createAndLaunch( integer const isProducer,
+                   globalIndex const rankOffset,
+                   string const dofKey,
+                   WellElementSubRegion const & subRegion,
+                   constitutive::SingleFluidBase const & fluid,
+                   CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                   arrayView1d< real64 > const & localRhs )
+  {
+    bool isThermal=false;
+    geos::internal::kernelLaunchSelectorThermalSwitch( isThermal, [&]( auto IS_THERMAL )
+    {
+
+      integer constexpr istherm = IS_THERMAL();
+
+      ElementBasedAssemblyKernel< istherm >
+      kernel( isProducer, rankOffset, dofKey, subRegion, fluid, localMatrix, localRhs );
+      ElementBasedAssemblyKernel< istherm >::template
+      launch< POLICY, ElementBasedAssemblyKernel< istherm > >( subRegion.size(), kernel );
+    } );
+  }
 };
 
 /******************************** PressureTemperatyrInitializationKernel ********************************/
