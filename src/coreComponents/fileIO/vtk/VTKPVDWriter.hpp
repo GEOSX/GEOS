@@ -45,11 +45,6 @@ public:
   void setFileName( string fileName );
 
   /*!
-   * @brief Reads existing pvd file
-   */
-  void read();
-
-  /*!
    * @brief Triggers the file output
    */
   void save() const;

@@ -29,19 +29,6 @@ set( events_headers
      SoloEvent.hpp
      tasks/TaskBase.hpp
      tasks/TasksManager.hpp
-     mpmEvents/MPMEventManager.hpp
-     mpmEvents/MPMEventBase.hpp
-     mpmEvents/MaterialSwapMPMEvent.hpp
-     mpmEvents/AnnealMPMEvent.hpp
-     mpmEvents/HealMPMEvent.hpp
-     mpmEvents/CrystalHealMPMEvent.hpp
-     mpmEvents/InsertPeriodicContactSurfacesMPMEvent.hpp
-     mpmEvents/MachineSampleMPMEvent.hpp
-     mpmEvents/FrictionCoefficientSwapMPMEvent.hpp
-     mpmEvents/BodyForceUpdateMPMEvent.hpp
-     mpmEvents/DeformationUpdateMPMEvent.hpp
-     mpmEvents/BoreholePressureMPMEvent.hpp
-     mpmEvents/CohesiveZoneReferenceMPMEvent.hpp
    )
 
 #
@@ -55,19 +42,6 @@ set( events_sources
      SoloEvent.cpp
      tasks/TaskBase.cpp
      tasks/TasksManager.cpp
-     mpmEvents/MPMEventManager.cpp
-     mpmEvents/MPMEventBase.cpp
-     mpmEvents/MaterialSwapMPMEvent.cpp
-     mpmEvents/AnnealMPMEvent.cpp
-     mpmEvents/HealMPMEvent.cpp
-     mpmEvents/CrystalHealMPMEvent.cpp
-     mpmEvents/InsertPeriodicContactSurfacesMPMEvent.cpp
-     mpmEvents/MachineSampleMPMEvent.cpp
-     mpmEvents/FrictionCoefficientSwapMPMEvent.cpp
-     mpmEvents/BodyForceUpdateMPMEvent.cpp
-     mpmEvents/DeformationUpdateMPMEvent.cpp
-     mpmEvents/BoreholePressureMPMEvent.cpp
-     mpmEvents/CohesiveZoneReferenceMPMEvent.cpp
    )
 
 set( dependencyList ${parallelDeps} functions )

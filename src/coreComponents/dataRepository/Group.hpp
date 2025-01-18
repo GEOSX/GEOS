@@ -1566,6 +1566,11 @@ protected:
   virtual void postRestartInitialization()
   {}
 
+
+
+  ///@}
+
+private:
   /**
    * @brief Read values from the input file and put them into the
    *   wrapped values for this group.
@@ -1576,9 +1581,6 @@ protected:
   virtual void processInputFile( xmlWrapper::xmlNode const & targetNode,
                                  xmlWrapper::xmlNodePos const & nodePos );
 
-  ///@}
-
-private:
   Group const & getBaseGroupByPath( string const & path ) const;
 
   /**

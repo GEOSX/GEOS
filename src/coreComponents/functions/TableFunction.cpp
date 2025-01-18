@@ -20,7 +20,6 @@
 #include "TableFunction.hpp"
 #include "codingUtilities/Parsing.hpp"
 #include "common/DataTypes.hpp"
-#include "fileIO/Outputs/OutputBase.hpp"
 
 #include <algorithm>
 

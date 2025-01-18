@@ -102,12 +102,10 @@ toVTKCellType( ParticleType const particleType )
 {
   switch( particleType )
   {
-    case ParticleType::SinglePoint:          return VTK_HEXAHEDRON;
-    case ParticleType::SinglePointBSpline:   return VTK_HEXAHEDRON;
-    case ParticleType::CPDI:                 return VTK_HEXAHEDRON;
-    case ParticleType::CPTI:                 return VTK_TETRA;
-    case ParticleType::CPDI2:                return VTK_HEXAHEDRON;
-    default:                                 GEOS_ERROR( "Unknown particle type!" );
+    case ParticleType::SinglePoint:   return VTK_HEXAHEDRON;
+    case ParticleType::CPDI:          return VTK_HEXAHEDRON;
+    case ParticleType::CPDI2:         return VTK_HEXAHEDRON;
+    case ParticleType::CPTI:          return VTK_TETRA;
   }
   return VTK_EMPTY_CELL;
 }
@@ -117,12 +115,10 @@ getVtkToGeosxNodeOrdering( ParticleType const particleType )
 {
   switch( particleType )
   {
-    case ParticleType::SinglePoint:        return { 0, 1, 3, 2, 4, 5, 7, 6 };
-    case ParticleType::SinglePointBSpline: return { 0, 1, 3, 2, 4, 5, 7, 6 };
-    case ParticleType::CPDI:               return { 0, 1, 3, 2, 4, 5, 7, 6 };
-    case ParticleType::CPTI:               return { 0, 1, 2, 3 };
-    case ParticleType::CPDI2:              return { 0, 1, 3, 2, 4, 5, 7, 6 };
-    default:                               GEOS_ERROR( "Unknown particle type!" );
+    case ParticleType::SinglePoint:   return { 0, 1, 3, 2, 4, 5, 7, 6 };
+    case ParticleType::CPDI:          return { 0, 1, 3, 2, 4, 5, 7, 6 };
+    case ParticleType::CPDI2:         return { 0, 1, 3, 2, 4, 5, 7, 6 };
+    case ParticleType::CPTI:          return { 0, 1, 2, 3 };
   }
   return {};
 }
@@ -273,7 +269,7 @@ getVtkPoints( ParticleRegion const & particleRegion ) // TODO: Loop over the sub
   // TODO: add support for CPTI (tet) and single point (cube or sphere) geometries
 
   localIndex const numCornersPerParticle = 8; // Each CPDI particle has 8 corners. TODO: add support for other particle types.
-  localIndex const numCorners = numCornersPerParticle * particleRegion.getNumberOfParticles(); // size(); // size isn't updated in mpm solver leading to crashes from index out of range
+  localIndex const numCorners = numCornersPerParticle * particleRegion.getNumberOfParticles();
   auto points = vtkSmartPointer< vtkPoints >::New();
   points->SetNumberOfPoints( numCorners );
   array2d< real64 > const coord = particleRegion.getParticleCorners();
@@ -1405,13 +1401,6 @@ void VTKPolyDataWriterInterface::write( real64 const time,
     string const vtmName = stepSubDir + ".vtm";
     VTKVTMWriter vtmWriter( joinPath( m_outputDir, vtmName ) );
     writeVtmFile( cycle, domain, vtmWriter );
-
-    // CC: for restarts need the vtk pvd file to be appended to which requires reading it in from file
-    if( m_previousCycle == -1 && cycle != 0)
-    {
-      GEOS_LOG_RANK_0( "Restart detected, importing existing pvd file!");
-      m_pvd.read();
-    }
 
     if( cycle != m_previousCycle )
     {

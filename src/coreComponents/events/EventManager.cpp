@@ -90,6 +90,7 @@ EventManager::~EventManager()
 {}
 
 
+
 Group * EventManager::createChild( string const & childKey, string const & childName )
 {
   GEOS_LOG_RANK_0( GEOS_FMT( "{}: adding {} {}", getName(), childKey, childName ) );
@@ -212,16 +213,6 @@ bool EventManager::run( DomainPartition & domain )
     m_time += m_dt;
     ++m_cycle;
     m_currentSubEvent = 0;
-  }
-
-  // Add note to output file if job exits before maxTime
-  if( m_time < m_maxTime )
-  {
-    GEOS_LOG_RANK_0( "Job exited early" );
-  }
-  else
-  {
-    GEOS_LOG_RANK_0( "Job complete" );
   }
 
   // Cleanup

@@ -23,6 +23,7 @@ Contains:
 
 #
 # Specify all headers
+#
 set( linearAlgebra_headers
      DofManager.hpp
      DofManagerHelpers.hpp
@@ -61,6 +62,7 @@ set( linearAlgebra_headers
      utilities/TransposeOperator.hpp )
 #
 # Specify all sources
+#
 set( linearAlgebra_sources
      DofManager.cpp
      solvers/BicgstabSolver.cpp

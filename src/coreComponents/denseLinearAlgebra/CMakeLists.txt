@@ -19,6 +19,7 @@ Contains dense linear algebra functions and interfaces to BLAS and LAPACK packag
 
 #
 # Specify all headers
+#
 set( denseLinearAlgebra_headers
      common/layouts.hpp
      denseLASolvers.hpp
@@ -27,6 +28,7 @@ set( denseLinearAlgebra_headers
 
 #
 # Specify all sources
+#
 set( denseLinearAlgebra_sources
      interfaces/blaslapack/BlasLapackLA.cpp )
 

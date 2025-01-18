@@ -1,0 +1,164 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Solvers>
+    <SinglePhaseFVM
+      name="singleFlow"
+      logLevel="1"
+      discretization="tpfaFlow"
+      temperature="0"
+      isThermal="1"
+      targetRegions="{ region }">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-6"
+        newtonMaxIter="100"/>
+      <LinearSolverParameters
+        directParallel="0"/>
+    </SinglePhaseFVM>
+  </Solvers>
+
+  <NumericalMethods>
+    <FiniteVolume>
+      <TwoPointFluxApproximation
+        name="tpfaFlow"/>
+    </FiniteVolume>
+  </NumericalMethods>
+
+  <Constitutive>
+
+    <CompressibleSolidConstantPermeability
+      name="rock_linear"
+      solidModelName="nullSolid"
+      porosityModelName="rockPorosity"
+      permeabilityModelName="rockPerm"
+      solidInternalEnergyModelName="rockInternalEnergy_linear"/>
+
+    <CompressibleSolidConstantPermeability
+      name="rock_temperatureDependentVolumetricHeatCapacity"
+      solidModelName="nullSolid"
+      porosityModelName="rockPorosity"
+      permeabilityModelName="rockPerm"
+      solidInternalEnergyModelName="rockInternalEnergy_nonLinear"/>
+
+    <NullModel
+      name="nullSolid"/>
+
+    <PressurePorosity
+      name="rockPorosity"
+      defaultReferencePorosity="0.1"
+      referencePressure="0.0"
+      compressibility="3.0e-11"/>
+
+	<!-- SPHINX_SolidInternalEnergy_linear -->
+    <SolidInternalEnergy
+      name="rockInternalEnergy_linear"
+      referenceVolumetricHeatCapacity="1.0e6"
+      referenceTemperature="0"
+      referenceInternalEnergy="0"/>
+	<!-- SPHINX_SolidInternalEnergy_linearEnd -->
+
+    <!-- SPHINX_SolidInternalEnergy_nonLinear -->
+    <SolidInternalEnergy
+      name="rockInternalEnergy_nonLinear"
+      referenceVolumetricHeatCapacity="4.56e6"
+      dVolumetricHeatCapacity_dTemperature="1e6"
+      referenceTemperature="0"
+      referenceInternalEnergy="0"/>
+    <!-- SPHINX_SolidInternalEnergy_nonLinearEnd -->
+
+    <ConstantPermeability
+      name="rockPerm"
+      permeabilityComponents="{ 1.0e-18, 1.0e-18, 1.0e-18 }"/>
+
+	<!-- SPHINX_ThermalCompressibleSinglePhaseFluid -->
+    <ThermalCompressibleSinglePhaseFluid
+      name="fluid"
+      defaultDensity="1000"
+      defaultViscosity="0.001"
+      referencePressure="0.0"
+      referenceTemperature="0"
+      compressibility="5e-10"
+      thermalExpansionCoeff="3e-4"
+      viscosibility="0.0"
+      specificHeatCapacity="1"
+      referenceInternalEnergy="0.99"/>
+	<!-- SPHINX_ThermalCompressibleSinglePhaseFluidEnd -->
+
+    <!-- SPHINX_SinglePhaseThermalConductivity_linear -->
+    <SinglePhaseThermalConductivity
+      name="thermalCond_linear"
+      defaultThermalConductivityComponents="{ 1.66, 1.66, 1.66 }"
+      thermalConductivityGradientComponents="{ 0, 0, 0 }"
+      referenceTemperature="0"/>
+    <!-- SPHINX_SinglePhaseThermalConductivity_linearEnd -->    
+
+	<!-- SPHINX_SinglePhaseThermalConductivity_nonLinear -->
+    <SinglePhaseThermalConductivity
+      name="thermalCond_nonLinear"
+      defaultThermalConductivityComponents="{ 1.5, 1.5, 1.5 }"
+      thermalConductivityGradientComponents="{ -12e-4, -12e-4, -12e-4 }"
+      referenceTemperature="20"/>
+	<!-- SPHINX_SinglePhaseThermalConductivity_nonLinearEnd -->    
+	
+  </Constitutive>
+
+  <FieldSpecifications>
+
+	<!-- SPHINX_FieldSpecificationImposedPressure -->
+    <FieldSpecification
+      name="initialPressure"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/region/cb"
+      fieldName="pressure"
+      scale="0e6"/>
+
+    <FieldSpecification
+      name="sinkPressure"
+      setNames="{ rpos }"       
+      objectPath="faceManager"
+      fieldName="pressure"
+      scale="0e6"/>
+
+    <FieldSpecification
+      name="sourcePressure"
+      setNames="{ rneg }"     
+      objectPath="faceManager"
+      fieldName="pressure"
+      scale="0e6"/>
+	<!-- SPHINX_FieldSpecificationImposedPressureEnd -->
+
+	<!-- SPHINX_FieldSpecificationImposedTemperature -->
+    <FieldSpecification
+      name="initialTemperature"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/region/cb"
+      fieldName="temperature"
+      scale="100"/>
+
+    <FieldSpecification
+      name="sinkTemperature"
+      setNames="{ rpos }"       
+      objectPath="faceManager"
+      fieldName="temperature"
+      scale="100"/>
+
+    <FieldSpecification
+      name="sourceTemperature"
+      setNames="{ rneg }"     
+      objectPath="faceManager"
+      fieldName="temperature"
+      scale="-20.0"/>
+	<!-- SPHINX_FieldSpecificationImposedTemperatureEnd -->
+
+  </FieldSpecifications>
+
+  <Outputs>
+    <VTK
+      name="vtkOutput"/>
+
+    <Restart
+      name="restartOutput"/>
+  </Outputs>
+</Problem>

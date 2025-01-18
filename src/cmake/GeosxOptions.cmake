@@ -205,4 +205,5 @@ message( "GEOS_GLOBALINDEX_TYPE_FLAG = ${GEOS_GLOBALINDEX_TYPE_FLAG}" )
 
 
 message( "CMAKE_CXX_FLAGS = ${CMAKE_CXX_FLAGS}" )
+
 message( "Leaving GeosxOptions.cmake\n" )

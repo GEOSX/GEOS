@@ -23,4 +23,3 @@ set(ESSL_LIBRARIES ${ESSL_DIR}/lib64/libessl.so
                    ${ESSL_DIR}/lib64/liblapackforessl.so
                    ${ESSL_DIR}/lib64/liblapackforessl_.so
                    CACHE PATH "" FORCE )
-
