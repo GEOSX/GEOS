@@ -2380,7 +2380,7 @@ localIndex SolidMechanicsMPM::partitionField( int numContactGroups,
   {
     LvArray::tensorOps::copy< 3 >( mappingNormal, particleSurfaceNormal );
   }
-  int nodeFlag = ( damageFieldPartitioning == 1 && LvArray::tensorOps::AiBi< 3 >( gridDamageGradient, mappingNormal ) < 0.0 ) ? 1 : 0; // 0 undamaged for "A" field, 1 for "B" field                                                                                                                                 
+  localIndex nodeFlag = ( damageFieldPartitioning == 1 && LvArray::tensorOps::AiBi< 3 >( gridDamageGradient, mappingNormal ) < 0.0 ) ? 1 : 0; // 0 undamaged for "A" field, 1 for "B" field                                                                                                                                 
   return nodeFlag * numContactGroups + particleGroup; // This ranges from 0 to nMatFields-1
 }
 
@@ -5190,6 +5190,7 @@ void SolidMechanicsMPM::setConstitutiveNamesCallSuper( ParticleSubRegionBase & s
   GEOS_ERROR_IF( solidMaterialName.empty(), GEOS_FMT( "ContinuumBase model not found on subregion {}", subRegion.getName() ) );
 }
 
+//Retain max number of neighbors for device parallelism in computeDamageFieldGradient
 real64 SolidMechanicsMPM::computeNeighborList( ParticleManager & particleManager )
 {
   GEOS_MARK_FUNCTION;
@@ -5677,8 +5678,8 @@ void SolidMechanicsMPM::computeDamageFieldGradient( ParticleManager & particleMa
 
     // Loop over neighbors
     SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
-    forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp ) // Must be on host since we call a 'this'
-                                                                                                // method which uses class variables
+    // forAll< parallelDevicePolicy<> >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp ) // Must be on host since we call a 'this' method which uses class variables
+    forAll< serialPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
     {
       localIndex const p = activeParticleIndices[pp];
 

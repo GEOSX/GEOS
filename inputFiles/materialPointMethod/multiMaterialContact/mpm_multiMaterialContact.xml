@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <!-- 
-srun -p pdebug -n 1 /usr/workspace/crook5/GEOS/build-ruby-clang-14-release/bin/geosx -i mpm_particleRepartition.xml
-srun -n 8 /usr/workspace/crook5/GEOS/build-ruby-clang-14-release/bin/geosx -i mpm_particleRepartition.xml
+srun -p pdebug -n 1 /usr/workspace/crook5/GEOS/build-ruby-clang-14-release/bin/geosx -i mpm_multiMaterialContact.xml
+srun -n 4 /usr/workspace/crook5/GEOS/build-ruby-clang-14-release/bin/geosx -i mpm_multiMaterialContact.xml
 -->
 <Problem>
 
@@ -11,18 +11,18 @@ srun -n 8 /usr/workspace/crook5/GEOS/build-ruby-clang-14-release/bin/geosx -i mp
       elementTypes="{ C3D8 }"
       xCoords="{-0.75,0.75}"
       yCoords="{-0.75,0.75}"
-      zCoords="{-0.75,0.75}"
+      zCoords="{-0.375,0.375}"
       nx="{6}"
       ny="{6}"
-      nz="{6}"
+      nz="{3}"
       periodic="{ 0, 0, 0}"
       cellBlockNames="{ cb1 }"/>
       
     <ParticleMesh
       name="particles"
-      particleFile="mpmParticleFile_particleRepartition"
-      particleBlockNames="{ pb0 }"
-      particleTypes="{ CPDI }"/>
+      particleFile="mpmParticleFile_multiMaterialContact"
+      particleBlockNames="{ pb0, pb1 }"
+      particleTypes="{ CPDI, CPDI }"/>
   </Mesh>
 
   <ElementRegions>
@@ -38,7 +38,12 @@ srun -n 8 /usr/workspace/crook5/GEOS/build-ruby-clang-14-release/bin/geosx -i mp
         name="ParticleRegion1"
         meshBody="particles"
         particleBlocks="{ pb0 }"
-        materialList="{ testMaterial }"/>
+        materialList="{ ceramic }"/>
+    <ParticleRegion
+        name="ParticleRegion2"
+        meshBody="particles"
+        particleBlocks="{ pb1 }"
+        materialList="{ plastic }"/>
   </ParticleRegions>
 
   <Solvers
@@ -46,12 +51,18 @@ srun -n 8 /usr/workspace/crook5/GEOS/build-ruby-clang-14-release/bin/geosx -i mp
     <SolidMechanics_MPM
       name="mpmsolve"
       discretization="FE1"
-      targetRegions="{ backgroundGrid/CellRegion1, particles/ParticleRegion1 }"
+      targetRegions="{ backgroundGrid/CellRegion1, particles/ParticleRegion1, particles/ParticleRegion2 }"
       timeIntegrationOption="ExplicitDynamic"
       updateMethod="FLIP"
       cflFactor="0.25"
       initialDt="1e-16"
-      boundaryConditionTypes="{0, 0, 0, 0, 0, 0}">
+      planeStrain="1"
+      prescribedBoundaryFTable="1"
+      fTable="{{0.0, 1.0, 1.0, 1.0}, {0.1, 1.0, 0.95, 1.0}}"
+      fTableInterpType="Cosine"
+      boundaryConditionTypes="{2, 2, 2, 2, 1, 1}"
+      frictionCoefficient="0.25"
+      contactGapCorrection="Implicit">
 
     </SolidMechanics_MPM>
   </Solvers>
@@ -63,11 +74,23 @@ srun -n 8 /usr/workspace/crook5/GEOS/build-ruby-clang-14-release/bin/geosx -i mp
       defaultBulkModulus="1.0e9"
       defaultShearModulus="1.0e9"/>
     
-    <ElasticIsotropic
-    	name="testMaterial"
-    	defaultDensity="1000"
-    	defaultBulkModulus="10.0e9"
-    	defaultShearModulus="10.0e9"/>
+    <CeramicDamage
+    	name="ceramic"
+    	defaultDensity="2648.0"
+    	defaultBulkModulus="36300000000.0"
+    	defaultShearModulus="26000000000.0"
+    	tensileStrength="449000000.0"
+    	compressiveStrength="2270000000.0"
+    	maximumStrength="5000000000.0"
+    	crackSpeed="1800.0"
+    	/>
+    <PerfectlyPlastic
+    	name="plastic"
+    	defaultDensity="2648.0"
+    	defaultBulkModulus="36300000000.0"
+    	defaultShearModulus="26000000000.0"
+    	defaultYieldStress="449000000.0"
+    	/>
     
   </Constitutive>
 

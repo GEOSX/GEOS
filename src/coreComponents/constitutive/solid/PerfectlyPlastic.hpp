@@ -258,14 +258,13 @@ void PerfectlyPlasticUpdates::smallStrainUpdate_StressOnly( localIndex const k,
                                                      real64 const ( & strainIncrement )[6],
                                                      real64 ( & stress )[6] ) const
 {
-  GEOS_UNUSED_VAR( k );
-  GEOS_UNUSED_VAR( q );
-  GEOS_UNUSED_VAR( timeIncrement );
   GEOS_UNUSED_VAR( beginningRotation);
   GEOS_UNUSED_VAR( endRotation);
-  GEOS_UNUSED_VAR( strainIncrement );
-  GEOS_UNUSED_VAR( stress );
-  GEOS_ERROR( "smallStrainUpdate_StressOnly overload not implemented for PerfectlyPlastic" );
+  smallStrainUpdate_StressOnly( k,
+                                q,
+                                timeIncrement,
+                                strainIncrement,
+                                stress);
 }
 
 

@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <!-- 
-srun -p pdebug -n 1 /usr/workspace/homel1/GEOS/build-quartz-gcc@12-release/bin/geosx -i mpm_dfgMovingGrid.xml
-srun -n 4 /usr/workspace/homel1/GEOS/build-quartz-gcc@12-release/bin/geosx -i mpm_dfgMovingGrid.xml
+srun -p pdebug -n 1 /usr/workspace/crook5/GEOS/build-ruby-clang-14-release/bin/geosx -i mpm_dfgMovingGrid.xml
+srun -n 4 /usr/workspace/crook5/GEOS/build-ruby-clang-14-release/bin/geosx -i mpm_dfgMovingGrid.xml
 -->
 <Problem>
 
@@ -9,19 +9,19 @@ srun -n 4 /usr/workspace/homel1/GEOS/build-quartz-gcc@12-release/bin/geosx -i mp
     <InternalMesh
       name="backgroundGrid"
       elementTypes="{ C3D8 }"
-      xCoords="{-0.25,1.25}"
-      yCoords="{-0.25,1.25}"
-      zCoords="{-1.5,1.5}"
+      xCoords="{-0.75,0.75}"
+      yCoords="{-0.75,0.75}"
+      zCoords="{-0.375,0.375}"
       nx="{6}"
       ny="{6}"
       nz="{3}"
+      periodic="{ 0, 0, 0}"
       cellBlockNames="{ cb1 }"/>
       
     <ParticleMesh
       name="particles"
       particleFile="mpmParticleFile_dfgMovingGrid"
-      headerFile="mpmHeaderFile_dfgMovingGrid"
-      particleBlockNames="{ pb1, pb2 }"
+      particleBlockNames="{ pb0, pb1 }"
       particleTypes="{ CPDI, CPDI }"/>
   </Mesh>
 
@@ -29,22 +29,21 @@ srun -n 4 /usr/workspace/homel1/GEOS/build-quartz-gcc@12-release/bin/geosx -i mp
     <CellElementRegion
       name="CellRegion1"
       meshBody="backgroundGrid"
-      cellBlocks="{ * }"
+      cellBlocks="{ cb1 }"
       materialList="{ null }"/>
   </ElementRegions>
 
   <ParticleRegions>
-    
-      <ParticleRegion
+    <ParticleRegion
         name="ParticleRegion1"
         meshBody="particles"
-        particleBlocks="{ pb1 }"
-        materialList="{stiff}"/>
-      <ParticleRegion
+        particleBlocks="{ pb0 }"
+        materialList="{ stiff }"/>
+    <ParticleRegion
         name="ParticleRegion2"
         meshBody="particles"
-        particleBlocks="{ pb2 }"
-        materialList="{compliant}"/>
+        particleBlocks="{ pb1 }"
+        materialList="{ compliant }"/>
   </ParticleRegions>
 
   <Solvers
@@ -53,31 +52,20 @@ srun -n 4 /usr/workspace/homel1/GEOS/build-quartz-gcc@12-release/bin/geosx -i mp
       name="mpmsolve"
       discretization="FE1"
       targetRegions="{ backgroundGrid/CellRegion1, particles/ParticleRegion1, particles/ParticleRegion2 }"
-      
-timeIntegrationOption="ExplicitDynamic"
-cflFactor="0.5"
-initialDt="1e-16"
+      timeIntegrationOption="ExplicitDynamic"
+      updateMethod="FLIP"
+      cflFactor="0.25"
+      initialDt="1e-16"
+      damageFieldPartitioning="1"
+      planeStrain="1"
+      needsNeighborList="1"
+      prescribedBoundaryFTable="1"
+      fTable="{{0.0, 1.0, 1.0, 1.0}, {0.1, 1.0, 0.95, 1.0}}"
+      fTableInterpType="Cosine"
+      boundaryConditionTypes="{2, 2, 2, 2, 1, 1}"
+      neighborRadius="-1.01">
 
-prescribedBcTable="0"
-prescribedBoundaryFTable="1"
-fTableInterpType="2"
-
-solverProfiling="0"
-
-boxAverageHistory="0"
-reactionHistory="0"
-
-planeStrain="1"
-
-damageFieldPartitioning="1"
-
-neighborRadius="-1.01"
-needsNeighborList="1"
-useDamageAsSurfaceFlag="1"
-
-boundaryConditionTypes="{ 1, 0, 2, 2, 1, 1 }"    
-
-      fTablePath="FTable.dat"/>
+    </SolidMechanics_MPM>
   </Solvers>
 
   <Constitutive>
@@ -87,17 +75,16 @@ boundaryConditionTypes="{ 1, 0, 2, 2, 1, 1 }"
       defaultBulkModulus="1.0e9"
       defaultShearModulus="1.0e9"/>
     
-<ElasticIsotropic
-	name="stiff"
-	defaultDensity="1000"
-	defaultBulkModulus="10.0e9"
-	defaultShearModulus="10.0e9"/>
-<ElasticIsotropic
-	name="compliant"
-	defaultDensity="1000"
-	defaultBulkModulus="10.0e8"
-	defaultShearModulus="10.0e8"/>
-
+    <ElasticIsotropic
+    	name="stiff"
+    	defaultDensity="1000"
+    	defaultBulkModulus="10.0e9"
+    	defaultShearModulus="10.0e9"/>
+    <ElasticIsotropic
+    	name="compliant"
+    	defaultDensity="1000"
+    	defaultBulkModulus="10.0e8"
+    	defaultShearModulus="10.0e8"/>
     
   </Constitutive>
 
@@ -108,12 +95,14 @@ boundaryConditionTypes="{ 1, 0, 2, 2, 1, 1 }"
       target="/Solvers/mpmsolve"/>
     <PeriodicEvent
       name="outputs"
-      timeFrequency="0.01"
+      timeFrequency="0.001"
       target="/Outputs/vtkOutput"/>
     <PeriodicEvent
       name="restart"
-      timeFrequency="0.05"
+      timeFrequency="0.01"
       target="/Outputs/restartOutput"/> 
+    <HaltEvent
+      maxRuntime="300.0"/>
   </Events>
 
   <NumericalMethods>
@@ -133,3 +122,4 @@ boundaryConditionTypes="{ 1, 0, 2, 2, 1, 1 }"
   </Outputs>
 
 </Problem>
+

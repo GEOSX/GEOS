@@ -1,1 +1,2 @@
-1 0.0	0.0	0.0	0.0	0.0	0.0	1.0	0.0	0.0	0	0	0	0	1.0	0.5	0	0	0	0.5	0	0	0	0.5	
+ID	PositionX	PositionY	PositionZ	ParticleType	VelocityX	VelocityY	VelocityZ	MaterialType	ContactGroup	SurfaceFlag	RVectorXX	RVectorXY	RVectorXZ	RVectorYX	RVectorYY	RVectorYZ	RVectorZX	RVectorZY	RVectorZZ
+1 0.0	0.0	0.0	2	0.0	0.0	0.0	0	0	0	0.5	0	0	0	0.5	0	0	0	0.5
