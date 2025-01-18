@@ -123,6 +123,7 @@ void ElementRegionManager::setSchemaDeviations( xmlWrapper::xmlNode schemaRoot,
   }
 }
 
+
 void ElementRegionManager::generateMesh( CellBlockManagerABC const & cellBlockManager )
 {
   { // cellBlocks loading

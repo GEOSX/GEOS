@@ -18,7 +18,6 @@
 
 #include "dataRepository/Group.hpp"
 #include "mesh/generators/CellBlockABC.hpp"
-#include "dataRepository/Group.hpp"
 #include "mesh/ElementType.hpp"
 
 namespace geos

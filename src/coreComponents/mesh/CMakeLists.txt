@@ -39,12 +39,12 @@ set( mesh_headers
      ExternalDataSourceManager.hpp
      EmbeddedSurfaceNodeManager.hpp
      EmbeddedSurfaceSubRegion.hpp
+     MeshFields.hpp
      FaceElementSubRegion.hpp
      FaceManager.hpp
      FieldIdentifiers.hpp
      InterObjectRelation.hpp
      MeshBody.hpp
-     MeshFields.hpp
      MeshForLoopInterface.hpp
      MeshLevel.hpp
      MeshManager.hpp
@@ -80,8 +80,6 @@ set( mesh_headers
      generators/InternalWellGenerator.hpp
      generators/InternalWellboreGenerator.hpp
      generators/MeshComponentBase.hpp
-     generators/LineBlock.hpp
-     generators/LineBlockABC.hpp
      generators/MeshGeneratorBase.hpp
      generators/ParMETISInterface.hpp
      particleGenerators/ParticleBlock.hpp
@@ -105,12 +103,8 @@ set( mesh_headers
      simpleGeometricObjects/Disc.hpp
      simpleGeometricObjects/CustomPolarObject.hpp
      simpleGeometricObjects/Box.hpp
-     simpleGeometricObjects/CustomPolarObject.hpp
      simpleGeometricObjects/Cylinder.hpp
-     simpleGeometricObjects/Disc.hpp
      simpleGeometricObjects/GeometricObjectManager.hpp
-     simpleGeometricObjects/PlanarGeometricObject.hpp
-     simpleGeometricObjects/Rectangle.hpp
      simpleGeometricObjects/SimpleGeometricObjectBase.hpp
      simpleGeometricObjects/PlanarGeometricObject.hpp
      simpleGeometricObjects/ThickPlane.hpp
@@ -170,7 +164,6 @@ set( mesh_sources
      generators/InternalWellGenerator.cpp
      generators/InternalWellboreGenerator.cpp
      generators/MeshComponentBase.cpp
-     generators/LineBlock.cpp
      generators/MeshGeneratorBase.cpp
      generators/ParMETISInterface.cpp
      particleGenerators/ParticleMeshGeneratorBase.cpp
@@ -188,12 +181,8 @@ set( mesh_sources
      simpleGeometricObjects/Disc.cpp
      simpleGeometricObjects/CustomPolarObject.cpp
      simpleGeometricObjects/Box.cpp
-     simpleGeometricObjects/CustomPolarObject.cpp
      simpleGeometricObjects/Cylinder.cpp
-     simpleGeometricObjects/Disc.cpp
      simpleGeometricObjects/GeometricObjectManager.cpp
-     simpleGeometricObjects/PlanarGeometricObject.cpp
-     simpleGeometricObjects/Rectangle.cpp
      simpleGeometricObjects/SimpleGeometricObjectBase.cpp
      simpleGeometricObjects/PlanarGeometricObject.cpp
      simpleGeometricObjects/ThickPlane.cpp
