@@ -326,7 +326,36 @@ public:
 
       real32 const localIncrement_p = -val * stack.invDensity * vti_sqrtDelta * m_q_n[m_elemsToNodes( k, j )];
       stack.stiffnessVectorLocal_p[q] += localIncrement_p;
+    } );    
+#endif
+
+
+#if 1
+    // Missing dxy term
+    m_finiteElementSpace.template computeMissingxyVolumeTerm( q, stack.xLocal, [&] ( int iVertice, int j, real64 val )
+    {
+      //iVertice is the "Qr" index of the vertice in the element (so 0 < iVertice < (r+1)^3)
+      real32 epsi = std::fabs( m_vti_DofEpsilon[m_elemsToNodes( k, iVertice )] ); // value on k
+      real32 delt = std::fabs( m_vti_DofDelta[m_elemsToNodes( k, iVertice )] ); // value on
+      if( std::fabs( epsi ) < 1e-5 )
+        epsi = 0;
+      if( std::fabs( delt ) < 1e-5 )
+        delt = 0;
+      if( delt > epsi )
+        delt = epsi;
+
+      // Two options for defining "f"
+      real32 vti_sqrtDelta = delt / sqrt( 1 + 2 *delt );
+      //real32 vti_sqrtDelta = sqrt( 1 + 2 *delt );
+
+
+
+      real32 const localIncrement_q = -val * stack.invDensity * vti_sqrtDelta * m_p_n[m_elemsToNodes( k, j )];
+      stack.stiffnessVectorLocal_q[q] += localIncrement_q;
     } );
+
+
+
 #endif
 
   }

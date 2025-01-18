@@ -687,9 +687,9 @@ public:
   template< typename FUNC >
   GEOS_HOST_DEVICE
   GEOS_FORCE_INLINE
-  static void computeMissingxyTerm( localIndex const q,
-                                    real64 const (&X)[8][3],
-                                    FUNC && func );
+  static void computeMissingxyVolumeTerm( localIndex const q,
+                                          real64 const (&X)[8][3],
+                                          FUNC && func );
 
   template< typename FUNC >
   GEOS_HOST_DEVICE
@@ -784,11 +784,11 @@ public:
   GEOS_HOST_DEVICE
   GEOS_FORCE_INLINE
   static void
-  computeGradPhiBGradzF( int const qa,
-                         int const qb,
-                         int const qc,
-                         real64 const (&B)[6],
-                         FUNC && func );
+  computeGradPhiBGradF( int const qa,
+                        int const qb,
+                        int const qc,
+                        real64 const (&B)[6],
+                        FUNC && func );
 
   template< typename FUNC >
   GEOS_HOST_DEVICE
@@ -1396,27 +1396,6 @@ GEOS_HOST_DEVICE
 GEOS_FORCE_INLINE
 void
 Qk_Hexahedron_Lagrange_GaussLobatto< GL_BASIS >::
-computeMissingxyTerm( localIndex const q,
-                      real64 const (&X)[8][3],
-                      FUNC && func )
-{
-  // TODO
-  //int qa, qb, qc;
-  //GL_BASIS::TensorProduct3D::multiIndex( q, qa, qb, qc );
-  //real64 B[6] = {0};
-  //real64 J[3][3] = {{0}};
-  //computeBMatrix( qa, qb, qc, X, J, B );
-  //computeGradPhiBGradPhi( qa, qb, qc, B, func );
-}
-
-
-
-template< typename GL_BASIS >
-template< typename FUNC >
-GEOS_HOST_DEVICE
-GEOS_FORCE_INLINE
-void
-Qk_Hexahedron_Lagrange_GaussLobatto< GL_BASIS >::
 computeMissingzVolumeTerm_precompDzF( localIndex const q,
                                       real64 const (&X)[8][3],
                                       FUNC && func )
@@ -1490,7 +1469,7 @@ computeMissingzVolumeTerm( localIndex const q,
   real64 B[6] = {0};
   real64 J[3][3] = {{0}};
   computeBzMatrix( qa, qb, qc, X, J, B );
-  computeGradPhiBGradzF( qa, qb, qc, B, func );
+  computeGradPhiBGradF( qa, qb, qc, B, func );
 }
 
 template< typename GL_BASIS >
@@ -1499,11 +1478,29 @@ GEOS_HOST_DEVICE
 GEOS_FORCE_INLINE
 void
 Qk_Hexahedron_Lagrange_GaussLobatto< GL_BASIS >::
-computeGradPhiBGradzF( int const qa,
-                       int const qb,
-                       int const qc,
-                       real64 const (&B)[6],
-                       FUNC && func )
+computeMissingxyVolumeTerm( localIndex const q,
+                            real64 const (&X)[8][3],
+                            FUNC && func )
+{
+  int qa, qb, qc;
+  GL_BASIS::TensorProduct3D::multiIndex( q, qa, qb, qc );
+  real64 B[6] = {0};
+  real64 J[3][3] = {{0}};
+  computeBxyMatrix( qa, qb, qc, X, J, B );
+  computeGradPhiBGradF( qa, qb, qc, B, func );
+}
+
+template< typename GL_BASIS >
+template< typename FUNC >
+GEOS_HOST_DEVICE
+GEOS_FORCE_INLINE
+void
+Qk_Hexahedron_Lagrange_GaussLobatto< GL_BASIS >::
+computeGradPhiBGradF( int const qa,
+                      int const qb,
+                      int const qc,
+                      real64 const (&B)[6],
+                      FUNC && func )
 {
   const real64 w = GL_BASIS::weight( qa )*GL_BASIS::weight( qb )*GL_BASIS::weight( qc );
 
