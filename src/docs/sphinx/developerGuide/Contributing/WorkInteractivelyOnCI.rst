@@ -16,6 +16,7 @@ First, as much as you can, try to reduce the number of jobs you're triggering by
 Then in your branch, add the following GHA step to the `.github/build_and_test.yml` (see full documentation of the action `here <https://github.com/lhotari/action-upterm>_`).
 
 .. code-block:: console
+
   - name: ssh  
       uses: lhotari/action-upterm@v1  
       with:

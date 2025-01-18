@@ -75,9 +75,6 @@ void TestMeshImport( string const & meshFilePath, V const & validate, string con
   meshManager.processInputFileRecursive( xmlDocument, xmlMeshNode );
   meshManager.postInputInitializationRecursive();
   DomainPartition domain( "domain", &root );
-  SpatialPartition & partition = dynamic_cast< SpatialPartition & >(domain.getReference< PartitionBase >( keys::partitionManager ));
-  partition.setPartitions( MpiWrapper::commSize(), 1, 1 );
-
   meshManager.generateMeshes( domain );
 
   // TODO Field import is not tested yet. Proper refactoring needs to be done first.

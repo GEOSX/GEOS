@@ -220,14 +220,6 @@ A good agreement between the GEOS results and analytical results for temperature
 
    Validation of the temperature.
 
-.. _problemCasedThermoElasticWellbore_Temperature_Fig:
-.. figure:: temperature.png
-   :align: center
-   :width: 800
-   :figclass: align-center
-
-   Validation of the temperature.
-
 and the validation for the radial displacement around the cased wellbore is shown below:
 
 .. _problemCasedThermoElasticWellbore_Displacement_Fig:
@@ -238,23 +230,7 @@ and the validation for the radial displacement around the cased wellbore is show
 
    Validation of the displacement.
 
-.. _problemCasedThermoElasticWellbore_Displacement_Fig:
-.. figure:: displacement.png
-   :align: center
-   :width: 800
-   :figclass: align-center
-
-   Validation of the displacement.
-
 The validations of the total radial and hoop stress (tangent stress) components computed by GEOS against reference results are shown in the figure below:
-
-.. _problemCasedThermoElasticWellbore_Stresses_Fig:
-.. figure:: stress.png
-   :align: center
-   :width: 800
-   :figclass: align-center
-
-   Validation of the stresses.
 
 .. _problemCasedThermoElasticWellbore_Stresses_Fig:
 .. figure:: stress.png
