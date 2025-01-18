@@ -129,8 +129,6 @@ void CompositionalMultiphaseFVM::postInputInitialization()
 
 void CompositionalMultiphaseFVM::registerDataOnMesh( Group & meshBodies )
 {
-  using namespace fields::flow;
-
   CompositionalMultiphaseBase::registerDataOnMesh( meshBodies );
 
   if( m_targetFlowCFL > 0 )
@@ -141,6 +139,8 @@ void CompositionalMultiphaseFVM::registerDataOnMesh( Group & meshBodies )
 
 void CompositionalMultiphaseFVM::registerDataForCFL( Group & meshBodies )
 {
+  using namespace fields::flow;
+
   forDiscretizationOnMeshTargets( meshBodies, [&]( string const &,
                                                    MeshLevel & mesh,
                                                    arrayView1d< string const > const & regionNames )
@@ -149,10 +149,10 @@ void CompositionalMultiphaseFVM::registerDataForCFL( Group & meshBodies )
                                                 [&]( localIndex const,
                                                      ElementSubRegionBase & subRegion )
     {
-      subRegion.registerField< fields::flow::phaseOutflux >( getName()).reference().resizeDimension< 1 >( m_numPhases );
-      subRegion.registerField< fields::flow::componentOutflux >( getName()).reference().resizeDimension< 1 >( m_numComponents );
-      subRegion.registerField< fields::flow::phaseCFLNumber >( getName());
-      subRegion.registerField< fields::flow::componentCFLNumber >( getName());
+      subRegion.registerField< phaseOutflux >( getName()).reference().resizeDimension< 1 >( m_numPhases );
+      subRegion.registerField< componentOutflux >( getName()).reference().resizeDimension< 1 >( m_numComponents );
+      subRegion.registerField< phaseCFLNumber >( getName());
+      subRegion.registerField< componentCFLNumber >( getName());
     } );
   } );
 }

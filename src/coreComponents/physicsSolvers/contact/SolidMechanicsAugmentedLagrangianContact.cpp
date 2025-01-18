@@ -61,6 +61,8 @@ SolidMechanicsAugmentedLagrangianContact::~SolidMechanicsAugmentedLagrangianCont
 
 void SolidMechanicsAugmentedLagrangianContact::registerDataOnMesh( dataRepository::Group & meshBodies )
 {
+  using namespace fields::solidMechanics;
+  using namespace fields::contact;
 
   ContactSolverBase::registerDataOnMesh( meshBodies );
 
@@ -71,11 +73,11 @@ void SolidMechanicsAugmentedLagrangianContact::registerDataOnMesh( dataRepositor
     FaceManager & faceManager = meshLevel.getFaceManager();
 
     // Register the total bubble displacement
-    faceManager.registerField< solidMechanics::totalBubbleDisplacement >( this->getName() ).
+    faceManager.registerField< totalBubbleDisplacement >( this->getName() ).
       reference().resizeDimension< 1 >( 3 );
 
     // Register the incremental bubble displacement
-    faceManager.registerField< solidMechanics::incrementalBubbleDisplacement >( this->getName() ).
+    faceManager.registerField< incrementalBubbleDisplacement >( this->getName() ).
       reference().resizeDimension< 1 >( 3 );
   } );
 
@@ -83,35 +85,35 @@ void SolidMechanicsAugmentedLagrangianContact::registerDataOnMesh( dataRepositor
   {
     fractureRegion.forElementSubRegions< SurfaceElementSubRegion >( [&]( SurfaceElementSubRegion & subRegion )
     {
-      subRegion.registerField< fields::contact::deltaTraction >( getName() ).
+      subRegion.registerField< deltaTraction >( getName() ).
         reference().resizeDimension< 1 >( 3 );
 
       // Register the rotation matrix
-      subRegion.registerField< contact::rotationMatrix >( this->getName() ).
+      subRegion.registerField< rotationMatrix >( getName() ).
         reference().resizeDimension< 1, 2 >( 3, 3 );
 
       // Register the penalty coefficients for the iterative procedure
-      subRegion.registerField< contact::iterativePenalty >( this->getName() ).
+      subRegion.registerField< iterativePenalty >( getName() ).
         reference().resizeDimension< 1 >( 5 );
 
       subRegion.registerWrapper< array1d< real64 > >( viewKeyStruct::normalTractionToleranceString() ).
         setPlotLevel( PlotLevel::NOPLOT ).
-        setRegisteringObjects( this->getName()).
+        setRegisteringObjects( getName()).
         setDescription( "An array that holds the normal traction tolerance." );
 
       subRegion.registerWrapper< array1d< real64 > >( viewKeyStruct::normalDisplacementToleranceString() ).
         setPlotLevel( PlotLevel::NOPLOT ).
-        setRegisteringObjects( this->getName()).
+        setRegisteringObjects( getName()).
         setDescription( "An array that holds the normal displacement tolerance." );
 
       subRegion.registerWrapper< array1d< real64 > >( viewKeyStruct::slidingToleranceString() ).
         setPlotLevel( PlotLevel::NOPLOT ).
-        setRegisteringObjects( this->getName()).
+        setRegisteringObjects( getName()).
         setDescription( "An array that holds the sliding tolerance." );
 
       subRegion.registerWrapper< array2d< real64 > >( viewKeyStruct::dispJumpUpdPenaltyString() ).
         setPlotLevel( PlotLevel::NOPLOT ).
-        setRegisteringObjects( this->getName()).
+        setRegisteringObjects( getName()).
         setDescription( "An array that stores the displacement jumps used to update the penalty coefficients." ).
         reference().resizeDimension< 1 >( 3 );
 

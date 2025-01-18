@@ -115,8 +115,9 @@ void QuasiDynamicEQ::registerDataOnMesh( Group & meshBodies )
           setRestartFlags( RestartFlags::NO_WRITE ).
           setSizedFromParent( 0 );
 
+        // TODO
         string & frictionLawName = subRegion.getReference< string >( viewKeyStruct::frictionLawNameString() );
-        frictionLawName =PhysicsSolverBase::getConstitutiveName< FrictionBase >( subRegion );
+        frictionLawName = getConstitutiveName< FrictionBase >( subRegion );
         GEOS_ERROR_IF( frictionLawName.empty(), GEOS_FMT( "{}: FrictionBase model not found on subregion {}",
                                                           getDataContext(), subRegion.getDataContext() ) );
       }

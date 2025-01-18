@@ -94,6 +94,9 @@ real64 SolidMechanicsLagrangeContactBubbleStab::solverStep( real64 const & time_
 
 void SolidMechanicsLagrangeContactBubbleStab::registerDataOnMesh( Group & meshBodies )
 {
+  using namespace fields::solidMechanics;
+  using namespace fields::contact;
+
   ContactSolverBase::registerDataOnMesh( meshBodies );
 
   forDiscretizationOnMeshTargets( meshBodies, [&] ( string const &,
@@ -103,11 +106,11 @@ void SolidMechanicsLagrangeContactBubbleStab::registerDataOnMesh( Group & meshBo
     FaceManager & faceManager = meshLevel.getFaceManager();
 
     // Register the total bubble displacement
-    faceManager.registerField< solidMechanics::totalBubbleDisplacement >( this->getName() ).
+    faceManager.registerField< totalBubbleDisplacement >( this->getName() ).
       reference().resizeDimension< 1 >( 3 );
 
     // Register the incremental bubble displacement
-    faceManager.registerField< solidMechanics::incrementalBubbleDisplacement >( this->getName() ).
+    faceManager.registerField< incrementalBubbleDisplacement >( this->getName() ).
       reference().resizeDimension< 1 >( 3 );
   } );
 
@@ -116,13 +119,13 @@ void SolidMechanicsLagrangeContactBubbleStab::registerDataOnMesh( Group & meshBo
     fractureRegion.forElementSubRegions< SurfaceElementSubRegion >( [&]( SurfaceElementSubRegion & subRegion )
     {
       // Register the rotation matrix
-      subRegion.registerField< contact::rotationMatrix >( this->getName() ).
+      subRegion.registerField< rotationMatrix >( this->getName() ).
         reference().resizeDimension< 1, 2 >( 3, 3 );
 
-      subRegion.registerField< fields::contact::deltaTraction >( getName() ).
+      subRegion.registerField< deltaTraction >( getName() ).
         reference().resizeDimension< 1 >( 3 );
 
-      subRegion.registerField< fields::contact::targetIncrementalJump >( getName() ).
+      subRegion.registerField< targetIncrementalJump >( getName() ).
         reference().resizeDimension< 1 >( 3 );
     } );
   } );

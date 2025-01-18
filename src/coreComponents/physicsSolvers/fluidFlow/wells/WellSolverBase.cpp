@@ -103,6 +103,8 @@ void WellSolverBase::postInputInitialization()
 
 void WellSolverBase::registerDataOnMesh( Group & meshBodies )
 {
+  using namespace fields::well;
+
   PhysicsSolverBase::registerDataOnMesh( meshBodies );
 
   // loop over the wells
@@ -116,24 +118,19 @@ void WellSolverBase::registerDataOnMesh( Group & meshBodies )
                                                                        [&]( localIndex const,
                                                                             WellElementSubRegion & subRegion )
     {
-      subRegion.registerField< fields::well::pressure >( getName() );
-      subRegion.registerField< fields::well::pressure_n >( getName() );
+      subRegion.registerField< pressure >( getName() );
+      subRegion.registerField< pressure_n >( getName() );
 
-      subRegion.registerField< fields::well::temperature >( getName() );
+      subRegion.registerField< temperature >( getName() );
       if( isThermal() )
       {
-        subRegion.registerField< fields::well::temperature_n >( getName() );
+        subRegion.registerField< temperature_n >( getName() );
       }
 
-      subRegion.registerField< fields::well::gravityCoefficient >( getName() );
-
-      subRegion.registerWrapper< string >( viewKeyStruct::fluidNamesString() ).
-        setPlotLevel( PlotLevel::NOPLOT ).
-        setRestartFlags( RestartFlags::NO_WRITE ).
-        setSizedFromParent( 0 );
+      subRegion.registerField< gravityCoefficient >( getName() );
 
       PerforationData * const perforationData = subRegion.getPerforationData();
-      perforationData->registerField< fields::well::gravityCoefficient >( getName() );
+      perforationData->registerField< gravityCoefficient >( getName() );
     } );
   } );
 }

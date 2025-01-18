@@ -99,20 +99,22 @@ void SolidMechanicsLagrangeContact::setMGRStrategy()
 
 void SolidMechanicsLagrangeContact::registerDataOnMesh( Group & meshBodies )
 {
+  using namespace fields::contact;
+
   ContactSolverBase::registerDataOnMesh( meshBodies );
 
   forFractureRegionOnMeshTargets( meshBodies, [&] ( SurfaceElementRegion & fractureRegion )
   {
     fractureRegion.forElementSubRegions< SurfaceElementSubRegion >( [&]( SurfaceElementSubRegion & subRegion )
     {
+      subRegion.registerField< deltaTraction >( getName() ).
+        reference().resizeDimension< 1 >( 3 );
+
       subRegion.registerWrapper< array3d< real64 > >( viewKeyStruct::rotationMatrixString() ).
         setPlotLevel( PlotLevel::NOPLOT ).
         setRegisteringObjects( this->getName()).
         setDescription( "An array that holds the rotation matrices on the fracture." ).
         reference().resizeDimension< 1, 2 >( 3, 3 );
-
-      subRegion.registerField< fields::contact::deltaTraction >( getName() ).
-        reference().resizeDimension< 1 >( 3 );
 
       subRegion.registerWrapper< array1d< real64 > >( viewKeyStruct::normalTractionToleranceString() ).
         setPlotLevel( PlotLevel::NOPLOT ).

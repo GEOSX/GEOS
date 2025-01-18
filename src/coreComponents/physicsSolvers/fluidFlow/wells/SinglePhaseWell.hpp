@@ -249,6 +249,8 @@ protected:
 
 private:
 
+  void setConstitutiveNames( ElementSubRegionBase & subRegion ) const;
+
   /**
    * @brief Initialize all the primary and secondary variables in all the wells
    * @param domain the domain containing the well manager to access individual wells

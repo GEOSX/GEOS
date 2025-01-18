@@ -61,8 +61,6 @@ public:
 
 protected:
 
-  virtual void validateConstitutiveModels( DomainPartition & domain ) const override;
-
   virtual FluidPropViews getFluidProperties( constitutive::ConstitutiveBase const & fluid ) const override;
 
 private:

@@ -161,12 +161,6 @@ void SinglePhaseBase::validateConstitutiveModels( DomainPartition & domain ) con
                                                                   ElementSubRegionBase & subRegion )
     {
       string & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
-      fluidName = getConstitutiveName< SingleFluidBase >( subRegion );
-      GEOS_THROW_IF( fluidName.empty(),
-                     GEOS_FMT( "SingleFluidBase {}: Fluid model not found on subregion {}",
-                               getDataContext(), subRegion.getName() ),
-                     InputError );
-
       SingleFluidBase const & fluid = getConstitutiveModel< SingleFluidBase >( subRegion, fluidName );
 
       constitutiveUpdatePassThru( fluid, [&] ( auto & castedFluid )

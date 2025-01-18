@@ -64,6 +64,8 @@ SinglePhaseWell::SinglePhaseWell( const string & name,
 
 void SinglePhaseWell::registerDataOnMesh( Group & meshBodies )
 {
+  using namespace fields::well;
+
   WellSolverBase::registerDataOnMesh( meshBodies );
 
   // loop over the wells
@@ -78,17 +80,12 @@ void SinglePhaseWell::registerDataOnMesh( Group & meshBodies )
                                                               [&]( localIndex const,
                                                                    WellElementSubRegion & subRegion )
     {
-      string & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
-      fluidName = getConstitutiveName< SingleFluidBase >( subRegion );
-      GEOS_ERROR_IF( fluidName.empty(), GEOS_FMT( "{}: Fluid model not found on subregion {}",
-                                                  getDataContext(), subRegion.getName() ) );
-
-      subRegion.registerField< fields::well::connectionRate_n >( getName() );
-      subRegion.registerField< fields::well::connectionRate >( getName() );
+      subRegion.registerField< connectionRate_n >( getName() );
+      subRegion.registerField< connectionRate >( getName() );
 
       PerforationData & perforationData = *subRegion.getPerforationData();
-      perforationData.registerField< fields::well::perforationRate >( getName() );
-      perforationData.registerField< fields::well::dPerforationRate_dPres >( getName() ).
+      perforationData.registerField< perforationRate >( getName() );
+      perforationData.registerField< dPerforationRate_dPres >( getName() ).
         reference().resizeDimension< 1 >( 2 );
 
       WellControls & wellControls = getWellControls( subRegion );
@@ -113,6 +110,11 @@ void SinglePhaseWell::registerDataOnMesh( Group & meshBodies )
       }
     } );
   } );
+}
+
+void SinglePhaseWell::setConstitutiveNames( ElementSubRegionBase & subRegion ) const
+{
+  setConstitutiveName< SingleFluidBase >( subRegion, viewKeyStruct::fluidNamesString() );
 }
 
 string SinglePhaseWell::resElementDofName() const

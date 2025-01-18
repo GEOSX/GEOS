@@ -69,26 +69,6 @@ void SinglePhaseProppantBase::setConstitutiveNames( ElementSubRegionBase & subRe
   setConstitutiveName< SlurryFluidBase >( subRegion, viewKeyStruct::fluidNamesString() );
 }
 
-void SinglePhaseProppantBase::validateConstitutiveModels( DomainPartition & domain ) const
-{
-  // Validate fluid models in regions
-  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
-                                                               MeshLevel & mesh,
-                                                               arrayView1d< string const > const & regionNames )
-  {
-    mesh.getElemManager().forElementSubRegions( regionNames, [&]( localIndex const,
-                                                                  ElementSubRegionBase & subRegion )
-    {
-      string & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
-      fluidName = getConstitutiveName< SlurryFluidBase >( subRegion );
-      GEOS_THROW_IF( fluidName.empty(),
-                     GEOS_FMT( "{}: Fluid model not found on subregion {}",
-                               getDataContext(), subRegion.getName() ),
-                     InputError );
-    } );
-  } );
-}
-
 SinglePhaseBase::FluidPropViews SinglePhaseProppantBase::getFluidProperties( constitutive::ConstitutiveBase const & fluid ) const
 {
   SlurryFluidBase const & slurryFluid = dynamicCast< SlurryFluidBase const & >( fluid );

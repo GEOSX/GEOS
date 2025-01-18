@@ -124,6 +124,12 @@ public:
   {
     Base::setConstitutiveNamesCallSuper( subRegion );
 
+    this->template setConstitutiveName< constitutive::CoupledSolidBase >( subRegion,
+                                                                          viewKeyStruct::porousMaterialNamesString() );
+
+    this->template setConstitutiveName< constitutive::PorosityBase >( subRegion,
+                                                                      constitutive::CoupledSolidBase::viewKeyStruct::porosityModelNameString() );
+
     if( dynamic_cast< SurfaceElementSubRegion * >( &subRegion ) )
     {
       this->template setConstitutiveName< constitutive::HydraulicApertureBase >( subRegion,
@@ -151,24 +157,12 @@ public:
                                                                          [&]( localIndex const,
                                                                               ElementSubRegionBase & subRegion )
       {
-        string & porousName = subRegion.getReference< string >( viewKeyStruct::porousMaterialNamesString() );
-        porousName = this->template getConstitutiveName< constitutive::CoupledSolidBase >( subRegion );
-        GEOS_THROW_IF( porousName.empty(),
-                       GEOS_FMT( "{} {} : Solid model not found on subregion {}",
-                                 this->getCatalogName(), this->getDataContext().toString(), subRegion.getName() ),
-                       InputError );
-
-        string & porosityModelName = subRegion.getReference< string >( constitutive::CoupledSolidBase::viewKeyStruct::porosityModelNameString() );
-        porosityModelName = this->template getConstitutiveName< constitutive::PorosityBase >( subRegion );
-        GEOS_THROW_IF( porosityModelName.empty(),
-                       GEOS_FMT( "{} {} : Porosity model not found on subregion {}",
-                                 this->getCatalogName(), this->getDataContext().toString(), subRegion.getName() ),
-                       InputError );
-
         if( subRegion.hasField< fields::poromechanics::bulkDensity >() )
         {
           // get the solid model to know the number of quadrature points and resize the bulk density
-          constitutive::CoupledSolidBase const & solid = this->template getConstitutiveModel< constitutive::CoupledSolidBase >( subRegion, porousName );
+          constitutive::CoupledSolidBase const & solid =
+            this->template getConstitutiveModel< constitutive::CoupledSolidBase >( subRegion,
+                                                                                   subRegion.getReference< string >( viewKeyStruct::porousMaterialNamesString() ) );
           subRegion.getField< fields::poromechanics::bulkDensity >().resizeDimension< 1 >( solid.getDensity().size( 1 ) );
         }
       } );
@@ -202,17 +196,6 @@ public:
                                                                 [&]( localIndex const,
                                                                      ElementSubRegionBase & subRegion )
       {
-        subRegion.registerWrapper< string >( viewKeyStruct::porousMaterialNamesString() ).
-          setPlotLevel( dataRepository::PlotLevel::NOPLOT ).
-          setRestartFlags( dataRepository::RestartFlags::NO_WRITE ).
-          setSizedFromParent( 0 );
-
-        // This is needed by the way the surface generator currently does things.
-        subRegion.registerWrapper< string >( constitutive::CoupledSolidBase::viewKeyStruct::porosityModelNameString() ).
-          setPlotLevel( dataRepository::PlotLevel::NOPLOT ).
-          setRestartFlags( dataRepository::RestartFlags::NO_WRITE ).
-          setSizedFromParent( 0 );
-
         if( this->getNonlinearSolverParameters().m_couplingType == NonlinearSolverParameters::CouplingType::Sequential )
         {
           // register the bulk density for use in the solid mechanics solver

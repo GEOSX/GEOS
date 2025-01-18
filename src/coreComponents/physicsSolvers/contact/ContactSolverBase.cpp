@@ -59,39 +59,41 @@ void ContactSolverBase::postInputInitialization()
 
 void ContactSolverBase::registerDataOnMesh( dataRepository::Group & meshBodies )
 {
+  using namespace fields::contact;
+
   SolidMechanicsLagrangianFEM::registerDataOnMesh( meshBodies );
 
   setFractureRegions( meshBodies );
 
+  string const labels[3] = { "normal", "tangent1", "tangent2" };
+
   forFractureRegionOnMeshTargets( meshBodies, [&] ( SurfaceElementRegion & fractureRegion )
   {
-    string const labels[3] = { "normal", "tangent1", "tangent2" };
-
     fractureRegion.forElementSubRegions< SurfaceElementSubRegion >( [&]( SurfaceElementSubRegion & subRegion )
     {
-      subRegion.registerField< fields::contact::dispJump >( getName() ).
+      subRegion.registerField< dispJump >( getName() ).
         setDimLabels( 1, labels ).
         reference().resizeDimension< 1 >( 3 );
 
-      subRegion.registerField< fields::contact::deltaDispJump >( getName() ).
+      subRegion.registerField< deltaDispJump >( getName() ).
         setDimLabels( 1, labels ).
         reference().resizeDimension< 1 >( 3 );
 
-      subRegion.registerField< fields::contact::oldDispJump >( getName() ).
+      subRegion.registerField< oldDispJump >( getName() ).
         setDimLabels( 1, labels ).
         reference().resizeDimension< 1 >( 3 );
 
-      subRegion.registerField< fields::contact::traction >( getName() ).
+      subRegion.registerField< traction >( getName() ).
         setDimLabels( 1, labels ).
         reference().resizeDimension< 1 >( 3 );
 
-      subRegion.registerField< fields::contact::fractureState >( getName() );
+      subRegion.registerField< fractureState >( getName() );
 
-      subRegion.registerField< fields::contact::oldFractureState >( getName() );
+      subRegion.registerField< oldFractureState >( getName() );
 
-      subRegion.registerField< fields::contact::slip >( getName() );
+      subRegion.registerField< slip >( getName() );
 
-      subRegion.registerField< fields::contact::deltaSlip >( getName() );
+      subRegion.registerField< deltaSlip >( getName() );
     } );
 
   } );

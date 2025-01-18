@@ -57,8 +57,6 @@ CompositionalMultiphaseHybridFVM::CompositionalMultiphaseHybridFVM( const std::s
 
 void CompositionalMultiphaseHybridFVM::registerDataOnMesh( Group & meshBodies )
 {
-  GEOS_MARK_FUNCTION;
-
   // 1) Register the elem-centered data
   CompositionalMultiphaseBase::registerDataOnMesh( meshBodies );
 
