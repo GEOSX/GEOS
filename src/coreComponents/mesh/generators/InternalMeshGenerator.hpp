@@ -382,6 +382,10 @@ private:
       X[i] = m_min[i] + (m_max[i]-m_min[i]) * ( ( k[i] + 0.5 ) / m_numElemsTotal[i] );
     }
   }
+
+  public:
+
+
 };
 
 } /* namespace geos */

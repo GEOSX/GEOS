@@ -13,6 +13,10 @@
  * ------------------------------------------------------------------------------------------------------------
  */
 
+/**
+ * @file InternalMeshGenerator.cpp
+ */
+
 #include "InternalMeshGenerator.hpp"
 #include "CellBlockManager.hpp"
 
