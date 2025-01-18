@@ -21,8 +21,7 @@
 
 #include <ptscotch.h>
 
-#include <type_traits>
-
+#include <numeric>
 
 static_assert( std::is_same< int64_t, SCOTCH_Num >::value,
                "Non-matching index types. Scotch must be configured with 64-bit indices." );
@@ -33,7 +32,9 @@ static_assert( std::is_same< int64_t, SCOTCH_Num >::value,
     GEOS_ERROR_IF_NE_MSG( ierr, 0, "Error in call to:\n" << #call ); \
   } while( false )
 
-namespace geos::ptscotch
+namespace geos
+{
+namespace ptscotch
 {
 
 array1d< int64_t >
@@ -87,4 +88,5 @@ partition( ArrayOfArraysView< int64_t const, int64_t > const & graph,
   return part;
 }
 
-} // namespace geos::ptscotch
+} // namespace ptscotch
+} // namespace geos

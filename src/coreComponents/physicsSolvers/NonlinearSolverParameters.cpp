@@ -78,11 +78,6 @@ NonlinearSolverParameters::NonlinearSolverParameters( string const & name,
     setApplyDefaultValue( 1e-12 ).
     setDescription( "Value used to make sure that residual normalizers are not too small when computing residual norm." );
 
-  registerWrapper( viewKeysStruct::minNormalizerString(), &m_minNormalizer ).
-    setInputFlag( dataRepository::InputFlags::OPTIONAL ).
-    setApplyDefaultValue( 1e-12 ).
-    setDescription( "Value used to make sure that residual normalizers are not too small when computing residual norm." );
-
   registerWrapper( viewKeysStruct::newtonTolString(), &m_newtonTol ).
     setApplyDefaultValue( 1.0e-6 ).
     setInputFlag( InputFlags::OPTIONAL ).
@@ -240,10 +235,8 @@ void NonlinearSolverParameters::print() const
     tableData.addRow( "Sequential convergence criterion", m_sequentialConvergenceCriterion );
     tableData.addRow( "Subcycling", m_subcyclingOption );
   }
-  TableLayout const tableLayout = TableLayout( {
-      TableLayout::ColumnParam{"Parameter", TableLayout::Alignment::left},
-      TableLayout::ColumnParam{"Value", TableLayout::Alignment::left},
-    }, GEOS_FMT( "{}: nonlinear solver", getParent().getName() ) );
+  TableLayout const tableLayout = TableLayout( GEOS_FMT( "{}: nonlinear solver", getParent().getName() ),
+                                               { "Parameter", "Value" } );
   TableTextFormatter const tableFormatter( tableLayout );
   GEOS_LOG_RANK_0( tableFormatter.toString( tableData ));
 }

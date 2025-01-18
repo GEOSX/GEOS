@@ -34,7 +34,7 @@ class BoreholePressureMPMEvent : public MPMEventBase
 public:
   /// @copydoc geos::dataRepository::Group::Group( string const & name, Group * const parent )
   BoreholePressureMPMEvent( const string & name,
-                  Group * const parent );
+                            Group * const parent );
 
   /// Destructor
   virtual ~BoreholePressureMPMEvent() override;

@@ -24,7 +24,9 @@
 
 #include "common/MpiWrapper.hpp"
 
-namespace geos::ptscotch
+namespace geos
+{
+namespace ptscotch
 {
 
 /**
@@ -39,6 +41,7 @@ partition( ArrayOfArraysView< int64_t const, int64_t > const & graph,
            int64_t const numParts,
            MPI_Comm comm );
 
-} // namespace geos::ptscotch
+} // namespace ptscotch
+} // namespace geos
 
 #endif //GEOS_MESH_GENERATORS_PTSCOTCHINTERFACE_HPP_

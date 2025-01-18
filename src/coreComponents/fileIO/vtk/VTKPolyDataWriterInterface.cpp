@@ -102,10 +102,12 @@ toVTKCellType( ParticleType const particleType )
 {
   switch( particleType )
   {
-    case ParticleType::SinglePoint:   return VTK_HEXAHEDRON;
-    case ParticleType::CPDI:          return VTK_HEXAHEDRON;
-    case ParticleType::CPDI2:         return VTK_HEXAHEDRON;
-    case ParticleType::CPTI:          return VTK_TETRA;
+    case ParticleType::SinglePoint:          return VTK_HEXAHEDRON;
+    case ParticleType::SinglePointBSpline:   return VTK_HEXAHEDRON;
+    case ParticleType::CPDI:                 return VTK_HEXAHEDRON;
+    case ParticleType::CPTI:                 return VTK_TETRA;
+    case ParticleType::CPDI2:                return VTK_HEXAHEDRON;
+    default:                                 GEOS_ERROR( "Unknown particle type!" );
   }
   return VTK_EMPTY_CELL;
 }
@@ -115,10 +117,12 @@ getVtkToGeosxNodeOrdering( ParticleType const particleType )
 {
   switch( particleType )
   {
-    case ParticleType::SinglePoint:   return { 0, 1, 3, 2, 4, 5, 7, 6 };
-    case ParticleType::CPDI:          return { 0, 1, 3, 2, 4, 5, 7, 6 };
-    case ParticleType::CPDI2:         return { 0, 1, 3, 2, 4, 5, 7, 6 };
-    case ParticleType::CPTI:          return { 0, 1, 2, 3 };
+    case ParticleType::SinglePoint:        return { 0, 1, 3, 2, 4, 5, 7, 6 };
+    case ParticleType::SinglePointBSpline: return { 0, 1, 3, 2, 4, 5, 7, 6 };
+    case ParticleType::CPDI:               return { 0, 1, 3, 2, 4, 5, 7, 6 };
+    case ParticleType::CPTI:               return { 0, 1, 2, 3 };
+    case ParticleType::CPDI2:              return { 0, 1, 3, 2, 4, 5, 7, 6 };
+    default:                               GEOS_ERROR( "Unknown particle type!" );
   }
   return {};
 }
