@@ -190,6 +190,7 @@ jobs:
             ENABLE_TRILINOS: OFF
             GCP_BUCKET: geosx/Sherlock-CPU
             HOST_CONFIG: host-configs/Stanford/sherlock-gcc10-ompi4.1.2-openblas0.3.10.cmake
+            BUILD_SHARED_LIBS: ON
 
     uses: ./.github/workflows/build_and_test.yml
     with:
