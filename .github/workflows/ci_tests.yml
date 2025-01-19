@@ -201,6 +201,7 @@ jobs:
       ENABLE_HYPRE: ${{ matrix.ENABLE_HYPRE }}
       ENABLE_TRILINOS: ${{ matrix.ENABLE_TRILINOS }}
       GCP_BUCKET: ${{ matrix.GCP_BUCKET }}
+      HOST_CONFIG: ${{ matrix.HOST_CONFIG }}
       RUNS_ON: ubuntu-22.04
     secrets: inherit
 
