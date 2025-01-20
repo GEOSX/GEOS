@@ -454,15 +454,6 @@
  */
 #define GEOS_ASSERT_GE( lhs, rhs ) GEOS_ASSERT_GE_MSG( lhs, rhs, "" )
 
-/**
- * @brief Output messages (with one line per rank) based on current Group's log level.
- * @param[in] minLevel minimum log level
- * @param[in] msg a message to log (any expression that can be stream inserted)
- * @deprecated Will be replaced by GEOS_LOG_LEVEL_INFO_BY_RANK
- */
-#define GEOS_LOG_LEVEL_BY_RANK( minLevel, msg ) GEOS_LOG_RANK_IF( this->getLogLevel() >= minLevel, msg )
-
-
 namespace geos
 {
 

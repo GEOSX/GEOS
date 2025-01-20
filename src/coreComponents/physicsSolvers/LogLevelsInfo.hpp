@@ -36,6 +36,7 @@ namespace logInfo
 
 /// @cond DO_NOT_DOCUMENT
 
+
 struct AggregatedSourceFluxStats
 {
   static constexpr int getMinLogLevel() { return 1; }
@@ -51,7 +52,7 @@ struct CFL
 struct Configuration
 {
   static constexpr int getMinLogLevel() { return 2; }
-  static constexpr std::string_view getDescription() { return "Configuration information"; }
+  static constexpr std::string_view getDescription() { return "Solver runtime settings"; }
 };
 
 struct Convergence

@@ -73,6 +73,7 @@ TimeHistoryOutput::TimeHistoryOutput( string const & name,
     setDescription( "The current history record to be written, on restart from an earlier time allows use to remove invalid future history." );
 
   addLogLevel< logInfo::DataCollectorInitialization >();
+  addLogLevel< logInfo::OutputEvents >();
 }
 
 void TimeHistoryOutput::initCollectorParallel( DomainPartition const & domain, HistoryCollection & collector )
@@ -100,6 +101,7 @@ void TimeHistoryOutput::initCollectorParallel( DomainPartition const & domain, H
         m_io[idx]->updateCollectingCount( count );
         return m_io[idx]->getBufferHead();
       } );
+
       m_io.back()->init( !freshInit );
     }
   };

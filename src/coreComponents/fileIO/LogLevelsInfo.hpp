@@ -50,7 +50,7 @@ struct ChomboIOInitialization
 struct OutputEvents
 {
   static constexpr int getMinLogLevel() { return 2; }
-  static constexpr std::string_view getDescription() { return "Information on output events, VTK/ChomboIO"; }
+  static constexpr std::string_view getDescription() { return "Information on output events (VTK/ChomboIO/HDF5)"; }
 };
 
 
