@@ -61,6 +61,9 @@ public:
 
 protected:
 
+  // this is needed to avoid calling SinglePhaseBase::validateConstitutiveModels
+  virtual void validateConstitutiveModels( DomainPartition & domain ) const override { GEOS_UNUSED_VAR( domain ); }
+
   virtual FluidPropViews getFluidProperties( constitutive::ConstitutiveBase const & fluid ) const override;
 
 private:
