@@ -971,15 +971,15 @@ public:
    *   i1, j1 and k1 (local indices for the first shape function) and value
    *   i2, j2 and k2 (local indices for the second shape function) and value
    */
-  template< typename FUNC >
+  template< typename FUNCP, typename FUNCF >
   GEOS_HOST_DEVICE
   GEOS_FORCE_INLINE
   static
   constexpr
   void
   computeSurfaceTerms( real64 const (&X)[4][3],
-                       FUNC && funcP,
-                       FUNC && funcF )
+                       FUNCP && funcP,
+                       FUNCF && funcF )
   {
     real64 detJf[4] = { faceJacobianDeterminant( 0, X ), faceJacobianDeterminant( 1, X ),
                         faceJacobianDeterminant( 2, X ), faceJacobianDeterminant( 3, X ) };

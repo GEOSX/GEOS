@@ -334,20 +334,31 @@ struct PressureComputation
  template< typename EXEC_POLICY, typename ATOMIC_POLICY >
  void
  launch( localIndex const size,
-         arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const X,
+         localIndex const regionIndex,
+         arrayView2d< WaveSolverBase::wsCoordType const, nodes::REFERENCE_POSITION_USD > const X,
          arrayView2d< localIndex const, cells::NODE_MAP_USD > const & elemsToNodes,
          arrayView2d< real32 const > const p_n,
          arrayView2d< real32 const > const p_nm1,
          arrayView2d< localIndex > const & elemsToOpposite,
          arrayView2d< integer > const & elemsToOppositePermutation,
+         arrayView2d< real64 const > const sourceConstants,
+         arrayView1d< localIndex const > const sourceIsAccessible,
+         arrayView1d< localIndex const > const sourceElem,
+         arrayView1d< localIndex const > const sourceRegion,
          real64 const dt,
+         real64 const time_n,
+         real32 const timeSourceFrequency,
+         real32 const timeSourceDelay,
+         localIndex const rickerOrder,
+         bool const useSourceWaveletTables,
+         arrayView1d< TableFunction::KernelWrapper const > const sourceWaveletTableWrappers,
          arrayView2d< real32 > const p_np1 )
 
  {
 
+    real64 const rickerValue = useSourceWaveletTables ? 0 : WaveSolverUtils::evaluateRicker( time_n, timeSourceFrequency, timeSourceDelay, rickerOrder );
 
-
-  //  //For now lots of comments with ideas  + needed array to add to the method prototype
+    //For now lots of comments with ideas  + needed array to add to the method prototype
     forAll< EXEC_POLICY >( size, [=] GEOS_HOST_DEVICE ( localIndex const k )
     {
 
@@ -358,8 +369,8 @@ struct PressureComputation
 
       real32 flowx[numNodesPerElem] = {0.0};
 
-      real64 xLocal[numNodesPerElem][3];
-      for( localIndex a=0; a< numNodesPerElem; ++a )
+      real64 xLocal[4][3];
+      for( localIndex a=0; a< 4; ++a )
       {
         for( localIndex i=0; i<3; ++i )
         {
@@ -370,19 +381,14 @@ struct PressureComputation
       //Mass matrix declaration and computation
       real32 mass[numNodesPerElem][numNodesPerElem];
 
-      m_finiteElement.computeMassMatrix(mass);
-
-      //Start of the time scheme
-      for (localIndex i = 0; i < numNodesPerElem; ++i)
-      {
-        p_np1[k][i]=p_n[k][i];
-      }
-
-      //Multiply by p_{n+1 } by 2*Mass
+      //Multiply by p_{n } by 2*Mass
       m_finiteElement.template computeMassTerm(xLocal, [&] (const int i, const int j, const real64 val)
       {
-         flowx[j] = 2.0*val*p_np1[k][i];
+         flowx[j] = 2.0*val*p_n[k][i];
+         flowx[j] -= val*p_nm1[k][i];
       } );
+
+
 
 
       //First stiffness part (volume)
@@ -391,24 +397,24 @@ struct PressureComputation
          flowx[j] -= dt2*val*p_n[k][i];
       } );
 
-      
-      m_finiteElement.template computeSurfaceTerms(xLocal, [&] (const int c1, const int c2, const int f1, const int i2, const int j2, const int k2, real64 val)
+
+      m_finiteElement.template computeSurfaceTerms(xLocal, [&] (const int c1, const int c2, const int f1, const int , const int , const int ,const int i2, const int j2, const int k2, real64 val)
       {
         //We take the neighbour element
-        const localIndex k2 = elemsToOpposite(k,f1);
+        const localIndex elemNeigh = elemsToOpposite(k,f1);
 
-        // Now we seek the degree of freedom on the neighbour element to use for the computation of the flux (or the penalty) 
-        // First, we compute the four possible values of the permutation of the degrees of freedom depending on the the fixed 
-        // permutation value contained inside elemsToOppositePermutation permutation 
+        // Now we seek the degree of freedom on the neighbour element to use for the computation of the flux (or the penalty)
+        // First, we compute the four possible values of the permutation of the degrees of freedom depending on the the fixed
+        // permutation value contained inside elemsToOppositePermutation permutation
 
-        const int perm = elemsToOppositePermutation(k2,f1);
+        const int perm = elemsToOppositePermutation(elemNeigh,f1);
 
         const int p1 = perm%4-1;
         const int p2 = (perm/4)%4-1;
         const int p3 = (perm/16)%4-1;
         const int p4 = (perm/64)-1;
 
-        // Then we transform the 3 indices returned by the callback (i2,j2,k2) using the permutations. One of this permutation, will be 0 (depending on which 
+        // Then we transform the 3 indices returned by the callback (i2,j2,k2) using the permutations. One of this permutation, will be 0 (depending on which
         // degree of freedom is the one at the opposite of the face shared with the neighbour element) and will correspond to the one where p* will be negative
 
         const int Indices[3] = {i2,j2,k2};
@@ -416,36 +422,34 @@ struct PressureComputation
         const int ii2 = p1 < 0 ? 0 : Indices[p1];
         const int jj2 = p2 < 0 ? 0 : Indices[p2];
         const int kk2 = p3 < 0 ? 0 : Indices[p3];
-        const int ll2 = p4 < 0 ? 0 : Indices[p4];
 
         // Finally, using the dofIndex function, we compute the number of the global degree of freedom on the element
 
-        const int neighDof = dofIndex< ii2, jj2, kk2 > ();
+        const int neighDof = m_finiteElement.dofIndex(ii2,jj2,kk2);
 
         //Flux computation
 
-        flowx[c1] += 0.5*dt2*p_n[k][c2];
-        flowx[c1] -= 0.5*dt2*p_n[k2][neighDof];
-        
- 
+        flowx[c1] -= 0.5*dt2*p_n[k][c2];
+        flowx[c1] += 0.5*dt2*p_n[elemNeigh][neighDof];
+
+
       },
-      [&] (const int c1, const int c2, const int f1, const int i2, const int j2, const int k2, real64 val)
+      [&] (const int c1, const int c2, const int f1, const int i1, const int j1, const int k1, const int i2, const int j2, const int k2, real64 val)
       {
         //We take the neighbour element
-        const localIndex k2 = elemsToOpposite(k,f1);
+         const int elemNeigh = elemsToOpposite(k,f1);
 
-        // Now we seek the degree of freedom on the neighbour element to use for the computation of the flux (or the penalty) 
-        // First, we compute the four possible values of the permutation of the degrees of freedom depending on the the fixed 
-        // permutation value contained inside elemsToOppositePermutation permutation 
+        // Now we seek the degree of freedom on the neighbour element to use for the computation of the flux (or the penalty)
+        // First, we compute the four possible values of the permutation of the degrees of freedom depending on the the fixed
+        // permutation value contained inside elemsToOppositePermutation permutation
 
-        const int perm = elemsToOppositePermutation(k2,f1);
+        const int perm = elemsToOppositePermutation(elemNeigh,f1);
 
         const int p1 = perm%4-1;
         const int p2 = (perm/4)%4-1;
         const int p3 = (perm/16)%4-1;
-        const int p4 = (perm/64)-1;
 
-        // Then we transform the 3 indices returned by the callback (i2,j2,k2) using the permutations. One of this permutation, will be 0 (depending on which 
+        // Then we transform the 3 indices returned by the callback (i2,j2,k2) using the permutations. One of this permutation, will be 0 (depending on which
         // degree of freedom is the one at the opposite of the face shared with the neighbour element) and will correspond to the one where p* will be negative
 
         const int Indices[3] = {i2,j2,k2};
@@ -453,41 +457,53 @@ struct PressureComputation
         const int ii2 = p1 < 0 ? 0 : Indices[p1];
         const int jj2 = p2 < 0 ? 0 : Indices[p2];
         const int kk2 = p3 < 0 ? 0 : Indices[p3];
-        const int ll2 = p4 < 0 ? 0 : Indices[p4];
 
         // Finally, using the dofIndex function, we compute the number of the global degree of freedom on the element
 
-        const int neighDof = dofIndex< ii2, jj2, kk2 > ();
+
+        const int neighDof = m_finiteElement.dofIndex(ii2,jj2,kk2);
 
         //Flux computation
 
-        flowx[c1] -= 0.5*dt2*p_n[k2][neighDof];
-        flowx[c1] += 0.5*dt2*p_n[k][c2];
+        flowx[c1] += 0.5*dt2*p_n[elemNeigh][neighDof];
+        flowx[c1] -= 0.5*dt2*p_n[k][c2];
 
-        //Then we need a second time where we take the transpose of the previous values: 
-        
+        //Then we need a second time where we take the transpose of the previous values:
+
 
         const int IndicesTranspose[3] = {i1,j1,k1};
 
         const int ii1 = p1 < 0 ? 0 : IndicesTranspose[p1];
         const int jj1 = p2 < 0 ? 0 : IndicesTranspose[p2];
         const int kk1 = p3 < 0 ? 0 : IndicesTranspose[p3];
-        const int ll1 = p4 < 0 ? 0 : IndicesTranspose[p4];
 
         // Finally, using the dofIndex function, we compute the number of the global degree of freedom on the element
 
-        const int neighDof = dofIndex< ii1, jj1, kk1 > ();
+        const int neighDof2 = m_finiteElement.dofIndex(ii1,jj1,kk1);
 
         //Flux computation
 
-        flowx[c2] -= 0.5*dt2*p_n[k2][neighDof];
+        flowx[c2] -= 0.5*dt2*p_n[elemNeigh][neighDof2];
         flowx[c2] += 0.5*dt2*p_n[k][c1];
 
 
-      } ); 
+      } );
 
-
-
+      //Source Injection
+      for( localIndex isrc = 0; isrc < sourceConstants.size( 0 ); ++isrc )
+      {
+        if( sourceIsAccessible[isrc] == 1 )
+        {
+          if( sourceElem[isrc]==k && sourceRegion[isrc] == regionIndex )
+          {
+            real64 const srcValue = useSourceWaveletTables ? sourceWaveletTableWrappers[ isrc ].compute( &time_n ) : rickerValue;
+            for( localIndex i = 0; i < numNodesPerElem; ++i )
+            {
+              flowx[i]+= dt2*(sourceConstants[isrc][i]*srcValue);
+            }
+          }
+        }
+      }
 
     } );
 

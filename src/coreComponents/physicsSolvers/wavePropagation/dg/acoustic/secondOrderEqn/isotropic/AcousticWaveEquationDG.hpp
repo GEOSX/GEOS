@@ -97,6 +97,7 @@ public:
     static constexpr char const * pressureNp1AtReceiversString() { return "pressureNp1AtReceivers"; }
 
     static constexpr char const * sourceElemString() { return "sourceElem"; }
+    static constexpr char const * sourceRegionString() { return "sourceRegion"; }
     static constexpr char const * receiverElemString() { return "receiverElem"; }
     static constexpr char const * receiverRegionString() { return "receiverRegion"; }
 
@@ -165,6 +166,10 @@ private:
 
   /// Array containing the elements which contain a source
   array1d< localIndex > m_sourceElem;
+
+  /// Array containing the elements which contain the region which the source belongs
+  array1d< localIndex > m_sourceRegion;
+
 
   /// Array containing the elements which contain a receiver
   array1d< localIndex > m_receiverElem;
