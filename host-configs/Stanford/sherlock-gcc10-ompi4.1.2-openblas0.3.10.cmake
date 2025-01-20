@@ -12,7 +12,7 @@ set(CMAKE_CXX_COMPILER     "${GCC_ROOT}/bin/g++"      CACHE PATH "")
 set(CMAKE_Fortran_COMPILER "${GCC_ROOT}/bin/gfortran" CACHE PATH "")
 
 # OpenMP options
-set(ENABLE_OPENMP ON CACHE BOOL "")
+#set(ENABLE_OPENMP ON CACHE BOOL "")
 
 # MPI options
 set(ENABLE_MPI ON CACHE PATH "" FORCE)
