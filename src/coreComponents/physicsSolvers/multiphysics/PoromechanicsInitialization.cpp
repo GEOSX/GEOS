@@ -112,7 +112,7 @@ execute( real64 const time_n,
          DomainPartition & domain )
 {
   GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::SolverInitialization, GEOS_FMT( "Task `{}`: at time {}s, physics solver `{}` is set to perform stress initialization during the next time step(s)", //1
-                                                                 getName(), time_n, m_poromechanicsSolverName ) );
+                                                                       getName(), time_n, m_poromechanicsSolverName ) );
   m_poromechanicsSolver->setStressInitialization( true );
 
   m_solidMechanicsStateResetTask.execute( time_n, dt, cycleNumber, eventCounter, eventProgress, domain );
@@ -120,7 +120,7 @@ execute( real64 const time_n,
   m_poromechanicsSolver->execute( time_n, dt, cycleNumber, eventCounter, eventProgress, domain );
 
   GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::SolverInitialization, GEOS_FMT( "Task `{}`: at time {}s, physics solver `{}` has completed stress initialization",//1
-                                                                 getName(), time_n + dt, m_poromechanicsSolverName ) );
+                                                                       getName(), time_n + dt, m_poromechanicsSolverName ) );
   m_poromechanicsSolver->setStressInitialization( false );
 
   if( m_solidMechanicsStatistics != nullptr )

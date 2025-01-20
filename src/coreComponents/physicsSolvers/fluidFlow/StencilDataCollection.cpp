@@ -111,12 +111,15 @@ void StencilDataCollection::initializePostInitialConditionsPostSubGroups()
     m_cellBGlobalId.resize( connCount );
     m_transmissibilityAB.resize( connCount );
     m_transmissibilityBA.resize( connCount );
-    GEOS_LOG_LEVEL_INFO_BY_RANK( logInfo::StencilInitialization, GEOS_FMT( "{}: initialized {} connection buffer for '{}'.",
-                                                                    getName(), connCount, m_discretization->getName() ) );
+    GEOS_LOG_LEVEL_INFO_BY_RANK( logInfo::StencilInitialization,
+                                 GEOS_FMT( "{}: initialized {} connection buffer for '{}'.",
+                                           getName(), connCount, m_discretization->getName() ) );
     ++supportedStencilCount;
   } );
-  GEOS_ERROR_IF( supportedStencilCount == 0, GEOS_FMT( "{}: No compatible discretization was found.", getDataContext() ) );
-  GEOS_ERROR_IF( supportedStencilCount > 1, GEOS_FMT( "{}: Multiple discretization was found.", getDataContext() ) );
+  GEOS_ERROR_IF( supportedStencilCount == 0,
+                 GEOS_FMT( "{}: No compatible discretization was found.", getDataContext() ) );
+  GEOS_ERROR_IF( supportedStencilCount > 1,
+                 GEOS_FMT( "{}: Multiple discretization was found.", getDataContext() ) );
 }
 
 

@@ -1485,10 +1485,10 @@ CompositionalMultiphaseWell::scalingForSystemSolution( DomainPartition & domain,
   string const massUnit = m_useMass ? "kg/m3" : "mol/m3";
   GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::WellComponents,
                               GEOS_FMT( "        {}: Max well pressure change: {} Pa (before scaling)",
-                                        getName(),GEOS_FMT( "{:.{}f}", maxDeltaPres, 3 ) ) );
+                                        getName(), GEOS_FMT( "{:.{}f}", maxDeltaPres, 3 ) ) );
   GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::WellComponents,
                               GEOS_FMT( "        {}: Max well component density change: {} {} (before scaling)",
-                                        getName(),GEOS_FMT( "{:.{}f}", maxDeltaCompDens, 3 ), massUnit ) );
+                                        getName(), GEOS_FMT( "{:.{}f}", maxDeltaCompDens, 3 ), massUnit ) );
 
   if( m_isThermal )
   {
@@ -1496,7 +1496,7 @@ CompositionalMultiphaseWell::scalingForSystemSolution( DomainPartition & domain,
     minTempScalingFactor = MpiWrapper::min( minTempScalingFactor );
     GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::WellComponents,
                                 GEOS_FMT( "        {}: Max well temperature change: {} K (before scaling)",
-                                          getName(),GEOS_FMT( "{:.{}f}", maxDeltaTemp, 3 ) ) );
+                                          getName(), GEOS_FMT( "{:.{}f}", maxDeltaTemp, 3 ) ) );
   }
 
 
