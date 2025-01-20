@@ -16,6 +16,7 @@
 #include "PhysicsSolverBase.hpp"
 #include "PhysicsSolverManager.hpp"
 
+#include "physicsSolvers/LogLevelsInfo.hpp"
 #include "common/TimingMacros.hpp"
 #include "linearAlgebra/solvers/KrylovSolver.hpp"
 #include "mesh/DomainPartition.hpp"

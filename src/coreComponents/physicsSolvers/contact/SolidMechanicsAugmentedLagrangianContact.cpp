@@ -20,6 +20,7 @@
 #include "mesh/DomainPartition.hpp"
 #include "SolidMechanicsAugmentedLagrangianContact.hpp"
 
+#include "physicsSolvers/LogLevelsInfo.hpp"
 #include "physicsSolvers/contact/kernels/SolidMechanicsConformingContactKernelsBase.hpp"
 #include "physicsSolvers/contact/kernels/SolidMechanicsALMKernels.hpp"
 #include "physicsSolvers/contact/kernels/SolidMechanicsALMKernelsBase.hpp"
