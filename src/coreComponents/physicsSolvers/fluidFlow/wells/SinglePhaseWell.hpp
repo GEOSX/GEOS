@@ -249,7 +249,7 @@ protected:
 
 private:
 
-  void setConstitutiveNames( ElementSubRegionBase & subRegion ) const;
+  virtual void setConstitutiveNames( ElementSubRegionBase & subRegion ) const override;
 
   /**
    * @brief Initialize all the primary and secondary variables in all the wells
