@@ -74,6 +74,7 @@ TimeHistoryOutput::TimeHistoryOutput( string const & name,
 
   addLogLevel< logInfo::DataCollectorInitialization >();
   addLogLevel< logInfo::OutputEvents >();
+  addLogLevel< logInfo::HDF5Writing >();
 }
 
 void TimeHistoryOutput::initCollectorParallel( DomainPartition const & domain, HistoryCollection & collector )
