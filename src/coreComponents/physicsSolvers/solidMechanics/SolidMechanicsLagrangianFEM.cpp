@@ -233,7 +233,10 @@ void SolidMechanicsLagrangianFEM::setConstitutiveNamesCallSuper( ElementSubRegio
 {
   PhysicsSolverBase::setConstitutiveNamesCallSuper( subRegion );
 
-  setConstitutiveName< SolidBase >( subRegion, viewKeyStruct::solidMaterialNamesString() );
+  if( dynamic_cast< CellElementSubRegion * >( &subRegion ) )
+  {
+    setConstitutiveName< SolidBase >( subRegion, viewKeyStruct::solidMaterialNamesString() );
+  }
 }
 
 void SolidMechanicsLagrangianFEM::initializePreSubGroups()
