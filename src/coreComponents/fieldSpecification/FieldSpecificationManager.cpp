@@ -209,8 +209,6 @@ void FieldSpecificationManager::validateBoundaryConditions( MeshLevel & mesh ) c
       else
       {
         fieldNameNotFoundMessage << GEOS_FMT( "Available fields in {} are:\n", fs.getObjectPath());
-        //bool stopIteration = false;
-        // ElementRegionManager const & elemRegionGroup = mesh.getElemManager();
         std::set< string > fieldNameAvail;
         this->forSubGroups< FieldSpecificationBase >( [&] ( FieldSpecificationBase const & fs2 )
         {
@@ -221,25 +219,19 @@ void FieldSpecificationManager::validateBoundaryConditions( MeshLevel & mesh ) c
                                                    Group & targetGroup,
                                                    string const fieldName )
           {
-            dataRepository::InputFlags const flag = fs2.getWrapper< string >( FieldSpecificationBase::viewKeyStruct::fieldNameString() ).getInputFlag();
-            GEOS_UNUSED_VAR( flag );
             GEOS_UNUSED_VAR( setName );
             GEOS_UNUSED_VAR( isTargetSetCreated );
             GEOS_UNUSED_VAR( targetSet );
-            std::cout << targetGroup.getName() << " has " << fieldName<< " field ? "<< std::endl;
 
             if( targetGroup.hasWrapper( fieldName ) )
             {
               WrapperBase & targetField = targetGroup.getWrapperBase( fieldName );
-              std::set< string > const & registerObjects = targetField.getRegisteringObjects();
-              string const solverName = *(registerObjects.begin());
-
+              string const solverName = *(targetField.getRegisteringObjects().begin());
 
               for( auto & view : targetGroup.wrappers() )
               {
-                if( *(view.second->getRegisteringObjects().begin()) == solverName)
+                if( *(view.second->getRegisteringObjects().begin()) == solverName )
                 {
-                  //std::cout << view.second->getName()  << std::endl;
                   fieldNameAvail.insert( view.second->getName()  );
                 }
               }
@@ -247,11 +239,11 @@ void FieldSpecificationManager::validateBoundaryConditions( MeshLevel & mesh ) c
 
           } );
         } );
+
         for( auto it=fieldNameAvail.begin(); it!=fieldNameAvail.end(); ++it )
         {
           fieldNameNotFoundMessage << *it;
-          std::cout << " " << *it;
-          if( it != std::prev(fieldNameAvail.end()))
+          if( it != std::prev( fieldNameAvail.end()))
           {
             fieldNameNotFoundMessage << ", ";
           }
