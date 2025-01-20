@@ -369,8 +369,8 @@ jobs:
             RUNS_ON: streak2
             NPROC: 8
             DOCKER_RUN_ARGS: "--cpus=8 --memory=128g --runtime=nvidia -v /etc/pki/ca-trust/source/anchors/:/usr/local/share/ca-certificates/llnl:ro"
-            DOCKER_CERTS_DIR: "/etc/pki/ca-trust/source/anchors"
-            DOCKER_CERTS_UPDATE_COMMAND: "update-ca-trust"
+            DOCKER_CERTS_DIR: "/usr/local/share/ca-certificates"
+            DOCKER_CERTS_UPDATE_COMMAND: "update-ca-certificates"
 
 
           # Below this line, jobs that deploy to Google Cloud.
