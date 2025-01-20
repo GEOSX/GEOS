@@ -222,15 +222,27 @@ void FieldSpecificationManager::validateBoundaryConditions( MeshLevel & mesh ) c
                                                    string const fieldName )
           {
             dataRepository::InputFlags const flag = fs2.getWrapper< string >( FieldSpecificationBase::viewKeyStruct::fieldNameString() ).getInputFlag();
+            GEOS_UNUSED_VAR( flag );
             GEOS_UNUSED_VAR( setName );
             GEOS_UNUSED_VAR( isTargetSetCreated );
             GEOS_UNUSED_VAR( targetSet );
-            if( targetGroup.hasWrapper( fieldName ) ||
-                flag == InputFlags::FALSE ||
-                targetGroup.getName() == MeshLevel::groupStructKeys::faceManagerString() )
+            std::cout << targetGroup.getName() << " has " << fieldName<< " field ? "<< std::endl;
+
+            if( targetGroup.hasWrapper( fieldName ) )
             {
-              fieldNameAvail.insert( fieldName );
-              std::cout << " targetGroup  " << targetGroup.getName() << " fieldName " << fieldName << std::endl;
+              WrapperBase & targetField = targetGroup.getWrapperBase( fieldName );
+              std::set< string > const & registerObjects = targetField.getRegisteringObjects();
+              string const solverName = *(registerObjects.begin());
+
+
+              for( auto & view : targetGroup.wrappers() )
+              {
+                if( *(view.second->getRegisteringObjects().begin()) == solverName)
+                {
+                  //std::cout << view.second->getName()  << std::endl;
+                  fieldNameAvail.insert( view.second->getName()  );
+                }
+              }
             }
 
           } );
