@@ -83,7 +83,7 @@ ThermalMultiphasePoromechanics( NodeManager const & nodeManager,
 {
   // extract fluid constitutive data views
   {
-    string const fluidModelName = elementSubRegion.template getReference< string >( fluidModelKey );
+    string const & fluidModelName = elementSubRegion.template getReference< string >( fluidModelKey );
     constitutive::MultiFluidBase const & fluid =
       elementSubRegion.template getConstitutiveModel< constitutive::MultiFluidBase >( fluidModelName );
 

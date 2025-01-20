@@ -191,7 +191,7 @@ void CompositionalMultiphaseHybridFVM::precomputeData( MeshLevel & mesh, arrayVi
   {
     arrayView2d< real64 const > const & elemCenter =
       subRegion.template getReference< array2d< real64 > >( CellElementSubRegion::viewKeyStruct::elementCenterString() );
-    string & permModelName = subRegion.getReference< string >( viewKeyStruct::permeabilityNamesString() );
+    string const & permModelName = subRegion.getReference< string >( viewKeyStruct::permeabilityNamesString() );
     arrayView3d< real64 const > const & elemPerm =
       getConstitutiveModel< PermeabilityBase >( subRegion, permModelName ).permeability();
     arrayView1d< real64 const > const elemGravCoef =

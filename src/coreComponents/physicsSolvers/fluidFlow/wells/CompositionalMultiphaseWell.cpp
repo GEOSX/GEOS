@@ -557,10 +557,9 @@ void CompositionalMultiphaseWell::updateBHPForConstraint( WellElementSubRegion &
   integer const numComp = m_numComponents;
   localIndex const iwelemRef = subRegion.getTopWellElementIndex();
 
-  string & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
-  fluidName = getConstitutiveName< MultiFluidBase >( subRegion );
+  string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
   MultiFluidBase const & fluid = subRegion.getConstitutiveModel< MultiFluidBase >( fluidName );
-  integer isThermal = fluid.isThermal();
+  integer const isThermal = fluid.isThermal();
   // subRegion data
 
   arrayView1d< real64 const > const & pres = subRegion.getField< fields::well::pressure >();
@@ -647,7 +646,7 @@ void CompositionalMultiphaseWell::updateVolRatesForConstraint( WellElementSubReg
 
   string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
   MultiFluidBase & fluid = subRegion.getConstitutiveModel< MultiFluidBase >( fluidName );
-  integer isThermal = fluid.isThermal();
+  integer const isThermal = fluid.isThermal();
   arrayView3d< real64 const, multifluid::USD_PHASE > const & phaseFrac = fluid.phaseFraction();
   arrayView4d< real64 const, multifluid::USD_PHASE_DC > const & dPhaseFrac = fluid.dPhaseFraction();
 
@@ -1103,7 +1102,7 @@ void CompositionalMultiphaseWell::assembleFluxTerms( real64 const & time,
       {
         string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString());
         MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( subRegion, fluidName );
-        int numComponents = fluid.numFluidComponents();
+        int const numComponents = fluid.numFluidComponents();
 
         if( isThermal() )
         {
@@ -1166,8 +1165,8 @@ void CompositionalMultiphaseWell::assembleAccumulationTerms( real64 const & time
     {
       string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString());
       MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( subRegion, fluidName );
-      int numPhases = fluid.numFluidPhases();
-      int numComponents = fluid.numFluidComponents();
+      int const numPhases = fluid.numFluidPhases();
+      int const numComponents = fluid.numFluidComponents();
       WellControls const & wellControls = getWellControls( subRegion );
       if( wellControls.isWellOpen( time+ dt ) && !m_keepVariablesConstantDuringInitStep )
       {
@@ -1656,7 +1655,7 @@ void CompositionalMultiphaseWell::computePerforationRates( real64 const & time_n
 
         string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
         MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( subRegion, fluidName );
-        bool isThermal = fluid.isThermal();
+        bool const isThermal = fluid.isThermal();
 
         if( isThermal )
         {
@@ -1897,7 +1896,7 @@ void CompositionalMultiphaseWell::assemblePressureRelations( real64 const & time
       {
         string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
         MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( subRegion, fluidName );
-        bool isThermal = fluid.isThermal();
+        bool const isThermal = fluid.isThermal();
         // get the degrees of freedom, depth info, next welem index
         string const wellDofKey = dofManager.getKey( wellElementDofName() );
         arrayView1d< globalIndex const > const & wellElemDofNumber =

@@ -127,6 +127,7 @@ public:
     this->template setConstitutiveName< constitutive::CoupledSolidBase >( subRegion,
                                                                           viewKeyStruct::porousMaterialNamesString() );
 
+    // This is needed by the way the surface generator currently does things.
     this->template setConstitutiveName< constitutive::PorosityBase >( subRegion,
                                                                       constitutive::CoupledSolidBase::viewKeyStruct::porosityModelNameString() );
 
@@ -171,7 +172,7 @@ public:
 
   virtual void registerDataOnMesh( dataRepository::Group & meshBodies ) override
   {
-    PhysicsSolverBase::registerDataOnMesh( meshBodies );
+    Base::registerDataOnMesh( meshBodies );
 
     if( this->getNonlinearSolverParameters().m_couplingType == NonlinearSolverParameters::CouplingType::Sequential )
     {
@@ -186,9 +187,9 @@ public:
       flowSolver()->enableJumpStabilization();
     }
 
-    PhysicsSolverBase::forDiscretizationOnMeshTargets( meshBodies, [&] ( string const &,
-                                                                         MeshLevel & mesh,
-                                                                         arrayView1d< string const > const & regionNames )
+    this->template forDiscretizationOnMeshTargets( meshBodies, [&] ( string const &,
+                                                                     MeshLevel & mesh,
+                                                                     arrayView1d< string const > const & regionNames )
     {
       ElementRegionManager & elemManager = mesh.getElemManager();
 
@@ -341,8 +342,9 @@ public:
         arrayView1d< integer > const macroElementIndex = subRegion.getField< fields::flow::macroElementIndex >();
         arrayView1d< real64 > const elementStabConstant = subRegion.getField< fields::flow::elementStabConstant >();
 
-        geos::constitutive::CoupledSolidBase const & porousSolid =
-          this->template getConstitutiveModel< geos::constitutive::CoupledSolidBase >( subRegion, subRegion.getReference< string >( viewKeyStruct::porousMaterialNamesString() ) );
+        constitutive::CoupledSolidBase const & porousSolid =
+          this->template getConstitutiveModel< constitutive::CoupledSolidBase >( subRegion,
+                                                                                 subRegion.getReference< string >( viewKeyStruct::porousMaterialNamesString() ) );
 
         arrayView1d< real64 const > const bulkModulus = porousSolid.getBulkModulus();
         arrayView1d< real64 const > const shearModulus = porousSolid.getShearModulus();
@@ -391,7 +393,7 @@ protected:
     string const dofKey = dofManager.getKey( fields::solidMechanics::totalDisplacement::key() );
     arrayView1d< globalIndex const > const & dofNumber = nodeManager.getReference< globalIndex_array >( dofKey );
 
-    real64 const gravityVectorData[3] = LVARRAY_TENSOROPS_INIT_LOCAL_3( PhysicsSolverBase::gravityVector() );
+    real64 const gravityVectorData[3] = LVARRAY_TENSOROPS_INIT_LOCAL_3( this->gravityVector() );
 
     KERNEL_WRAPPER kernelWrapper( dofNumber,
                                   dofManager.rankOffset(),
@@ -417,15 +419,17 @@ protected:
                                               array1d< real64 > & averageMeanTotalStressIncrement )
   {
     averageMeanTotalStressIncrement.resize( 0 );
-    PhysicsSolverBase::forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
-                                                                                    MeshLevel & mesh,
-                                                                                    arrayView1d< string const > const & regionNames ) {
+    this->template forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
+                                                                                MeshLevel & mesh,
+                                                                                arrayView1d< string const > const & regionNames ) {
       mesh.getElemManager().forElementSubRegions< CellElementSubRegion >( regionNames, [&]( localIndex const,
-                                                                                            auto & subRegion ) {
+                                                                                            auto & subRegion )
+      {
         // get the solid model (to access stress increment)
-        string const solidName = subRegion.template getReference< string >( "porousMaterialNames" );
-        constitutive::CoupledSolidBase & solid = PhysicsSolverBase::getConstitutiveModel< constitutive::CoupledSolidBase >(
-          subRegion, solidName );
+        string const & solidName =
+          subRegion.template getReference< string >( viewKeyStruct::porousMaterialNamesString() );
+        constitutive::CoupledSolidBase & solid =
+          this->template getConstitutiveModel< constitutive::CoupledSolidBase >( subRegion, solidName );
 
         arrayView1d< const real64 > const & averageMeanTotalStressIncrement_k = solid.getAverageMeanTotalStressIncrement_k();
         for( localIndex k = 0; k < localIndex( averageMeanTotalStressIncrement_k.size()); k++ )
@@ -440,15 +444,15 @@ protected:
                                                         array1d< real64 > & averageMeanTotalStressIncrement )
   {
     integer i = 0;
-    PhysicsSolverBase::forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
-                                                                                    MeshLevel & mesh,
-                                                                                    arrayView1d< string const > const & regionNames ) {
+    this->template forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
+                                                                                MeshLevel & mesh,
+                                                                                arrayView1d< string const > const & regionNames ) {
       mesh.getElemManager().forElementSubRegions< CellElementSubRegion >( regionNames, [&]( localIndex const,
                                                                                             auto & subRegion ) {
         // get the solid model (to access stress increment)
-        string const solidName = subRegion.template getReference< string >( "porousMaterialNames" );
-        constitutive::CoupledSolidBase & solid = PhysicsSolverBase::getConstitutiveModel< constitutive::CoupledSolidBase >(
-          subRegion, solidName );
+        string const & solidName = subRegion.template getReference< string >( viewKeyStruct::porousMaterialNamesString() );
+        constitutive::CoupledSolidBase & solid =
+          this->template getConstitutiveModel< constitutive::CoupledSolidBase >( subRegion, solidName );
         auto & porosityModel = dynamic_cast< constitutive::BiotPorosity const & >( solid.getBasePorosityModel());
         arrayView1d< real64 > const & averageMeanTotalStressIncrement_k = solid.getAverageMeanTotalStressIncrement_k();
         for( localIndex k = 0; k < localIndex( averageMeanTotalStressIncrement_k.size()); k++ )
@@ -599,8 +603,9 @@ protected:
                                                                                             auto & subRegion )
       {
         // get the solid model (to access stress increment)
-        string const solidName = subRegion.template getReference< string >( viewKeyStruct::porousMaterialNamesString() );
-        constitutive::CoupledSolidBase & solid = this->template getConstitutiveModel< constitutive::CoupledSolidBase >( subRegion, solidName );
+        string const & solidName = subRegion.template getReference< string >( viewKeyStruct::porousMaterialNamesString() );
+        constitutive::CoupledSolidBase & solid =
+          this->template getConstitutiveModel< constitutive::CoupledSolidBase >( subRegion, solidName );
 
         arrayView2d< real64 const > const meanTotalStressIncrement_k = solid.getMeanTotalStressIncrement_k();
         arrayView1d< real64 > const averageMeanTotalStressIncrement_k = solid.getAverageMeanTotalStressIncrement_k();

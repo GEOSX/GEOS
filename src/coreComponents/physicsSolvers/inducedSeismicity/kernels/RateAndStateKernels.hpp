@@ -284,8 +284,8 @@ createAndLaunch( SurfaceElementSubRegion & subRegion,
 
   GEOS_UNUSED_VAR( time_n );
 
-  string const & frictionaLawName = subRegion.getReference< string >( frictionLawNameKey );
-  constitutive::RateAndStateFriction const & frictionLaw = subRegion.getConstitutiveModel< constitutive::RateAndStateFriction >( frictionaLawName );
+  string const & frictionLawName = subRegion.getReference< string >( frictionLawNameKey );
+  constitutive::RateAndStateFriction const & frictionLaw = subRegion.getConstitutiveModel< constitutive::RateAndStateFriction >( frictionLawName );
   KernelType kernel( subRegion, frictionLaw, shearImpedance );
 
   // Newton loop (outside of the kernel launch)

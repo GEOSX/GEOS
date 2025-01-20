@@ -112,33 +112,33 @@ void SolidMechanicsLagrangeContact::registerDataOnMesh( Group & meshBodies )
 
       subRegion.registerWrapper< array3d< real64 > >( viewKeyStruct::rotationMatrixString() ).
         setPlotLevel( PlotLevel::NOPLOT ).
-        setRegisteringObjects( this->getName()).
+        setRegisteringObjects( getName()).
         setDescription( "An array that holds the rotation matrices on the fracture." ).
         reference().resizeDimension< 1, 2 >( 3, 3 );
 
       subRegion.registerWrapper< array1d< real64 > >( viewKeyStruct::normalTractionToleranceString() ).
         setPlotLevel( PlotLevel::NOPLOT ).
-        setRegisteringObjects( this->getName()).
+        setRegisteringObjects( getName()).
         setDescription( "An array that holds the normal traction tolerance." );
 
       subRegion.registerWrapper< array1d< real64 > >( viewKeyStruct::normalDisplacementToleranceString() ).
         setPlotLevel( PlotLevel::NOPLOT ).
-        setRegisteringObjects( this->getName()).
+        setRegisteringObjects( getName()).
         setDescription( "An array that holds the normal displacement tolerance." );
 
       subRegion.registerWrapper< array1d< real64 > >( viewKeyStruct::slidingToleranceString() ).
         setPlotLevel( PlotLevel::NOPLOT ).
-        setRegisteringObjects( this->getName()).
+        setRegisteringObjects( getName()).
         setDescription( "An array that holds the sliding tolerance." );
 
       // Needed just because SurfaceGenerator initialize the field "pressure" (NEEDED!!!)
       // It is used in "TwoPointFluxApproximation.cpp", called by "SurfaceGenerator.cpp"
       subRegion.registerField< flow::pressure >( getName() ).
         setPlotLevel( PlotLevel::NOPLOT ).
-        setRegisteringObjects( this->getName());
+        setRegisteringObjects( getName());
       subRegion.registerField< flow::pressure_n >( getName() ).
         setPlotLevel( PlotLevel::NOPLOT ).
-        setRegisteringObjects( this->getName());
+        setRegisteringObjects( getName());
 
     } );
 
@@ -151,7 +151,7 @@ void SolidMechanicsLagrangeContact::registerDataOnMesh( Group & meshBodies )
       faceManager.registerWrapper< array1d< real64 > >( viewKeyStruct::transMultiplierString() ).
         setApplyDefaultValue( 1.0 ).
         setPlotLevel( PlotLevel::LEVEL_0 ).
-        setRegisteringObjects( this->getName() ).
+        setRegisteringObjects( getName() ).
         setDescription( "An array that holds the permeability transmissibility multipliers" );
     } );
 
@@ -449,7 +449,7 @@ void SolidMechanicsLagrangeContact::computeTolerances( DomainPartition & domain 
 
   GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Configuration,
                               GEOS_FMT( "{}: normal displacement tolerance = [{}, {}], sliding tolerance = [{}, {}], normal traction tolerance = [{}, {}]",
-                                        this->getName(), minNormalDisplacementTolerance, maxNormalDisplacementTolerance,
+                                        getName(), minNormalDisplacementTolerance, maxNormalDisplacementTolerance,
                                         minSlidingTolerance, maxSlidingTolerance,
                                         minNormalTractionTolerance, maxNormalTractionTolerance ) );
 }

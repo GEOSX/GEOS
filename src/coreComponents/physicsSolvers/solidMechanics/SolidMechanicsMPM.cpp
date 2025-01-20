@@ -486,8 +486,9 @@ void SolidMechanicsMPM::initializePreSubGroups()
       particleManager.forParticleSubRegions< ParticleSubRegion >( regionNames, [&]( localIndex const,
                                                                                     ParticleSubRegion & subRegion )
       {
+        // TODO this is already done in setConstitutiveName
         string & solidMaterialName = subRegion.getReference< string >( viewKeyStruct::solidMaterialNamesString() );
-        solidMaterialName = PhysicsSolverBase::getConstitutiveName< SolidBase >( subRegion );
+        solidMaterialName = getConstitutiveName< SolidBase >( subRegion );
       } );
     }
   } );

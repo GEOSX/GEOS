@@ -783,7 +783,7 @@ void MultiphasePoromechanicsConformingFractures< FLOW_SOLVER >::updateHydraulicA
       arrayView1d< real64 > const hydraulicAperture        = subRegion.getField< flow::hydraulicAperture >();
       arrayView1d< real64 > const deltaVolume              = subRegion.getField< flow::deltaVolume >();
 
-      string const porousSolidName = subRegion.getReference< string >( FlowSolverBase::viewKeyStruct::solidNamesString() );
+      string const & porousSolidName = subRegion.getReference< string >( FlowSolverBase::viewKeyStruct::solidNamesString() );
       CoupledSolidBase & porousSolid = subRegion.getConstitutiveModel< CoupledSolidBase >( porousSolidName );
 
       string const & hydraulicApertureRelationName = subRegion.template getReference< string >( viewKeyStruct::hydraulicApertureRelationNameString()  );

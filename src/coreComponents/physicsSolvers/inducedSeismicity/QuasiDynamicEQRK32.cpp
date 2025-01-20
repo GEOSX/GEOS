@@ -130,7 +130,7 @@ void QuasiDynamicEQRK32::registerDataOnMesh( Group & meshBodies )
           setRestartFlags( RestartFlags::NO_WRITE ).
           setSizedFromParent( 0 );
 
-        // TODO
+        // TODO this should be in setConstitutiveNames
         string & frictionLawName = subRegion.getReference< string >( viewKeyStruct::frictionLawNameString() );
         frictionLawName = getConstitutiveName< FrictionBase >( subRegion );
         GEOS_ERROR_IF( frictionLawName.empty(), GEOS_FMT( "{}: FrictionBase model not found on subregion {}",
@@ -222,8 +222,8 @@ void QuasiDynamicEQRK32::stepRateStateODEInitialSubstage( real64 const dt, Domai
                                                                                 SurfaceElementSubRegion & subRegion )
     {
 
-      string const & fricitonLawName = subRegion.template getReference< string >( viewKeyStruct::frictionLawNameString() );
-      RateAndStateFriction const & frictionLaw = getConstitutiveModel< RateAndStateFriction >( subRegion, fricitonLawName );
+      string const & frictionLawName = subRegion.template getReference< string >( viewKeyStruct::frictionLawNameString() );
+      RateAndStateFriction const & frictionLaw = getConstitutiveModel< RateAndStateFriction >( subRegion, frictionLawName );
       rateAndStateKernels::EmbeddedRungeKuttaKernel rkKernel( subRegion, frictionLaw, m_butcherTable );
       arrayView3d< real64 > const rkStageRates      = subRegion.getField< rateAndState::rungeKuttaStageRates >();
 
@@ -263,8 +263,8 @@ void QuasiDynamicEQRK32::stepRateStateODESubstage( integer const stageIndex,
                                                                                 SurfaceElementSubRegion & subRegion )
     {
 
-      string const & fricitonLawName = subRegion.template getReference< string >( viewKeyStruct::frictionLawNameString() );
-      RateAndStateFriction const & frictionLaw = getConstitutiveModel< RateAndStateFriction >( subRegion, fricitonLawName );
+      string const & frictionLawName = subRegion.template getReference< string >( viewKeyStruct::frictionLawNameString() );
+      RateAndStateFriction const & frictionLaw = getConstitutiveModel< RateAndStateFriction >( subRegion, frictionLawName );
       rateAndStateKernels::EmbeddedRungeKuttaKernel rkKernel( subRegion, frictionLaw, m_butcherTable );
       arrayView3d< real64 > const rkStageRates      = subRegion.getField< rateAndState::rungeKuttaStageRates >();
 
@@ -289,8 +289,8 @@ void QuasiDynamicEQRK32::stepRateStateODEAndComputeError( real64 const dt, Domai
                                                                                 SurfaceElementSubRegion & subRegion )
     {
 
-      string const & fricitonLawName = subRegion.template getReference< string >( viewKeyStruct::frictionLawNameString() );
-      RateAndStateFriction const & frictionLaw = getConstitutiveModel< RateAndStateFriction >( subRegion, fricitonLawName );
+      string const & frictionLawName = subRegion.template getReference< string >( viewKeyStruct::frictionLawNameString() );
+      RateAndStateFriction const & frictionLaw = getConstitutiveModel< RateAndStateFriction >( subRegion, frictionLawName );
       rateAndStateKernels::EmbeddedRungeKuttaKernel rkKernel( subRegion, frictionLaw, m_butcherTable );
       arrayView3d< real64 > const rkStageRates      = subRegion.getField< rateAndState::rungeKuttaStageRates >();
       if( m_butcherTable.FSAL )
@@ -348,8 +348,8 @@ real64 QuasiDynamicEQRK32::updateStresses( real64 const & time_n,
         arrayView2d< real64 > const traction        = subRegion.getField< fields::contact::traction >();
         arrayView2d< real64 const > const traction_n      = subRegion.getField< fields::contact::traction_n >();
 
-        string const & fricitonLawName = subRegion.template getReference< string >( viewKeyStruct::frictionLawNameString() );
-        RateAndStateFriction const & frictionLaw = getConstitutiveModel< RateAndStateFriction >( subRegion, fricitonLawName );
+        string const & frictionLawName = subRegion.template getReference< string >( viewKeyStruct::frictionLawNameString() );
+        RateAndStateFriction const & frictionLaw = getConstitutiveModel< RateAndStateFriction >( subRegion, frictionLawName );
 
         RateAndStateFriction::KernelWrapper frictionKernelWrapper = frictionLaw.createKernelUpdates();
 
