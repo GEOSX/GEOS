@@ -326,7 +326,7 @@ public:
 
       real32 const localIncrement_p = -val * stack.invDensity * vti_sqrtDelta * m_q_n[m_elemsToNodes( k, j )];
       stack.stiffnessVectorLocal_p[q] += localIncrement_p;
-    } );    
+    } );
 #endif
 
 
@@ -344,10 +344,16 @@ public:
       if( delt > epsi )
         delt = epsi;
 
+
+
+      real32 const localIncrement_p = -val * stack.invDensity * (1 + 2 * epsi) * m_p_n[m_elemsToNodes( k, j )];
+      stack.stiffnessVectorLocal_p[q] += localIncrement_p;
+
+
+
       // Two options for defining "f"
       real32 vti_sqrtDelta = delt / sqrt( 1 + 2 *delt );
       //real32 vti_sqrtDelta = sqrt( 1 + 2 *delt );
-
 
 
       real32 const localIncrement_q = -val * stack.invDensity * vti_sqrtDelta * m_p_n[m_elemsToNodes( k, j )];
