@@ -68,6 +68,7 @@ public:
    * @param[in] t1RateDependence The value for the rate dependence parameter 1
    * @param[in] t2RateDependence The value for the rate dependence parameter 2
    * @param[in] fractureEnergyReleaseRate The value for the fracture energy release rate
+   * @param[in] fractureStress The value for the fracture energy release rate  
    * @param[in] cr The value for the cap shape paramter
    * @param[in] fluidBulkModulus The value for the fluid bulk modulus
    * @param[in] fluidInitialPressure The value for the fluid initial pressure
@@ -107,6 +108,7 @@ public:
                        real64 const & t1RateDependence,
                        real64 const & t2RateDependence,
                        real64 const & fractureEnergyReleaseRate,
+                       real64 const & fractureStress,
                        real64 const & cr,
                        real64 const & fluidBulkModulus,
                        real64 const & fluidInitialPressure,
@@ -167,6 +169,7 @@ public:
     m_t1RateDependence( t1RateDependence ),
     m_t2RateDependence( t2RateDependence ),
     m_fractureEnergyReleaseRate( fractureEnergyReleaseRate ),
+    m_fractureStress( fractureStress ),
     m_cr( cr ),
     m_fluidBulkModulus( fluidBulkModulus ),
     m_fluidInitialPressure( fluidInitialPressure ),
@@ -315,9 +318,11 @@ public:
   GEOS_HOST_DEVICE
   void computeCoher( const real64 & lch,
                      const real64 & I1_trial, 
+                     const real64 & rJ2_trial, 
 			               const real64 & I1_0,     
 			               const real64 & d_evp,    
-			               const real64 & Gf,       
+			               const real64 & Gf,     
+                           const real64 & fractureStress,  
 			               const real64 & coher_old,
 			               real64 & coher_new ) const;    
 
@@ -465,6 +470,7 @@ private:
   real64 const & m_t1RateDependence;
   real64 const & m_t2RateDependence;
   real64 const & m_fractureEnergyReleaseRate;
+  real64 const & m_fractureStress;
   real64 const & m_cr;
   real64 const & m_fluidBulkModulus;
   real64 const & m_fluidInitialPressure;
@@ -1438,18 +1444,23 @@ GEOS_HOST_DEVICE
 GEOS_FORCE_INLINE
 void GeomechanicsUpdates::computeCoher( const real64 & lch,       // length scale
                                         const real64 & I1_trial,  // trial value of I1
+                                        const real64 & rJ2_trial,  // trial value of rootJ2
 			                                  const real64 & I1_0,      // I1 value on yield surface
 			                                  const real64 & d_evp,     // increment in vol plastic strain
 			                                  const real64 & Gf,        // fracture energy per unit area
+                                              const real64 & fractureStress,   // stress required before coher evolves (input is von Mises stress)
 			                                  const real64 & coher_old, // old coherence = 1-damage
 			                                  real64 & coher_new      // OUPUT: new value of coher
 ) const
 {
+
+    real64 fractureStressRootJ2 = sqrt(2./3.)*fractureStress;  // fix this.
+    //see formula in Homel et al 2015, section 1.2
 	coher_new = coher_old;
 	if( Gf > 1.e-16 )
 	{
 		// real64 d_I1 = I1_trial - I1_0; // Seemed unused
-		if ( d_evp > 0 && ( I1_trial - I1_0 ) > 0 )
+		if ( d_evp > 0 && ( I1_trial - I1_0 ) > 0 && ( (rJ2_trial > fractureStressRootJ2 || coher_old < 1 )    ))
 		{
 			// increment in work per unit volume.
 			real64 d_dilationalPlasticWork = d_evp*0.5*(I1_trial - I1_0);
@@ -1795,9 +1806,11 @@ int GeomechanicsUpdates::computeSubstep( real64 const ( & D )[6],         // str
     // update the damage variable.  this is untested, and only active if Gf > 0
     computeCoher( lch,
                   I1_trial,
+                  rJ2_trial,
                   I1_0,
                   d_evp,
                   m_fractureEnergyReleaseRate,
+                  m_fractureStress,
                   coher_old,
                   coher_new );
 
@@ -2638,6 +2651,9 @@ public:
     /// string/key for fracture energy release rate
     static constexpr char const * fractureEnergyReleaseRateString() { return "fractureEnergyReleaseRate"; }
 
+    /// string/key for fracture stress
+    static constexpr char const * fractureStressString() { return "fractureStress"; }
+
     /// string/key for peak t1 shear limit parameter
     static constexpr char const * peakT1String() { return "peakT1"; }
 
@@ -2749,6 +2765,7 @@ public:
                                 m_t1RateDependence,
                                 m_t2RateDependence,
                                 m_fractureEnergyReleaseRate,
+                                m_fractureStress,
                                 m_cr,
                                 m_fluidBulkModulus,
                                 m_fluidInitialPressure,
@@ -2816,6 +2833,7 @@ public:
                           m_t1RateDependence,
                           m_t2RateDependence,
                           m_fractureEnergyReleaseRate,
+                          m_fractureStress,
                           m_cr,
                           m_fluidBulkModulus,
                           m_fluidInitialPressure,
@@ -2959,6 +2977,7 @@ protected:
 
   // Fracture energy release rate
   real64 m_fractureEnergyReleaseRate;
+  real64 m_fractureStress;
 
   // Cap shape parameter
   real64 m_cr;

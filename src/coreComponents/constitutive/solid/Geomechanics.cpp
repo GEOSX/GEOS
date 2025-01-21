@@ -49,6 +49,7 @@ Geomechanics::Geomechanics( string const & name, Group * const parent ):
   m_t1RateDependence( 0.0 ),
   m_t2RateDependence( 0.0 ),
   m_fractureEnergyReleaseRate( 0.0 ),
+  m_fractureStress( 0.0 ),
   m_cr( 0.0 ),
   m_fluidBulkModulus(0.0 ),
   m_fluidInitialPressure( 0.0 ),
@@ -158,6 +159,10 @@ Geomechanics::Geomechanics( string const & name, Group * const parent ):
   registerWrapper( viewKeyStruct::fractureEnergyReleaseRateString(), &m_fractureEnergyReleaseRate ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "Fracture energy release rate parameter" );
+
+  registerWrapper( viewKeyStruct::fractureStressString(), &m_fractureStress ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Fracture stress" );
 
   registerWrapper( viewKeyStruct::peakT1String(), &m_peakT1 ).
     setInputFlag( InputFlags::REQUIRED ).
