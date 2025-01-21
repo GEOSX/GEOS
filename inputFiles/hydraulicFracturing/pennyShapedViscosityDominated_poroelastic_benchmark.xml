@@ -69,7 +69,7 @@
       name="SurfaceGen"
       targetRegions="{ Domain }"
       nodeBasedSIF="1"      
-      rockToughness="0.3e6"
+      initialRockToughness="0.3e6"
       mpiCommOrder="1"/>
   <!-- SPHINX_SURFACEGENERATOR_END -->
   </Solvers> 

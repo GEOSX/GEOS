@@ -3,9 +3,9 @@
 <Problem>
   <Included>
     <File
-      name="./pennyShapedViscosityDominated_poroelastic_base.xml"/>
+      name="./pennyShapedAnisotropicToughness_base.xml"/>
   </Included>
-
+  
   <Solvers
     gravityVector="{ 0.0, 0.0, -0.0 }">
     <Hydrofracture
@@ -14,13 +14,13 @@
       flowSolverName="SinglePhaseFlow"
       surfaceGeneratorName="SurfaceGen"
       logLevel="1"
-      targetRegions="{ Domain, Fracture }"
-      isMatrixPoroelastic="1"
+      targetRegions="{ Fracture }"
       maxNumResolves="1"
-      initialDt="0.1">
+      initialDt="0.01">
       <NonlinearSolverParameters
-        newtonTol="1.0e-4"
-        newtonMaxIter="50"/>
+        newtonTol="1.0e-5"
+        newtonMaxIter="20"
+        lineSearchMaxCuts="3"/>
       <LinearSolverParameters
         directParallel="0"/>
     </Hydrofracture>
@@ -30,72 +30,76 @@
       timeIntegrationOption="QuasiStatic"
       discretization="FE1"
       targetRegions="{ Domain, Fracture }"
-      contactRelationName="fractureContact"
-      contactPenaltyStiffness="1.0e0">     
+      contactRelationName="fractureContact">
     </SolidMechanicsLagrangianSSLE>
 
     <SinglePhaseFVM
       name="SinglePhaseFlow"
       discretization="singlePhaseTPFA"
-      targetRegions="{ Domain, Fracture }"> 
+      targetRegions="{ Fracture }">
     </SinglePhaseFVM>
 
     <SurfaceGenerator
       name="SurfaceGen"
       targetRegions="{ Domain }"
       nodeBasedSIF="1"      
-      initialRockToughness="0.3e6"
-      mpiCommOrder="1"
-      isPoroelastic="1"/>
+      initialRockToughness="-1.0"
+      mpiCommOrder="1"/>
   </Solvers> 
-
+ 
   <Mesh>
-    <InternalMesh
+    <InternalMesh 
       name="mesh1"
-      elementTypes="{ C3D8 }"
-      xCoords="{ 0, 100, 200, 400 }"
-      yCoords="{ 0, 100, 200, 400 }"
-      zCoords="{ -400, -100, -20, 20, 100, 400 }"
-      nx="{ 10, 1, 2 }"
-      ny="{ 10, 1, 2 }"
-      nz="{ 1, 1, 2, 1, 1 }"
-      cellBlockNames="{ cb1 }"/> 
+      elementTypes="{C3D8}"
+      xCoords="{ -10, 0, 10 }"
+      yCoords="{ 0, 5, 10 }"
+      zCoords="{ 0, 5, 10 }"
+      nx="{ 3, 3 }"
+      ny="{ 10, 2 }"
+      nz="{ 10, 2 }"
+      xBias="{ 0.6, -0.6 }"
+      yBias="{ 0.0, -0.6 }"
+      zBias="{ 0.0, -0.6 }"
+      cellBlockNames="{cb1}"/>
   </Mesh>
  
-  <Geometry> 
+  <Geometry>
     <Box
       name="fracture"
-      xMin="{ -10.1, -10.1, -0.1 }"
-      xMax="{ 10.1, 10.1, 0.1 }"/>
+      xMin="{ -0.01, -0.01, -0.01 }"
+      xMax="{  0.01,  1.01,  1.01 }"/>
 
     <Box
       name="source"
-      xMin="{ -10.1, -10.1, -0.1 }"
-      xMax="{ 10.1, 10.1, 0.1 }"/>
-
+      xMin="{ -0.01, -0.01, -0.01 }"
+      xMax="{  0.01,  0.51,  0.51 }"/>
 
     <Box
       name="core"
-      xMin="{ -500.1, -500.1, -0.1 }"
-      xMax="{ 500.1, 500.1, 0.1 }"/>
+      xMin="{ -0.01, -0.01, -0.01 }"
+      xMax="{  0.01, 1e6,  1e6 }"/>
   </Geometry>
 
   <Events
-    maxTime="5.0">
+    maxTime="1.0"
+    maxCycle="10">
     <SoloEvent
       name="preFracture"
       target="/Solvers/SurfaceGen"/>
 
     <PeriodicEvent
       name="solverApplications1"
-      beginTime="0.0"
-      endTime="10.0"
-      forceDt="1.0"
+      maxEventDt="0.1"
       target="/Solvers/hydrofracture"/>
+
+    <PeriodicEvent
+      name="outputs"
+      timeFrequency="2.0"
+      target="/Outputs/vtkOutput"/>
 
     <PeriodicEvent 
       name="restarts"
-      timeFrequency="5.0"
+      cycleFrequency="5"
       targetExactTimestep="0"
       target="/Outputs/restartOutput" />
   </Events>

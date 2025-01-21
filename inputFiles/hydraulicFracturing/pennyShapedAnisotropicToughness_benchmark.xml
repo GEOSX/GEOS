@@ -3,9 +3,9 @@
 <Problem>
   <Included>
     <File
-      name="./pknViscosityDominated_base.xml"/>
+      name="./pennyShapedAnisotropicToughness_base.xml"/>
   </Included>
-
+  
   <Solvers
     gravityVector="{ 0.0, 0.0, -0.0 }">
   <!-- SPHINX_HYDROFRACSOLVER -->
@@ -20,9 +20,8 @@
       initialDt="0.1">
       <NonlinearSolverParameters
         newtonTol="1.0e-4"
-        newtonMaxIter="10"
-        maxTimeStepCuts="5"
-        maxAllowedResidualNorm="1e+15"/>
+        newtonMaxIter="50"
+        logLevel="1"/>
       <LinearSolverParameters
         solverType="gmres"
         preconditionerType="mgr"
@@ -35,6 +34,7 @@
     <SolidMechanicsLagrangianSSLE
       name="lagsolve"
       timeIntegrationOption="QuasiStatic"
+      logLevel="1"
       discretization="FE1"
       targetRegions="{ Domain, Fracture }"
       contactRelationName="fractureContact"
@@ -43,13 +43,14 @@
         newtonTol="1.0e-6"/>
       <LinearSolverParameters
         solverType="gmres"
-        krylovTol="1.0e-10"/>    
+        krylovTol="1.0e-10"/>
     </SolidMechanicsLagrangianSSLE>
   <!-- SPHINX_MECHANICALSOLVER_END -->
 
   <!-- SPHINX_SINGLEPHASEFVM -->
     <SinglePhaseFVM
       name="SinglePhaseFlow"
+      logLevel="1"
       discretization="singlePhaseTPFA"
       targetRegions="{ Fracture }">
       <NonlinearSolverParameters
@@ -57,7 +58,7 @@
         newtonMaxIter="10"/>
       <LinearSolverParameters
         solverType="gmres"
-        krylovTol="1.0e-12"/>     
+        krylovTol="1.0e-12"/>
     </SinglePhaseFVM>
   <!-- SPHINX_SINGLEPHASEFVM_END -->
 
@@ -66,97 +67,61 @@
       name="SurfaceGen"
       targetRegions="{ Domain }"
       nodeBasedSIF="1"      
-      initialRockToughness="0.1e6"
+      initialRockToughness="-1.0"
       mpiCommOrder="1"/>
   <!-- SPHINX_SURFACEGENERATOR_END -->
   </Solvers>
-
+ 
   <!-- SPHINX_MESH -->
   <Mesh>
     <InternalMesh
       name="mesh1"
       elementTypes="{ C3D8 }"
-      xCoords="{ 0, 150, 200, 400 }"
-      yCoords="{ 0, 150, 200, 400 }"
+      xCoords="{ 0, 100, 200, 400 }"
+      yCoords="{ 0, 100, 200, 400 }"
       zCoords="{ -400, -100, -20, 20, 100, 400 }"
-      nx="{ 75, 10, 20 }"
-      ny="{ 75, 10, 20 }"
+      nx="{ 50, 10, 20 }"
+      ny="{ 50, 10, 20 }"
       nz="{ 10, 10, 20, 10, 10 }"
-      cellBlockNames="{ cb1 }"/> 
+      cellBlockNames="{ cb1 }"/>
   </Mesh>
   <!-- SPHINX_MESH_END -->
  
-  <Geometry> 
+  <Geometry>
   <!-- SPHINX_INITIALFRAC -->
     <Box
       name="fracture"
       xMin="{ -4.1, -4.1, -0.1 }"
-      xMax="{ 2.1, 6.1, 0.1 }"/>
+      xMax="{ 4.1, 4.1, 0.1 }"/>
   <!-- SPHINX_INITIALFRAC_END -->
 
   <!-- SPHINX_INJSOURCE -->
     <Box
       name="source"
       xMin="{ -2.1, -2.1, -0.1 }"
-      xMax="{ 2.1, 6.1, 0.1 }"/>
+      xMax="{ 2.1, 2.1, 0.1 }"/>
   <!-- SPHINX_INJSOURCE_END -->
 
   <!-- SPHINX_FRACPLANE -->
     <Box
       name="core"
       xMin="{ -500.1, -500.1, -0.1 }"
-      xMax="{ 500.1, 10.1, 0.1 }"/>
+      xMax="{ 500.1, 500.1, 0.1 }"/>
   <!-- SPHINX_FRACPLANE_END -->
   </Geometry>
 
   <Events
-    maxTime="200.1"> 
+    maxTime="400.1">
     <SoloEvent
       name="preFracture"
       target="/Solvers/SurfaceGen"/>
 
     <PeriodicEvent
       name="outputs"
-      beginTime="2.0"
       timeFrequency="2.0"
       targetExactTimestep="0"
       target="/Outputs/vtkOutput"/>
 
-    <PeriodicEvent
-      name="timeHistoryCollection0"
-      beginTime="2.0"
-      timeFrequency="2.0"
-      targetExactTimestep="0"
-      target="/Tasks/pressureCollection" />
-
-    <PeriodicEvent
-      name="timeHistoryCollection1"
-      beginTime="2.0"
-      timeFrequency="2.0"
-      targetExactTimestep="0"
-      target="/Tasks/apertureCollection" />
-
-    <PeriodicEvent
-      name="timeHistoryCollection2"
-      beginTime="2.0"
-      timeFrequency="2.0"
-      targetExactTimestep="0"
-      target="/Tasks/hydraulicApertureCollection" /> 
-
-    <PeriodicEvent
-      name="timeHistoryCollection3"
-      beginTime="2.0"
-      timeFrequency="2.0"
-      targetExactTimestep="0"
-      target="/Tasks/areaCollection" />      
-
-    <PeriodicEvent
-      name="timeHistoryOutput"
-      beginTime="2.0"
-      timeFrequency="2.0"
-      targetExactTimestep="0"
-      target="/Outputs/timeHistoryOutput"/> 
- 
     <PeriodicEvent
       name="solverApplications1"
       beginTime="0.0"
@@ -202,7 +167,14 @@
     <PeriodicEvent
       name="solverApplications7"
       beginTime="100.0"
+      endTime="200.0"
       forceDt="10.0"
       target="/Solvers/hydrofracture"/>
-  </Events> 
+
+    <PeriodicEvent
+      name="solverApplications8"
+      beginTime="200.0"      
+      forceDt="20.0"
+      target="/Solvers/hydrofracture"/>
+  </Events>
 </Problem>
