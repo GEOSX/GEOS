@@ -22,6 +22,10 @@
 
 #include "physicsSolvers/fluidFlow/FlowSolverBase.hpp"
 #include "fieldSpecification/FieldSpecificationManager.hpp"
+#include "constitutive/fluid/multifluid/MultiFluidBase.hpp"
+#include "constitutive/solid/CoupledSolidBase.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/AccumulationKernel.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/ThermalAccumulationKernel.hpp"
 
 namespace geos
 {
@@ -97,6 +101,21 @@ public:
                            DofManager const & dofManager,
                            CRSMatrixView< real64, globalIndex const > const & localMatrix,
                            arrayView1d< real64 > const & localRhs ) override;
+
+  /**
+   * @brief assembles the accumulation terms for all cells of a spcefici subRegion.
+   * @tparam SUBREGION_TYPE the subRegion type
+   * @param dofManager degree-of-freedom manager associated with the linear system
+   * @param subRegion the subRegion
+   * @param localMatrix the system matrix
+   * @param localRhs the system right-hand side vector
+   *
+   */
+  template< typename SUBREGION_TYPE >
+  void accumulationAssemblyLaunch( DofManager const & dofManager,
+                                   SUBREGION_TYPE const & subRegion,
+                                   CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                                   arrayView1d< real64 > const & localRhs );
 
   virtual void
   resetStateToBeginningOfStep( DomainPartition & domain ) override;
@@ -541,6 +560,58 @@ void CompositionalMultiphaseBase::applyFieldValue( real64 const & time_n,
   } );
 }
 
+template< typename SUBREGION_TYPE >
+void CompositionalMultiphaseBase::accumulationAssemblyLaunch( DofManager const & dofManager,
+                                                              SUBREGION_TYPE const & subRegion,
+                                                              CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                                                              arrayView1d< real64 > const & localRhs )
+{
+  constitutive::MultiFluidBase const & fluid =
+    getConstitutiveModel< constitutive::MultiFluidBase >( subRegion, subRegion.template getReference< string >( viewKeyStruct::fluidNamesString() ) );
+  constitutive::CoupledSolidBase const & solid =
+    getConstitutiveModel< constitutive::CoupledSolidBase >( subRegion, subRegion.template getReference< string >( viewKeyStruct::solidNamesString() ) );
+
+  string const dofKey = dofManager.getKey( viewKeyStruct::elemDofFieldString() );
+
+  using namespace isothermalCompositionalMultiphaseBaseKernels;
+
+  BitFlags< KernelFlags > kernelFlags;
+  if( m_useTotalMassEquation )
+    kernelFlags.set( KernelFlags::TotalMassEquation );
+  if( m_useSimpleAccumulation )
+    kernelFlags.set( KernelFlags::SimpleAccumulation );
+
+  if( m_isThermal )
+  {
+    thermalCompositionalMultiphaseBaseKernels::
+      AccumulationKernelFactory::
+      createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
+                                                 m_numPhases,
+                                                 dofManager.rankOffset(),
+                                                 kernelFlags,
+                                                 dofKey,
+                                                 subRegion,
+                                                 fluid,
+                                                 solid,
+                                                 localMatrix,
+                                                 localRhs );
+  }
+  else
+  {
+    isothermalCompositionalMultiphaseBaseKernels::
+      AccumulationKernelFactory::
+      createAndLaunch< parallelDevicePolicy<> >( m_numComponents,
+                                                 m_numPhases,
+                                                 dofManager.rankOffset(),
+                                                 kernelFlags,
+                                                 dofKey,
+                                                 subRegion,
+                                                 fluid,
+                                                 solid,
+                                                 localMatrix,
+                                                 localRhs );
+  }
+}
 
 } // namespace geos
 
