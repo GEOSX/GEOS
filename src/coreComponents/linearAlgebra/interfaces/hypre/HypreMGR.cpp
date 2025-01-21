@@ -139,7 +139,7 @@ void hypre::mgr::createMGR( LinearSolverParameters const & params,
       setStrategy< LagrangianContactMechanics >( params.mgr, numComponentsPerField, precond, mgrData );
       break;
     }
-     case LinearSolverParameters::MGR::StrategyType::lagrangianContactMechanicsBubbleStab:
+    case LinearSolverParameters::MGR::StrategyType::lagrangianContactMechanicsBubbleStab:
     {
       setStrategy< LagrangianContactMechanicsBubbleStabilization >( params.mgr, numComponentsPerField, precond, mgrData );
       break;

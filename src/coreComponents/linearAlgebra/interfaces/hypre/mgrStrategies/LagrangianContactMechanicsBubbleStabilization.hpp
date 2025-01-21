@@ -55,9 +55,9 @@ namespace mgr
  * 1. F-points: multipliers (6,7,8), C-points: displacements (0,1,2)
  * 2. F-points smoother: l1jacobi
  * 3. Global smoother: none
- * 
+ *
  * C-points coarse-grid/Schur complement solver: boomer AMG
- 
+
  */
 class LagrangianContactMechanicsBubbleStabilization : public MGRStrategyBase< 2 >
 {
