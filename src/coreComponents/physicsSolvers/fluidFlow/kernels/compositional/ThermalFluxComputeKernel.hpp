@@ -197,7 +197,7 @@ public:
     // such as potGrad, phaseFlux, and the indices of the upwind cell
     // We use the lambda below (called **inside** the phase loop of the base computeFlux) to access these variables
     Base::computeFlux( iconn, stack, [&] ( integer const ip,
-                                           integer const useNewGravity,
+                                           integer const checkPhasePresenceInGravity,
                                            localIndex const (&k)[2],
                                            localIndex const (&seri)[2],
                                            localIndex const (&sesri)[2],
@@ -235,7 +235,7 @@ public:
         localIndex const ei  = sei[i];
 
         bool const phaseExists = (m_phaseVolFrac[er_up][esr_up][ei_up][ip] > 0);
-        if( useNewGravity && !phaseExists )
+        if( checkPhasePresenceInGravity && !phaseExists )
         {
           continue;
         }
@@ -522,8 +522,7 @@ public:
                    integer const numPhases,
                    globalIndex const rankOffset,
                    string const & dofKey,
-                   integer const hasCapPressure,
-                   integer const useTotalMassEquation,
+                   BitFlags< isothermalCompositionalMultiphaseFVMKernels::KernelFlags > kernelFlags,
                    string const & solverName,
                    ElementRegionManager const & elemManager,
                    STENCILWRAPPER const & stencilWrapper,
@@ -540,12 +539,6 @@ public:
       ElementRegionManager::ElementViewAccessor< arrayView1d< globalIndex const > > dofNumberAccessor =
         elemManager.constructArrayViewAccessor< globalIndex, 1 >( dofKey );
       dofNumberAccessor.setName( solverName + "/accessors/" + dofKey );
-
-      BitFlags< isothermalCompositionalMultiphaseFVMKernels::KernelFlags > kernelFlags;
-      if( hasCapPressure )
-        kernelFlags.set( isothermalCompositionalMultiphaseFVMKernels::KernelFlags::CapPressure );
-      if( useTotalMassEquation )
-        kernelFlags.set( isothermalCompositionalMultiphaseFVMKernels::KernelFlags::TotalMassEquation );
 
       using KernelType = FluxComputeKernel< NUM_COMP, NUM_DOF, STENCILWRAPPER >;
       typename KernelType::CompFlowAccessors compFlowAccessors( elemManager, solverName );

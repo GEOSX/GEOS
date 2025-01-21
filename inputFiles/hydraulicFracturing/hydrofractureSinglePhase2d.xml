@@ -34,7 +34,7 @@
     <SurfaceGenerator
       name="SurfaceGen"
       targetRegions="{ Domain }"
-      rockToughness="1.0e6"/>
+      initialRockToughness="1.0e6"/>
   </Solvers>
 
   <Mesh>

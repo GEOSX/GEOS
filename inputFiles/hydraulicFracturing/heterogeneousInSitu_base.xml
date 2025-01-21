@@ -53,7 +53,7 @@
     <SurfaceGenerator
       name="SurfaceGen"
       targetRegions="{ Domain }"
-      rockToughness="$K_upscaled$"
+      initialRockToughness="$K_upscaled$"
       nodeBasedSIF="1"
       mpiCommOrder="1"/>
   </Solvers>

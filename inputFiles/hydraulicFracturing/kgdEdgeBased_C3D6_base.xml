@@ -49,7 +49,7 @@
     <SurfaceGenerator
       name="SurfaceGen"
       targetRegions="{ Domain }"
-      rockToughness="0.707e7"
+      initialRockToughness="0.707e7"
       mpiCommOrder="1"/>
   </Solvers>
 </Problem>
