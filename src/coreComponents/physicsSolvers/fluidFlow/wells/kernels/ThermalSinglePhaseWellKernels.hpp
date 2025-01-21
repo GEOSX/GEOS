@@ -42,35 +42,35 @@ namespace thermalSinglePhaseWellKernels
 
 /**
  * @class ElementBasedAssemblyKernel
- * @tparam NUM_DOF number of degrees of freedom
- * @brief Define the interface for the assembly kernel in charge of accumulation and volume balance
+ * @tparam IS_THERMAL thermal switch
+ * @brief Define the interface for the assembly kernel in charge of accumulation and energy balance
  */
-template< integer NUM_DOF >
-class ElementBasedAssemblyKernel : public singlePhaseWellKernels::ElementBasedAssemblyKernel< NUM_DOF >
+template< integer IS_THERMAL >
+class ElementBasedAssemblyKernel : public singlePhaseWellKernels::ElementBasedAssemblyKernel< IS_THERMAL >
 {
 public:
-  using Base = singlePhaseWellKernels::ElementBasedAssemblyKernel< NUM_DOF >;
+  using Base = singlePhaseWellKernels::ElementBasedAssemblyKernel< IS_THERMAL >;
   using Base::m_rankOffset;
-  using Base::m_wellElemDofNumber;
+  using Base::m_dofNumber;
   using Base::m_elemGhostRank;
   using Base::m_wellElemVolume;
   using Base::m_wellElemDensity;
   using Base::m_wellElemDensity_n;
-  using Base::m_dWellElemDensity_dPressure;
+  using Base::m_dWellElemDensity;
   using Base::m_localMatrix;
   using Base::m_localRhs;
   using ROFFSET = singlePhaseWellKernels::RowOffset;
   using COFFSET = singlePhaseWellKernels::ColOffset;
 
   /// Compute time value for the number of degrees of freedom
-  static constexpr integer numDof = NUM_DOF;
+  static constexpr integer NUM_DOF = 1 + IS_THERMAL; // tjb review
 
   /// Compute time value for the number of equations
-  static constexpr integer numEqn = NUM_DOF;
+  static constexpr integer numEqn = NUM_DOF;   // tjb review
 
   /**
    * @brief Constructor
-   * @param[in] numPhases the number of fluid phases
+   * @param[in] isProducer well type
    * @param[in] rankOffset the offset of my MPI rank
    * @param[in] dofKey the string key to retrieve the degress of freedom numbers
    * @param[in] subRegion the element subregion
@@ -78,42 +78,24 @@ public:
    * @param[inout] localMatrix the local CRS matrix
    * @param[inout] localRhs the local right-hand side vector
    */
-  ElementBasedAssemblyKernel( globalIndex const rankOffset,
+  ElementBasedAssemblyKernel( integer const isProducer,
+                              globalIndex const rankOffset,
                               string const dofKey,
-                              ElementSubRegionBase const & subRegion,
+                              WellElementSubRegion const & subRegion,
                               constitutive::SingleFluidBase const & fluid,
                               CRSMatrixView< real64, globalIndex const > const & localMatrix,
                               arrayView1d< real64 > const & localRhs )
-    :    Base( rankOffset, dofKey, subRegion, fluid, localMatrix, localRhs ),
-    m_dWellElemDensity_dTemperature( fluid.dDensity_dTemperature()  ),
+    :    Base( isProducer, rankOffset, dofKey, subRegion, fluid, localMatrix, localRhs ),
     m_internalEnergy( fluid.internalEnergy() ),
     m_internalEnergy_n( fluid.internalEnergy_n() ),
-    m_dInternalEnergy_dPres( fluid.dInternalEnergy_dPressure() ),
-    m_dInternalEnergy_dTemp( fluid.dInternalEnergy_dTemperature() )
+    m_dInternalEnergy( fluid.dInternalEnergy() )
   {}
 
   /**
    * @struct StackVariables
    * @brief Kernel variables (dof numbers, jacobian and residual) located on the stack
    */
-  struct StackVariables : public Base::StackVariables
-  {
-public:
-    GEOS_HOST_DEVICE
-    StackVariables()
-      : Base::StackVariables()
-    {}
-    using Base::StackVariables::eqnRowIndices;
-    using Base::StackVariables::dofColIndices;
-    using Base::StackVariables::localJacobian;
-    using Base::StackVariables::localResidual;
-    using Base::StackVariables::localRow;
-    using Base::StackVariables::volume;
-    using Base::StackVariables::density;
-    using Base::StackVariables::density_n;
-    using Base::StackVariables::dDensity_dPres;
 
-  };
   /**
    * @brief Getter for the ghost rank of an element
    * @param[in] ei the element index
@@ -134,12 +116,12 @@ public:
    */
   template< typename FUNC = NoOpFunc >
   GEOS_HOST_DEVICE
-  void computeAccumulation( localIndex const iwelem,
-                            StackVariables & stack ) const
+  void computeAccumulation( localIndex const iwelem ) const
   {
-    Base::computeAccumulation( iwelem, stack, [&]( )
+    Base::computeAccumulation( iwelem, [&]( )
     {
 
+#if 0
       // Step 1: assemble the derivatives of the mass balance equation w.r.t temperature
       stack.localJacobian[0][numDof-1] =  stack.volume * m_dWellElemDensity_dTemperature[iwelem][0];
 
@@ -160,6 +142,7 @@ public:
       // derivatives w.r.t. pressure and temperature
       stack.localJacobian[numEqn-1][0]        = dFluidEnergy_dP;
       stack.localJacobian[numEqn-1][numDof-1] = dFluidEnergy_dT;
+#endif
     } );
   }
 
@@ -185,11 +168,7 @@ public:
       {
         return;
       }
-      typename KERNEL_TYPE::StackVariables stack;
-      kernelComponent.setup( iwelem, stack );
-      kernelComponent.computeAccumulation( iwelem, stack );
-      kernelComponent.complete( iwelem, stack );
-
+      kernelComponent.computeAccumulation( iwelem );
     } );
   }
 
@@ -201,8 +180,7 @@ protected:
   /// Views on fluid internal energy
   arrayView2d< real64 const > const m_internalEnergy;
   arrayView2d< real64 const > const m_internalEnergy_n;
-  arrayView2d< real64 const > const m_dInternalEnergy_dPres;
-  arrayView2d< real64 const > const m_dInternalEnergy_dTemp;
+  arrayView3d< real64 const > const m_dInternalEnergy;
 
 };
 
@@ -216,6 +194,7 @@ public:
   /**
    * @brief Create a new kernel and launch
    * @tparam POLICY the policy used in the RAJA kernel
+   * @param[in] isProducer well type
    * @param[in] rankOffset the offset of my MPI rank
    * @param[in] dofKey the string key to retrieve the degress of freedom numbers
    * @param[in] subRegion the element subregion
@@ -225,18 +204,19 @@ public:
    */
   template< typename POLICY >
   static void
-  createAndLaunch( globalIndex const rankOffset,
+  createAndLaunch( integer const isProducer,
+                   globalIndex const rankOffset,
                    string const dofKey,
-                   ElementSubRegionBase const & subRegion,
+                   WellElementSubRegion const & subRegion,
                    constitutive::SingleFluidBase const & fluid,
                    CRSMatrixView< real64, globalIndex const > const & localMatrix,
                    arrayView1d< real64 > const & localRhs )
   {
-    integer constexpr NUM_DOF = 2;
-    ElementBasedAssemblyKernel< NUM_DOF >
-    kernel( rankOffset, dofKey, subRegion, fluid, localMatrix, localRhs );
-    ElementBasedAssemblyKernel< NUM_DOF >::template
-    launch< POLICY, ElementBasedAssemblyKernel< NUM_DOF > >( subRegion.size(), kernel );
+    integer constexpr isThermal = 1;
+    ElementBasedAssemblyKernel< isThermal >
+    kernel( isProducer, rankOffset, dofKey, subRegion, fluid, localMatrix, localRhs );
+    ElementBasedAssemblyKernel< isThermal >::template
+    launch< POLICY, ElementBasedAssemblyKernel< isThermal > >( subRegion.size(), kernel );
 
   }
 };

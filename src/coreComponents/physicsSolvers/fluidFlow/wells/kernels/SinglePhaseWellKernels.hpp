@@ -324,14 +324,15 @@ public:
   using WJ_ROFFSET = singlePhaseWellKernels::RowOffset_WellJac< IS_THERMAL >;
 
   /// Number of Dof's set in this kernal   - no dQ in accum
-  static constexpr integer numDof = 1 + IS_THERMAL;
+  static constexpr integer numDof = 1 + IS_THERMAL;  // tjb review
 
-  /// Compute time value for the number of equations  mass bal + vol bal + energy bal
-  static constexpr integer numEqn =  1 + IS_THERMAL;
+  /// Compute time value for the number of equations  mass bal + momentum + energy bal
+  static constexpr integer numEqn =  1 + IS_THERMAL;  // tjb review
 
 
   /**
    * @brief Constructor
+   * @param[in] isProducer well type
    * @param[in] rankOffset the offset of my MPI rank
    * @param[in] dofKey the string key to retrieve the degress of freedom numbers
    * @param[in] subRegion the element subregion
@@ -352,9 +353,9 @@ public:
     m_dofNumber( subRegion.getReference< array1d< globalIndex > >( dofKey ) ),
     m_elemGhostRank( subRegion.ghostRank() ),
     m_wellElemVolume( subRegion.getElementVolume() ),
-    m_wellElemDensity_n( fluid.density_n() ),
     m_wellElemDensity( fluid.density() ),
     m_dWellElemDensity( fluid.dDensity() ),
+    m_wellElemDensity_n( fluid.density_n() ),
     m_localMatrix( localMatrix ),
     m_localRhs( localRhs )
   {}
@@ -380,9 +381,23 @@ public:
    */
   template< typename FUNC = NoOpFunc >
   GEOS_HOST_DEVICE
-  void computeAccumulation( localIndex const ei,
+  void computeAccumulation( localIndex const iwelem,
                             FUNC && kernelOp = NoOpFunc{} ) const
-  {  }
+  {
+
+    localIndex const eqnRowIndex = m_dofNumber[iwelem] + ROFFSET::MASSBAL - m_rankOffset;
+    globalIndex const presDofColIndex = m_dofNumber[iwelem] + COFFSET::DPRES;
+
+    real64 const localAccum = m_wellElemVolume[iwelem] * ( m_wellElemDensity[iwelem][0] - m_wellElemDensity_n[iwelem][0] );
+    real64 const localAccumJacobian = m_wellElemVolume[iwelem] * m_dWellElemDensity[iwelem][0][FLUID_PROP_COFFSET::dP];
+
+    // add contribution to global residual and jacobian (no need for atomics here)
+    m_localMatrix.addToRow< serialAtomic >( eqnRowIndex, &presDofColIndex, &localAccumJacobian, 1 );
+    m_localRhs[eqnRowIndex] += localAccum;
+
+    //kernelOp
+
+  }
 
 
 
@@ -400,9 +415,9 @@ public:
   {
     GEOS_MARK_FUNCTION;
 
-    forAll< POLICY >( numElems, [=] GEOS_HOST_DEVICE ( localIndex const ei )
+    forAll< POLICY >( numElems, [=] GEOS_HOST_DEVICE ( localIndex const iwelem )
     {
-      if( kernelComponent.elemGhostRank( ei ) >= 0 )
+      if( kernelComponent.elemGhostRank( iwelem ) >= 0 )
       {
         return;
       }
@@ -410,7 +425,7 @@ public:
       //typename KERNEL_TYPE::StackVariables stack;
 
       //kernelComponent.setup( ei, stack );
-      //kernelComponent.computeAccumulation( ei, stack );
+      kernelComponent.computeAccumulation( iwelem );
       //kernelComponent.computeVolumeBalance( ei, stack );
       //kernelComponent.complete( ei, stack );
     } );
@@ -474,7 +489,7 @@ public:
                    CRSMatrixView< real64, globalIndex const > const & localMatrix,
                    arrayView1d< real64 > const & localRhs )
   {
-    bool isThermal=false;
+    integer isThermal=0;
     geos::internal::kernelLaunchSelectorThermalSwitch( isThermal, [&]( auto IS_THERMAL )
     {
 
@@ -490,6 +505,7 @@ public:
 
 /******************************** PressureTemperatyrInitializationKernel ********************************/
 
+// tjb make this templated on thermal
 struct PresTempInitializationKernel
 {
 
@@ -512,7 +528,8 @@ struct PresTempInitializationKernel
   using ElementViewConst = ElementRegionManager::ElementViewConst< VIEWTYPE >;
 
   static void
-  launch( localIndex const perforationSize,
+  launch( integer const isThermal,
+          localIndex const perforationSize,
           localIndex const subRegionSize,
           localIndex const numPerforations,
           WellControls const & wellControls,

@@ -21,7 +21,7 @@
 
 // TODO: move keys to WellControls
 #include "physicsSolvers/fluidFlow/wells/SinglePhaseWell.hpp"
-
+#include "physicsSolvers/fluidFlow/wells/SinglePhaseWellFields.hpp"
 namespace geos
 {
 
@@ -434,7 +434,7 @@ PerforationKernel::
   perfRate = 0.0;
   for( integer i = 0; i < 2; ++i )
   {
-    for( integer j=0; i<DerivOffset::nDer; j++ )
+    for( integer j=0; j<DerivOffset::nDer; j++ )
     {
       dPerfRate[i][j] = 0.0;
     }
@@ -480,7 +480,7 @@ PerforationKernel::
   {
     potDif += multiplier[i] * trans * pressure[i];
     dPerfRate_dPres[i] = multiplier[i] * trans * dPressure_dP[i];// tjb remove
-    for( integer j=0; i<DerivOffset::nDer; j++ )
+    for( integer j=0; j<DerivOffset::nDer; j++ )
     {
       dPerfRate[i][j] = multiplier[i] * trans * dPressure[i][j];
     }
@@ -694,7 +694,8 @@ AccumulationKernel::
 
 void
 PresTempInitializationKernel::
-  launch( localIndex const perforationSize,
+  launch( integer const isThermal,
+          localIndex const perforationSize,
           localIndex const subRegionSize,
           localIndex const numPerforations,
           WellControls const & wellControls,
@@ -815,7 +816,7 @@ PresTempInitializationKernel::
     {
       foundNegativePressure.max( 1 );
     }
-    if( wellElemTemperature[iwelem] <= 0 )
+    if( wellElemTemperature[iwelem] < 0 )
     {
       foundNegativeTemp.max( 1 );
     }
@@ -824,9 +825,12 @@ PresTempInitializationKernel::
   GEOS_THROW_IF( foundNegativePressure.get() == 1,
                  wellControls.getDataContext() << ": Invalid well initialization, negative pressure was found.",
                  InputError );
-  GEOS_THROW_IF( foundNegativeTemp.get() == 1,
-                 wellControls.getDataContext() << "Invalid well initialization, negative temperature was found.",
-                 InputError );
+  if( isThermal )   // tjb change  temp in isothermal cases shouldnt be an issue (also what if temp in fluid prop calcs like compo)
+  {
+    GEOS_THROW_IF( foundNegativeTemp.get() == 1,
+                   wellControls.getDataContext() << "Invalid well initialization, negative temperature was found.",
+                   InputError );
+  }
 }
 
 /******************************** RateInitializationKernel ********************************/
@@ -866,6 +870,239 @@ RateInitializationKernel::
   } );
 }
 
+/**
+ * @class FaceBasedAssemblyKernel
+ * @tparam NUM_COMP number of fluid components
+ * @tparam NUM_DOF number of degrees of freedom
+ * @brief Define the interface for the assembly kernel in charge of flux terms
+ */
+
+
+template< integer IS_THERMAL >
+class FaceBasedAssemblyKernel
+{
+public:
+
+  using COFFSET = singlePhaseWellKernels::ColOffset;
+  using ROFFSET = singlePhaseWellKernels::RowOffset;
+  using TAG = singlePhaseWellKernels::ElemTag;
+
+  using FLUID_PROP_COFFSET = constitutive::singlefluid::DerivativeOffsetC< IS_THERMAL >;
+  using WJ_COFFSET = singlePhaseWellKernels::ColOffset_WellJac< IS_THERMAL >;
+  using WJ_ROFFSET = singlePhaseWellKernels::RowOffset_WellJac< IS_THERMAL >;
+
+  using CP_Deriv = constitutive::singlefluid::DerivativeOffsetC< IS_THERMAL >;
+
+  /// Number of Dof's set in this kernal
+  static constexpr integer numDof = WJ_COFFSET::nDer;  // tjb revisit
+
+  /// Compile time value for the number of equations except rate, momentum, energy
+  static constexpr integer numEqn = WJ_COFFSET::nDer;// tjb revisit
+
+  static constexpr integer maxNumElems = 2;
+  static constexpr integer maxStencilSize = 2;
+  /**
+   * @brief Constructor for the kernel interface
+   * @param[in] dt time step size
+   * @param[in] rankOffset the offset of my MPI rank
+   * @param[in] dofNumberAccessor
+   * @param[in] wellControls well information
+   * @param[in] subRegion  region containing well
+   * @param[inout] localMatrix the local CRS matrix
+   * @param[inout] localRhs the local right-hand side vector
+   */
+  FaceBasedAssemblyKernel( real64 const dt,
+                           globalIndex const rankOffset,
+                           string const wellDofKey,
+                           WellControls const & wellControls,
+                           WellElementSubRegion const & subRegion,
+                           CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                           arrayView1d< real64 > const & localRhs )
+    :
+    m_dt( dt ),
+    m_rankOffset( rankOffset ),
+    m_wellElemDofNumber ( subRegion.getReference< array1d< globalIndex > >( wellDofKey ) ),
+    m_nextWellElemIndex ( subRegion.getReference< array1d< localIndex > >( WellElementSubRegion::viewKeyStruct::nextWellElementIndexString()) ),
+    m_connRate ( subRegion.getField< geos::fields::well::connectionRate >() ),
+    m_localMatrix( localMatrix ),
+    m_localRhs ( localRhs ),
+    m_isProducer ( wellControls.isProducer() )
+  {}
+
+
+  /**
+   * @brief Compute the local flux contributions to the residual and Jacobian
+   * @tparam FUNC the type of the function that can be used to customize the computation of the phase fluxes
+   * @param[in] ie the element index
+   * @param[inout] stack the stack variables
+   * @param[in] compFluxKernelOp the function used to customize the computation of the component fluxes
+   */
+  template< typename FUNC = NoOpFunc >
+  GEOS_HOST_DEVICE
+  inline
+  void computeFlux( localIndex const iwelem,
+                    FUNC && compFluxKernelOp = NoOpFunc{} ) const
+  {
+    // 1) Compute the flux and its derivatives
+
+    /*  currentConnRate < 0 flow from iwelem to iwelemNext
+     *  currentConnRate > 0 flow from iwelemNext to iwelem
+     *  With this convention, currentConnRate < 0 at the last connection for a producer
+     *                        currentConnRate > 0 at the last connection for a injector
+     */
+
+    // get next well element index
+    localIndex const iwelemNext = m_nextWellElemIndex[iwelem];
+
+    // there is nothing to upwind for single-phase flow
+    real64 const currentConnRate = m_connRate[iwelem];
+    real64 const flux = m_dt * currentConnRate;
+    real64 const dFlux_dRate = m_dt;
+
+    // 2) Assemble the flux into residual and Jacobian
+    if( iwelemNext < 0 )
+    {
+      // flux terms
+      real64 const oneSidedLocalFlux = -flux;
+      real64 const oneSidedLocalFluxJacobian_dRate = -dFlux_dRate;
+
+      // jacobian indices
+      globalIndex const oneSidedEqnRowIndex = m_wellElemDofNumber[iwelem] + ROFFSET::MASSBAL - m_rankOffset;
+      globalIndex const oneSidedDofColIndex_dRate = m_wellElemDofNumber[iwelem] + COFFSET::DRATE;
+
+      if( oneSidedEqnRowIndex >= 0 && oneSidedEqnRowIndex < m_localMatrix.numRows() )
+      {
+        m_localMatrix.addToRow< parallelDeviceAtomic >( oneSidedEqnRowIndex,
+                                                        &oneSidedDofColIndex_dRate,
+                                                        &oneSidedLocalFluxJacobian_dRate,
+                                                        1 );
+        RAJA::atomicAdd( parallelDeviceAtomic{}, &m_localRhs[oneSidedEqnRowIndex], oneSidedLocalFlux );
+      }
+    }
+    else
+    {
+      // local working variables and arrays
+      globalIndex eqnRowIndices[2]{};
+
+      real64 localFlux[2]{};
+      real64 localFluxJacobian_dRate[2]{};
+
+      // flux terms
+      localFlux[TAG::NEXT]    =   flux;
+      localFlux[TAG::CURRENT] = -flux;
+
+      localFluxJacobian_dRate[TAG::NEXT]    =   dFlux_dRate;
+      localFluxJacobian_dRate[TAG::CURRENT] = -dFlux_dRate;
+
+      // indices
+      eqnRowIndices[TAG::CURRENT] = m_wellElemDofNumber[iwelem] + ROFFSET::MASSBAL - m_rankOffset;
+      eqnRowIndices[TAG::NEXT]    = m_wellElemDofNumber[iwelemNext] + ROFFSET::MASSBAL - m_rankOffset;
+      globalIndex const dofColIndex_dRate = m_wellElemDofNumber[iwelem] + COFFSET::DRATE;
+
+      for( localIndex i = 0; i < 2; ++i )
+      {
+        if( eqnRowIndices[i] >= 0 && eqnRowIndices[i] < m_localMatrix.numRows() )
+        {
+          m_localMatrix.addToRow< parallelDeviceAtomic >( eqnRowIndices[i],
+                                                          &dofColIndex_dRate,
+                                                          &localFluxJacobian_dRate[i],
+                                                          1 );
+          RAJA::atomicAdd( parallelDeviceAtomic{}, &m_localRhs[eqnRowIndices[i]], localFlux[i] );
+        }
+      }
+    }
+
+
+  }
+
+
+  /**
+   * @brief Performs the kernel launch
+   * @tparam POLICY the policy used in the RAJA kernels
+   * @tparam KERNEL_TYPE the kernel type
+   * @param[in] numElements the number of elements
+   * @param[inout] kernelComponent the kernel component providing access to setup/compute/complete functions
+   */
+  template< typename POLICY, typename KERNEL_TYPE >
+  static void
+  launch( localIndex const numElements,
+          KERNEL_TYPE const & kernelComponent )
+  {
+    GEOS_MARK_FUNCTION;
+    forAll< POLICY >( numElements, [=] GEOS_HOST_DEVICE ( localIndex const ie )
+    {
+      kernelComponent.computeFlux( ie );
+    } );
+  }
+
+protected:
+  /// Time step size
+  real64 const m_dt;
+  /// Rank offset for calculating row/col Jacobian indices
+  integer const m_rankOffset;
+
+  /// Reference to the degree-of-freedom numbers
+  arrayView1d< globalIndex const > const m_wellElemDofNumber;
+  /// Next element index, needed since iterating over element nodes, not edges
+  arrayView1d< localIndex const > const m_nextWellElemIndex;
+
+  /// Connection rate
+  arrayView1d< real64 const > const m_connRate;
+
+  /// Element component fraction
+  arrayView2d< real64 const, compflow::USD_COMP > const m_wellElemCompFrac;
+
+  /// View on the local CRS matrix
+  CRSMatrixView< real64, globalIndex const > const m_localMatrix;
+  /// View on the local RHS
+  arrayView1d< real64 > const m_localRhs;
+
+  /// Well type
+  bool const m_isProducer;
+
+};
+
+/**
+ * @class FaceBasedAssemblyKernelFactory
+ */
+class FaceBasedAssemblyKernelFactory
+{
+public:
+
+  /**
+   * @brief Create a new kernel and launch
+   * @tparam POLICY the policy used in the RAJA kernel
+   * @param[in] dt time step size
+   * @param[in] rankOffset the offset of my MPI rank
+   * @param[in] dofKey string to get the element degrees of freedom numbers
+   * @param[in] wellControls object holding well control/constraint information
+   * @param[in] subregion well subregion
+   * @param[inout] localMatrix the local CRS matrix
+   * @param[inout] localRhs the local right-hand side vector
+   */
+  template< typename POLICY >
+  static void
+  createAndLaunch( integer const numComps,
+                   real64 const dt,
+                   globalIndex const rankOffset,
+                   string const dofKey,
+                   WellControls const & wellControls,
+                   WellElementSubRegion const & subRegion,
+                   CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                   arrayView1d< real64 > const & localRhs )
+  {
+    integer isThermal=0;
+    geos::internal::kernelLaunchSelectorThermalSwitch( isThermal, [&]( auto IS_THERMAL )
+    {
+
+      integer constexpr istherm = IS_THERMAL();
+
+      using kernelType = FaceBasedAssemblyKernel< istherm >;
+      kernelType kernel( dt, rankOffset, dofKey, wellControls, subRegion, localMatrix, localRhs );
+      kernelType::template launch< POLICY >( subRegion.size(), kernel );
+    } );
+  }
+};
 
 } // end namespace singlePhaseWellKernels
 

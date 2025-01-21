@@ -38,6 +38,7 @@
 #include "physicsSolvers/fluidFlow/wells/SinglePhaseWellFields.hpp"
 #include "physicsSolvers/fluidFlow/wells/WellControls.hpp"
 #include "physicsSolvers/fluidFlow/wells/kernels/SinglePhaseWellKernels.hpp"
+#include "physicsSolvers/fluidFlow/wells/kernels/ThermalSinglePhaseWellKernels.hpp"
 #include "physicsSolvers/fluidFlow/kernels/singlePhase/FluidUpdateKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/singlePhase/SolutionCheckKernel.hpp"
 #include "physicsSolvers/fluidFlow/wells/LogLevelsInfo.hpp"
@@ -429,7 +430,8 @@ void SinglePhaseWell::initializeWells( DomainPartition & domain, real64 const & 
       // 2) Initialize the reference pressure
       // 3) Estimate the pressures in the well elements using the average density
       PresTempInitializationKernel::
-        launch( perforationData.size(),
+        launch( isThermal(),
+                perforationData.size(),
                 subRegion.size(),
                 perforationData.getNumPerforationsGlobal(),
                 wellControls,
@@ -631,24 +633,52 @@ void SinglePhaseWell::assembleAccumulationTerms( real64 const & time_n,
       arrayView1d< integer const > const wellElemGhostRank = subRegion.ghostRank();
 
       arrayView1d< real64 const > const wellElemVolume = subRegion.getElementVolume();
-
+      WellControls const & wellControls = getWellControls( subRegion );
       string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
       SingleFluidBase const & fluid = subRegion.getConstitutiveModel< SingleFluidBase >( fluidName );
       arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const wellElemDensity = fluid.density();
       arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > const dWellElemDensity = fluid.dDensity();
       arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const wellElemDensity_n = fluid.density_n();
 
-      AccumulationKernel::launch( subRegion.size(),
-                                  dofManager.rankOffset(),
-                                  wellElemDofNumber,
-                                  wellElemGhostRank,
-                                  wellElemVolume,
-                                  wellElemDensity,
-                                  dWellElemDensity,
-                                  wellElemDensity_n,
-                                  localMatrix,
-                                  localRhs );
-
+      if( isThermal() )
+      {
+#if 1
+        thermalSinglePhaseWellKernels::
+          ElementBasedAssemblyKernelFactory::
+          createAndLaunch< parallelDevicePolicy<> >( wellControls.isProducer(),
+                                                     dofManager.rankOffset(),
+                                                     wellElemDofKey,
+                                                     subRegion,
+                                                     fluid,
+                                                     localMatrix,
+                                                     localRhs );
+#endif
+      }
+      else
+      {
+#if 0
+        AccumulationKernel::launch( subRegion.size(),
+                                    dofManager.rankOffset(),
+                                    wellElemDofNumber,
+                                    wellElemGhostRank,
+                                    wellElemVolume,
+                                    wellElemDensity,
+                                    dWellElemDensity,
+                                    wellElemDensity_n,
+                                    localMatrix,
+                                    localRhs );
+#else
+        singlePhaseWellKernels::
+          ElementBasedAssemblyKernelFactory::
+          createAndLaunch< parallelDevicePolicy<> >( wellControls.isProducer(),
+                                                     dofManager.rankOffset(),
+                                                     wellElemDofKey,
+                                                     subRegion,
+                                                     fluid,
+                                                     localMatrix,
+                                                     localRhs );
+#endif
+      }
     } );
   } );
   // then assemble the volume balance equations
