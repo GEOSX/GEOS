@@ -62,7 +62,7 @@
     <SurfaceGenerator
       name="SurfaceGen"
       targetRegions="{ Domain }"
-      rockToughness="1e6"
+      initialRockToughness="1e6"
       nodeBasedSIF="1"
       mpiCommOrder="1"/>
   </Solvers>
