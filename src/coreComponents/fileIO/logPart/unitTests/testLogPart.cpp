@@ -33,7 +33,7 @@ TEST( testSection, sectionWithTitle )
 
   logPart.end( oss );
   EXPECT_EQ( oss.str(),
-             "\n##                           section name                           ##\n"
+             "\n##                       End of section name                        ##\n"
              "######################################################################\n\n"
              );
   oss.clear();
@@ -74,7 +74,7 @@ TEST( testSection, sectionWithSetWidth )
 
   logPart.end( oss );
   EXPECT_EQ( oss.str(),
-             "\n##                                          section name                                          ##\n"
+             "\n##                                      End of section name                                       ##\n"
              "####################################################################################################\n\n"
              );
   oss.clear();
@@ -103,7 +103,7 @@ TEST( testSection, sectionMultipleDescriptions )
 
   logPart.end( oss );
   EXPECT_EQ( oss.str(),
-             "\n##                          TIMESTEP START                          ##\n"
+             "\n##                      End of TIMESTEP START                       ##\n"
              "######################################################################\n\n"
              );
   oss.clear();
@@ -113,19 +113,18 @@ TEST( testSection, sectionEndDescription )
 {
   std::ostringstream oss;
   LogPart logPart( "TIMESTEP START" );
-  logPart.addDescription( "description" );
+  logPart.addEndDescription( "test end description" );
   logPart.setMinWidth( 70 );
   logPart.begin( oss );
   oss.clear();
   oss.str( "" );
 
-  logPart.addDescription( "test end description" );
   logPart.end( oss );
 
   EXPECT_EQ( oss.str(),
              "\n##  test end description                                            ##\n"
              "######################################################################\n"
-             "##                          TIMESTEP START                          ##\n"
+             "##                      End of TIMESTEP START                       ##\n"
              "######################################################################\n\n"
              );
   oss.clear();

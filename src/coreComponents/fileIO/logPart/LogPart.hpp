@@ -26,7 +26,7 @@ namespace geos
 {
 
 /**
- * @brief Class for displaying different steps of simulation
+ * @brief Class for displaying section for different steps of simulation
  */
 class LogPart
 {
@@ -39,19 +39,34 @@ public:
   LogPart( string_view m_logPartTitle );
 
   /**
-   * @brief Add a description to the logPart by concatening a description name and descriptions values.
+   * @brief Add a description to the opening logPart by concatening a description name and descriptions values.
    * @param name The description name
    * @param args Descriptions values to be concatened.
-   * Descriptions values can be be any types and will be aligned
+   * @note Descriptions values can be be any formatted types. Values will be aligned altogether.
    */
   template< typename ... Args >
   void addDescription( string const & name, Args const & ... args );
 
   /**
-   * @brief Add a description to the logPart
+   * @brief Add a description to the opening logPart
    * @param description The string value of the description
    */
   void addDescription( string const & description );
+
+  /**
+   * @brief Add a description to the closing logPart by concatening a description name and descriptions values.
+   * @param name The description name
+   * @param args Descriptions values to be concatened.
+   * @note Descriptions values can be be any formatted types. Values will be aligned altogether.
+   */
+  template< typename ... Args >
+  void addEndDescription( string const & name, Args const & ... args );
+
+  /**
+   * @brief Add a description to the closing logPart
+   * @param description The string value of the description
+   */
+  void addEndDescription( string const & description );
 
   /**
    * @brief Set the minimal width of a row
@@ -73,43 +88,45 @@ public:
 
 private:
 
+  struct Description
+  {
+    /// Title footer string
+    string m_title;
+
+    /// Name of the description, formatted to be : [Name] : [Values1]\n[Values2]
+    std::vector< string > m_descriptionNames;
+    /// Values in the descrpption the description
+    std::vector< std::vector< string > > m_descriptionValues;
+    /// Vector containing the descriptions formatted by formatDescriptions()
+    std::vector< string > m_formattedDescriptionLines;
+
+    /// logPart length
+    size_t m_logPartWidth;
+  };
+
   /**
    * @brief Build a description from the name and description values
    * @param name The decription name
    * @param decriptionsValues The description values
    */
-  void formatDescriptions();
+  void formatDescriptions( LogPart::Description & description );
 
   /**
    * @brief Constructs the string logPart title of the log part.
    */
-  string buildTitlePart();
+  string buildTitlePart( LogPart::Description const & description );
 
   /**
    * @brief Constructs the string logPart descriptions of the log part.
    */
-  string buildDescriptionPart();
+  string buildDescriptionPart( LogPart::Description const & description );
 
-  /**
-   * @brief Clear all buffer
-   */
-  void clear();
-
-  /// Vector containing formatted description
-  std::vector< string > m_formattedDescriptions;
-  /// Name of the description, formatted to be : [Name] : [Values1]\n[Values2]
-  std::vector< string > m_descriptionNames;
-  /// Values in the descrpption the description
-  std::vector< std::vector< string > > m_descriptionValues;
-
-  /// title of logPart
-  string m_logPartTitle;
-  /// Title footer string
-  string m_footerTitle;
+  string const m_prefixEndTitle = "End of ";
   /// min width of logPart length
   size_t m_rowMinWidth = 70;
-  /// logPart length
-  size_t m_logPartWidth;
+
+  Description m_startDesc = { "", {}, {}, {}, m_rowMinWidth};
+  Description m_endDesc  = { "", {}, {}, {}, m_rowMinWidth};
 
   /// description border margin
   static constexpr size_t m_borderMargin = 2;
@@ -131,8 +148,22 @@ void LogPart::addDescription( string const & name, Args const &... args )
     string const value = GEOS_FMT( "{}", args );
     values.push_back( value );
   } (), ...);
-  m_descriptionNames.push_back( name );
-  m_descriptionValues.push_back( values );
+  m_startDesc.m_descriptionNames.push_back( name );
+  m_startDesc.m_descriptionValues.push_back( values );
+}
+
+template< typename ... Args >
+void LogPart::addEndDescription( string const & name, Args const &... args )
+{
+  std::vector< string > values;
+  ( [&] {
+    static_assert( has_formatter_v< decltype(args) >, "Argument passed in addRow cannot be converted to string" );
+    string const value = GEOS_FMT( "{}", args );
+    values.push_back( value );
+  } (), ...);
+
+  m_endDesc.m_descriptionNames.push_back( name );
+  m_endDesc.m_descriptionValues.push_back( values );
 }
 
 }
