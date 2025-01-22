@@ -210,7 +210,7 @@ bool EventManager::run( DomainPartition & domain )
       }
     }
 
-    
+
 
     logPart.end();
     // Increment time/cycle, reset the subevent counter
