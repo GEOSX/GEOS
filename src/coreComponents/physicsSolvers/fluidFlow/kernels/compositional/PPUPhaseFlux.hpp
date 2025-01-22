@@ -68,6 +68,10 @@ struct PPUPhaseFlux
    * @param phaseFlux phase flux
    * @param dPhaseFlux_dP derivative of phase flux wrt pressure
    * @param dPhaseFlux_dC derivative of phase flux wrt comp density
+   * @param compFlux component flux
+   * @param dCompFlux_dP derivative of phase flux wrt pressure
+   * @param dCompFlux_dC derivative of phase flux wrt comp density
+   * @param dCompFlux_dTrans derivative of phase flux wrt transmissibility
    */
   template< integer numComp, integer numFluxSupportPoints >
   GEOS_HOST_DEVICE
@@ -96,13 +100,15 @@ struct PPUPhaseFlux
            ElementViewConst< arrayView4d< real64 const, constitutive::cappres::USD_CAPPRES_DS > > const & dPhaseCapPressure_dPhaseVolFrac,
            localIndex & k_up,
            real64 & potGrad,
-           real64 ( &phaseFlux ),
+           real64 & phaseFlux,
            real64 ( & dPhaseFlux_dP )[numFluxSupportPoints],
            real64 ( & dPhaseFlux_dC )[numFluxSupportPoints][numComp],
            real64 ( & compFlux )[numComp],
            real64 ( & dCompFlux_dP )[numFluxSupportPoints][numComp],
-           real64 ( & dCompFlux_dC )[numFluxSupportPoints][numComp][numComp] )
+           real64 ( & dCompFlux_dC )[numFluxSupportPoints][numComp][numComp],
+           real64 ( & dCompFlux_dTrans )[numComp] )
   {
+    real64 dPotGrad_dTrans = 0;
     real64 dPresGrad_dP[numFluxSupportPoints]{};
     real64 dPresGrad_dC[numFluxSupportPoints][numComp]{};
     real64 dGravHead_dP[numFluxSupportPoints]{};
@@ -111,8 +117,9 @@ struct PPUPhaseFlux
                                                        seri, sesri, sei, trans, dTrans_dPres, pres,
                                                        gravCoef, phaseVolFrac, dPhaseVolFrac, dCompFrac_dCompDens,
                                                        phaseMassDens, dPhaseMassDens,
-                                                       phaseCapPressure, dPhaseCapPressure_dPhaseVolFrac, potGrad,
-                                                       dPresGrad_dP, dPresGrad_dC, dGravHead_dP, dGravHead_dC );
+                                                       phaseCapPressure, dPhaseCapPressure_dPhaseVolFrac,
+                                                       potGrad, dPotGrad_dTrans, dPresGrad_dP,
+                                                       dPresGrad_dC, dGravHead_dP, dGravHead_dC );
 
     // *** upwinding ***
 
@@ -125,6 +132,11 @@ struct PPUPhaseFlux
 
     real64 const mobility = phaseMob[er_up][esr_up][ei_up][ip];
 
+    // compute phase flux using upwind mobility
+    phaseFlux = mobility * potGrad;
+
+    real64 const dPhaseFlux_dTrans = mobility * dPotGrad_dTrans;
+
     // pressure gradient depends on all points in the stencil
     for( integer ke = 0; ke < numFluxSupportPoints; ++ke )
     {
@@ -136,8 +148,6 @@ struct PPUPhaseFlux
         dPhaseFlux_dC[ke][jc] *= mobility;
       }
     }
-    // compute phase flux using upwind mobility.
-    phaseFlux = mobility * potGrad;
 
     real64 const dMob_dP = dPhaseMob[er_up][esr_up][ei_up][ip][Deriv::dP];
     arraySlice1d< real64 const, compflow::USD_PHASE_DC - 2 > dPhaseMobSub =
@@ -151,8 +161,8 @@ struct PPUPhaseFlux
     }
 
     //distribute on phaseComponentFlux here
-    PhaseComponentFlux::compute( ip, k_up, seri, sesri, sei, phaseCompFrac, dPhaseCompFrac, dCompFrac_dCompDens, phaseFlux
-                                 , dPhaseFlux_dP, dPhaseFlux_dC, compFlux, dCompFlux_dP, dCompFlux_dC );
+    PhaseComponentFlux::compute( ip, k_up, seri, sesri, sei, phaseCompFrac, dPhaseCompFrac, dCompFrac_dCompDens,
+                                 phaseFlux, dPhaseFlux_dP, dPhaseFlux_dC, dPhaseFlux_dTrans, compFlux, dCompFlux_dP, dCompFlux_dC, dCompFlux_dTrans );
 
   }
 };

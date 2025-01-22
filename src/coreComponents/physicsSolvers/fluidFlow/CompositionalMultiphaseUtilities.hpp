@@ -29,6 +29,19 @@ namespace compositionalMultiphaseUtilities
 {
 
 /**
+ * @brief Solution scaling type, used in CompositionalMultiphaseFVM
+ */
+enum class ScalingType : integer
+{
+  Global,         ///< Scale the Newton update with a unique scaling factor
+  Local            ///< Scale the Newton update locally (modifies the Newton direction)
+};
+
+ENUM_STRINGS( ScalingType,
+              "Global",
+              "Local" );
+
+/**
  * @brief In each block, shift the elements from 0 to numRowsToShift-1 one position ahead and replaces the first element
  * with the sum of all elements from 0 to numRowsToShift-1 of the input block one-dimensional array of values.
  *
