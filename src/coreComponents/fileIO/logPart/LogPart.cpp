@@ -45,9 +45,11 @@ void LogPart::setMinWidth( size_t const & minWidth )
 void LogPart::formatDescriptions()
 {
   size_t maxNameSize = 1;
+
   for( auto const & name : m_descriptionNames )
   {
-    size_t idx = &name - &(*m_descriptionNames.begin());
+    size_t const idx = &name - &(*m_descriptionNames.begin());
+
     if( !m_descriptionValues[idx].empty())
     {
       maxNameSize = std::max( maxNameSize, name.size() );
@@ -55,30 +57,31 @@ void LogPart::formatDescriptions()
   }
 
   size_t const spacesFromBorder = m_borderMargin * 2 + m_nbBorderChar * 2;
+
   for( size_t idxName = 0; idxName < m_descriptionNames.size(); idxName++ )
   {
+
     if( m_descriptionValues[idxName].empty())
     {
       m_formattedDescriptions.push_back( m_descriptionNames[idxName] );
     }
     else
     {
-      string name = m_descriptionNames[idxName];
-      string spaces = string( maxNameSize - name.size(), ' ' );
-      string nameFormatted = GEOS_FMT( "{}{} ", name, spaces );
+      string_view name = m_descriptionNames[idxName];
+      string_view spaces = std::string( maxNameSize - name.size(), ' ' );
+      string_view nameFormatted = GEOS_FMT( "{}{} ", name, spaces );
 
       m_formattedDescriptions.push_back( GEOS_FMT( "{}{}", nameFormatted, m_descriptionValues[idxName][0] ));
-      m_logPartWidth = m_formattedDescriptions[idxName].size() + spacesFromBorder;
+      m_logPartWidth = std::max( m_logPartWidth, m_formattedDescriptions[idxName].size() + spacesFromBorder );
 
       for( size_t idxValue = 1; idxValue < m_descriptionValues[idxName].size(); idxValue++ )
       {
         m_formattedDescriptions.push_back( GEOS_FMT( "{:>{}}", m_descriptionValues[idxName][idxValue],
-                                                     nameFormatted.size() + m_descriptionValues[idxName][idxValue].size()  ));
+                                                     nameFormatted.size() + m_descriptionValues[idxName][idxValue].size() ));
         m_logPartWidth = std::max( m_logPartWidth,
-                                   m_formattedDescriptions[idxValue].size() + spacesFromBorder );
+                                   m_formattedDescriptions.back().size() + spacesFromBorder );
       }
     }
-
   }
 
   m_logPartWidth = std::max( m_rowMinWidth, m_logPartWidth );
@@ -111,11 +114,11 @@ string LogPart::buildTitlePart()
   std::ostringstream oss;
   size_t const titleRowLength = m_logPartWidth - m_nbBorderChar * 2;
   string const borderCharacters =  string( m_nbBorderChar, m_borderCharacter );
-  oss <<  GEOS_FMT( "{}{:^{}}{}\n",
-                    borderCharacters,
-                    m_footerTitle,
-                    titleRowLength,
-                    borderCharacters );
+  oss << GEOS_FMT( "{}{:^{}}{}\n",
+                   borderCharacters,
+                   m_footerTitle,
+                   titleRowLength,
+                   borderCharacters );
   return oss.str();
 }
 

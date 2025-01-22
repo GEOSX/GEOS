@@ -16,6 +16,7 @@
 #include "PhysicsSolverBase.hpp"
 #include "PhysicsSolverManager.hpp"
 
+#include "fileIO/logPart/LogPart.hpp"
 #include "common/TimingMacros.hpp"
 #include "linearAlgebra/solvers/KrylovSolver.hpp"
 #include "mesh/DomainPartition.hpp"
@@ -350,18 +351,27 @@ void PhysicsSolverBase::logEndOfCycleInformation( integer const cycleNumber,
                                                   integer const numOfSubSteps,
                                                   std::vector< real64 > const & subStepDt ) const
 {
-  // The formating here is a work in progress.
-  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, "\n------------------------- TIMESTEP END -------------------------" );
-  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "    - Cycle:      {}", cycleNumber ) );
-  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "    - N substeps: {}", numOfSubSteps ) );
-  std::string logMessage = "    - dt:";
+  LogPart endTimeStep( "TIMESTEP END" );
+  endTimeStep.addDescription( "- Cycle:", cycleNumber );
+  endTimeStep.addDescription( "- N substeps:", numOfSubSteps );
+  std::string logMessage;
   for( integer i = 0; i < numOfSubSteps; ++i )
   {
     logMessage += "  " + units::TimeFormatInfo::fromSeconds( subStepDt[i] ).toString();
   }
+  endTimeStep.addDescription( "- dt:", logMessage );
+  endTimeStep.end();
+
+
+  // The formating here is a work in progress.
+  // GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, "\n------------------------- TIMESTEP END -------------------------" );
+  // GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "    - Cycle:      {}", cycleNumber ) );
+  // GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "    - N substeps: {}", numOfSubSteps ) );
+
+
   // Log the complete message once
-  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, logMessage );
-  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, "------------------------------------------------------------------\n" );
+  // GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, logMessage );
+  // GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, "------------------------------------------------------------------\n" );
 }
 
 real64 PhysicsSolverBase::setNextDt( real64 const & currentDt,
