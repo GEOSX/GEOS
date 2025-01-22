@@ -1,0 +1,69 @@
+<?xml version="1.0" ?>
+<Problem>
+  <Included>
+    <File
+      name="./SpringSlider_base.xml"/>
+  </Included>
+
+  <Solvers>
+    <ImplicitSpringSlider
+      name="SpringSlider"
+      targetRegions="{ Fault }"
+      shearImpedance="4.41"
+      initialDt="1"
+      logLevel="1"
+      discretization="FE1">
+    </ImplicitSpringSlider>
+  </Solvers>
+
+  <Events
+    maxTime="4.5e4">
+
+    <SoloEvent 
+      name="generateFault"
+      target="/Solvers/SurfaceGen"/>
+
+    <PeriodicEvent
+      name="vtkOutput"
+      cycleFrequency="1"
+      targetExactTimestep="0"
+      target="/Outputs/vtkOutput"/>  
+      
+    <PeriodicEvent
+      name="solverApplications"
+      maxEventDt="1e4"
+      target="/Solvers/SpringSlider"/>
+    
+    <!-- Time history collection -->
+    <PeriodicEvent
+      name="slipRateCollection"
+      cycleFrequency="1"
+      targetExactTimestep="0"
+      target="/Tasks/slipRateCollection"/>
+
+    <PeriodicEvent
+      name="slipCollection"
+      cycleFrequency="1"
+      targetExactTimestep="0"
+      target="/Tasks/slipCollection"/>
+
+    <PeriodicEvent
+      name="stateVariableCollection"
+      cycleFrequency="1"
+      targetExactTimestep="0"
+      target="/Tasks/stateVariableCollection"/>    
+
+    <!-- Time history output -->
+   <PeriodicEvent
+      name="timeHistoryOutput"
+      cycleFrequency="100"
+      targetExactTimestep="0"
+      target="/Outputs/timeHistoryOutput"/>    
+
+    <PeriodicEvent
+      name="resarts"
+      timeFrequency="2e4"
+      targetExactTimestep="0"
+      target="/Outputs/restart"/>  
+  </Events>
+</Problem>
