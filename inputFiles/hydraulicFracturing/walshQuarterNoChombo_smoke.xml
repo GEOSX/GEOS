@@ -64,7 +64,7 @@
       fractureRegion="Fracture"
       targetRegions="{Domain, void}"
       nodeBasedSIF="1"
-      rockToughness="3.0e6"
+      initialRockToughness="3.0e6"
       mpiCommOrder="1">
     </SurfaceGenerator>
   </Solvers>
