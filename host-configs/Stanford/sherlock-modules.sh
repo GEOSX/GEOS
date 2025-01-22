@@ -1,3 +1,4 @@
+module purge
 module load system
 module load git
 module load git-lfs
@@ -9,4 +10,6 @@ module load libevent/2.1.12 # needed for silo
 module load py-mpi4py/3.1.3_py39
 module load py-h5py/3.7.0_py39
 module unload cuda
-module load cuda/12.4.0
+module load cuda/12.4.0 
+module load ninja/1.9.0
+

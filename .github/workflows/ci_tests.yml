@@ -189,7 +189,7 @@ jobs:
             ENABLE_HYPRE: ON
             ENABLE_TRILINOS: OFF
             GCP_BUCKET: geosx/Sherlock-CPU
-            HOST_CONFIG: host-configs/Stanford/sherlock-gcc10-ompi4.1.2-openblas0.3.10.cmake
+            HOST_CONFIG: host-configs/Stanford/sherlock-gcc10.cmake
             BUILD_SHARED_LIBS: ON
 
     uses: ./.github/workflows/build_and_test.yml
@@ -365,7 +365,7 @@ jobs:
             ENABLE_HYPRE: ON
             ENABLE_TRILINOS: OFF
             GCP_BUCKET: geosx/Sherlock-GPU
-            HOST_CONFIG: host-configs/Stanford/sherlock-gcc10-ompi4.1.2-openblas0.3.10-cuda12.4.0-sm70.cmake
+            HOST_CONFIG: host-configs/Stanford/sherlock-gcc10-cuda12-sm70.cmake
             RUNS_ON: streak2
             NPROC: 8
             DOCKER_RUN_ARGS: "--cpus=8 --memory=128g --runtime=nvidia -v /etc/pki/ca-trust/source/anchors/:/etc/pki/ca-trust/source/anchors/llnl:ro"

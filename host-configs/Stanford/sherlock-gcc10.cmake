@@ -1,8 +1,13 @@
-set(CONFIG_NAME "sherlock-gcc10-ompi4.1.2-openblas0.3.10" CACHE PATH "")
+# User defined versions
+set(GCC_VERSION "10.1.0" CACHE STRING "Version of GCC")
+set(OMPI_VERSION "4.1.2" CACHE STRING "Version of Open MPI")
+set(OPENBLAS_VERSION "0.3.10" CACHE STRING "Version of OpenBLAS")
+
+set(CONFIG_NAME "sherlock-gcc${GCC_VERSION}-ompi${OMPI_VERSION}-openblas${OPENBLAS_VERSION}" CACHE PATH "")
 
 set(SOFTWARE_ROOT /share/software/user/open CACHE PATH "")
-set(GCC_ROOT "${SOFTWARE_ROOT}/gcc/10.1.0" CACHE PATH "")
-set(MPI_ROOT "${SOFTWARE_ROOT}/openmpi/4.1.2" CACHE PATH "")
+set(GCC_ROOT "${SOFTWARE_ROOT}/gcc/${GCC_VERSION}" CACHE PATH "")
+set(MPI_ROOT "${SOFTWARE_ROOT}/openmpi/${OMPI_VERSION}" CACHE PATH "")
 
 site_name(HOST_NAME)
 
@@ -27,12 +32,11 @@ set(ENABLE_WRAP_ALL_TESTS_WITH_MPIEXEC ON CACHE BOOL "")
 set(ENABLE_CUDA OFF CACHE PATH "" FORCE)
 
 # Blas/Lapack options
-set(OPENBLAS_ROOT "${SOFTWARE_ROOT}/openblas/0.3.10" CACHE STRING "")
+set(OPENBLAS_ROOT "${SOFTWARE_ROOT}/openblas/${OPENBLAS_VERSION}" CACHE STRING "")
 set(BLAS_LIBRARIES "${OPENBLAS_ROOT}/lib/libopenblas.so" CACHE STRING "")
 set(LAPACK_LIBRARIES "${OPENBLAS_ROOT}/lib/libopenblas.so" CACHE STRING "")
 
 set(ENABLE_VALGRIND OFF CACHE BOOL "")
 set(ENABLE_CALIPER ON CACHE BOOL "")
 
-set(GEOS_TPL_DIR "$ENV{GEOSX_TPL_DIR}" CACHE PATH "" FORCE)
 include(${CMAKE_CURRENT_LIST_DIR}/../tpls.cmake)
