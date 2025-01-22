@@ -41,7 +41,7 @@ Geomechanics::Geomechanics( string const & name, Group * const parent ):
   m_p2( 0.0 ),
   m_p3( 0.0 ),
   m_p4( 0.0 ),
-  m_peakT1( 0.0 ),
+  m_peakI1( 0.0 ),
   m_fSlope( 0.0 ),
   m_stren( 0.0 ),
   m_ySlope( 0.0 ),
@@ -164,9 +164,9 @@ Geomechanics::Geomechanics( string const & name, Group * const parent ):
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "Fracture stress" );
 
-  registerWrapper( viewKeyStruct::peakT1String(), &m_peakT1 ).
+  registerWrapper( viewKeyStruct::peakI1String(), &m_peakI1 ).
     setInputFlag( InputFlags::REQUIRED ).
-    setDescription( "Peak T1 shear limit parameter" );
+    setDescription( "Peak I1 shear limit parameter" );
 
   registerWrapper( viewKeyStruct::fSlopeString(), &m_fSlope ).
     setInputFlag( InputFlags::REQUIRED ).
@@ -320,7 +320,7 @@ void Geomechanics::postInputInitialization()
     GEOS_THROW_IF( m_p3 <= 0.0, "p3 must be greater than 0", InputError );
     // GEOS_THROW_IF( m_p4 <= 0.0, "p4 must be greater than 0", InputError );
 
-    // GEOS_THROW_IF( m_peakT1 <= 0.0, "peakT1 must be greater than 0", InputError );
+    // GEOS_THROW_IF( m_peakI1 <= 0.0, "peakI1 must be greater than 0", InputError );
     GEOS_THROW_IF( m_fSlope < 0.0, "fSlope must be greater than 0", InputError );
     // GEOS_THROW_IF( m_ySlope <= 0.0, "ySlope must be greater than 0", InputError );
     // GEOS_THROW_IF( m_stren <= 0.0, "stren must be greater than 0", InputError );

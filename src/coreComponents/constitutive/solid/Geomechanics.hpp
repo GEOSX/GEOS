@@ -60,7 +60,7 @@ public:
    * @param[in] p2 The value for the crush curve paramter 2
    * @param[in] p3 The value for the crush curve paramter 3
    * @param[in] p4 The value for the crush curve paramter 4
-   * @param[in] peakT1 The value for the peak T1 shear limit parameter
+   * @param[in] peakI1 The value for the peak T1 shear limit parameter
    * @param[in] fSlope The value for the F slope shear limit parameter
    * @param[in] stren The value for the stren shear limit paramter
    * @param[in] ySlope The value for the Y Slope shear limit parameter
@@ -100,7 +100,7 @@ public:
                        real64 const & p2,
                        real64 const & p3,
                        real64 const & p4,
-                       real64 const & peakT1,
+                       real64 const & peakI1,
                        real64 const & fSlope,
                        real64 const & stren,
                        real64 const & ySlope,
@@ -161,7 +161,7 @@ public:
     m_p2( p2 ),
     m_p3( p3 ),
     m_p4( p4 ),
-    m_peakT1( peakT1 ),
+    m_peakI1( peakI1 ),
     m_fSlope( fSlope ),
     m_stren( stren ),
     m_ySlope( ySlope ),
@@ -397,6 +397,7 @@ public:
                              const real64 & X,
                              const real64 & Zeta,
                              const real64 & coher,
+                             const real64 & hardening,
                              const real64 & a1,
                              const real64 & a2,
                              const real64 & a3,
@@ -409,6 +410,7 @@ public:
                                 const real64 & X,
                                 const real64 & Zeta,
 										            const real64 & coher,
+                                const real64 & hardening,
 										            const real64 & a1,
 										            const real64 & a2,
 										            const real64 & a3,
@@ -421,6 +423,7 @@ public:
                             const real64 & X,
                             const real64 & Zeta,
 									          const real64 & coher,
+                            const real64 & hardening,
 									          const real64 & a1,
 									          const real64 & a2,
 									          const real64 & a3,
@@ -462,7 +465,7 @@ private:
   real64 const & m_p2;
   real64 const & m_p3;
   real64 const & m_p4;
-  real64 const & m_peakT1;
+  real64 const & m_peakI1;
   real64 const & m_fSlope;
   real64 const & m_stren;
   real64 const & m_ySlope;
@@ -1364,7 +1367,7 @@ int GeomechanicsUpdates::computeStepDivisions( const real64 & X,
   LvArray::tensorOps::copy< 6 >( d_sigma, sigma_trial );
   LvArray::tensorOps::subtract< 6 >( d_sigma, sigma_n );
 
-  real64 size = 0.5*(m_peakT1 - X);
+  real64 size = 0.5*(m_peakI1 - X);
 
   if( m_stren > 0.0 )
   {
@@ -1680,6 +1683,7 @@ int GeomechanicsUpdates::computeSubstep( real64 const ( & D )[6],         // str
                                     X_old,
                                     Zeta_old,
                                     coher_old,
+                                    hardening,
                                     a1,
                                     a2,
                                     a3,
@@ -1826,6 +1830,7 @@ int GeomechanicsUpdates::computeSubstep( real64 const ( & D )[6],         // str
                               X_new,
                               Zeta_new,
                               coher_new,
+                              hardening,
                               a1,
                               a2,
                               a3,
@@ -2072,21 +2077,32 @@ int GeomechanicsUpdates::nonHardeningReturn( const real64 & I1_trial,           
   real64 I1_0,
 		     I1trialMinusZeta = I1_trial-Zeta;
 
+
+  real64 peakI1_h;
+  if (m_fSlope > 0.0)
+  {
+     peakI1_h = coher*(m_peakI1 + hardening/m_fSlope);
+  } 
+  else
+  {
+    peakI1_h = m_peakI1;
+  }
+
   // It may be better to use an interior point at the center of the yield surface, rather than at zeta, in particular
   // when PEAKI1=0.  Picking the midpoint between PEAKI1 and X would be problematic when the user has specified
   // some no porosity condition (e.g. p0=-1e99)
-  if( I1trialMinusZeta>= coher * m_peakT1 ) // Trial is past vertex
+  if( I1trialMinusZeta>= peakI1_h ) // Trial is past vertex
   { 
 	  real64 lTrial = sqrt(I1trialMinusZeta * I1trialMinusZeta + rJ2_trial * rJ2_trial),
-			     lYield = 0.5 * (coher * m_peakT1 - X);
-	  I1_0 = Zeta + coher * m_peakT1 - std::min(lTrial, lYield);
+			     lYield = 0.5 * (peakI1_h - X);
+	  I1_0 = Zeta + peakI1_h - std::min(lTrial, lYield);
   }
-  else if( (I1trialMinusZeta < coher * m_peakT1) && (I1trialMinusZeta > X) ){ // Trial is above yield surface
+  else if( (I1trialMinusZeta < peakI1_h) && (I1trialMinusZeta > X) ){ // Trial is above yield surface
 	  I1_0 = I1_trial;
   }
   else if( I1trialMinusZeta <= X ) // Trial is past X, use yield midpoint as interior point
   {
-	  I1_0 = Zeta + 0.5 * (coher * m_peakT1 + X);
+	  I1_0 = Zeta + 0.5 * (peakI1_h + X);
   }
   else
   { // Shouldn't get here
@@ -2150,6 +2166,7 @@ int GeomechanicsUpdates::nonHardeningReturn( const real64 & I1_trial,           
                           X,
                           Zeta,
                           coher,
+                          hardening,
                           a1,
                           a2,
                           a3,
@@ -2181,6 +2198,7 @@ int GeomechanicsUpdates::nonHardeningReturn( const real64 & I1_trial,           
                                      X,
                                      Zeta,
                                      coher,
+                                     hardening,
                                      a1,
                                      a2,
                                      a3,
@@ -2274,6 +2292,7 @@ void GeomechanicsUpdates::transformedBisection(real64 & z_0,
                                                const real64 & X,
                                                const real64 & Zeta,
 									                             const real64 & coher,
+                                               const real64 & hardening,
 									                             const real64 & a1,
 									                             const real64 & a2,
 									                             const real64 & a3,
@@ -2312,6 +2331,7 @@ void GeomechanicsUpdates::transformedBisection(real64 & z_0,
                                    X,
                                    Zeta,
                                    coher,
+                                   hardening,
                                    a1,
                                    a2,
                                    a3,
@@ -2339,6 +2359,7 @@ int GeomechanicsUpdates::transformedYieldFunction( const real64 & z,
                                                    const real64 & X,
                                                    const real64 & Zeta,
 										                               const real64 & coher,
+                                                   const real64 & hardening,
 										                               const real64 & a1,
 										                               const real64 & a2,
 										                               const real64 & a3,
@@ -2360,6 +2381,7 @@ int GeomechanicsUpdates::transformedYieldFunction( const real64 & z,
                                        X,
                                        Zeta,
                                        coher,
+                                       hardening,
                                        a1,
                                        a2,
                                        a3,
@@ -2374,7 +2396,8 @@ int GeomechanicsUpdates::computeYieldFunction( const real64 & I1,
                                                const real64 & rJ2,
                                                const real64 & X,
                                                const real64 & Zeta,
-									                             const real64 & GEOS_UNUSED_PARAM( coher ),
+									                             const real64 & coher,
+                                               const real64 & hardening,
 									                             const real64 & a1,
 									                             const real64 & a2,
 									                             const real64 & a3,
@@ -2394,6 +2417,16 @@ int GeomechanicsUpdates::computeYieldFunction( const real64 & I1,
 	int YIELD = -1;
 	real64 I1mZ = I1 - Zeta;    // Shifted stress to evalue yield criteria
 
+  real64 peakI1_h;
+  if (m_fSlope > 0.0)
+  {
+     peakI1_h = coher*(m_peakI1 + hardening/m_fSlope);
+  } 
+  else
+  {
+    peakI1_h = m_peakI1;
+  }
+
 	// --------------------------------------------------------------------
 	// *** SHEAR LIMIT FUNCTION (Ff) ***
 	// --------------------------------------------------------------------
@@ -2404,7 +2437,7 @@ int GeomechanicsUpdates::computeYieldFunction( const real64 & I1,
 	// --------------------------------------------------------------------
 	// *** Branch Point (Kappa) ***
 	// --------------------------------------------------------------------
-	real64  Kappa  = m_peakT1-m_cr*(m_peakT1-X); // Branch Point
+	real64  Kappa  = peakI1_h-m_cr*(peakI1_h-X); // Branch Point
 
 	// --------------------------------------------------------------------
 	// *** COMPOSITE YIELD FUNCTION ***
@@ -2431,13 +2464,13 @@ int GeomechanicsUpdates::computeYieldFunction( const real64 & I1,
 			YIELD = 1;
 		}
 	}
-	else if(( I1mZ <= m_peakT1 )&&( I1mZ >= Kappa ))
+	else if(( I1mZ <= peakI1_h )&&( I1mZ >= Kappa ))
   { // -----(kappa<I1<PEAKI1)
 		if(rJ2 > Ff) {
 			YIELD = 1;
 		}
 	}
-	else if( I1mZ > m_peakT1 )
+	else if( I1mZ > peakI1_h )
 	{// --------------------------------(peakI1<I1)
     YIELD = 1;
 	};
@@ -2480,7 +2513,7 @@ void GeomechanicsUpdates::computeLimitParameters( real64 & a1,
 		                                              real64 & a2,
 		                                              real64 & a3,
 		                                              real64 & a4,
-		                                              const real64 & GEOS_UNUSED_PARAM( coher ),
+		                                              const real64 & coher,
                                                   const real64 & hardening
 ) const 
 { // Value of I1 at strength=0 (Perturbed by variability)
@@ -2491,42 +2524,43 @@ void GeomechanicsUpdates::computeLimitParameters( real64 & a1,
   // originally written by R.M. Brannon, with modifications by M.S. Swan.
   // harden peakI1 and stren together to not change slope:
 	real64 stren_h = m_stren + hardening;
- 	real64 peakT1_h;
+ 	real64 peakI1_h;
+
   if (m_fSlope > 0.0)
   {
-     peakT1_h = m_peakT1 + hardening/m_fSlope;
+     peakI1_h = coher*(m_peakI1 + hardening/m_fSlope);
   } 
   else
   {
-    peakT1_h = m_peakT1;
+    peakI1_h = m_peakI1;
   }
 
-  if (m_fSlope > 0.0 && m_peakT1 >= 0.0 && m_stren == 0.0 && m_ySlope == 0.0)
+  if (m_fSlope > 0.0 && peakI1_h >= 0.0 && m_stren == 0.0 && m_ySlope == 0.0)
   {// ----------------------------------------------Linear Drucker-Prager
-    a1 = m_peakT1 * m_fSlope;
+    a1 = peakI1_h * m_fSlope;
     a2 = 0.0;
     a3 = 0.0;
     a4 = m_fSlope;
   }
-  else if (m_fSlope == 0.0 && m_peakT1 == 0.0 && m_stren > 0.0 && m_ySlope == 0.0)
+  else if (m_fSlope == 0.0 && peakI1_h == 0.0 && m_stren > 0.0 && m_ySlope == 0.0)
   { // ------------------------------------------------------- Von Mises
-    a1 = stren_h;
+    a1 = stren_h*coher;
     a2 = 0.0;
     a3 = 0.0;
     a4 = 0.0;
   }
-  else if (m_fSlope > 0.0 && m_ySlope  == 0.0 && m_stren > 0.0 && m_peakT1 == 0.0)
+  else if (m_fSlope > 0.0 && m_ySlope  == 0.0 && m_stren > 0.0 && peakI1_h == 0.0)
   { // ------------------------------------------------------- 0 PEAKI1 to vonMises
     a1 = stren_h;
     a2 = m_fSlope / stren_h;
     a3 = stren_h;
     a4 = 0.0;
   }
-  else if (m_fSlope > m_ySlope && m_ySlope > 0.0 && m_stren > m_ySlope*m_peakT1 && m_peakT1 >= 0.0)
+  else if (m_fSlope > m_ySlope && m_ySlope > 0.0 && m_stren > m_ySlope*peakI1_h && peakI1_h >= 0.0)
   { // ------------------------------------------------------- Nonlinear Drucker-Prager
     a1 = stren_h;
-    a2 = (m_fSlope-m_ySlope )/(stren_h-m_ySlope *peakT1_h);
-    a3 = (stren_h-m_ySlope *peakT1_h)*exp(-a2*peakT1_h);
+    a2 = (m_fSlope-m_ySlope )/(stren_h-m_ySlope *peakI1_h);
+    a3 = (stren_h-m_ySlope *peakI1_h)*exp(-a2*peakI1_h);
     a4 = m_ySlope ;
   }
   else
@@ -2655,7 +2689,7 @@ public:
     static constexpr char const * fractureStressString() { return "fractureStress"; }
 
     /// string/key for peak t1 shear limit parameter
-    static constexpr char const * peakT1String() { return "peakT1"; }
+    static constexpr char const * peakI1String() { return "peakI1"; }
 
     /// string/key for F slope shear limit parameter
     static constexpr char const * fSlopeString() { return "fSlope"; }
@@ -2757,7 +2791,7 @@ public:
                                 m_p2,
                                 m_p3,
                                 m_p4,
-                                m_peakT1,
+                                m_peakI1,
                                 m_fSlope,
                                 m_stren,
                                 m_ySlope,
@@ -2825,7 +2859,7 @@ public:
                           m_p2,
                           m_p3,
                           m_p4,
-                          m_peakT1,
+                          m_peakI1,
                           m_fSlope,
                           m_stren,
                           m_ySlope,
@@ -2963,7 +2997,7 @@ protected:
   real64 m_p4;
 
   // Shear limit surface parameters
-  real64 m_peakT1;
+  real64 m_peakI1;
   real64 m_fSlope;
   real64 m_stren;
   real64 m_ySlope;
