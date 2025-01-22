@@ -296,6 +296,7 @@ struct LinearSolverParameters
       hydrofracture,                             ///< hydrofracture
       lagrangianContactMechanics,                ///< Lagrangian contact mechanics
       augmentedLagrangianContactMechanics,       ///< Augmented Lagrangian contact mechanics
+      lagrangianContactMechanicsBubbleStab,      ///< Lagrangian contact mechanics with bubble stabilization
       solidMechanicsEmbeddedFractures            ///< Embedded fractures mechanics
     };
 
@@ -389,6 +390,7 @@ ENUM_STRINGS( LinearSolverParameters::MGR::StrategyType,
               "hydrofracture",
               "lagrangianContactMechanics",
               "augmentedLagrangianContactMechanics",
+              "lagrangianContactMechanicsBubbleStab",
               "solidMechanicsEmbeddedFractures" );
 
 /// Declare strings associated with enumeration values.

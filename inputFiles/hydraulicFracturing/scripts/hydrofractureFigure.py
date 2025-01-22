@@ -36,7 +36,7 @@ def getParametersFromXML( geosDir, xmlFilePrefix):
         poissonRatio = float(elasticParam.get('defaultPoissonRatio'))
         injectionRate = -2.0 * float(tree.find('FieldSpecifications/SourceFlux').get('scale')) / fluidDensity
         tree = ElementTree.parse(prefix + xmlFilePrefix + "_base.xml")
-        toughness = float(tree.find('Solvers/SurfaceGenerator').get('rockToughness'))
+        toughness = float(tree.find('Solvers/SurfaceGenerator').get('initialRockToughness'))
 
     elif xmlFilePrefix == 'pennyShapedToughnessDominated' or xmlFilePrefix == 'pennyShapedViscosityDominated':
         K = float(elasticParam.get('defaultBulkModulus'))
@@ -45,7 +45,7 @@ def getParametersFromXML( geosDir, xmlFilePrefix):
         poissonRatio = youngModulus / (2.0 * G) - 1.0
         injectionRate = -4.0 * float(tree.find('FieldSpecifications/SourceFlux').get('scale')) / fluidDensity
         tree = ElementTree.parse(prefix + xmlFilePrefix + "_benchmark.xml")
-        toughness = float(tree.find('Solvers/SurfaceGenerator').get('rockToughness'))
+        toughness = float(tree.find('Solvers/SurfaceGenerator').get('initialRockToughness'))
 
     elif xmlFilePrefix == 'pknViscosityDominated':
         K = float(elasticParam.get('defaultBulkModulus'))
@@ -54,7 +54,7 @@ def getParametersFromXML( geosDir, xmlFilePrefix):
         poissonRatio = youngModulus / (2.0 * G) - 1.0
         injectionRate = -4.0 * float(tree.find('FieldSpecifications/SourceFlux').get('scale')) / fluidDensity
         tree = ElementTree.parse(prefix + xmlFilePrefix + "_benchmark.xml")
-        toughness = float(tree.find('Solvers/SurfaceGenerator').get('rockToughness'))
+        toughness = float(tree.find('Solvers/SurfaceGenerator').get('initialRockToughness'))
         found_core = False
         for elem in param:
             if elem.get("name") == "core":
