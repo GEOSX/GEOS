@@ -14,14 +14,14 @@
  */
 
 /**
- * @file QuasiDynamicEQRK32.cpp
+ * @file ExplicitQDRateAndState.cpp
  */
 
-#include "QuasiDynamicEQRK32.hpp"
+#include "ExplicitQDRateAndState.hpp"
 
 #include "dataRepository/InputFlags.hpp"
 #include "mesh/DomainPartition.hpp"
-#include "kernels/RateAndStateKernels.hpp"
+#include "kernels/ExplicitRateAndStateKernels.hpp"
 #include "rateAndStateFields.hpp"
 #include "physicsSolvers/contact/ContactFields.hpp"
 #include "fieldSpecification/FieldSpecificationManager.hpp"
@@ -34,47 +34,24 @@ using namespace fields;
 using namespace constitutive;
 using namespace rateAndStateKernels;
 
-QuasiDynamicEQRK32::QuasiDynamicEQRK32( const string & name,
-                                        Group * const parent ):
-  PhysicsSolverBase( name, parent ),
-  m_stressSolver( nullptr ),
-  m_stressSolverName( "SpringSlider" ),
-  m_shearImpedance( 0.0 ),
+ExplicitQDRateAndState::ExplicitQDRateAndState( const string & name,
+                                                Group * const parent ):
+  QDRateAndStateBase( name, parent ),
   m_butcherTable( BogackiShampine32Table()), // TODO: The butcher table should be specified in the XML input.
   m_successfulStep( false ),
-  m_controller( PIDController( { 1.0/18.0, 1.0/9.0, 1.0/18.0 },
+  m_stepUpdateFactor( 1.0 ),
+  m_controller( PIDController( { 0.6, -0.2, 0.0 },
                                1.0e-6, 1.0e-6, 0.81 )) // TODO: The control parameters should be specified in the XML input
-{
-  this->registerWrapper( viewKeyStruct::shearImpedanceString(), &m_shearImpedance ).
-    setInputFlag( InputFlags::REQUIRED ).
-    setDescription( "Shear impedance." );
+{}
 
-  this->registerWrapper( viewKeyStruct::stressSolverNameString(), &m_stressSolverName ).
-    setInputFlag( InputFlags::OPTIONAL ).
-    setDescription( "Name of solver for computing stress. If empty, the spring-slider model is run." );
-}
-
-void QuasiDynamicEQRK32::postInputInitialization()
-{
-
-  // Initialize member stress solver as specified in XML input
-  if( !m_stressSolverName.empty() )
-  {
-    m_stressSolver = &this->getParent().getGroup< PhysicsSolverBase >( m_stressSolverName );
-  }
-
-  PhysicsSolverBase::postInputInitialization();
-}
-
-QuasiDynamicEQRK32::~QuasiDynamicEQRK32()
+ExplicitQDRateAndState::~ExplicitQDRateAndState()
 {
   // TODO Auto-generated destructor stub
 }
 
-
-void QuasiDynamicEQRK32::registerDataOnMesh( Group & meshBodies )
+void ExplicitQDRateAndState::registerDataOnMesh( Group & meshBodies )
 {
-  PhysicsSolverBase::registerDataOnMesh( meshBodies );
+  QDRateAndStateBase::registerDataOnMesh( meshBodies );
 
   forDiscretizationOnMeshTargets( meshBodies, [&] ( string const &,
                                                     MeshLevel & mesh,
@@ -86,79 +63,21 @@ void QuasiDynamicEQRK32::registerDataOnMesh( Group & meshBodies )
                                                                  [&]( localIndex const,
                                                                       SurfaceElementSubRegion & subRegion )
     {
-      // Scalar functions on fault
-      subRegion.registerField< rateAndState::stateVariable >( getName() );
-      subRegion.registerField< rateAndState::stateVariable_n >( getName() );
-      subRegion.registerField< rateAndState::slipRate >( getName() );
-
-      // Tangent (2-component) functions on fault
-      string const labels2Comp[2] = {"tangent1", "tangent2" };
-      subRegion.registerField< rateAndState::slipVelocity >( getName() ).
-        setDimLabels( 1, labels2Comp ).reference().resizeDimension< 1 >( 2 );
-      subRegion.registerField< rateAndState::slipVelocity_n >( getName() ).
-        setDimLabels( 1, labels2Comp ).reference().resizeDimension< 1 >( 2 );
-      subRegion.registerField< rateAndState::deltaSlip >( getName() ).
-        setDimLabels( 1, labels2Comp ).reference().resizeDimension< 1 >( 2 );
-      subRegion.registerField< rateAndState::deltaSlip_n >( getName() ).
-        setDimLabels( 1, labels2Comp ).reference().resizeDimension< 1 >( 2 );
-
       // Runge-Kutta stage rates and error
       integer const numRKComponents = 3;
       subRegion.registerField< rateAndState::rungeKuttaStageRates >( getName() ).reference().resizeDimension< 1, 2 >( m_butcherTable.numStages, numRKComponents );
       subRegion.registerField< rateAndState::error >( getName() ).reference().resizeDimension< 1 >( numRKComponents );
-
-
-      if( !subRegion.hasWrapper( contact::dispJump::key() ))
-      {
-        // 3-component functions on fault
-        string const labels3Comp[3] = { "normal", "tangent1", "tangent2" };
-        subRegion.registerField< contact::dispJump >( getName() ).
-          setDimLabels( 1, labels3Comp ).
-          reference().resizeDimension< 1 >( 3 );
-        subRegion.registerField< contact::dispJump_n >( getName() ).
-          setDimLabels( 1, labels3Comp ).
-          reference().resizeDimension< 1 >( 3 );
-        subRegion.registerField< contact::traction >( getName() ).
-          setDimLabels( 1, labels3Comp ).
-          reference().resizeDimension< 1 >( 3 );
-        subRegion.registerField< contact::traction_n >( getName() ).
-          setDimLabels( 1, labels3Comp ).
-          reference().resizeDimension< 1 >( 3 );
-
-        subRegion.registerWrapper< string >( viewKeyStruct::frictionLawNameString() ).
-          setPlotLevel( PlotLevel::NOPLOT ).
-          setRestartFlags( RestartFlags::NO_WRITE ).
-          setSizedFromParent( 0 );
-
-        string & frictionLawName = subRegion.getReference< string >( viewKeyStruct::frictionLawNameString() );
-        frictionLawName = PhysicsSolverBase::getConstitutiveName< FrictionBase >( subRegion );
-        GEOS_ERROR_IF( frictionLawName.empty(), GEOS_FMT( "{}: FrictionBase model not found on subregion {}",
-                                                          getDataContext(), subRegion.getDataContext() ) );
-      }
     } );
   } );
 }
 
-real64 QuasiDynamicEQRK32::solverStep( real64 const & time_n,
-                                       real64 const & dt,
-                                       int const cycleNumber,
-                                       DomainPartition & domain )
+real64 ExplicitQDRateAndState::solverStep( real64 const & time_n,
+                                           real64 const & dt,
+                                           int const cycleNumber,
+                                           DomainPartition & domain )
 {
-  if( cycleNumber == 0 )
-  {
-    /// Apply initial conditions to the Fault
-    FieldSpecificationManager & fieldSpecificationManager = FieldSpecificationManager::getInstance();
-
-    forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
-                                                                 MeshLevel & mesh,
-                                                                 arrayView1d< string const > const & )
-
-    {
-      fieldSpecificationManager.applyInitialConditions( mesh );
-
-    } );
-    saveState( domain );
-  }
+  applyInitialConditionsToFault( cycleNumber, domain );
+  saveState( domain );
 
   real64 dtAdaptive = dt;
 
@@ -184,31 +103,29 @@ real64 QuasiDynamicEQRK32::solverStep( real64 const & time_n,
 
     stepRateStateODEAndComputeError( dtAdaptive, domain );
     // Update timestep based on the time step error
-    real64 const dtNext = setNextDt( time_n, dtAdaptive, domain );
-    if( m_successfulStep ) // set in setNextDt
+    evalTimestep( domain );
+    if( m_successfulStep ) // set in evalTimestep
     {
-      // Compute stresses, and slip velocity and save results at updated time,
+      // Compute stresses, and slip velocity and save results at time_n + dtAdapitve
       if( !m_butcherTable.FSAL )
       {
         dtStress = updateStresses( time_n, dtAdaptive, cycleNumber, domain );
         updateSlipVelocity( time_n, dtAdaptive, domain );
       }
       saveState( domain );
-      // update the time step and exit the adaptive time step loop
-      dtAdaptive = dtNext;
       break;
     }
     else
     {
       // Retry with updated time step
-      dtAdaptive = dtNext;
+      dtAdaptive = setNextDt( dtAdaptive, domain );
     }
   }
-  // return time step size achieved by stress solver
+  // return last successful adaptive time step (passed along to setNextDt)
   return dtAdaptive;
 }
 
-void QuasiDynamicEQRK32::stepRateStateODEInitialSubstage( real64 const dt, DomainPartition & domain ) const
+void ExplicitQDRateAndState::stepRateStateODEInitialSubstage( real64 const dt, DomainPartition & domain ) const
 {
 
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
@@ -247,9 +164,9 @@ void QuasiDynamicEQRK32::stepRateStateODEInitialSubstage( real64 const dt, Domai
   } );
 }
 
-void QuasiDynamicEQRK32::stepRateStateODESubstage( integer const stageIndex,
-                                                   real64 const dt,
-                                                   DomainPartition & domain ) const
+void ExplicitQDRateAndState::stepRateStateODESubstage( integer const stageIndex,
+                                                       real64 const dt,
+                                                       DomainPartition & domain ) const
 {
 
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
@@ -276,7 +193,7 @@ void QuasiDynamicEQRK32::stepRateStateODESubstage( integer const stageIndex,
   } );
 }
 
-void QuasiDynamicEQRK32::stepRateStateODEAndComputeError( real64 const dt, DomainPartition & domain ) const
+void ExplicitQDRateAndState::stepRateStateODEAndComputeError( real64 const dt, DomainPartition & domain ) const
 {
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
                                                                MeshLevel & mesh,
@@ -316,64 +233,9 @@ void QuasiDynamicEQRK32::stepRateStateODEAndComputeError( real64 const dt, Domai
   } );
 }
 
-real64 QuasiDynamicEQRK32::updateStresses( real64 const & time_n,
-                                           real64 const & dt,
-                                           const int cycleNumber,
-                                           DomainPartition & domain ) const
-{
-  GEOS_LOG_LEVEL_RANK_0( 1, "Stress solver" );
-  // Call member variable stress solver to update the stress state
-  if( m_stressSolver )
-  {
-    // 1. Solve the momentum balance
-    real64 const dtStress =  m_stressSolver->solverStep( time_n, dt, cycleNumber, domain );
-
-    return dtStress;
-  }
-  else
-  {
-    // Spring-slider shear traction computation
-    forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
-                                                                 MeshLevel & mesh,
-                                                                 arrayView1d< string const > const & regionNames )
-
-    {
-      mesh.getElemManager().forElementSubRegions< SurfaceElementSubRegion >( regionNames,
-                                                                             [&]( localIndex const,
-                                                                                  SurfaceElementSubRegion & subRegion )
-      {
-
-        arrayView2d< real64 const > const deltaSlip = subRegion.getField< rateAndState::deltaSlip >();
-        arrayView2d< real64 > const traction        = subRegion.getField< fields::contact::traction >();
-        arrayView2d< real64 const > const traction_n      = subRegion.getField< fields::contact::traction_n >();
-
-        string const & fricitonLawName = subRegion.template getReference< string >( viewKeyStruct::frictionLawNameString() );
-        RateAndStateFriction const & frictionLaw = getConstitutiveModel< RateAndStateFriction >( subRegion, fricitonLawName );
-
-        RateAndStateFriction::KernelWrapper frictionKernelWrapper = frictionLaw.createKernelUpdates();
-
-        forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
-        {
-          SpringSliderParameters springSliderParameters = SpringSliderParameters( traction[k][0],
-                                                                                  frictionKernelWrapper.getACoefficient( k ),
-                                                                                  frictionKernelWrapper.getBCoefficient( k ),
-                                                                                  frictionKernelWrapper.getDcCoefficient( k ) );
-
-
-          traction[k][1] = traction_n[k][1] + springSliderParameters.tauRate * dt
-                           - springSliderParameters.springStiffness * deltaSlip[k][0];
-          traction[k][2] = traction_n[k][2] + springSliderParameters.tauRate * dt
-                           - springSliderParameters.springStiffness * deltaSlip[k][1];
-        } );
-      } );
-    } );
-    return dt;
-  }
-}
-
-void QuasiDynamicEQRK32::updateSlipVelocity( real64 const & time_n,
-                                             real64 const & dt,
-                                             DomainPartition & domain ) const
+void ExplicitQDRateAndState::updateSlipVelocity( real64 const & time_n,
+                                                 real64 const & dt,
+                                                 DomainPartition & domain ) const
 {
   GEOS_LOG_LEVEL_RANK_0( 1, "Rate and State solver" );
   integer const maxIterNewton = m_nonlinearSolverParameters.m_maxIterNewton;
@@ -394,9 +256,10 @@ void QuasiDynamicEQRK32::updateSlipVelocity( real64 const & time_n,
   } );
 }
 
-void QuasiDynamicEQRK32::saveState( DomainPartition & domain ) const
+void ExplicitQDRateAndState::evalTimestep( DomainPartition & domain )
 {
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
+<<<<<<< HEAD:src/coreComponents/physicsSolvers/inducedSeismicity/QuasiDynamicEQRK32.cpp
                                                                MeshLevel & mesh,
                                                                arrayView1d< string const > const & regionNames )
 
@@ -436,6 +299,8 @@ real64 QuasiDynamicEQRK32::setNextDt( real64 const & GEOS_UNUSED_PARAM( currentT
 
   // Spring-slider shear traction computation
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
+=======
+>>>>>>> origin/develop:src/coreComponents/physicsSolvers/inducedSeismicity/ExplicitQDRateAndState.cpp
                                                                MeshLevel const & mesh,
                                                                arrayView1d< string const > const & regionNames )
 
@@ -457,24 +322,29 @@ real64 QuasiDynamicEQRK32::setNextDt( real64 const & GEOS_UNUSED_PARAM( currentT
   } );
 
   // Compute update factor to currentDt using PID error controller + limiter
-  real64 const dtFactor = m_controller.computeUpdateFactor( m_butcherTable.algHighOrder, m_butcherTable.algLowOrder );
-  real64 const nextDt = dtFactor*currentDt;
+  m_stepUpdateFactor = m_controller.computeUpdateFactor( m_butcherTable.algHighOrder, m_butcherTable.algLowOrder );
   // Check if step was acceptable
-  m_successfulStep = (dtFactor >= m_controller.acceptSafety) ? true : false;
+  m_successfulStep = (m_stepUpdateFactor >= m_controller.acceptSafety) ? true : false;
   if( m_successfulStep )
   {
     m_controller.errors[2] = m_controller.errors[1];
     m_controller.errors[1] = m_controller.errors[0];
+  }
+}
+
+real64 ExplicitQDRateAndState::setNextDt( real64 const & currentDt, DomainPartition & domain )
+{
+  GEOS_UNUSED_VAR( domain );
+  real64 const nextDt = m_stepUpdateFactor*currentDt;
+  if( m_successfulStep )
+  {
     GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "Adaptive time step successful. The next dt will be {:.2e} s", nextDt ));
   }
   else
   {
-    GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "Adaptive time step failed. The next dt will be {:.2e} s", nextDt ));
+    GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "Adaptive time step failed. Retry step with dt {:.2e} s", nextDt ));
   }
-
   return nextDt;
 }
-
-REGISTER_CATALOG_ENTRY( PhysicsSolverBase, QuasiDynamicEQRK32, string const &, dataRepository::Group * const )
 
 } // namespace geos

@@ -18,37 +18,36 @@
  */
 
 #include "TableData.hpp"
+#include "common/logger/Logger.hpp"
 
 namespace geos
 {
 
-void TableData::addRow( std::vector< string > const & row )
+void TableData::addRow( std::vector< TableData::CellData > const & row )
 {
-  if( m_rows.size() != 0 && row.size() != m_rows[m_rows.size() - 1].size() )
-  {
-    string msg = "Remarks : some cells may be missing";
-    if( std::find( m_errorsMsg.begin(), m_errorsMsg.end(), msg ) == m_errorsMsg.end())
-    {
-      m_errorsMsg.push_back( msg );
-    }
-  }
   m_rows.push_back( row );
+}
+
+void TableData::addSeparator()
+{
+  if( m_rows.empty())
+  {
+    GEOS_ERROR( "Bad use of a Tabledata::addSeparator(). Make sure you have added values in TableData" );
+  }
+
+  integer rowSize = m_rows[0].size();
+  m_rows.emplace_back( std::vector< TableData::CellData >( rowSize, { CellType::Separator, "-" } ));
+
 }
 
 void TableData::clear()
 {
   m_rows.clear();
-  m_errorsMsg.clear();
 }
 
-std::vector< std::vector< string > > const & TableData::getTableDataRows() const
+std::vector< std::vector< TableData::CellData > > const & TableData::getTableDataRows() const
 {
   return m_rows;
-}
-
-std::vector< string > const & TableData::getErrorMsgs() const
-{
-  return m_errorsMsg;
 }
 
 void TableData2D::collectTableValues( arraySlice1d< real64 const > rowAxisValues,
@@ -75,7 +74,6 @@ TableData2D::TableDataHolder TableData2D::convertTable2D( arrayView1d< real64 co
 {
   string const rowFmt = GEOS_FMT( "{} = {{}}", rowAxisDescription );
   string const columnFmt = GEOS_FMT( "{} = {{}}", columnAxisDescription );
-
   collectTableValues( coordinates[0], coordinates[1], values );
   return buildTableData( string( units::getDescription( valueUnit )),
                          rowFmt,
@@ -87,7 +85,6 @@ TableData2D::TableDataHolder TableData2D::buildTableData( string_view targetUnit
                                                           string_view columnFmt ) const
 {
   TableData2D::TableDataHolder tableData1D;
-  std::vector< size_t > rowsLength;
 
   tableData1D.headerNames.push_back( string( targetUnit ) );
 
@@ -99,9 +96,9 @@ TableData2D::TableDataHolder TableData2D::buildTableData( string_view targetUnit
   // insert row value and row cell values
   for( auto const & [rowValue, rowMap] : m_data )
   {
-    std::vector< string > currentRowValues;
+    std::vector< TableData::CellData > currentRowValues;
     currentRowValues.reserve( rowMap.size() );
-    currentRowValues.push_back( GEOS_FMT( rowFmt, rowValue ) );
+    currentRowValues.push_back( {CellType::Value, GEOS_FMT( rowFmt, rowValue )} );
 
     std::set< real64 >::const_iterator columnIt = m_columnValues.begin();
     for( auto const & [columnValue, cellValue] : rowMap )
@@ -109,13 +106,12 @@ TableData2D::TableDataHolder TableData2D::buildTableData( string_view targetUnit
       // if a column value(s) is/are missing, insert empty entry(ies)
       while( columnValue > *( columnIt++ ) && columnIt != m_columnValues.end() )
       {
-        currentRowValues.push_back( "" );
+        currentRowValues.push_back( {CellType::Value, ""} );
       }
-      currentRowValues.push_back( GEOS_FMT( "{}", cellValue ) );
+      currentRowValues.push_back( {CellType::Value, GEOS_FMT( "{}", cellValue )} );
     }
 
-    tableData1D.tableData.addRow( std::move( currentRowValues ) );
-    rowsLength.push_back( currentRowValues.size() );
+    tableData1D.tableData.addRow( currentRowValues );
   }
 
   return tableData1D;

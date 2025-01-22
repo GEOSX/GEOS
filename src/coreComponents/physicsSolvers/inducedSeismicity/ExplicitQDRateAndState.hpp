@@ -13,46 +13,35 @@
  * ------------------------------------------------------------------------------------------------------------
  */
 
-#ifndef GEOS_PHYSICSSOLVERS_INDUCED_QUASIDYNAMICEQRK32_HPP
-#define GEOS_PHYSICSSOLVERS_INDUCED_QUASIDYNAMICEQRK32_HPP
+#ifndef GEOS_PHYSICSSOLVERS_INDUCEDSEISMICITY_QUASIDYNAMICEQRK32_HPP
+#define GEOS_PHYSICSSOLVERS_INDUCEDSEISMICITY_QUASIDYNAMICEQRK32_HPP
 
-#include "physicsSolvers/PhysicsSolverBase.hpp"
-#include "kernels/RateAndStateKernels.hpp"
+#include "QDRateAndStateBase.hpp"
+#include "kernels/ExplicitRateAndStateKernels.hpp"
 
 namespace geos
 {
 
-class QuasiDynamicEQRK32 : public PhysicsSolverBase
+class ExplicitQDRateAndState : public QDRateAndStateBase
 {
 public:
   /// The default nullary constructor is disabled to avoid compiler auto-generation:
-  QuasiDynamicEQRK32() = delete;
+  ExplicitQDRateAndState() = delete;
 
   /// The constructor needs a user-defined "name" and a parent Group (to place this instance in the tree structure of classes)
-  QuasiDynamicEQRK32( const string & name,
-                      Group * const parent );
+  ExplicitQDRateAndState( const string & name,
+                          Group * const parent );
 
   /// Destructor
-  virtual ~QuasiDynamicEQRK32() override;
+  virtual ~ExplicitQDRateAndState() override;
 
-  static string catalogName() { return "QuasiDynamicEQRK32"; }
-
-  /**
-   * @return Get the final class Catalog name
-   */
-  virtual string getCatalogName() const override { return catalogName(); }
+  static string derivedSolverPrefix() { return "Explicit";};
 
   /// This method ties properties with their supporting mesh
   virtual void registerDataOnMesh( Group & meshBodies ) override;
 
-  struct viewKeyStruct : public PhysicsSolverBase::viewKeyStruct
+  struct viewKeyStruct : public QDRateAndStateBase::viewKeyStruct
   {
-    /// stress solver name
-    constexpr static char const * stressSolverNameString() { return "stressSolverName"; }
-    /// Friction law name string
-    constexpr static char const * frictionLawNameString() { return "frictionLawName"; }
-    /// Friction law name string
-    constexpr static char const * shearImpedanceString() { return "shearImpedance"; }
     /// target slip increment
     constexpr static char const * timeStepTol() { return "timeStepTol"; }
   };
@@ -66,6 +55,12 @@ public:
   virtual real64 setNextDt( real64 const & currentTime,
                             real64 const & currentDt,
                             DomainPartition & domain ) override final;
+
+  /**
+   * @brief Evaluates whether an adaptive time step was successful
+   * @param domain
+   */
+  void evalTimestep( DomainPartition & domain );
 
   /**
    * @brief Computes stage rates for the initial Runge-Kutta substage and updates slip and state
@@ -91,11 +86,6 @@ public:
    */
   void stepRateStateODEAndComputeError( real64 const dt, DomainPartition & domain ) const;
 
-  real64 updateStresses( real64 const & time_n,
-                         real64 const & dt,
-                         const int cycleNumber,
-                         DomainPartition & domain ) const;
-
   /**
    * @brief Updates rate-and-state slip velocity
    * @param domain
@@ -104,25 +94,7 @@ public:
                            real64 const & dt,
                            DomainPartition & domain ) const;
 
-  /**
-   * @brief save the current state
-   * @param domain
-   */
-  void saveState( DomainPartition & domain ) const;
-
-private:
-
-  virtual void postInputInitialization() override;
-
-
-  /// pointer to stress solver
-  PhysicsSolverBase * m_stressSolver;
-
-  /// stress solver name
-  string m_stressSolverName;
-
-  /// shear impedance
-  real64 m_shearImpedance;
+protected:
 
   /// Runge-Kutta Butcher table (specifies the embedded RK method)
   // TODO: The specific type should not be hardcoded!
@@ -130,6 +102,8 @@ private:
   rateAndStateKernels::BogackiShampine32Table m_butcherTable;
 
   bool m_successfulStep; // Flag indicating if the adative time step was accepted
+
+  real64 m_stepUpdateFactor; // Factor to update timestep with
 
   /**
    * @brief Proportional-integral-derivative controller used for updating time step
@@ -196,41 +170,8 @@ public:
 
   PIDController m_controller;
 
-
-  class SpringSliderParameters
-  {
-public:
-
-    GEOS_HOST_DEVICE
-    SpringSliderParameters( real64 const normalTraction, real64 const a, real64 const b, real64 const Dc ):
-      tauRate( 1e-4 ),
-      springStiffness( 0.0 )
-    {
-      real64 const criticalStiffness = normalTraction * (b - a) / Dc;
-      springStiffness = 0.9 * criticalStiffness;
-    }
-
-    /// Default copy constructor
-    SpringSliderParameters( SpringSliderParameters const & ) = default;
-
-    /// Default move constructor
-    SpringSliderParameters( SpringSliderParameters && ) = default;
-
-    /// Deleted default constructor
-    SpringSliderParameters() = delete;
-
-    /// Deleted copy assignment operator
-    SpringSliderParameters & operator=( SpringSliderParameters const & ) = delete;
-
-    /// Deleted move assignment operator
-    SpringSliderParameters & operator=( SpringSliderParameters && ) =  delete;
-
-    real64 tauRate;
-
-    real64 springStiffness;
-  };
 };
 
 } /* namespace geos */
 
-#endif /* GEOS_PHYSICSSOLVERS_INDUCED_QUASIDYNAMICEQRK32_HPP */
+#endif /* GEOS_PHYSICSSOLVERS_INDUCEDSEISMICITY_QUASIDYNAMICEQRK32_HPP */
