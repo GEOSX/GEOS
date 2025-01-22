@@ -180,15 +180,27 @@ SurfaceGenerator::SurfaceGenerator( const string & name,
 //  m_maxTurnAngle(91.0),
   m_nodeBasedSIF( 1 ),
   m_isPoroelastic( 0 ),
-  m_rockToughness( 1.0e99 ),
+  m_initialRockToughness( 1.0e99 ),
+  m_toughnessScalingFactor( 0.0 ),
+  m_fractureOrigin( { 0.0, 0.0, 0.0 } ),
   m_mpiCommOrder( 0 )
 {
   this->registerWrapper( viewKeyStruct::failCriterionString(), &this->m_failCriterion );
 
 
-  registerWrapper( viewKeyStruct::rockToughnessString(), &m_rockToughness ).
+  registerWrapper( viewKeyStruct::initialRockToughnessString(), &m_initialRockToughness ).
     setInputFlag( InputFlags::REQUIRED ).
-    setDescription( "Rock toughness of the solid material" );
+    setDescription( "Initial rock toughness of the solid material" );
+
+  registerWrapper( viewKeyStruct::toughnessScalingFactorString(), &m_toughnessScalingFactor ).
+    setApplyDefaultValue( 0.0 ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Scaling factor for the rock toughness of the solid material" );
+
+  registerWrapper( viewKeyStruct::fractureOriginString(), &m_fractureOrigin ).
+    setDefaultValue( m_fractureOrigin ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Coordinate of fracture origin" );
 
   registerWrapper( viewKeyStruct::nodeBasedSIFString(), &m_nodeBasedSIF ).
     setInputFlag( InputFlags::OPTIONAL ).
@@ -372,23 +384,28 @@ void SurfaceGenerator::initializePostInitialConditionsPreSubGroups()
     FaceManager & faceManager = meshLevel.getFaceManager();
     ElementRegionManager & elementManager = meshLevel.getElemManager();
     arrayView2d< real64 const > const & faceNormals = faceManager.faceNormal();
+    arrayView2d< real64 const > const & faceCenters = faceManager.faceCenter();
 
     //TODO: roughness to KIC should be made a material constitutive relationship.
     arrayView2d< real64 > const & KIC = faceManager.getField< surfaceGeneration::K_IC >();
 
     for( localIndex kf=0; kf<faceManager.size(); ++kf )
     {
-      if( m_rockToughness >= 0 )
+      if( m_initialRockToughness >= 0 )
       {
-        KIC[kf][0] = m_rockToughness;
-        KIC[kf][1] = m_rockToughness;
-        KIC[kf][2] = m_rockToughness;
+        KIC[kf][0] = m_initialRockToughness;
+        KIC[kf][1] = m_initialRockToughness;
+        KIC[kf][2] = m_initialRockToughness;
       }
       else
       {
         arrayView2d< localIndex const > const & faceToRegionMap = faceManager.elementRegionList();
         arrayView2d< localIndex const > const & faceToSubRegionMap = faceManager.elementSubRegionList();
         arrayView2d< localIndex const > const & faceToElementMap = faceManager.elementList();
+
+        KIC[kf][0] = 1e99;
+        KIC[kf][1] = 1e99;
+        KIC[kf][2] = 1e99;
 
         for( localIndex k=0; k<faceToRegionMap.size( 1 ); ++k )
         {
@@ -421,6 +438,25 @@ void SurfaceGenerator::initializePostInitialConditionsPreSubGroups()
             KIC[kf][1] = std::min( std::fabs( k0[1] ), std::fabs( KIC[kf][1] ) );
             KIC[kf][2] = std::min( std::fabs( k0[2] ), std::fabs( KIC[kf][2] ) );
           }
+        }
+      }
+      if( m_toughnessScalingFactor > 0.0 )
+      {
+        real64 faceCenter[3];
+        faceCenter[0] = faceCenters[kf][0];
+        faceCenter[1] = faceCenters[kf][1];
+        faceCenter[2] = faceCenters[kf][2];
+
+        for( localIndex dim=0; dim<3; ++dim )
+        {
+          real64 const initialRockToughness = KIC[kf][dim];
+
+          real64 const scaledToughness = scalingToughness( m_fractureOrigin,
+                                                           faceCenter,
+                                                           initialRockToughness,
+                                                           m_toughnessScalingFactor );
+
+          KIC[kf][dim] = scaledToughness;
         }
       }
     }
@@ -558,7 +594,6 @@ real64 SurfaceGenerator::solverStep( real64 const & time_n,
       PermeabilityBase & permModel = getConstitutiveModel< PermeabilityBase >( fractureSubRegion, permModelName );
       permModel.initializeState();
     }
-
   } );
 
   return rval;
@@ -4560,6 +4595,20 @@ SurfaceGenerator::calculateRuptureRate( SurfaceElementRegion & faceElementRegion
                          MPI_COMM_GEOS );
 
   return globalMaxRuptureRate;
+}
+
+real64 SurfaceGenerator::scalingToughness( R1Tensor const fractureOrigin,
+                                           real64 const (&faceCenter)[3],
+                                           real64 const initialRockToughness,
+                                           real64 const toughnessScalingFactor )
+{
+  real64 const distance = sqrt( (fractureOrigin[0] - faceCenter[0])*(fractureOrigin[0] - faceCenter[0]) +
+                                (fractureOrigin[1] - faceCenter[1])*(fractureOrigin[1] - faceCenter[1]) +
+                                (fractureOrigin[2] - faceCenter[2])*(fractureOrigin[2] - faceCenter[2]) );
+
+  real64 scaledToughness = initialRockToughness*( 1 + toughnessScalingFactor*sqrt( distance ) );
+
+  return scaledToughness;
 }
 
 
