@@ -13,13 +13,10 @@
  * ------------------------------------------------------------------------------------------------------------
  */
 
-#ifndef GEOS_PHYSICSSOLVERS_RATEANDSTATEKERNELS_HPP_
-#define GEOS_PHYSICSSOLVERS_RATEANDSTATEKERNELS_HPP_
+#ifndef GEOS_PHYSICSSOLVERS_INDUCEDSEISMICITY_KERNELS_EXPLICITRATEANDSTATEKERNELS_HPP_
+#define GEOS_PHYSICSSOLVERS_INDUCEDSEISMICITY_KERNELS_EXPLICITRATEANDSTATEKERNELS_HPP_
 
-#include "common/DataTypes.hpp"
-#include "common/GEOS_RAJA_Interface.hpp"
-#include "constitutive/contact/RateAndStateFriction.hpp"
-#include "physicsSolvers/inducedSeismicity/rateAndStateFields.hpp"
+#include "RateAndStateKernelsBase.hpp"
 #include "denseLinearAlgebra/denseLASolvers.hpp"
 
 namespace geos
@@ -27,137 +24,6 @@ namespace geos
 
 namespace rateAndStateKernels
 {
-
-// TBD: Pass the kernel and add getters for relevant fields to make this function general purpose and avoid
-// wrappers?
-GEOS_HOST_DEVICE
-static void projectSlipRateBase( localIndex const k,
-                                 real64 const frictionCoefficient,
-                                 real64 const shearImpedance,
-                                 arrayView2d< real64 const > const traction,
-                                 arrayView1d< real64 const > const slipRate,
-                                 arrayView2d< real64 > const slipVelocity )
-{
-  // Project slip rate onto shear traction to get slip velocity components
-  real64 const frictionForce = traction[k][0] * frictionCoefficient;
-  real64 const projectionScaling = 1.0 / ( shearImpedance +  frictionForce / slipRate[k] );
-  slipVelocity[k][0] = projectionScaling * traction[k][1];
-  slipVelocity[k][1] = projectionScaling * traction[k][2];
-}
-
-/**
- * @class ImplicitFixedStressRateAndStateKernel
- *
- * @brief
- *
- * @details
- */
-class ImplicitFixedStressRateAndStateKernel
-{
-public:
-
-  ImplicitFixedStressRateAndStateKernel( SurfaceElementSubRegion & subRegion,
-                                         constitutive::RateAndStateFriction const & frictionLaw,
-                                         real64 const shearImpedance ):
-    m_slipRate( subRegion.getField< fields::rateAndState::slipRate >() ),
-    m_stateVariable( subRegion.getField< fields::rateAndState::stateVariable >() ),
-    m_stateVariable_n( subRegion.getField< fields::rateAndState::stateVariable_n >() ),
-    m_traction( subRegion.getField< fields::contact::traction >() ),
-    m_slipVelocity( subRegion.getField< fields::rateAndState::slipVelocity >() ),
-    m_shearImpedance( shearImpedance ),
-    m_frictionLaw( frictionLaw.createKernelUpdates()  )
-  {}
-
-  /**
-   * @struct StackVariables
-   * @brief Kernel variables located on the stack
-   */
-  struct StackVariables
-  {
-public:
-
-    GEOS_HOST_DEVICE
-    StackVariables( )
-    {}
-
-    real64 jacobian[2][2]{};
-
-    real64 rhs[2]{};
-
-  };
-
-  GEOS_HOST_DEVICE
-  void setup( localIndex const k,
-              real64 const dt,
-              StackVariables & stack ) const
-  {
-    real64 const normalTraction = m_traction[k][0];
-    real64 const shearTractionMagnitude = LvArray::math::sqrt( m_traction[k][1] * m_traction[k][1] + m_traction[k][2] * m_traction[k][2] );
-    // Eq 1: Scalar force balance for slipRate and shear traction magnitude
-    stack.rhs[0] = shearTractionMagnitude - m_shearImpedance * m_slipRate[k]
-                   - normalTraction * m_frictionLaw.frictionCoefficient( k, m_slipRate[k], m_stateVariable[k] );
-    real64 const dFriction[2] = { -normalTraction * m_frictionLaw.dFrictionCoefficient_dStateVariable( k, m_slipRate[k], m_stateVariable[k] ),
-                                  -m_shearImpedance - normalTraction * m_frictionLaw.dFrictionCoefficient_dSlipRate( k, m_slipRate[k], m_stateVariable[k] ) };
-
-    // Eq 2: slip law
-    stack.rhs[1] = (m_stateVariable[k] - m_stateVariable_n[k]) / dt - m_frictionLaw.stateEvolution( k, m_slipRate[k], m_stateVariable[k] );
-    real64 const dStateEvolutionLaw[2] = { 1 / dt - m_frictionLaw.dStateEvolution_dStateVariable( k, m_slipRate[k], m_stateVariable[k] ),
-                                           -m_frictionLaw.dStateEvolution_dSlipRate( k, m_slipRate[k], m_stateVariable[k] ) };
-
-    // Assemble Jacobian matrix
-    stack.jacobian[0][0] = dFriction[0];          // derivative of Eq 1 w.r.t. stateVariable
-    stack.jacobian[0][1] = dFriction[1];          // derivative of Eq 1 w.r.t. slipRate
-    stack.jacobian[1][0] = dStateEvolutionLaw[0]; // derivative of Eq 2 w.r.t. stateVariable
-    stack.jacobian[1][1] = dStateEvolutionLaw[1]; // derivative of Eq 2 w.r.t. slipRate
-  }
-
-  GEOS_HOST_DEVICE
-  void solve( localIndex const k,
-              StackVariables & stack ) const
-  {
-    /// Solve 2x2 system
-    real64 solution[2] = {0.0, 0.0};
-    denseLinearAlgebra::solve< 2 >( stack.jacobian, stack.rhs, solution );
-
-    // Update variables
-    m_stateVariable[k]  -=  solution[0];
-    m_slipRate[k]       -=  solution[1];
-  }
-
-  GEOS_HOST_DEVICE
-  void projectSlipRate( localIndex const k ) const
-  {
-    real64 const frictionCoefficient = m_frictionLaw.frictionCoefficient( k, m_slipRate[k], m_stateVariable[k] );
-    projectSlipRateBase( k, frictionCoefficient, m_shearImpedance, m_traction, m_slipRate, m_slipVelocity );
-  }
-
-  GEOS_HOST_DEVICE
-  camp::tuple< int, real64 > checkConvergence( StackVariables const & stack,
-                                               real64 const tol ) const
-  {
-    real64 const residualNorm = LvArray::tensorOps::l2Norm< 2 >( stack.rhs );
-    int const converged = residualNorm < tol ? 1 : 0;
-    camp::tuple< int, real64 > result { converged, residualNorm };
-    return result;
-  }
-
-private:
-
-  arrayView1d< real64 > const m_slipRate;
-
-  arrayView1d< real64 > const m_stateVariable;
-
-  arrayView1d< real64 const > const m_stateVariable_n;
-
-  arrayView2d< real64 const > const m_traction;
-
-  arrayView2d< real64 > const m_slipVelocity;
-
-  real64 const m_shearImpedance;
-
-  constitutive::RateAndStateFriction::KernelWrapper m_frictionLaw;
-
-};
 
 /**
  * @class ExplicitRateAndStateKernel
@@ -175,7 +41,8 @@ public:
                               real64 const shearImpedance ):
     m_slipRate( subRegion.getField< fields::rateAndState::slipRate >() ),
     m_stateVariable( subRegion.getField< fields::rateAndState::stateVariable >() ),
-    m_traction( subRegion.getField< fields::contact::traction >() ),
+    m_normalTraction( subRegion.getField< fields::rateAndState::normalTraction >() ),
+    m_shearTraction( subRegion.getField< fields::rateAndState::shearTraction >() ),
     m_slipVelocity( subRegion.getField< fields::rateAndState::slipVelocity >() ),
     m_shearImpedance( shearImpedance ),
     m_frictionLaw( frictionLaw.createKernelUpdates()  )
@@ -189,12 +56,10 @@ public:
   {
 public:
 
-    GEOS_HOST_DEVICE
-    StackVariables( )
-    {}
+    StackVariables() = default;
 
-    real64 jacobian;
-    real64 rhs;
+    real64 jacobian{};
+    real64 rhs{};
 
   };
 
@@ -204,8 +69,8 @@ public:
               StackVariables & stack ) const
   {
     GEOS_UNUSED_VAR( dt );
-    real64 const normalTraction = m_traction[k][0];
-    real64 const shearTractionMagnitude = LvArray::math::sqrt( m_traction[k][1] * m_traction[k][1] + m_traction[k][2] * m_traction[k][2] );
+    real64 const normalTraction = m_normalTraction[k];
+    real64 const shearTractionMagnitude = LvArray::tensorOps::l2Norm< 2 >( m_shearTraction[k] );
 
     // Slip rate is bracketed between [0, shear traction magnitude / shear impedance]
     // If slip rate is outside the bracket, re-initialize to the middle value
@@ -224,7 +89,7 @@ public:
 
     // Slip rate is bracketed between [0, shear traction magnitude / shear impedance]
     // Check that the update did not end outside of the bracket.
-    real64 const shearTractionMagnitude = LvArray::math::sqrt( m_traction[k][1] * m_traction[k][1] + m_traction[k][2] * m_traction[k][2] );
+    real64 const shearTractionMagnitude = LvArray::tensorOps::l2Norm< 2 >( m_shearTraction[k] );
     real64 const upperBound = shearTractionMagnitude/m_shearImpedance;
     if( m_slipRate[k] > upperBound ) m_slipRate[k] = 0.5*upperBound;
 
@@ -245,7 +110,43 @@ public:
   void projectSlipRate( localIndex const k ) const
   {
     real64 const frictionCoefficient = m_frictionLaw.frictionCoefficient( k, m_slipRate[k], m_stateVariable[k] );
-    projectSlipRateBase( k, frictionCoefficient, m_shearImpedance, m_traction, m_slipRate, m_slipVelocity );
+    projectSlipRateBase( k, frictionCoefficient, m_shearImpedance, m_normalTraction, m_shearTraction, m_slipRate, m_slipVelocity );
+  }
+
+  GEOS_HOST_DEVICE
+  void udpateVariables( localIndex const k ) const
+  {
+    projectSlipRate( k );
+  }
+
+  GEOS_HOST_DEVICE
+  void resetState( localIndex const k ) const
+  {
+    GEOS_UNUSED_VAR( k );
+  }
+
+  /**
+   * @brief Performs the kernel launch
+   * @tparam KernelType The Rate-and-state kernel to launch
+   * @tparam POLICY the policy used in the RAJA kernels
+   */
+  template< typename POLICY >
+  static real64
+  solveRateAndStateEquation( SurfaceElementSubRegion & subRegion,
+                             ExplicitRateAndStateKernel & kernel,
+                             real64 dt,
+                             integer const maxNewtonIter,
+                             real64 const newtonTol )
+  {
+    GEOS_MARK_FUNCTION;
+
+    newtonSolve< POLICY >( subRegion, kernel, dt, maxNewtonIter, newtonTol );
+
+    forAll< POLICY >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
+    {
+      kernel.projectSlipRate( k );
+    } );
+    return dt;
   }
 
 private:
@@ -254,7 +155,9 @@ private:
 
   arrayView1d< real64 > const m_stateVariable;
 
-  arrayView2d< real64 const > const m_traction;
+  arrayView1d< real64 const > const m_normalTraction;
+
+  arrayView2d< real64 const > const m_shearTraction;
 
   arrayView2d< real64 > const m_slipVelocity;
 
@@ -263,65 +166,6 @@ private:
   constitutive::RateAndStateFriction::KernelWrapper m_frictionLaw;
 
 };
-
-
-/**
- * @brief Performs the kernel launch
- * @tparam KernelType The Rate-and-state kernel to launch
- * @tparam POLICY the policy used in the RAJA kernels
- */
-template< typename KernelType, typename POLICY >
-static void
-createAndLaunch( SurfaceElementSubRegion & subRegion,
-                 string const & frictionLawNameKey,
-                 real64 const shearImpedance,
-                 integer const maxIterNewton,
-                 real64 const newtonTol,
-                 real64 const time_n,
-                 real64 const dt )
-{
-  GEOS_MARK_FUNCTION;
-
-  GEOS_UNUSED_VAR( time_n );
-
-  string const & frictionLawName = subRegion.getReference< string >( frictionLawNameKey );
-  constitutive::RateAndStateFriction const & frictionLaw = subRegion.getConstitutiveModel< constitutive::RateAndStateFriction >( frictionLawName );
-  KernelType kernel( subRegion, frictionLaw, shearImpedance );
-
-  // Newton loop (outside of the kernel launch)
-  bool allConverged = false;
-  for( integer iter = 0; iter < maxIterNewton; iter++ )
-  {
-    RAJA::ReduceMin< parallelDeviceReduce, int > converged( 1 );
-    RAJA::ReduceMax< parallelDeviceReduce, real64 > residualNorm( 0.0 );
-    forAll< POLICY >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
-    {
-      typename KernelType::StackVariables stack;
-      kernel.setup( k, dt, stack );
-      kernel.solve( k, stack );
-      auto const [elementConverged, elementResidualNorm] = kernel.checkConvergence( stack, newtonTol );
-      converged.min( elementConverged );
-      residualNorm.max( elementResidualNorm );
-    } );
-
-    real64 const maxResidualNorm = MpiWrapper::max( residualNorm.get() );
-    GEOS_LOG_RANK_0( GEOS_FMT( "-----iter {} : residual = {:.10e} ", iter, maxResidualNorm ) );
-
-    if( converged.get() )
-    {
-      allConverged = true;
-      break;
-    }
-  }
-  if( !allConverged )
-  {
-    GEOS_ERROR( " Failed to converge" );
-  }
-  forAll< POLICY >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
-  {
-    kernel.projectSlipRate( k );
-  } );
-}
 
 /**
  * @brief Butcher table for embedded RK3(2) method using Kuttas third order
@@ -366,7 +210,8 @@ struct BogackiShampine32Table
  *
  * @tparam Butcher table defining the Runge-Kutta method.
  */
-template< typename TABLE_TYPE > class EmbeddedRungeKuttaKernel
+template< typename TABLE_TYPE >
+class EmbeddedRungeKuttaKernel
 {
 
 public:
@@ -378,8 +223,8 @@ public:
     m_slipRate( subRegion.getField< fields::rateAndState::slipRate >() ),
     m_slipVelocity( subRegion.getField< fields::rateAndState::slipVelocity >() ),
     m_slipVelocity_n( subRegion.getField< fields::rateAndState::slipVelocity_n >() ),
-    m_deltaSlip( subRegion.getField< fields::rateAndState::deltaSlip >() ),
-    m_deltaSlip_n( subRegion.getField< fields::rateAndState::deltaSlip_n >() ),
+    m_deltaSlip( subRegion.getField< fields::contact::deltaSlip >() ),
+    m_deltaSlip_n( subRegion.getField< fields::contact::deltaSlip_n >() ),
     m_dispJump( subRegion.getField< fields::contact::dispJump >() ),
     m_dispJump_n( subRegion.getField< fields::contact::dispJump_n >() ),
     m_error( subRegion.getField< fields::rateAndState::error >() ),
@@ -579,4 +424,4 @@ private:
 
 } /* namespace geos */
 
-#endif /* GEOS_PHYSICSSOLVERS_RATEANDSTATEKERNELS_HPP_ */
+#endif /* GEOS_PHYSICSSOLVERS_INDUCEDSEISMICITY_KERNELS_EXPLICITRATEANDSTATEKERNELS_HPP_ */
