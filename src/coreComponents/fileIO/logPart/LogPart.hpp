@@ -121,7 +121,9 @@ private:
    */
   string buildDescriptionPart( LogPart::Description const & description );
 
+  /// prefix to append to the title of closing section
   string const m_prefixEndTitle = "End of ";
+
   /// min width of logPart length
   size_t m_rowMinWidth = 70;
 
