@@ -1,4 +1,6 @@
-module purge
+module --force purge 
+module load devel
+module load math
 module load system
 module load git
 module load git-lfs
