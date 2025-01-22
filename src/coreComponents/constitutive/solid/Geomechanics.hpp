@@ -62,6 +62,7 @@ public:
    * @param[in] p4 The value for the crush curve paramter 4
    * @param[in] peakI1 The value for the peak T1 shear limit parameter
    * @param[in] fSlope The value for the F slope shear limit parameter
+   * @param[in] fSlopeFailed The value for the F slope shear limit parameter
    * @param[in] stren The value for the stren shear limit paramter
    * @param[in] ySlope The value for the Y Slope shear limit parameter
    * @param[in] beta The value for the nonassociativity parameter
@@ -102,6 +103,7 @@ public:
                        real64 const & p4,
                        real64 const & peakI1,
                        real64 const & fSlope,
+                       real64 const & fSlopeFailed,
                        real64 const & stren,
                        real64 const & ySlope,
                        real64 const & beta,
@@ -163,6 +165,7 @@ public:
     m_p4( p4 ),
     m_peakI1( peakI1 ),
     m_fSlope( fSlope ),
+    m_fSlopeFailed( fSlopeFailed ),
     m_stren( stren ),
     m_ySlope( ySlope ),
     m_beta( beta ),
@@ -467,6 +470,7 @@ private:
   real64 const & m_p4;
   real64 const & m_peakI1;
   real64 const & m_fSlope;
+  real64 const & m_fSlopeFailed;
   real64 const & m_stren;
   real64 const & m_ySlope;
   real64 const & m_beta;
@@ -2077,16 +2081,12 @@ int GeomechanicsUpdates::nonHardeningReturn( const real64 & I1_trial,           
   real64 I1_0,
 		     I1trialMinusZeta = I1_trial-Zeta;
 
-
-  real64 peakI1_h;
-  if (m_fSlope > 0.0)
-  {
-     peakI1_h = coher*(m_peakI1 + hardening/m_fSlope);
-  } 
-  else
-  {
-    peakI1_h = m_peakI1;
-  }
+  // The following are the input parameters, modified by hardening and or damage
+  //  Any change to peakI1 should be copied in the non-hardening return and
+  //  yield function updates, which have branch points based on the peakI1 value.
+  real64 peakI1_h, fSlope_h; //  
+  fSlope_h = coher*m_fSlope + ( 1. - coher )*m_fSlopeFailed;
+  peakI1_h = coher*(m_peakI1 + hardening/fSlope_h) ? (fSlope_h > 1.e-12) : coher*m_peakI1;
 
   // It may be better to use an interior point at the center of the yield surface, rather than at zeta, in particular
   // when PEAKI1=0.  Picking the midpoint between PEAKI1 and X would be problematic when the user has specified
@@ -2417,15 +2417,11 @@ int GeomechanicsUpdates::computeYieldFunction( const real64 & I1,
 	int YIELD = -1;
 	real64 I1mZ = I1 - Zeta;    // Shifted stress to evalue yield criteria
 
-  real64 peakI1_h;
-  if (m_fSlope > 0.0)
-  {
-     peakI1_h = coher*(m_peakI1 + hardening/m_fSlope);
-  } 
-  else
-  {
-    peakI1_h = m_peakI1;
-  }
+  // Parameters modified by damage and/or hardening
+  real64 peakI1_h, fSlope_h; //  
+  fSlope_h = coher*m_fSlope + ( 1. - coher )*m_fSlopeFailed;
+  peakI1_h = coher*(m_peakI1 + hardening/fSlope_h) ? (fSlope_h > 1.e-12) : m_peakI1;
+
 
 	// --------------------------------------------------------------------
 	// *** SHEAR LIMIT FUNCTION (Ff) ***
@@ -2523,45 +2519,43 @@ void GeomechanicsUpdates::computeLimitParameters( real64 & a1,
   // This routine computes the a_i parameters from the user inputs.  The code was
   // originally written by R.M. Brannon, with modifications by M.S. Swan.
   // harden peakI1 and stren together to not change slope:
-	real64 stren_h = m_stren + hardening;
- 	real64 peakI1_h;
-
-  if (m_fSlope > 0.0)
-  {
-     peakI1_h = coher*(m_peakI1 + hardening/m_fSlope);
-  } 
-  else
-  {
-    peakI1_h = m_peakI1;
-  }
-
-  if (m_fSlope > 0.0 && peakI1_h >= 0.0 && m_stren == 0.0 && m_ySlope == 0.0)
+	
+  // The following are the input parameters, modified by hardening and or damage
+  //  Any change to peakI1 should be copied in the non-hardening return and
+  //  yield function updates, which have branch points based on the peakI1 value.
+  real64 stren_h, peakI1_h, fSlope_h, ySlope_h;  
+  stren_h = m_stren + hardening;
+  fSlope_h = coher*m_fSlope + ( 1. - coher )*m_fSlopeFailed;
+  ySlope_h = std::min( 0.99999*fSlope_h, m_ySlope );
+  peakI1_h = coher*(m_peakI1 + hardening/fSlope_h) ? (fSlope_h > 1.e-12) : coher*m_peakI1;
+  
+  if (fSlope_h > 0.0 && peakI1_h >= 0.0 && m_stren == 0.0 && ySlope_h == 0.0)
   {// ----------------------------------------------Linear Drucker-Prager
-    a1 = peakI1_h * m_fSlope;
+    a1 = peakI1_h * fSlope_h;
     a2 = 0.0;
     a3 = 0.0;
-    a4 = m_fSlope;
+    a4 = fSlope_h;
   }
-  else if (m_fSlope == 0.0 && peakI1_h == 0.0 && m_stren > 0.0 && m_ySlope == 0.0)
+  else if (fSlope_h == 0.0 && peakI1_h == 0.0 && stren_h > 0.0 && ySlope_h == 0.0)
   { // ------------------------------------------------------- Von Mises
     a1 = stren_h*coher;
     a2 = 0.0;
     a3 = 0.0;
     a4 = 0.0;
   }
-  else if (m_fSlope > 0.0 && m_ySlope  == 0.0 && m_stren > 0.0 && peakI1_h == 0.0)
+  else if (fSlope_h > 0.0 && ySlope_h  == 0.0 && stren_h > 0.0 && peakI1_h == 0.0)
   { // ------------------------------------------------------- 0 PEAKI1 to vonMises
     a1 = stren_h;
-    a2 = m_fSlope / stren_h;
+    a2 = fSlope_h / stren_h;
     a3 = stren_h;
     a4 = 0.0;
   }
-  else if (m_fSlope > m_ySlope && m_ySlope > 0.0 && m_stren > m_ySlope*peakI1_h && peakI1_h >= 0.0)
+  else if (fSlope_h > ySlope_h && ySlope_h > 0.0 && stren_h > ySlope_h*peakI1_h && peakI1_h >= 0.0)
   { // ------------------------------------------------------- Nonlinear Drucker-Prager
     a1 = stren_h;
-    a2 = (m_fSlope-m_ySlope )/(stren_h-m_ySlope *peakI1_h);
-    a3 = (stren_h-m_ySlope *peakI1_h)*exp(-a2*peakI1_h);
-    a4 = m_ySlope ;
+    a2 = (fSlope_h-ySlope_h )/(stren_h - ySlope_h*peakI1_h);
+    a3 = (stren_h-ySlope_h*peakI1_h)*exp(-a2*peakI1_h);
+    a4 = ySlope_h ;
   }
   else
   {
@@ -2693,7 +2687,10 @@ public:
 
     /// string/key for F slope shear limit parameter
     static constexpr char const * fSlopeString() { return "fSlope"; }
-         
+
+    /// string/key for F slope shear limit parameter
+    static constexpr char const * fSlopeFailedString() { return "fSlopeFailed"; }
+
     /// string/key for stren shear limit parameter
     static constexpr char const * strenString() { return "stren"; }
 
@@ -2793,6 +2790,7 @@ public:
                                 m_p4,
                                 m_peakI1,
                                 m_fSlope,
+                                m_fSlopeFailed,
                                 m_stren,
                                 m_ySlope,
                                 m_beta,
@@ -2861,6 +2859,7 @@ public:
                           m_p4,
                           m_peakI1,
                           m_fSlope,
+                          m_fSlopeFailed,
                           m_stren,
                           m_ySlope,
                           m_beta,
@@ -2999,6 +2998,7 @@ protected:
   // Shear limit surface parameters
   real64 m_peakI1;
   real64 m_fSlope;
+  real64 m_fSlopeFailed;
   real64 m_stren;
   real64 m_ySlope;
 

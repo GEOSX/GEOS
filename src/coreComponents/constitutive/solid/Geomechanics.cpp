@@ -43,6 +43,7 @@ Geomechanics::Geomechanics( string const & name, Group * const parent ):
   m_p4( 0.0 ),
   m_peakI1( 0.0 ),
   m_fSlope( 0.0 ),
+  m_fSlopeFailed( 0.0 ),
   m_stren( 0.0 ),
   m_ySlope( 0.0 ),
   m_beta( 1.0 ),
@@ -171,6 +172,10 @@ Geomechanics::Geomechanics( string const & name, Group * const parent ):
   registerWrapper( viewKeyStruct::fSlopeString(), &m_fSlope ).
     setInputFlag( InputFlags::REQUIRED ).
     setDescription( "F slope shear limit parameter" );
+
+  registerWrapper( viewKeyStruct::fSlopeFailedString(), &m_fSlopeFailed ).
+    setInputFlag( InputFlags::REQUIRED ).
+    setDescription( "F slope shear limit parameter after damage" );
 
   registerWrapper( viewKeyStruct::strenString(), &m_stren ).
     setInputFlag( InputFlags::REQUIRED ).
@@ -322,6 +327,7 @@ void Geomechanics::postInputInitialization()
 
     // GEOS_THROW_IF( m_peakI1 <= 0.0, "peakI1 must be greater than 0", InputError );
     GEOS_THROW_IF( m_fSlope < 0.0, "fSlope must be greater than 0", InputError );
+    GEOS_THROW_IF( m_fSlopeFailed > m_fSlope, "fSlopeFailed must be less than fSlope", InputError );
     // GEOS_THROW_IF( m_ySlope <= 0.0, "ySlope must be greater than 0", InputError );
     // GEOS_THROW_IF( m_stren <= 0.0, "stren must be greater than 0", InputError );
     GEOS_THROW_IF( m_beta <= 0.0, "beta must be greater than 0", InputError );

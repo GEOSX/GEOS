@@ -6391,7 +6391,7 @@ void SolidMechanicsMPM::computeAndWriteBoxAverage( const real64 dt,
          << ", "
          << boxSums[16] / boxVolume
          << ", "
-         << boxSums[17] / boxVolume
+         << boxSums[17]
          << ", "
          << m_domainF[0]
          << ", "
