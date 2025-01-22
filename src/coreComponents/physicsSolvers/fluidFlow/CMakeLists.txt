@@ -89,7 +89,6 @@ set( physicsSolvers_headers
      fluidFlow/wells/CompositionalMultiphaseWell.hpp
      fluidFlow/wells/CompositionalMultiphaseWellFields.hpp
      fluidFlow/wells/kernels/CompositionalMultiphaseWellKernels.hpp
-     fluidFlow/wells/LogLevelsInfo.hpp
      fluidFlow/wells/SinglePhaseWell.hpp
      fluidFlow/wells/SinglePhaseWellFields.hpp
      fluidFlow/wells/WellConstants.hpp
