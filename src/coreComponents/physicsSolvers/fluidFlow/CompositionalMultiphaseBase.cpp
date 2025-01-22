@@ -42,8 +42,6 @@
 #include "physicsSolvers/fluidFlow/CompositionalMultiphaseBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/SourceFluxStatistics.hpp"
-#include "physicsSolvers/fluidFlow/kernels/compositional/AccumulationKernel.hpp"
-#include "physicsSolvers/fluidFlow/kernels/compositional/ThermalAccumulationKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/GlobalComponentFractionKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/PhaseVolumeFractionKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/ThermalPhaseVolumeFractionKernel.hpp"
@@ -501,7 +499,7 @@ void CompositionalMultiphaseBase::setConstitutiveNames( ElementSubRegionBase & s
   string & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
   fluidName = getConstitutiveName< MultiFluidBase >( subRegion );
   GEOS_THROW_IF( fluidName.empty(),
-                 GEOS_FMT( "{}: Fluid model not found on subregion {}",
+                 GEOS_FMT( "{}: multiphase fluid model not found on subregion {}",
                            getDataContext(), subRegion.getDataContext() ),
                  InputError );
 
@@ -1469,7 +1467,6 @@ void CompositionalMultiphaseBase::assembleLocalTerms( DomainPartition & domain,
     kernelFlags.set( KernelFlags::TotalMassEquation );
   if( m_useSimpleAccumulation )
     kernelFlags.set( KernelFlags::SimpleAccumulation );
-
 
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
                                                                MeshLevel const & mesh,
