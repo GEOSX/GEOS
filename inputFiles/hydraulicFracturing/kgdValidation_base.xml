@@ -44,7 +44,7 @@
       logLevel="1"
       targetRegions="{ Domain }"
       nodeBasedSIF="0"      
-      rockToughness="1.2e6"
+      initialRockToughness="1.2e6"
       mpiCommOrder="1"/>
     <!-- SPHINX_SURFACEGENERATOR_END -->
   </Solvers>
