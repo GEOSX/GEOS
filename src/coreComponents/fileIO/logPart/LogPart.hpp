@@ -144,7 +144,8 @@ void LogPart::addDescription( string const & name, Args const &... args )
 {
   std::vector< string > values;
   ( [&] {
-    static_assert( has_formatter_v< decltype(args) >, "Argument passed in addRow cannot be converted to string" );
+    static_assert( has_formatter_v< decltype(args) >,
+                   "Argument passed in addRow cannot be converted to string" );
     string const value = GEOS_FMT( "{}", args );
     values.push_back( value );
   } (), ...);
@@ -157,7 +158,8 @@ void LogPart::addEndDescription( string const & name, Args const &... args )
 {
   std::vector< string > values;
   ( [&] {
-    static_assert( has_formatter_v< decltype(args) >, "Argument passed in addRow cannot be converted to string" );
+    static_assert( has_formatter_v< decltype(args) >,
+                   "Argument passed in addRow cannot be converted to string" );
     string const value = GEOS_FMT( "{}", args );
     values.push_back( value );
   } (), ...);

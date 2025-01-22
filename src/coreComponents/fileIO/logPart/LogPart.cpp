@@ -94,8 +94,6 @@ void LogPart::formatDescriptions( LogPart::Description & description )
       }
     }
   }
-
-  logPartWidth = std::max( m_rowMinWidth, logPartWidth );
 }
 
 string LogPart::buildDescriptionPart( LogPart::Description const & description )
