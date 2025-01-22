@@ -259,48 +259,6 @@ void ExplicitQDRateAndState::updateSlipVelocity( real64 const & time_n,
 void ExplicitQDRateAndState::evalTimestep( DomainPartition & domain )
 {
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
-<<<<<<< HEAD:src/coreComponents/physicsSolvers/inducedSeismicity/QuasiDynamicEQRK32.cpp
-                                                               MeshLevel & mesh,
-                                                               arrayView1d< string const > const & regionNames )
-
-  {
-    mesh.getElemManager().forElementSubRegions< SurfaceElementSubRegion >( regionNames,
-                                                                           [&]( localIndex const,
-                                                                                SurfaceElementSubRegion & subRegion )
-    {
-      arrayView1d< real64 const > const stateVariable = subRegion.getField< rateAndState::stateVariable >();
-      arrayView2d< real64 const > const slipVelocity  = subRegion.getField< rateAndState::slipVelocity >();
-      arrayView2d< real64 const > const deltaSlip     = subRegion.getField< rateAndState::deltaSlip >();
-      arrayView2d< real64 const > const dispJump      = subRegion.getField< contact::dispJump >();
-      arrayView2d< real64 const > const traction      = subRegion.getField< contact::traction >();
-
-      arrayView1d< real64 > const stateVariable_n = subRegion.getField< rateAndState::stateVariable_n >();
-      arrayView2d< real64 > const slipVelocity_n  = subRegion.getField< rateAndState::slipVelocity_n >();
-      arrayView2d< real64 > const deltaSlip_n     = subRegion.getField< rateAndState::deltaSlip >();
-      arrayView2d< real64 > const dispJump_n      = subRegion.getField< contact::dispJump_n >();
-      arrayView2d< real64 > const traction_n      = subRegion.getField< contact::traction_n >();
-
-      forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
-      {
-        stateVariable_n[k]  = stateVariable[k];
-        LvArray::tensorOps::copy< 2 >( deltaSlip_n[k], deltaSlip[k] );
-        LvArray::tensorOps::copy< 2 >( slipVelocity_n[k], slipVelocity[k] );
-        LvArray::tensorOps::copy< 3 >( dispJump_n[k], dispJump[k] );
-        LvArray::tensorOps::copy< 3 >( traction_n[k], traction[k] );
-      } );
-    } );
-  } );
-}
-
-real64 QuasiDynamicEQRK32::setNextDt( real64 const & GEOS_UNUSED_PARAM( currentTime ),
-                                      real64 const & currentDt,
-                                      DomainPartition & domain )
-{
-
-  // Spring-slider shear traction computation
-  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
-=======
->>>>>>> origin/develop:src/coreComponents/physicsSolvers/inducedSeismicity/ExplicitQDRateAndState.cpp
                                                                MeshLevel const & mesh,
                                                                arrayView1d< string const > const & regionNames )
 
