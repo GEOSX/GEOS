@@ -21,7 +21,7 @@
 #include "WellConstants.hpp"
 #include "dataRepository/InputFlags.hpp"
 #include "functions/FunctionManager.hpp"
-#include "physicsSolvers/fluidFlow/wells/LogLevelsInfo.hpp"
+#include "physicsSolvers/LogLevelsInfo.hpp"
 
 
 namespace geos

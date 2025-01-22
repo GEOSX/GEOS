@@ -34,7 +34,7 @@
 #include "events/EventManager.hpp"
 #include "AcousticPMLSEMKernel.hpp"
 #include "physicsSolvers/wavePropagation/shared/PrecomputeSourcesAndReceiversKernel.hpp"
-#include "physicsSolvers/wavePropagation/LogLevelsInfo.hpp"
+#include "physicsSolvers/LogLevelsInfo.hpp"
 
 namespace geos
 {
