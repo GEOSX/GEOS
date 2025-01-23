@@ -30,6 +30,22 @@
 namespace geos
 {
 
+/**
+ * @brief Options for flow formulation
+ */
+enum class CompositionalMultiphaseFormulationType : integer
+{
+  ComponentDensities, ///< use component densities as primary variables
+  OverallComposition  ///< use overall composition (z_c) as primary variables
+};
+
+/**
+ * @brief Strings for options for flow formulation
+ */
+ENUM_STRINGS( CompositionalMultiphaseFormulationType,
+              "ComponentDensities",
+              "CverallComposition" );
+
 //START_SPHINX_INCLUDE_00
 /**
  * @class CompositionalMultiphaseBase
@@ -266,7 +282,7 @@ public:
     // inputs
 
     static constexpr char const * useMassFlagString() { return "useMass"; }
-    static constexpr char const * useZFormulationFlagString() { return "useZFormulation"; }
+    static constexpr char const * formulationTypeString() { return "formulationType"; }
     static constexpr char const * relPermNamesString() { return "relPermNames"; }
     static constexpr char const * capPressureNamesString() { return "capPressureNames"; }
     static constexpr char const * diffusionNamesString() { return "diffusionNames"; }
@@ -462,8 +478,8 @@ protected:
   /// flag indicating whether mass or molar formulation should be used
   integer m_useMass;
 
-  /// flag indicating whether overall composition (Z) formulation should be used
-  integer m_useZFormulation;
+  /// formulation type
+  CompositionalMultiphaseFormulationType m_formulationType;
 
   /// flag to determine whether or not to apply capillary pressure
   integer m_hasCapPressure;

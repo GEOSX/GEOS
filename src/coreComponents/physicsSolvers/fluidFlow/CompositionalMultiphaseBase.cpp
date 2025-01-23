@@ -92,10 +92,11 @@ CompositionalMultiphaseBase::CompositionalMultiphaseBase( const string & name,
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( GEOS_FMT( "Use mass formulation instead of molar. Warning : Affects {} rates units.",
                               SourceFluxBoundaryCondition::catalogName() ) );
-  this->registerWrapper( viewKeyStruct::useZFormulationFlagString(), &m_useZFormulation ).
-    setApplyDefaultValue( 0 ).
+
+  this->registerWrapper( viewKeyStruct::formulationTypeString(), &m_formulationType ).
+    setApplyDefaultValue( CompositionalMultiphaseFormulationType::ComponentDensities ).
     setInputFlag( InputFlags::OPTIONAL ).
-    setDescription( "Use overall composition (Z) formulation instead of component density." );
+    setDescription( "Type of formulation used." );
 
   this->registerWrapper( viewKeyStruct::solutionChangeScalingFactorString(), &m_solutionChangeScalingFactor ).
     setSizedFromParent( 0 ).
@@ -247,36 +248,24 @@ void CompositionalMultiphaseBase::postInputInitialization()
     m_useSimpleAccumulation = 0;
   }
 
-  if( m_useZFormulation )
+  if( m_formulationType == CompositionalMultiphaseFormulationType::OverallComposition )
   {
-    if( m_isThermal ) // useZFormulation is not yet compatible with thermal
+    string const formulationName = EnumStrings<CompositionalMultiphaseFormulationType>::toString(CompositionalMultiphaseFormulationType::OverallComposition);
+
+    if( m_isThermal ) // z_c formulation is not yet compatible with thermal
     {
       GEOS_ERROR( GEOS_FMT( "{}: '{}' is currently not available for thermal simulations",
-                            getDataContext(), viewKeyStruct::useZFormulationFlagString() ) );
+                            getDataContext(), formulationName ) );
     }
-    if( m_hasDiffusion || m_hasDispersion )
+    if( m_hasDiffusion || m_hasDispersion ) // z_c formulation is not yet compatible with diffusion or dispersion
     {
       GEOS_ERROR( GEOS_FMT( "{}: {} is currently not available for diffusion or dispersion",
-                            getDataContext(), viewKeyStruct::useZFormulationFlagString() ) );
+                            getDataContext(), formulationName ) );
     }
-    if( m_isJumpStabilized ) // useZFormulation is not yet compatible with pressure stabilization
+    if( m_isJumpStabilized ) // z_c formulation is not yet compatible with pressure stabilization
     {
       GEOS_ERROR( GEOS_FMT( "{}: pressure stabilization is not yet supported by {}",
-                            getDataContext(), viewKeyStruct::useZFormulationFlagString() ) );
-    }
-
-    DomainPartition & domain = this->getGroupByPath< DomainPartition >( "/Problem/domain" );
-    NumericalMethodsManager const & numericalMethodManager = domain.getNumericalMethodManager();
-    FiniteVolumeManager const & fvManager = numericalMethodManager.getFiniteVolumeManager();
-    FluxApproximationBase const & fluxApprox = fvManager.getFluxApproximation( m_discretizationName );
-    auto const & upwindingParams = fluxApprox.upwindingParams();
-    if( upwindingParams.upwindingScheme == UpwindingScheme::C1PPU ||
-        upwindingParams.upwindingScheme == UpwindingScheme::IHU )
-    {
-      GEOS_ERROR( GEOS_FMT( "{}: {} is not available for {}",
-                            getDataContext(),
-                            EnumStrings< UpwindingScheme >::toString( upwindingParams.upwindingScheme ),
-                            viewKeyStruct::useZFormulationFlagString() ) );
+                            getDataContext(), formulationName ) );
     }
   }
 }
@@ -340,20 +329,23 @@ void CompositionalMultiphaseBase::registerDataOnMesh( Group & meshBodies )
   }
 
 
-  if( m_useZFormulation )
-  {
-    // Z formulation - component densities and pressure are primary unknowns
-    // (n_c-1) overall compositions + one pressure
-    // Testing: let's have sum_c zc = 1 as explicit equation for now
-    m_numDofPerCell = m_numComponents + 1;
-  }
-  else
+  if( m_formulationType == CompositionalMultiphaseFormulationType::ComponentDensities )
   {
     // default formulation - component densities and pressure are primary unknowns
     // n_c components + one pressure ( + one temperature if needed )
     m_numDofPerCell = m_isThermal ? m_numComponents + 2 : m_numComponents + 1;
+  }  
+  else if( m_formulationType == CompositionalMultiphaseFormulationType::OverallComposition  )
+  {
+    // z_c formulation - component densities and pressure are primary unknowns
+    // (n_c-1) overall compositions + one pressure
+    // Testing: let's have sum_c z_c = 1 as explicit equation for now
+    m_numDofPerCell = m_numComponents + 1;
   }
-
+  else
+  {
+    GEOS_ERROR( GEOS_FMT( "{}: unknown formulation type", getDataContext() ) );
+  }
 
   // 2. Register and resize all fields as necessary
   forDiscretizationOnMeshTargets( meshBodies, [&]( string const &,
@@ -422,7 +414,7 @@ void CompositionalMultiphaseBase::registerDataOnMesh( Group & meshBodies )
       subRegion.registerField< globalCompFraction >( getName() ).
         setDimLabels( 1, fluid.componentNames() ).
         reference().resizeDimension< 1 >( m_numComponents );
-      if( m_useZFormulation )
+      if( m_formulationType == CompositionalMultiphaseFormulationType::OverallComposition )
       {
         subRegion.registerField< globalCompFraction_n >( getName() ).
           setDimLabels( 1, fluid.componentNames() ).
@@ -715,7 +707,7 @@ real64 CompositionalMultiphaseBase::updatePhaseVolumeFraction( ObjectManagerBase
   string const & fluidName = dataGroup.getReference< string >( viewKeyStruct::fluidNamesString() );
   MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( dataGroup, fluidName );
 
-  if( m_useZFormulation )
+  if( m_formulationType == CompositionalMultiphaseFormulationType::OverallComposition )
   {
     // isothermal for now
     return isothermalCompositionalMultiphaseBaseKernels::
@@ -835,7 +827,7 @@ void CompositionalMultiphaseBase::updateCompAmount( ElementSubRegionBase & subRe
 
   integer const numComp = m_numComponents;
 
-  if( m_useZFormulation )
+  if( m_formulationType == CompositionalMultiphaseFormulationType::OverallComposition )
   {
     arrayView2d< real64 const, compflow::USD_COMP > const compFrac = subRegion.getField< fields::flow::globalCompFraction >();
     // access total density stored in the fluid
@@ -919,7 +911,7 @@ real64 CompositionalMultiphaseBase::updateFluidState( ElementSubRegionBase & sub
 
   real64 maxDeltaPhaseVolFrac;
 
-  if( !m_useZFormulation )
+  if( m_formulationType == CompositionalMultiphaseFormulationType::ComponentDensities )
   {
     // For p, rho_c as the primary unknowns
     updateGlobalComponentFraction( subRegion );
@@ -957,7 +949,7 @@ void CompositionalMultiphaseBase::initializeFluidState( MeshLevel & mesh,
     MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( subRegion, fluidName );
     arrayView2d< real64 const, multifluid::USD_FLUID > const totalDens = fluid.totalDensity();
 
-    if( !m_useZFormulation )
+    if( m_formulationType == CompositionalMultiphaseFormulationType::ComponentDensities )
     {
       arrayView2d< real64 const, compflow::USD_COMP > const compFrac =
         subRegion.getField< fields::flow::globalCompFraction >();
@@ -981,7 +973,7 @@ void CompositionalMultiphaseBase::initializeFluidState( MeshLevel & mesh,
   } );
 
   // check if comp fractions need to be corrected to avoid zero diags etc
-  if( m_useZFormulation && m_allowCompDensChopping )
+  if( m_formulationType == CompositionalMultiphaseFormulationType::OverallComposition && m_allowCompDensChopping )
   {
     DomainPartition & domain = this->getGroupByPath< DomainPartition >( "/Problem/domain" );
     chopNegativeCompFractions( domain );
@@ -1364,7 +1356,8 @@ void CompositionalMultiphaseBase::initializePostInitialConditionsPreSubGroups()
                                                                arrayView1d< string const > const & regionNames )
   {
     FieldIdentifiers fieldsToBeSync;
-    fieldsToBeSync.addElementFields( {m_useZFormulation ? fields::flow::globalCompFraction::key() : fields::flow::globalCompDensity::key() },
+    fieldsToBeSync.addElementFields( { m_formulationType == CompositionalMultiphaseFormulationType::OverallComposition ?
+                                      fields::flow::globalCompFraction::key() : fields::flow::globalCompDensity::key() },
                                      regionNames );
 
     CommunicationTools::getInstance().synchronizeFields( fieldsToBeSync, mesh, domain.getNeighbors(), false );
@@ -1483,7 +1476,7 @@ void CompositionalMultiphaseBase::assembleLocalTerms( DomainPartition & domain,
       MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( subRegion, fluidName );
       CoupledSolidBase const & solid = getConstitutiveModel< CoupledSolidBase >( subRegion, solidName );
 
-      if( m_useZFormulation )
+      if( m_formulationType == CompositionalMultiphaseFormulationType::OverallComposition )
       {
         // isothermal for now
         isothermalCompositionalMultiphaseBaseKernels::
@@ -1985,11 +1978,8 @@ void CompositionalMultiphaseBase::applyDirichletBC( real64 const time_n,
 
       // for now to avoid lambda function complain
 
-      if( m_useZFormulation )
+      if( m_formulationType == CompositionalMultiphaseFormulationType::OverallComposition )
       {
-        //arrayView2d< real64 const, compflow::USD_COMP > const compFrac =
-        //subRegion.getReference< array2d< real64, compflow::LAYOUT_COMP > >( fields::flow::globalCompFraction::key() );
-
         integer const numComp = m_numComponents;
         forAll< parallelDevicePolicy<> >( targetSet.size(), [=] GEOS_HOST_DEVICE ( localIndex const a )
         {
@@ -2280,8 +2270,8 @@ void CompositionalMultiphaseBase::chopNegativeCompFractions( DomainPartition & d
 real64 CompositionalMultiphaseBase::setNextDtBasedOnStateChange( real64 const & currentDt,
                                                                  DomainPartition & domain )
 {
-  // TODO: put in a seprate function or put flags to avoid duplication of code
-  if( m_useZFormulation )
+  // TODO: put in a separate function or put flags to avoid duplication of code
+  if( m_formulationType == CompositionalMultiphaseFormulationType::OverallComposition )
   {
     if( m_targetRelativePresChange >= 1.0 &&
         m_targetPhaseVolFracChange >= 1.0 &&
@@ -2548,7 +2538,7 @@ void CompositionalMultiphaseBase::resetStateToBeginningOfStep( DomainPartition &
         subRegion.template getField< fields::flow::pressure_n >();
       pres.setValues< parallelDevicePolicy<> >( pres_n );
 
-      if( m_useZFormulation )
+      if( m_formulationType == CompositionalMultiphaseFormulationType::OverallComposition )
       {
         arrayView2d< real64, compflow::USD_COMP > const & compFrac =
           subRegion.template getField< fields::flow::globalCompFraction >();
@@ -2691,7 +2681,7 @@ void CompositionalMultiphaseBase::saveConvergedState( ElementSubRegionBase & sub
 {
   FlowSolverBase::saveConvergedState( subRegion );
 
-  if( m_useZFormulation )
+  if( m_formulationType == CompositionalMultiphaseFormulationType::OverallComposition )
   {
     arrayView2d< real64 const, compflow::USD_COMP > const & compFrac =
       subRegion.template getField< fields::flow::globalCompFraction >();

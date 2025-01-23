@@ -134,10 +134,29 @@ void CompositionalMultiphaseFVM::postInputInitialization()
                           EnumStrings< ScalingType >::toString( ScalingType::Local )) );
   }
 
-  if( m_useZFormulation && m_dbcParams.useDBC ) // useZFormulation is not compatible with DBC
+  if( m_formulationType == CompositionalMultiphaseFormulationType::OverallComposition )
   {
-    GEOS_ERROR( GEOS_FMT( "{}: '{}' is not compatible with {}",
-                          getDataContext(), viewKeyStruct::useZFormulationFlagString(), viewKeyStruct::useDBCString() ) );
+    string const formulationName = EnumStrings<CompositionalMultiphaseFormulationType>::toString(CompositionalMultiphaseFormulationType::OverallComposition);
+
+    if( m_dbcParams.useDBC ) // z_c formulation is not compatible with DBC
+    {
+      GEOS_ERROR( GEOS_FMT( "{}: '{}' is not compatible with {}",
+                            getDataContext(), formulationName, viewKeyStruct::useDBCString() ) );
+    }
+
+    DomainPartition & domain = this->getGroupByPath< DomainPartition >( "/Problem/domain" );
+    NumericalMethodsManager const & numericalMethodManager = domain.getNumericalMethodManager();
+    FiniteVolumeManager const & fvManager = numericalMethodManager.getFiniteVolumeManager();
+    FluxApproximationBase const & fluxApprox = fvManager.getFluxApproximation( m_discretizationName );
+    auto const & upwindingParams = fluxApprox.upwindingParams();
+    if( upwindingParams.upwindingScheme == UpwindingScheme::C1PPU ||
+        upwindingParams.upwindingScheme == UpwindingScheme::IHU )
+    {
+      GEOS_ERROR( GEOS_FMT( "{}: {} is not available for {}",
+                            getDataContext(),
+                            EnumStrings< UpwindingScheme >::toString( upwindingParams.upwindingScheme ),
+                            formulationName ) );
+    }
   }
 }
 
@@ -260,7 +279,7 @@ void CompositionalMultiphaseFVM::assembleFluxTerms( real64 const dt,
 
       // Convective flux
 
-      if( m_useZFormulation )
+      if( m_formulationType == CompositionalMultiphaseFormulationType::OverallComposition )
       {
         // isothermal only for now
         isothermalCompositionalMultiphaseFVMKernels::
@@ -582,7 +601,7 @@ real64 CompositionalMultiphaseFVM::scalingForSystemSolution( DomainPartition & d
 {
   GEOS_MARK_FUNCTION;
 
-  if( m_useZFormulation )
+  if( m_formulationType == CompositionalMultiphaseFormulationType::OverallComposition )
   {
     return scalingForSystemSolutionZFormulation( domain, dofManager, localSolution );
   }
@@ -821,9 +840,9 @@ bool CompositionalMultiphaseFVM::checkSystemSolution( DomainPartition & domain,
 {
   GEOS_MARK_FUNCTION;
 
-  // TO DO: Implement the solution check for Z Formulation
-  if( m_useZFormulation )
+  if( m_formulationType == CompositionalMultiphaseFormulationType::OverallComposition )
   {
+    // TO DO: Implement the solution check for Z Formulation
     return true;
   }
   else
@@ -952,7 +971,7 @@ void CompositionalMultiphaseFVM::applySystemSolution( DofManager const & dofMana
                                  pressureMask );
   }
 
-  if( m_useZFormulation )
+  if( m_formulationType == CompositionalMultiphaseFormulationType::OverallComposition )
   {
     if( localScaling )
     {
@@ -1017,7 +1036,7 @@ void CompositionalMultiphaseFVM::applySystemSolution( DofManager const & dofMana
 
   if( m_allowCompDensChopping )
   {
-    if( m_useZFormulation )
+    if( m_formulationType == CompositionalMultiphaseFormulationType::OverallComposition )
       chopNegativeCompFractions( domain );
     else
       chopNegativeDensities( domain );
@@ -1028,7 +1047,8 @@ void CompositionalMultiphaseFVM::applySystemSolution( DofManager const & dofMana
                                                                arrayView1d< string const > const & regionNames )
   {
     std::vector< string > fields{ fields::flow::pressure::key(),
-                                  m_useZFormulation ? fields::flow::globalCompFraction::key() : fields::flow::globalCompDensity::key() };
+                                  m_formulationType == CompositionalMultiphaseFormulationType::OverallComposition ?
+                                  fields::flow::globalCompFraction::key() : fields::flow::globalCompDensity::key() };
     if( m_isThermal )
     {
       fields.emplace_back( fields::flow::temperature::key() );
@@ -1051,7 +1071,7 @@ void CompositionalMultiphaseFVM::updatePhaseMobility( ObjectManagerBase & dataGr
   string const & relpermName = dataGroup.getReference< string >( viewKeyStruct::relPermNamesString() );
   RelativePermeabilityBase const & relperm = getConstitutiveModel< RelativePermeabilityBase >( dataGroup, relpermName );
 
-  if( m_useZFormulation )
+  if( m_formulationType == CompositionalMultiphaseFormulationType::OverallComposition )
   {
     // For now: isothermal only
     isothermalCompositionalMultiphaseFVMKernels::
@@ -1310,7 +1330,7 @@ void CompositionalMultiphaseFVM::applyFaceDirichletBC( real64 const time_n,
 
       string const & elemDofKey = dofManager.getKey( viewKeyStruct::elemDofFieldString() );
 
-      if( m_useZFormulation )
+      if( m_formulationType == CompositionalMultiphaseFormulationType::OverallComposition )
       {
         isothermalCompositionalMultiphaseFVMKernels::
           DirichletFluxComputeZFormulationKernelFactory::
