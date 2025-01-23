@@ -3,6 +3,7 @@ set( physicsSolvers_headers
      ${physicsSolvers_headers}
      surfaceGeneration/EmbeddedSurfaceGenerator.hpp
      surfaceGeneration/EmbeddedSurfacesParallelSynchronization.hpp
+     surfaceGeneration/LogLevelsInfo.hpp
      surfaceGeneration/ParallelTopologyChange.hpp
      surfaceGeneration/SurfaceGenerator.hpp
      surfaceGeneration/SurfaceGeneratorFields.hpp

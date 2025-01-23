@@ -17,11 +17,11 @@
  * @file WellControls.cpp
  */
 
+#include "LogLevelsInfo.hpp"
 #include "WellControls.hpp"
 #include "WellConstants.hpp"
 #include "dataRepository/InputFlags.hpp"
 #include "functions/FunctionManager.hpp"
-#include "physicsSolvers/LogLevelsInfo.hpp"
 
 
 namespace geos

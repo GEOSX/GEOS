@@ -1,6 +1,7 @@
 # Specify solver headers
 set( physicsSolvers_headers
      ${physicsSolvers_headers}
+     fluidFlow/LogLevelsInfo.hpp
      fluidFlow/FlowSolverBase.hpp
      fluidFlow/FlowSolverBaseFields.hpp
      fluidFlow/CompositionalMultiphaseBase.hpp
@@ -89,6 +90,7 @@ set( physicsSolvers_headers
      fluidFlow/wells/CompositionalMultiphaseWell.hpp
      fluidFlow/wells/CompositionalMultiphaseWellFields.hpp
      fluidFlow/wells/kernels/CompositionalMultiphaseWellKernels.hpp
+     fluidFlow/wells/LogLevelsInfo.hpp
      fluidFlow/wells/SinglePhaseWell.hpp
      fluidFlow/wells/SinglePhaseWellFields.hpp
      fluidFlow/wells/WellConstants.hpp

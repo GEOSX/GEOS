@@ -36,29 +36,10 @@ namespace logInfo
 
 /// @cond DO_NOT_DOCUMENT
 
-
-struct AggregatedSourceFluxStats
-{
-  static constexpr int getMinLogLevel() { return 1; }
-  static constexpr std::string_view getDescription() { return "Print aggregated statistics of all source fluxes in a mesh"; }
-};
-
-struct CFL
-{
-  static constexpr int getMinLogLevel() { return 1; }
-  static constexpr std::string_view getDescription() { return "CFL information"; }
-};
-
 struct Configuration
 {
   static constexpr int getMinLogLevel() { return 2; }
   static constexpr std::string_view getDescription() { return "Solver runtime settings"; }
-};
-
-struct Crossflow
-{
-  static constexpr int getMinLogLevel() { return 1; }
-  static constexpr std::string_view getDescription() { return "Crossflow information"; }
 };
 
 struct Convergence
@@ -71,24 +52,6 @@ struct Coupling
 {
   static constexpr int getMinLogLevel() { return 1; }
   static constexpr std::string_view getDescription() { return "Coupling information"; }
-};
-
-struct DASType
-{
-  static constexpr int getMinLogLevel() { return 1; }
-  static constexpr std::string_view getDescription() { return "DAS type information"; }
-};
-
-struct DetailedSourceFluxStats
-{
-  static constexpr int getMinLogLevel() { return 2; }
-  static constexpr std::string_view getDescription() { return "Print statistics for each source flux in a mesh"; }
-};
-
-struct DetailedRegionsSourceFluxStats
-{
-  static constexpr int getMinLogLevel() { return 3; }
-  static constexpr std::string_view getDescription() { return "Print statistics for each source flux in each regions"; }
 };
 
 struct Fields
@@ -115,29 +78,12 @@ struct LineSearch
   static constexpr std::string_view getDescription() { return "Line search information"; }
 };
 
-struct Mapping
-{
-  static constexpr int getMinLogLevel() { return 2; }
-  static constexpr std::string_view getDescription() { return "Mapping information"; }
-};
-
 struct NonlinearSolver
 {
   static constexpr int getMinLogLevel() { return 1; }
   static constexpr std::string_view getDescription() { return "Nonlinear solver information"; }
 };
 
-struct PMLParameters
-{
-  static constexpr int getMinLogLevel() { return 1; }
-  static constexpr std::string_view getDescription() { return "Information on Perfectly match layers parameters"; }
-};
-
-struct RuptureRate
-{
-  static constexpr int getMinLogLevel() { return 3; }
-  static constexpr std::string_view getDescription() { return "Rupture rate information"; }
-};
 
 struct Solution
 {
@@ -168,18 +114,6 @@ struct SolverSteps
   static constexpr std::string_view getDescription() { return "Solver step Information"; }
 };
 
-struct StencilConnection
-{
-  static constexpr int getMinLogLevel() { return 1; }
-  static constexpr std::string_view getDescription() { return "Log stencil stored connection"; }
-};
-
-struct StencilInitialization
-{
-  static constexpr int getMinLogLevel() { return 1; }
-  static constexpr std::string_view getDescription() { return "Information on stencil Initialization"; }
-};
-
 struct Statistics
 {
   static constexpr int getMinLogLevel() { return 1; }
@@ -192,12 +126,6 @@ struct SurfaceGenerator
   static constexpr std::string_view getDescription() { return "Fracture generation information"; }
 };
 
-struct SystemSolution
-{
-  static constexpr int getMinLogLevel() { return 1; }
-  static constexpr std::string_view getDescription() { return "Log single phase well system solution"; }
-};
-
 struct TimeStep
 {
   static constexpr int getMinLogLevel() { return 1; }
@@ -208,24 +136,6 @@ struct Timers
 {
   static constexpr int getMinLogLevel() { return 1; }
   static constexpr std::string_view getDescription() { return "Solver timers information"; }
-};
-
-struct WellComponents
-{
-  static constexpr int getMinLogLevel() { return 1; }
-  static constexpr std::string_view getDescription() { return "Well components information"; }
-};
-
-struct WellControl
-{
-  static constexpr int getMinLogLevel() { return 1; }
-  static constexpr std::string_view getDescription() { return "Well control information"; }
-};
-
-struct WellValidity
-{
-  static constexpr int getMinLogLevel() { return 1; }
-  static constexpr std::string_view getDescription() { return "Well validity information"; }
 };
 
 /// @endcond

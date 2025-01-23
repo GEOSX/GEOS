@@ -18,8 +18,8 @@
  * This file contains common log level informations for physics solvers
  */
 
-#ifndef GEOS_FILEIO_LOGLEVELSINFO_HPP
-#define GEOS_FILEIO_LOGLEVELSINFO_HPP
+#ifndef GEOS_PHYSICSSOLVERS_SURFACEGENERATION_LOGLEVELSINFO_HPP_
+#define GEOS_PHYSICSSOLVERS_SURFACEGENERATION_LOGLEVELSINFO_HPP_
 
 #include "common/DataTypes.hpp"
 
@@ -29,36 +29,16 @@ namespace geos
 namespace logInfo
 {
 
-/**
- * @name Common LogLevels info structures. They must comply with the `is_log_level_info` trait.
- */
-///@{
-
-/// @cond DO_NOT_DOCUMENT
-
-struct DataCollectorInitialization
-{
-  static constexpr int getMinLogLevel() { return 3; }
-  static constexpr std::string_view getDescription() { return "Information on Time history Initialization"; }
-};
-
-struct ChomboIOInitialization
-{
-  static constexpr int getMinLogLevel() { return 1; }
-  static constexpr std::string_view getDescription() { return "Information on chomboIO coupling Initialization"; }
-};
-
-struct OutputEvents
+struct Mapping
 {
   static constexpr int getMinLogLevel() { return 2; }
-  static constexpr std::string_view getDescription() { return "Information on output events (VTK/ChomboIO/HDF5)"; }
+  static constexpr std::string_view getDescription() { return "Mapping information"; }
 };
 
-
-struct HDF5Writing
+struct RuptureRate
 {
   static constexpr int getMinLogLevel() { return 3; }
-  static constexpr std::string_view getDescription() { return "Information on buffered data in an HDF5 file "; }
+  static constexpr std::string_view getDescription() { return "Rupture rate information"; }
 };
 
 /// @endcond
@@ -68,4 +48,4 @@ struct HDF5Writing
 
 }
 
-#endif // GEOS_FILEIO_LOGLEVELSINFO_HPP
+#endif // GEOS_PHYSICSSOLVERS_SURFACEGENERATION_LOGLEVELSINFO_HPP
