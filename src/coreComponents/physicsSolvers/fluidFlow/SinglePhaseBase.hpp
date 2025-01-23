@@ -25,6 +25,8 @@
 #include "physicsSolvers/fluidFlow/kernels/singlePhase/ThermalAccumulationKernels.hpp"
 #include "constitutive/fluid/singlefluid/SingleFluidBase.hpp"
 #include "constitutive/solid/CoupledSolidBase.hpp"
+#include "constitutive/fluid/singlefluid/SingleFluidLayouts.hpp"
+#include "constitutive/fluid/singlefluid/SingleFluidUtils.hpp"
 
 
 namespace geos
@@ -45,6 +47,8 @@ class ConstitutiveBase;
 class SinglePhaseBase : public FlowSolverBase
 {
 public:
+  using SingleFluidProp = constitutive::SingleFluidVar< real64, 2, constitutive::singlefluid::LAYOUT_FLUID, constitutive::singlefluid::LAYOUT_FLUID_DER >;
+
   /**
    * @brief main constructor for Group Objects
    * @param name the name of this instantiation of Group in the repository
@@ -377,22 +381,14 @@ protected:
    */
   struct FluidPropViews
   {
-    arrayView2d< real64 const > const dens;             ///< density
-    arrayView2d< real64 const > const dDens_dPres;      ///< derivative of density w.r.t. pressure
-    arrayView2d< real64 const > const visc;             ///< viscosity
-    arrayView2d< real64 const > const dVisc_dPres;      ///< derivative of viscosity w.r.t. pressure
+    arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const dens;             ///< density
+    arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > const dDens;             ///< density derivatives
+    arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const visc;             ///< viscosity
+    arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > const dVisc;             ///< viscosity derivatives
     real64 const defaultDensity;                     ///< default density to use for new elements
     real64 const defaultViscosity;                    ///< default vi to use for new elements
   };
 
-  /**
-   * @brief Structure holding views into thermal fluid properties used by the base solver.
-   */
-  struct ThermalFluidPropViews
-  {
-    arrayView2d< real64 const > const dDens_dTemp;      ///< derivative of density w.r.t. temperature
-    arrayView2d< real64 const > const dVisc_dTemp;      ///< derivative of viscosity w.r.t. temperature
-  };
 
   /**
    * @brief Extract properties from a fluid.
@@ -406,7 +402,6 @@ protected:
    */
   virtual FluidPropViews getFluidProperties( constitutive::ConstitutiveBase const & fluid ) const;
 
-  virtual ThermalFluidPropViews getThermalFluidProperties( constitutive::ConstitutiveBase const & fluid ) const;
 
 private:
   virtual void setConstitutiveNames( ElementSubRegionBase & subRegion ) const override;

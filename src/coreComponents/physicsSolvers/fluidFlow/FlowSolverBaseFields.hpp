@@ -249,22 +249,6 @@ DECLARE_FIELD( energy,
                WRITE_AND_READ,
                "Energy" );
 
-DECLARE_FIELD( dEnergy_dPressure,
-               "dEnergy_dPressure",
-               array1d< real64 >,
-               0,
-               NOPLOT,
-               NO_WRITE,
-               "Derivative of energy with respect to pressure" );
-
-DECLARE_FIELD( dEnergy_dTemperature,
-               "dEnergy_dTemperature",
-               array1d< real64 >,
-               0,
-               NOPLOT,
-               NO_WRITE,
-               "Derivative of energy with respect to temperature" );
-
 DECLARE_FIELD( energy_n,
                "energy_n",
                array1d< real64 >,
@@ -272,6 +256,14 @@ DECLARE_FIELD( energy_n,
                NOPLOT,
                NO_WRITE,
                "Energy at the previous converged time step" );
+
+DECLARE_FIELD( dEnergy,
+               "dEnergy",
+               array1d< real64 >, // TODO: change to array2d< real64 >
+               0,
+               NOPLOT,
+               NO_WRITE,
+               "Derivatives of energy" );
 
 }
 

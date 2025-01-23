@@ -30,8 +30,10 @@ TEST( SinglePhaseBaseKernels, mobility )
   int constexpr NTEST = 3;
 
   real64 const dens[NTEST]        = { 800.0, 1000.0, 1500.0 };
+
   real64 const dDens_dPres[NTEST] = { 1e-5, 1e-10, 0.0    };
   real64 const visc[NTEST]        = { 5.0, 2.0, 1.0    };
+
   real64 const dVisc_dPres[NTEST] = { 1e-7, 0.0, 0.0    };
 
   for( int i = 0; i < NTEST; ++i )

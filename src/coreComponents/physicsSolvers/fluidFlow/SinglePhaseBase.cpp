@@ -38,6 +38,7 @@
 #include "mainInterface/ProblemManager.hpp"
 #include "mesh/DomainPartition.hpp"
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
+#include "physicsSolvers/KernelLaunchSelectors.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/SinglePhaseBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/kernels/singlePhase/MobilityKernel.hpp"
@@ -69,7 +70,7 @@ SinglePhaseBase::SinglePhaseBase( const string & name,
     appendDescription( GEOS_FMT( "\nSourceFluxes application if {} is enabled :\n"
                                  "- negative value (injection): the mass balance equation is modified to considered the additional source term,\n"
                                  "- positive value (production): both the mass balance and the energy balance equations are modified to considered the additional source term.\n"
-                                 "For the energy balance equation, the mass flux is multipied by the enthalpy in the cell from which the fluid is being produced.",
+                                 "For the energy balance equation, the mass flux is multiplied by the enthalpy in the cell from which the fluid is being produced.",
                                  viewKeyStruct::isThermalString() ) );
 }
 
@@ -92,17 +93,11 @@ void SinglePhaseBase::registerDataOnMesh( Group & meshBodies )
                                                                    ElementSubRegionBase & subRegion )
     {
       subRegion.registerField< fields::flow::mobility >( getName() );
-      subRegion.registerField< fields::flow::dMobility_dPressure >( getName() );
+      subRegion.registerField< fields::flow::dMobility >( getName()).reference().resizeDimension< 1 >( m_numDofPerCell );
 
       subRegion.registerField< fields::flow::mass >( getName() );
-      subRegion.registerField< fields::flow::dMass_dPressure >( getName() );
       subRegion.registerField< fields::flow::mass_n >( getName() );
-
-      if( m_isThermal )
-      {
-        subRegion.registerField< fields::flow::dMobility_dTemperature >( getName() );
-        subRegion.registerField< fields::flow::dMass_dTemperature >( getName() );
-      }
+      subRegion.registerField< fields::flow::dMass >( getName() ).reference().resizeDimension< 1 >( m_numDofPerCell );;
     } );
 
     elemManager.forElementSubRegions< SurfaceElementSubRegion >( regionNames,
@@ -205,18 +200,11 @@ SinglePhaseBase::FluidPropViews SinglePhaseBase::getFluidProperties( Constitutiv
 {
   SingleFluidBase const & singleFluid = dynamicCast< SingleFluidBase const & >( fluid );
   return { singleFluid.density(),
-           singleFluid.dDensity_dPressure(),
+           singleFluid.dDensity(),
            singleFluid.viscosity(),
-           singleFluid.dViscosity_dPressure(),
+           singleFluid.dViscosity(),
            singleFluid.defaultDensity(),
            singleFluid.defaultViscosity() };
-}
-
-SinglePhaseBase::ThermalFluidPropViews SinglePhaseBase::getThermalFluidProperties( ConstitutiveBase const & fluid ) const
-{
-  SingleFluidBase const & singleFluid = dynamicCast< SingleFluidBase const & >( fluid );
-  return { singleFluid.dDensity_dTemperature(),
-           singleFluid.dViscosity_dTemperature() };
 }
 
 void SinglePhaseBase::initializePreSubGroups()
@@ -283,9 +271,9 @@ void SinglePhaseBase::updateMass( ElementSubRegionBase & subRegion ) const
 
   SingleFluidBase & fluid =
     getConstitutiveModel< SingleFluidBase >( subRegion, subRegion.getReference< string >( viewKeyStruct::fluidNamesString() ) );
-  arrayView2d< real64 const > const density = fluid.density();
+  arrayView2d< real64 const, singlefluid::USD_FLUID > const density = fluid.density();
+  arrayView2d< real64 const, singlefluid::USD_FLUID > const density_n = fluid.density_n();
   arrayView2d< real64 const > const dDensity_dP = fluid.dDensity_dPressure();
-  arrayView2d< real64 const > const density_n = fluid.density_n();
 
   forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const ei )
   {
@@ -332,10 +320,10 @@ void SinglePhaseBase::updateEnergy( ElementSubRegionBase & subRegion ) const
 
   SingleFluidBase & fluid =
     getConstitutiveModel< SingleFluidBase >( subRegion, subRegion.getReference< string >( viewKeyStruct::fluidNamesString() ) );
-  arrayView2d< real64 const > const density = fluid.density();
+  arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const density = fluid.density();
+  arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const fluidInternalEnergy = fluid.internalEnergy();
   arrayView2d< real64 const > const dDensity_dP = fluid.dDensity_dPressure();
   arrayView2d< real64 const > const dDensity_dT = fluid.dDensity_dTemperature();
-  arrayView2d< real64 const > const fluidInternalEnergy = fluid.internalEnergy();
   arrayView2d< real64 const > const dFluidInternalEnergy_dP = fluid.dInternalEnergy_dPressure();
   arrayView2d< real64 const > const dFluidInternalEnergy_dT = fluid.dInternalEnergy_dTemperature();
 
@@ -394,44 +382,25 @@ void SinglePhaseBase::updateMobility( ObjectManagerBase & dataGroup ) const
   GEOS_MARK_FUNCTION;
 
   // output
-
   arrayView1d< real64 > const mob = dataGroup.getField< fields::flow::mobility >();
-  arrayView1d< real64 > const dMob_dPres = dataGroup.getField< fields::flow::dMobility_dPressure >();
+  arrayView2d< real64, constitutive::singlefluid::USD_FLUID > const dMobility = dataGroup.getField< fields::flow::dMobility >();
 
   // input
-
   SingleFluidBase & fluid =
     getConstitutiveModel< SingleFluidBase >( dataGroup, dataGroup.getReference< string >( viewKeyStruct::fluidNamesString() ) );
   FluidPropViews fluidProps = getFluidProperties( fluid );
 
-  if( m_isThermal )
-  {
-    arrayView1d< real64 > const dMob_dTemp =
-      dataGroup.getField< fields::flow::dMobility_dTemperature >();
+  geos::internal::kernelLaunchSelectorThermalSwitch( m_isThermal, [&] ( auto ISTHERMAL ) {
+    integer constexpr NUMDOF = ISTHERMAL() + 1;
+    singlePhaseBaseKernels::MobilityKernel::compute_value_and_derivatives< parallelDevicePolicy<>, NUMDOF >( dataGroup.size(),
+                                                                                                             fluidProps.dens,
+                                                                                                             fluidProps.dDens,
+                                                                                                             fluidProps.visc,
+                                                                                                             fluidProps.dVisc,
+                                                                                                             mob,
+                                                                                                             dMobility );
+  } );
 
-    ThermalFluidPropViews thermalFluidProps = getThermalFluidProperties( fluid );
-
-    singlePhaseBaseKernels::MobilityKernel::launch< parallelDevicePolicy<> >( dataGroup.size(),
-                                                                              fluidProps.dens,
-                                                                              fluidProps.dDens_dPres,
-                                                                              thermalFluidProps.dDens_dTemp,
-                                                                              fluidProps.visc,
-                                                                              fluidProps.dVisc_dPres,
-                                                                              thermalFluidProps.dVisc_dTemp,
-                                                                              mob,
-                                                                              dMob_dPres,
-                                                                              dMob_dTemp );
-  }
-  else
-  {
-    singlePhaseBaseKernels::MobilityKernel::launch< parallelDevicePolicy<> >( dataGroup.size(),
-                                                                              fluidProps.dens,
-                                                                              fluidProps.dDens_dPres,
-                                                                              fluidProps.visc,
-                                                                              fluidProps.dVisc_dPres,
-                                                                              mob,
-                                                                              dMob_dPres );
-  }
 }
 
 void SinglePhaseBase::initializePostInitialConditionsPreSubGroups()
@@ -784,7 +753,7 @@ void SinglePhaseBase::implicitStepComplete( real64 const & time,
 
       SingleFluidBase const & fluid =
         getConstitutiveModel< SingleFluidBase >( subRegion, subRegion.template getReference< string >( viewKeyStruct::fluidNamesString() ) );
-      arrayView2d< real64 const > const density_n = fluid.density_n();
+      arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const density_n = fluid.density_n();
 
       forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const ei )
       {
@@ -1086,20 +1055,19 @@ void SinglePhaseBase::applySourceFluxBC( real64 const time_n,
 
       if( isThermal )
       {
+        using DerivOffset = constitutive::singlefluid::DerivativeOffsetC< 1 >;
         SingleFluidBase const & fluid =
           getConstitutiveModel< SingleFluidBase >( subRegion, subRegion.template getReference< string >( viewKeyStruct::fluidNamesString() ) );
 
-        arrayView2d< real64 const > const enthalpy = fluid.enthalpy();
-        arrayView2d< real64 const > const dEnthalpy_dTemperature = fluid.dEnthalpy_dTemperature();
-        arrayView2d< real64 const > const dEnthalpy_dPressure    = fluid.dEnthalpy_dPressure();
+        arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const enthalpy = fluid.enthalpy();
+        arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > const dEnthalpy = fluid.dEnthalpy();
         forAll< parallelDevicePolicy<> >( targetSet.size(), [sizeScalingFactor,
                                                              targetSet,
                                                              rankOffset,
                                                              ghostRank,
                                                              dofNumber,
                                                              enthalpy,
-                                                             dEnthalpy_dTemperature,
-                                                             dEnthalpy_dPressure,
+                                                             dEnthalpy,
                                                              rhsContributionArrayView,
                                                              localRhs,
                                                              localMatrix,
@@ -1127,7 +1095,7 @@ void SinglePhaseBase::applySourceFluxBC( real64 const time_n,
             localRhs[energyRowIndex] += enthalpy[ei][0] * rhsValue;
 
             globalIndex dofIndices[2]{pressureDofIndex, temperatureDofIndex};
-            real64 jacobian[2]{rhsValue * dEnthalpy_dPressure[ei][0], rhsValue * dEnthalpy_dTemperature[ei][0]};
+            real64 jacobian[2]{rhsValue * dEnthalpy[ei][0][DerivOffset::dP], rhsValue * dEnthalpy[ei][0][DerivOffset::dT]};
 
             localMatrix.template addToRow< serialAtomic >( energyRowIndex,
                                                            dofIndices,

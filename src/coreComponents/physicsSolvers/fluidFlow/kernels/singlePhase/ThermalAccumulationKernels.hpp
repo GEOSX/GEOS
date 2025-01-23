@@ -49,6 +49,9 @@ public:
   using Base::m_localMatrix;
   using Base::m_localRhs;
 
+  /// Note: Derivative lineup only supports dP & dT, not component terms
+  static constexpr integer isThermal = NUM_DOF-1;
+  using DerivOffset = constitutive::singlefluid::DerivativeOffsetC< isThermal >;
   /**
    * @brief Constructor
    * @param[in] rankOffset the offset of my MPI rank
@@ -66,10 +69,9 @@ public:
                       arrayView1d< real64 > const & localRhs )
     : Base( rankOffset, dofKey, subRegion, localMatrix, localRhs ),
     m_energy( subRegion.template getField< fields::flow::energy >() ),
-    m_dEnergy_dPres( subRegion.template getField< fields::flow::dEnergy_dPressure >() ),
-    m_dEnergy_dTemp( subRegion.template getField< fields::flow::dEnergy_dTemperature >() ),
     m_energy_n( subRegion.template getField< fields::flow::energy_n >() ),
-    m_dMass_dTemp( subRegion.template getField< fields::flow::dMass_dTemperature >() )
+    m_dEnergy( subRegion.template getField< fields::flow::dEnergy >() ),
+    m_dMass( subRegion.template getField< fields::flow::dMass >() )
   {}
 
   /**
@@ -93,12 +95,12 @@ public:
     Base::computeAccumulation( ei, stack );
 
     // assemble the derivatives of the mass balance equation w.r.t temperature
-    stack.localJacobian[0][numDof-1] = m_dMass_dTemp[ei];
+    stack.localJacobian[0][numDof-1] = m_dMass[ei][DerivOffset::dT];
 
     // assemble the accumulation term of the energy equation
     stack.localResidual[numEqn-1] = m_energy[ei] - m_energy_n[ei];
-    stack.localJacobian[numEqn-1][0] += m_dEnergy_dPres[ei];
-    stack.localJacobian[numEqn-1][numDof-1] += m_dEnergy_dTemp[ei];
+    stack.localJacobian[numEqn-1][0] += m_dEnergy[ei][DerivOffset::dP];
+    stack.localJacobian[numEqn-1][numDof-1] += m_dEnergy[ei][DerivOffset::dT];
   }
 
   /**
@@ -125,12 +127,11 @@ protected:
 
   /// View on energy
   arrayView1d< real64 const > const m_energy;
-  arrayView1d< real64 const > const m_dEnergy_dPres;
-  arrayView1d< real64 const > const m_dEnergy_dTemp;
   arrayView1d< real64 const > const m_energy_n;
+  arrayView2d< real64 const > const m_dEnergy;
 
   /// View on mass derivative
-  arrayView1d< real64 const > const m_dMass_dTemp;
+  arrayView2d< real64 const > const m_dMass;
 
 };
 

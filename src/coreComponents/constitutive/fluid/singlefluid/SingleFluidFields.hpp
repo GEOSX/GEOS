@@ -21,7 +21,8 @@
 #define GEOS_CONSTITUTIVE_FLUID_SINGLEFLUIDFIELDS_HPP_
 
 #include "mesh/MeshFields.hpp"
-
+#include "constitutive/fluid/singlefluid/SingleFluidLayouts.hpp"
+#include "constitutive/fluid/singlefluid/SingleFluidUtils.hpp"
 namespace geos
 {
 
@@ -31,33 +32,28 @@ namespace fields
 namespace singlefluid
 {
 
+using array2dLayoutFluid = array2d< real64, constitutive::singlefluid::LAYOUT_FLUID >;
+using array3dLayoutFluid_der = array3d< real64, constitutive::singlefluid::LAYOUT_FLUID_DER >;
+
 DECLARE_FIELD( density,
                "density",
-               array2d< real64 >,
+               array2dLayoutFluid,
                0,
                LEVEL_0,
                WRITE_AND_READ,
                "Density" );
 
-DECLARE_FIELD( dDensity_dPressure,
-               "dDensity_dPressure",
-               array2d< real64 >,
+DECLARE_FIELD( dDensity,
+               "dDensity",
+               array3dLayoutFluid_der,
                0,
-               NOPLOT,
+               LEVEL_0,
                WRITE_AND_READ,
-               "Derivative of density with respect to pressure" );
-
-DECLARE_FIELD( dDensity_dTemperature,
-               "dDensity_dTemperature",
-               array2d< real64 >,
-               0,
-               NOPLOT,
-               WRITE_AND_READ,
-               "Derivative of density with respect to temperature" );
+               "dDensity" );
 
 DECLARE_FIELD( density_n,
                "density_n",
-               array2d< real64 >,
+               array2dLayoutFluid,
                0,
                NOPLOT,
                WRITE_AND_READ,
@@ -65,84 +61,59 @@ DECLARE_FIELD( density_n,
 
 DECLARE_FIELD( viscosity,
                "viscosity",
-               array2d< real64 >,
+               array2dLayoutFluid,
                0,
-               NOPLOT,
+               LEVEL_0,
                WRITE_AND_READ,
                "Viscosity" );
 
-DECLARE_FIELD( dViscosity_dPressure,
-               "dViscosity_dPressure",
-               array2d< real64 >,
+DECLARE_FIELD( dViscosity,
+               "dViscosity",
+               array3dLayoutFluid_der,
                0,
-               NOPLOT,
+               LEVEL_0,
                WRITE_AND_READ,
-               "Derivative of viscosity with respect to pressure" );
-
-DECLARE_FIELD( dViscosity_dTemperature,
-               "dViscosity_dTemperature",
-               array2d< real64 >,
-               0,
-               NOPLOT,
-               WRITE_AND_READ,
-               "Derivative of viscosity with respect to temperature" );
+               "dViscosity" );
 
 DECLARE_FIELD( internalEnergy,
                "internalEnergy",
-               array2d< real64 >,
+               array2dLayoutFluid,
                0,
-               NOPLOT,
+               LEVEL_0,
                WRITE_AND_READ,
-               "Internal energy" );
+               "InternalEnergy" );
+
+DECLARE_FIELD( dInternalEnergy,
+               "dInternalEnergy",
+               array3dLayoutFluid_der,
+               0,
+               LEVEL_0,
+               WRITE_AND_READ,
+               "dInternalEnergy" );
 
 DECLARE_FIELD( internalEnergy_n,
                "internalEnergy_n",
-               array2d< real64 >,
+               array2dLayoutFluid,
                0,
                NOPLOT,
                WRITE_AND_READ,
                "Fluid internal energy at the previous converged step" );
 
-DECLARE_FIELD( dInternalEnergy_dPressure,
-               "dInternalEnergy_dPressure",
-               array2d< real64 >,
-               0,
-               NOPLOT,
-               WRITE_AND_READ,
-               "Derivative of internal energy with respect to pressure" );
-
-DECLARE_FIELD( dInternalEnergy_dTemperature,
-               "dInternalEnergy_dTemperature",
-               array2d< real64 >,
-               0,
-               NOPLOT,
-               WRITE_AND_READ,
-               "Derivative of internal energy with respect to temperature" );
-
 DECLARE_FIELD( enthalpy,
                "enthalpy",
-               array2d< real64 >,
+               array2dLayoutFluid,
                0,
-               NOPLOT,
+               LEVEL_0,
                WRITE_AND_READ,
                "Enthalpy" );
 
-DECLARE_FIELD( dEnthalpy_dPressure,
-               "dEnthalpy_dPressure",
-               array2d< real64 >,
+DECLARE_FIELD( dEnthalpy,
+               "dEnthalpy",
+               array3dLayoutFluid_der,
                0,
-               NOPLOT,
+               LEVEL_0,
                WRITE_AND_READ,
-               "Derivative of enthalpy with respect to pressure" );
-
-DECLARE_FIELD( dEnthalpy_dTemperature,
-               "dEnthalpy_dTemperature",
-               array2d< real64 >,
-               0,
-               NOPLOT,
-               WRITE_AND_READ,
-               "Derivative of enthalpy with respect to temperature" );
-
+               "dEnthalpy" );
 }
 
 }

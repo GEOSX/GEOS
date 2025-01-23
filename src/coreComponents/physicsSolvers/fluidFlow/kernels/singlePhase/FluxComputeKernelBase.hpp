@@ -62,23 +62,25 @@ public:
 
   using DofNumberAccessor = ElementRegionManager::ElementViewAccessor< arrayView1d< globalIndex const > >;
 
+  using SingleFluidProp = constitutive::SingleFluidVar< real64, 2, constitutive::singlefluid::LAYOUT_FLUID, constitutive::singlefluid::LAYOUT_FLUID_DER >;
+
   using SinglePhaseFlowAccessors =
     StencilAccessors< fields::ghostRank,
                       fields::flow::pressure,
                       fields::flow::pressure_n,
                       fields::flow::gravityCoefficient,
                       fields::flow::mobility,
-                      fields::flow::dMobility_dPressure >;
+                      fields::flow::dMobility >;
 
   using SinglePhaseFluidAccessors =
     StencilMaterialAccessors< constitutive::SingleFluidBase,
                               fields::singlefluid::density,
-                              fields::singlefluid::dDensity_dPressure >;
+                              fields::singlefluid::dDensity >;
 
   using SlurryFluidAccessors =
     StencilMaterialAccessors< constitutive::SlurryFluidBase,
                               fields::singlefluid::density,
-                              fields::singlefluid::dDensity_dPressure >;
+                              fields::singlefluid::dDensity >;
 
   using PermeabilityAccessors =
     StencilMaterialAccessors< constitutive::PermeabilityBase,
@@ -120,9 +122,9 @@ public:
     m_gravCoef( singlePhaseFlowAccessors.get( fields::flow::gravityCoefficient {} ) ),
     m_pres( singlePhaseFlowAccessors.get( fields::flow::pressure {} ) ),
     m_mob( singlePhaseFlowAccessors.get( fields::flow::mobility {} ) ),
-    m_dMob_dPres( singlePhaseFlowAccessors.get( fields::flow::dMobility_dPressure {} ) ),
+    m_dMob( singlePhaseFlowAccessors.get( fields::flow::dMobility {} ) ),
     m_dens( singlePhaseFluidAccessors.get( fields::singlefluid::density {} ) ),
-    m_dDens_dPres( singlePhaseFluidAccessors.get( fields::singlefluid::dDensity_dPressure {} ) ),
+    m_dDens( singlePhaseFluidAccessors.get( fields::singlefluid::dDensity {} ) ),
     m_localMatrix( localMatrix ),
     m_localRhs( localRhs )
   {}
@@ -152,11 +154,12 @@ protected:
 
   /// Views on fluid mobility
   ElementViewConst< arrayView1d< real64 const > > const m_mob;
+  ElementViewConst< arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > > const m_dMob;
   ElementViewConst< arrayView1d< real64 const > > const m_dMob_dPres;
 
   /// Views on fluid density
-  ElementViewConst< arrayView2d< real64 const > > const m_dens;
-  ElementViewConst< arrayView2d< real64 const > > const m_dDens_dPres;
+  ElementViewConst< arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > > const m_dens;
+  ElementViewConst< arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > > const m_dDens;
 
   // Residual and jacobian
 

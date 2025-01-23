@@ -48,6 +48,7 @@ public:
                                                                CONSTITUTIVE_TYPE,
                                                                FE_TYPE >;
 
+  using DerivOffset = constitutive::singlefluid::DerivativeOffsetC< 1 >;
   /// Maximum number of nodes per element, which is equal to the maxNumTestSupportPointPerElem and
   /// maxNumTrialSupportPointPerElem by definition. When the FE_TYPE is not a Virtual Element, this
   /// will be the actual number of nodes per element.
@@ -67,7 +68,7 @@ public:
   using Base::m_pressure_n;
   using Base::m_fluidDensity;
   using Base::m_fluidDensity_n;
-  using Base::m_dFluidDensity_dPressure;
+  using Base::m_dFluidDensity;
   using Base::m_solidDensity;
   using Base::m_flowDofNumber;
   using Base::m_dt;
@@ -279,14 +280,11 @@ public:
 
 protected:
 
-  /// Views on fluid density derivative wrt temperature
-  arrayView2d< real64 const > const m_dFluidDensity_dTemperature;
-
   /// Views on fluid internal energy
-  arrayView2d< real64 const > const m_fluidInternalEnergy_n;
-  arrayView2d< real64 const > const m_fluidInternalEnergy;
-  arrayView2d< real64 const > const m_dFluidInternalEnergy_dPressure;
-  arrayView2d< real64 const > const m_dFluidInternalEnergy_dTemperature;
+  arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const m_fluidInternalEnergy_n;
+  arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const m_fluidInternalEnergy;
+  arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > const m_dFluidInternalEnergy;
+
 
   /// Views on rock internal energy
   arrayView2d< real64 const > const m_rockInternalEnergy_n;

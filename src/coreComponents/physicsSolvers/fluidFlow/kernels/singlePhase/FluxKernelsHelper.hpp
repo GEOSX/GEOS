@@ -22,6 +22,7 @@
 
 #include "common/DataTypes.hpp"
 #include "mesh/ElementRegionManager.hpp"
+#include "constitutive/fluid/singlefluid/SingleFluidLayouts.hpp"
 
 namespace geos
 {
@@ -47,10 +48,10 @@ void computeSinglePhaseFlux( localIndex const ( &seri )[2],
                              real64 const ( &dTrans_dPres )[2],
                              ElementViewConst< arrayView1d< real64 const > > const & pres,
                              ElementViewConst< arrayView1d< real64 const > > const & gravCoef,
-                             ElementViewConst< arrayView2d< real64 const > > const & dens,
-                             ElementViewConst< arrayView2d< real64 const > > const & dDens_dPres,
+                             ElementViewConst< arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > > const & dens,
+                             ElementViewConst< arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > > const & dDens,
                              ElementViewConst< arrayView1d< real64 const > > const & mob,
-                             ElementViewConst< arrayView1d< real64 const > > const & dMob_dPres,
+                             ElementViewConst< arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > > const & dMob,
                              real64 & alpha,
                              real64 & mobility,
                              real64 & potGrad,
@@ -58,6 +59,7 @@ void computeSinglePhaseFlux( localIndex const ( &seri )[2],
                              real64 ( & dFlux_dP )[2],
                              real64 & dFlux_dTrans )
 {
+  using DerivOffset = constitutive::singlefluid::DerivativeOffsetC< 0 >;
   // average density
   real64 densMean = 0.0;
   real64 dDensMean_dP[2];
@@ -65,7 +67,7 @@ void computeSinglePhaseFlux( localIndex const ( &seri )[2],
   for( localIndex ke = 0; ke < 2; ++ke )
   {
     densMean        += 0.5 * dens[seri[ke]][sesri[ke]][sei[ke]][0];
-    dDensMean_dP[ke] = 0.5 * dDens_dPres[seri[ke]][sesri[ke]][sei[ke]][0];
+    dDensMean_dP[ke] = 0.5 * dDens[seri[ke]][sesri[ke]][sei[ke]][0][DerivOffset::dP];
   }
 
   // compute potential difference
@@ -104,7 +106,7 @@ void computeSinglePhaseFlux( localIndex const ( &seri )[2],
     // happy path: single upwind direction
     localIndex const ke = 1 - localIndex( fmax( fmin( alpha, 1.0 ), 0.0 ) );
     mobility = mob[seri[ke]][sesri[ke]][sei[ke]];
-    dMobility_dP[ke] = dMob_dPres[seri[ke]][sesri[ke]][sei[ke]];
+    dMobility_dP[ke] = dMob[seri[ke]][sesri[ke]][sei[ke]][DerivOffset::dP];
   }
   else
   {
@@ -113,7 +115,7 @@ void computeSinglePhaseFlux( localIndex const ( &seri )[2],
     for( localIndex ke = 0; ke < 2; ++ke )
     {
       mobility += mobWeights[ke] * mob[seri[ke]][sesri[ke]][sei[ke]];
-      dMobility_dP[ke] = mobWeights[ke] * dMob_dPres[seri[ke]][sesri[ke]][sei[ke]];
+      dMobility_dP[ke] = mobWeights[ke] * dMob[seri[ke]][sesri[ke]][sei[ke]][DerivOffset::dP];
     }
   }
 
@@ -137,12 +139,11 @@ void computeEnthalpyFlux( localIndex const ( &seri )[2],
                           localIndex const ( &sesri )[2],
                           localIndex const ( &sei )[2],
                           real64 const ( &transmissibility )[2],
-                          ElementViewConst< arrayView2d< real64 const > > const & enthalpy,
-                          ElementViewConst< arrayView2d< real64 const > > const & dEnthalpy_dPressure,
-                          ElementViewConst< arrayView2d< real64 const > > const & dEnthalpy_dTemperature,
+                          ElementViewConst< arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > > const & enthalpy,
+                          ElementViewConst< arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > > const & dEnthalpy,
                           ElementViewConst< arrayView1d< real64 const > > const & gravCoef,
-                          ElementViewConst< arrayView2d< real64 const > > const & dDens_dTemp,
-                          ElementViewConst< arrayView1d< real64 const > > const & dMob_dTemp,
+                          ElementViewConst< arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > > const & dDens,
+                          ElementViewConst< arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > > const & dMob,
                           real64 const & alpha,
                           real64 const & mobility,
                           real64 const & potGrad,
@@ -156,12 +157,12 @@ void computeEnthalpyFlux( localIndex const ( &seri )[2],
                           ENERGYFLUX_DERIVATIVE_TYPE & dEnergyFlux_dT )
 {
   // Step 1: compute the derivatives of the mean density at the interface wrt temperature
-
+  using DerivOffset = constitutive::singlefluid::DerivativeOffsetC< 1 >;
   real64 dDensMean_dT[2]{0.0, 0.0};
 
   for( integer ke = 0; ke < 2; ++ke )
   {
-    real64 const dDens_dT = dDens_dTemp[seri[ke]][sesri[ke]][sei[ke]][0];
+    real64 const dDens_dT = dDens[seri[ke]][sesri[ke]][sei[ke]][0][DerivOffset::dT];
     dDensMean_dT[ke] = 0.5 * dDens_dT;
   }
 
@@ -206,14 +207,14 @@ void computeEnthalpyFlux( localIndex const ( &seri )[2],
   {
     localIndex const k_up = 1 - localIndex( fmax( fmin( alpha, 1.0 ), 0.0 ) );
 
-    dMob_dT[k_up] = dMob_dTemp[seri[k_up]][sesri[k_up]][sei[k_up]];
+    dMob_dT[k_up] = dMob[seri[k_up]][sesri[k_up]][sei[k_up]][DerivOffset::dT];
   }
   else
   {
     real64 const mobWeights[2] = { alpha, 1.0 - alpha };
     for( integer ke = 0; ke < 2; ++ke )
     {
-      dMob_dT[ke] = mobWeights[ke] * dMob_dTemp[seri[ke]][sesri[ke]][sei[ke]];
+      dMob_dT[ke] = mobWeights[ke] * dMob[seri[ke]][sesri[ke]][sei[ke]][DerivOffset::dT];
     }
   }
 
@@ -233,8 +234,8 @@ void computeEnthalpyFlux( localIndex const ( &seri )[2],
     localIndex const k_up = 1 - localIndex( fmax( fmin( alpha, 1.0 ), 0.0 ) );
 
     enthalpyTimesMobWeight = enthalpy[seri[k_up]][sesri[k_up]][sei[k_up]][0];
-    dEnthalpy_dP[k_up] = dEnthalpy_dPressure[seri[k_up]][sesri[k_up]][sei[k_up]][0];
-    dEnthalpy_dT[k_up] = dEnthalpy_dTemperature[seri[k_up]][sesri[k_up]][sei[k_up]][0];
+    dEnthalpy_dP[k_up] = dEnthalpy[seri[k_up]][sesri[k_up]][sei[k_up]][0][DerivOffset::dP];
+    dEnthalpy_dT[k_up] = dEnthalpy[seri[k_up]][sesri[k_up]][sei[k_up]][0][DerivOffset::dT];
   }
   else
   {
@@ -242,8 +243,8 @@ void computeEnthalpyFlux( localIndex const ( &seri )[2],
     for( integer ke = 0; ke < 2; ++ke )
     {
       enthalpyTimesMobWeight += mobWeights[ke] * enthalpy[seri[ke]][sesri[ke]][sei[ke]][0];
-      dEnthalpy_dP[ke] = mobWeights[ke] * dEnthalpy_dPressure[seri[ke]][sesri[ke]][sei[ke]][0];
-      dEnthalpy_dT[ke] = mobWeights[ke] * dEnthalpy_dTemperature[seri[ke]][sesri[ke]][sei[ke]][0];
+      dEnthalpy_dP[ke] = mobWeights[ke] * dEnthalpy[seri[ke]][sesri[ke]][sei[ke]][0][DerivOffset::dP];
+      dEnthalpy_dT[ke] = mobWeights[ke] * dEnthalpy[seri[ke]][sesri[ke]][sei[ke]][0][DerivOffset::dT];
     }
   }
 

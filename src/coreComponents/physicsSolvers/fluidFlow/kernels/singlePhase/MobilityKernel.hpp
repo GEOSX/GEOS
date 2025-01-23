@@ -22,6 +22,7 @@
 
 #include "common/DataTypes.hpp"
 #include "common/GEOS_RAJA_Interface.hpp"
+#include "constitutive/fluid/singlefluid/SingleFluidLayouts.hpp"
 
 namespace geos
 {
@@ -33,39 +34,6 @@ namespace singlePhaseBaseKernels
 
 struct MobilityKernel
 {
-  // Isothermal version
-  GEOS_HOST_DEVICE
-  inline
-  static void
-  compute( real64 const & dens,
-           real64 const & dDens_dPres,
-           real64 const & visc,
-           real64 const & dVisc_dPres,
-           real64 & mob,
-           real64 & dMob_dPres )
-  {
-    mob = dens / visc;
-    dMob_dPres = dDens_dPres / visc - mob / visc * dVisc_dPres;
-  }
-
-// Thermal version
-  GEOS_HOST_DEVICE
-  inline
-  static void
-  compute( real64 const & dens,
-           real64 const & dDens_dPres,
-           real64 const & dDens_dTemp,
-           real64 const & visc,
-           real64 const & dVisc_dPres,
-           real64 const & dVisc_dTemp,
-           real64 & mob,
-           real64 & dMob_dPres,
-           real64 & dMob_dTemp )
-  {
-    mob = dens / visc;
-    dMob_dPres = dDens_dPres / visc - mob / visc * dVisc_dPres;
-    dMob_dTemp = dDens_dTemp / visc - mob / visc * dVisc_dTemp;
-  }
 
 // Value-only (no derivatives) version
   GEOS_HOST_DEVICE
@@ -78,59 +46,32 @@ struct MobilityKernel
     mob = dens / visc;
   }
 
-  // Isothermal version
-  template< typename POLICY >
-  static void launch( localIndex const size,
-                      arrayView2d< real64 const > const & dens,
-                      arrayView2d< real64 const > const & dDens_dPres,
-                      arrayView2d< real64 const > const & visc,
-                      arrayView2d< real64 const > const & dVisc_dPres,
-                      arrayView1d< real64 > const & mob,
-                      arrayView1d< real64 > const & dMob_dPres )
+  // Computes mobility and derivtives
+  template< typename POLICY, integer NUMDOF >
+  static void compute_value_and_derivatives( localIndex const size,
+                                             arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const & density,
+                                             arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > const & dDensity,
+                                             arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const & viscosity,
+                                             arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > const & dViscosity,
+                                             arrayView1d< real64 > const & mobility,
+                                             arrayView2d< real64, constitutive::singlefluid::USD_FLUID > const & dMobility )
   {
     forAll< POLICY >( size, [=] GEOS_HOST_DEVICE ( localIndex const a )
     {
-      compute( dens[a][0],
-               dDens_dPres[a][0],
-               visc[a][0],
-               dVisc_dPres[a][0],
-               mob[a],
-               dMob_dPres[a] );
+      mobility[a] = density[a][0] / viscosity[a][0];
+      for( int i=0; i<NUMDOF; i++ )
+      {
+        dMobility[a][i] = dDensity[a][0][i]/viscosity[a][0] - mobility[a]/viscosity[a][0]*dViscosity[a][0][i];
+      }
+
     } );
   }
 
-  // Thermal version
+  // Value-only (no derivatives) version
   template< typename POLICY >
   static void launch( localIndex const size,
-                      arrayView2d< real64 const > const & dens,
-                      arrayView2d< real64 const > const & dDens_dPres,
-                      arrayView2d< real64 const > const & dDens_dTemp,
-                      arrayView2d< real64 const > const & visc,
-                      arrayView2d< real64 const > const & dVisc_dPres,
-                      arrayView2d< real64 const > const & dVisc_dTemp,
-                      arrayView1d< real64 > const & mob,
-                      arrayView1d< real64 > const & dMob_dPres,
-                      arrayView1d< real64 > const & dMob_dTemp )
-  {
-    forAll< POLICY >( size, [=] GEOS_HOST_DEVICE ( localIndex const a )
-    {
-      compute( dens[a][0],
-               dDens_dPres[a][0],
-               dDens_dTemp[a][0],
-               visc[a][0],
-               dVisc_dPres[a][0],
-               dVisc_dTemp[a][0],
-               mob[a],
-               dMob_dPres[a],
-               dMob_dTemp[a] );
-    } );
-  }
-
-// Value-only (no derivatives) version
-  template< typename POLICY >
-  static void launch( localIndex const size,
-                      arrayView2d< real64 const > const & dens,
-                      arrayView2d< real64 const > const & visc,
+                      arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const & dens,
+                      arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const & visc,
                       arrayView1d< real64 > const & mob )
   {
     forAll< POLICY >( size, [=] GEOS_HOST_DEVICE ( localIndex const a )

@@ -23,6 +23,7 @@
 #include "common/DataTypes.hpp"
 #include "common/GEOS_RAJA_Interface.hpp"
 #include "constitutive/fluid/singlefluid/SingleFluidBase.hpp"
+#include "constitutive/fluid/singlefluid/SingleFluidUtils.hpp"
 #include "constitutive/solid/CoupledSolidBase.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/SinglePhaseBaseFields.hpp"
@@ -45,12 +46,18 @@ class AccumulationKernel
 {
 
 public:
+  using SingleFluidProp = constitutive::SingleFluidVar< real64, 2, constitutive::singlefluid::LAYOUT_FLUID, constitutive::singlefluid::LAYOUT_FLUID_DER >;
 
   /// Compute time value for the number of degrees of freedom
   static constexpr integer numDof = NUM_DOF;
 
   /// Compute time value for the number of equations
   static constexpr integer numEqn = NUM_DOF;
+
+
+  /// Note: Derivative lineup only supports dP & dT, not component terms
+  static constexpr integer isThermal = NUM_DOF-1;
+  using DerivOffset = constitutive::singlefluid::DerivativeOffsetC< isThermal >;
 
   /**
    * @brief Constructor
@@ -70,8 +77,8 @@ public:
     m_dofNumber( subRegion.template getReference< array1d< globalIndex > >( dofKey ) ),
     m_elemGhostRank( subRegion.ghostRank() ),
     m_mass( subRegion.template getField< fields::flow::mass >() ),
-    m_dMass_dPres( subRegion.template getField< fields::flow::dMass_dPressure >() ),
     m_mass_n( subRegion.template getField< fields::flow::mass_n >() ),
+    m_dMass( subRegion.template getField< fields::flow::dMass >() ),
     m_localMatrix( localMatrix ),
     m_localRhs( localRhs )
   {}
@@ -144,7 +151,7 @@ public:
     stack.localResidual[0] = m_mass[ei] - m_mass_n[ei];
 
     // Derivative of residual wrt to pressure in the cell
-    stack.localJacobian[0][0] = m_dMass_dPres[ei];
+    stack.localJacobian[0][0] = m_dMass[ei][0][DerivOffset::dP];
 
     // Customize the kernel with this lambda
     kernelOp();
@@ -210,8 +217,8 @@ protected:
 
   /// View on mass
   arrayView1d< real64 const > const m_mass;
-  arrayView1d< real64 const > const m_dMass_dPres;
   arrayView1d< real64 const > const m_mass_n;
+  arrayView2d< real64 const > const m_dMass; // TODO check...
 
   /// View on the local CRS matrix
   CRSMatrixView< real64, globalIndex const > const m_localMatrix;

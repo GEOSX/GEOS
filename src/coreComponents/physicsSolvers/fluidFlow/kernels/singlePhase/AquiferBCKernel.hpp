@@ -81,14 +81,15 @@ struct AquiferBCKernel
           ElementViewConst< arrayView1d< real64 const > > const & pres,
           ElementViewConst< arrayView1d< real64 const > > const & pres_n,
           ElementViewConst< arrayView1d< real64 const > > const & gravCoef,
-          ElementViewConst< arrayView2d< real64 const > > const & dens,
-          ElementViewConst< arrayView2d< real64 const > > const & dDens_dPres,
+          ElementViewConst< arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > > const & dens,
+          ElementViewConst< arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > > const & dDens,
           real64 const & timeAtBeginningOfStep,
           real64 const & dt,
           CRSMatrixView< real64, globalIndex const > const & localMatrix,
           arrayView1d< real64 > const & localRhs )
   {
     using Order = BoundaryStencil::Order;
+    using Deriv = constitutive::singlefluid::DerivativeOffset;
 
     BoundaryStencil::IndexContainerViewConstType const & seri = stencil.getElementRegionIndices();
     BoundaryStencil::IndexContainerViewConstType const & sesri = stencil.getElementSubRegionIndices();
@@ -121,7 +122,7 @@ struct AquiferBCKernel
                                 dAquiferVolFlux_dPres,
                                 aquiferDens,
                                 dens[er][esr][ei][0],
-                                dDens_dPres[er][esr][ei][0],
+                                dDens[er][esr][ei][0][Deriv::dP],
                                 dt,
                                 localFlux,
                                 localFluxJacobian );

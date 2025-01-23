@@ -34,6 +34,7 @@ namespace constitutive
 class SlurryFluidBaseUpdate
 {
 public:
+  using SingleFluidProp = SingleFluidVar< real64, 2, constitutive::singlefluid::LAYOUT_FLUID, constitutive::singlefluid::LAYOUT_FLUID_DER >;
 
   /**
    * @brief Get number of elements in this wrapper.
@@ -70,7 +71,7 @@ protected:
    * @param Ks
    * @param isNewtonianFluid
    * @param density
-   * @param dDens_dPres
+   * @param dDensity
    * @param dDens_dProppantConc
    * @param dDens_dCompConc
    * @param componentDensity
@@ -83,7 +84,7 @@ protected:
    * @param dFluidVisc_dPres
    * @param dFluidVisc_dCompConc
    * @param viscosity
-   * @param dVisc_dPres
+   * @param dViscosity
    * @param dVisc_dProppantConc
    * @param dVisc_dCompConc
    */
@@ -93,21 +94,21 @@ protected:
                          arrayView1d< real64 const > const & nIndices,
                          arrayView1d< real64 const > const & Ks,
                          bool const isNewtonianFluid,
-                         arrayView2d< real64 > const & density,
-                         arrayView2d< real64 > const & dDens_dPres,
+                         arrayView2d< real64, constitutive::singlefluid::USD_FLUID > const & density,
+                         arrayView3d< real64, constitutive::singlefluid::USD_FLUID_DER > const & dDensity,
                          arrayView2d< real64 > const & dDens_dProppantConc,
                          arrayView3d< real64 > const & dDens_dCompConc,
                          arrayView3d< real64 > const & componentDensity,
                          arrayView3d< real64 > const & dCompDens_dPres,
                          arrayView4d< real64 > const & dCompDens_dCompConc,
-                         arrayView2d< real64 > const & fluidDensity,
+                         arrayView2d< real64, constitutive::singlefluid::USD_FLUID > const & fluidDensity,
                          arrayView2d< real64 > const & dFluidDens_dPres,
                          arrayView3d< real64 > const & dFluidDens_dCompConc,
                          arrayView2d< real64 > const & fluidViscosity,
                          arrayView2d< real64 > const & dFluidVisc_dPres,
                          arrayView3d< real64 > const & dFluidVisc_dCompConc,
-                         arrayView2d< real64 > const & viscosity,
-                         arrayView2d< real64 > const & dVisc_dPres,
+                         arrayView2d< real64, constitutive::singlefluid::USD_FLUID > const & viscosity,
+                         arrayView3d< real64, constitutive::singlefluid::USD_FLUID_DER > const & dViscosity,
                          arrayView2d< real64 > const & dVisc_dProppantConc,
                          arrayView3d< real64 > const & dVisc_dCompConc )
     : m_defaultComponentDensity( defaultDensity ),
@@ -117,7 +118,7 @@ protected:
     m_Ks( Ks ),
     m_isNewtonianFluid( isNewtonianFluid ),
     m_density( density ),
-    m_dDensity_dPressure( dDens_dPres ),
+    m_dDensity( dDensity ),
     m_dDensity_dProppantConc( dDens_dProppantConc ),
     m_dDensity_dCompConc( dDens_dCompConc ),
     m_componentDensity( componentDensity ),
@@ -130,7 +131,7 @@ protected:
     m_dFluidVisc_dPres( dFluidVisc_dPres ),
     m_dFluidVisc_dCompConc( dFluidVisc_dCompConc ),
     m_viscosity( viscosity ),
-    m_dViscosity_dPressure( dVisc_dPres ),
+    m_dViscosity( dViscosity ),
     m_dViscosity_dProppantConc( dVisc_dProppantConc ),
     m_dViscosity_dCompConc( dVisc_dCompConc )
   {}
@@ -168,8 +169,9 @@ protected:
 
   bool m_isNewtonianFluid;
 
-  arrayView2d< real64 > m_density;
-  arrayView2d< real64 > m_dDensity_dPressure;
+  arrayView2d< real64, constitutive::singlefluid::USD_FLUID > m_density;
+  arrayView3d< real64, constitutive::singlefluid::USD_FLUID_DER > m_dDensity;
+
   arrayView2d< real64 > m_dDensity_dProppantConc;
   arrayView3d< real64 > m_dDensity_dCompConc;
 
@@ -177,7 +179,7 @@ protected:
   arrayView3d< real64 > m_dCompDens_dPres;
   arrayView4d< real64 > m_dCompDens_dCompConc;
 
-  arrayView2d< real64 > m_fluidDensity;
+  arrayView2d< real64, constitutive::singlefluid::USD_FLUID > m_fluidDensity;
   arrayView2d< real64 > m_dFluidDens_dPres;
   arrayView3d< real64 > m_dFluidDens_dCompConc;
 
@@ -185,8 +187,9 @@ protected:
   arrayView2d< real64 > m_dFluidVisc_dPres;
   arrayView3d< real64 > m_dFluidVisc_dCompConc;
 
-  arrayView2d< real64 > m_viscosity;
-  arrayView2d< real64 > m_dViscosity_dPressure;
+  arrayView2d< real64, constitutive::singlefluid::USD_FLUID > m_viscosity;
+  arrayView3d< real64, constitutive::singlefluid::USD_FLUID_DER > m_dViscosity;
+
   arrayView2d< real64 > m_dViscosity_dProppantConc;
   arrayView3d< real64 > m_dViscosity_dCompConc;
 
@@ -247,6 +250,7 @@ private:
 class SlurryFluidBase : public SingleFluidBase
 {
 public:
+  using SingleFluidProp = SingleFluidVar< real64, 2, constitutive::singlefluid::LAYOUT_FLUID, constitutive::singlefluid::LAYOUT_FLUID_DER >;
 
   SlurryFluidBase( string const & name, Group * const parent );
 
@@ -269,8 +273,8 @@ public:
   arrayView3d< real64 > dDensity_dComponentConcentration() { return m_dDensity_dCompConc; }
   arrayView3d< real64 const > dDensity_dComponentConcentration() const { return m_dDensity_dCompConc; }
 
-  arrayView2d< real64 > fluidDensity() { return m_fluidDensity; }
-  arrayView2d< real64 const > fluidDensity() const { return m_fluidDensity; }
+  arrayView2d< real64, constitutive::singlefluid::USD_FLUID >  fluidDensity() { return m_fluidDensity.value; }
+  arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > fluidDensity() const { return m_fluidDensity.value; }
 
   arrayView2d< real64 > dFluidDensity_dPressure() { return m_dFluidDens_dPres; }
   arrayView2d< real64 const > dFluidDensity_dPressure() const { return m_dFluidDens_dPres; }
@@ -317,6 +321,7 @@ protected:
   array1d< real64 > m_nIndices;
   array1d< real64 > m_Ks;
 
+  // these can be folded into base but specializations will need input into DOFS for sizing
   array2d< real64 > m_dDensity_dProppantConc;
   array3d< real64 > m_dDensity_dCompConc;
 
@@ -324,7 +329,7 @@ protected:
   array3d< real64 > m_dCompDens_dPres;
   array4d< real64 > m_dCompDens_dCompConc;
 
-  array2d< real64 > m_fluidDensity;
+  SingleFluidProp m_fluidDensity;
   array2d< real64 > m_dFluidDens_dPres;
   array3d< real64 > m_dFluidDens_dCompConc;
 

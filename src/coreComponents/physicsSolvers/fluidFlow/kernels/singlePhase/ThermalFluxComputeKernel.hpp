@@ -63,7 +63,9 @@ public:
   using AbstractBase::m_dofNumber;
   using AbstractBase::m_gravCoef;
   using AbstractBase::m_mob;
+  using AbstractBase::m_dMob;
   using AbstractBase::m_dens;
+  using AbstractBase::m_dDens;
 
   using Base = singlePhaseFVMKernels::FluxComputeKernel< NUM_EQN, NUM_DOF, STENCILWRAPPER >;
   using Base::numDof;
@@ -77,15 +79,12 @@ public:
   using Base::m_sei;
 
   using ThermalSinglePhaseFlowAccessors =
-    StencilAccessors< fields::flow::temperature,
-                      fields::flow::dMobility_dTemperature >;
+    StencilAccessors< fields::flow::temperature >;
 
   using ThermalSinglePhaseFluidAccessors =
     StencilMaterialAccessors< constitutive::SingleFluidBase,
-                              fields::singlefluid::dDensity_dTemperature,
                               fields::singlefluid::enthalpy,
-                              fields::singlefluid::dEnthalpy_dPressure,
-                              fields::singlefluid::dEnthalpy_dTemperature >;
+                              fields::singlefluid::dEnthalpy >;
 
   using ThermalConductivityAccessors =
     StencilMaterialAccessors< constitutive::SinglePhaseThermalConductivityBase,
@@ -130,11 +129,8 @@ public:
             localMatrix,
             localRhs ),
     m_temp( thermalSinglePhaseFlowAccessors.get( fields::flow::temperature {} ) ),
-    m_dMob_dTemp( thermalSinglePhaseFlowAccessors.get( fields::flow::dMobility_dTemperature {} ) ),
-    m_dDens_dTemp( thermalSinglePhaseFluidAccessors.get( fields::singlefluid::dDensity_dTemperature {} ) ),
     m_enthalpy( thermalSinglePhaseFluidAccessors.get( fields::singlefluid::enthalpy {} ) ),
-    m_dEnthalpy_dPres( thermalSinglePhaseFluidAccessors.get( fields::singlefluid::dEnthalpy_dPressure {} ) ),
-    m_dEnthalpy_dTemp( thermalSinglePhaseFluidAccessors.get( fields::singlefluid::dEnthalpy_dTemperature {} ) ),
+    m_dEnthalpy( thermalSinglePhaseFluidAccessors.get( fields::singlefluid::dEnthalpy {} ) ),
     m_thermalConductivity( thermalConductivityAccessors.get( fields::thermalconductivity::effectiveConductivity {} ) ),
     m_dThermalCond_dT( thermalConductivityAccessors.get( fields::thermalconductivity::dEffectiveConductivity_dT {} ) )
   {}
@@ -185,6 +181,7 @@ public:
   void computeFlux( localIndex const iconn,
                     StackVariables & stack ) const
   {
+    using DerivOffset = constitutive::singlefluid::DerivativeOffsetC< 1 >;
     // ***********************************************
     // First, we call the base computeFlux to compute:
     //  1) compFlux and its derivatives (including derivatives wrt temperature),
@@ -212,8 +209,7 @@ public:
 
       for( integer ke = 0; ke < 2; ++ke )
       {
-        real64 const dDens_dT = m_dDens_dTemp[seri[ke]][sesri[ke]][sei[ke]][0];
-        dDensMean_dT[ke] = 0.5 * dDens_dT;
+        dDensMean_dT[ke] = 0.5 * m_dDens[seri[ke]][sesri[ke]][sei[ke]][0][DerivOffset::dT];
       }
 
       // Step 2: compute the derivatives of the potential difference wrt temperature
@@ -258,15 +254,14 @@ public:
       if( alpha <= 0.0 || alpha >= 1.0 )
       {
         localIndex const k_up = 1 - localIndex( fmax( fmin( alpha, 1.0 ), 0.0 ) );
-
-        dMob_dT[k_up] = m_dMob_dTemp[seri[k_up]][sesri[k_up]][sei[k_up]];
+        dMob_dT[k_up] = m_dMob[seri[k_up]][sesri[k_up]][sei[k_up]][DerivOffset::dT];
       }
       else
       {
         real64 const mobWeights[2] = { alpha, 1.0 - alpha };
         for( integer ke = 0; ke < 2; ++ke )
         {
-          dMob_dT[ke] = mobWeights[ke] * m_dMob_dTemp[seri[ke]][sesri[ke]][sei[ke]];
+          dMob_dT[ke] = mobWeights[ke] * m_dMob[seri[ke]][sesri[ke]][sei[ke]][DerivOffset::dT];
         }
       }
 
@@ -294,8 +289,8 @@ public:
         localIndex const k_up = 1 - localIndex( fmax( fmin( alpha, 1.0 ), 0.0 ) );
 
         enthalpy = m_enthalpy[seri[k_up]][sesri[k_up]][sei[k_up]][0];
-        dEnthalpy_dP[k_up] = m_dEnthalpy_dPres[seri[k_up]][sesri[k_up]][sei[k_up]][0];
-        dEnthalpy_dT[k_up] = m_dEnthalpy_dTemp[seri[k_up]][sesri[k_up]][sei[k_up]][0];
+        dEnthalpy_dP[k_up] = m_dEnthalpy[seri[k_up]][sesri[k_up]][sei[k_up]][0][DerivOffset::dP];
+        dEnthalpy_dT[k_up] = m_dEnthalpy[seri[k_up]][sesri[k_up]][sei[k_up]][0][DerivOffset::dT];
       }
       else
       {
@@ -303,8 +298,8 @@ public:
         for( integer ke = 0; ke < 2; ++ke )
         {
           enthalpy += mobWeights[ke] * m_enthalpy[seri[ke]][sesri[ke]][sei[ke]][0];
-          dEnthalpy_dP[ke] = mobWeights[ke] * m_dEnthalpy_dPres[seri[ke]][sesri[ke]][sei[ke]][0];
-          dEnthalpy_dT[ke] = mobWeights[ke] * m_dEnthalpy_dTemp[seri[ke]][sesri[ke]][sei[ke]][0];
+          dEnthalpy_dP[ke] = mobWeights[ke] * m_dEnthalpy[seri[ke]][sesri[ke]][sei[ke]][0][DerivOffset::dP];
+          dEnthalpy_dT[ke] = mobWeights[ke] * m_dEnthalpy[seri[ke]][sesri[ke]][sei[ke]][0][DerivOffset::dT];
         }
       }
 
@@ -412,16 +407,9 @@ protected:
   /// Views on temperature
   ElementViewConst< arrayView1d< real64 const > > const m_temp;
 
-  /// Views on derivatives of fluid mobilities
-  ElementViewConst< arrayView1d< real64 const > > const m_dMob_dTemp;
-
-  /// Views on derivatives of fluid densities
-  ElementViewConst< arrayView2d< real64 const > > const m_dDens_dTemp;
-
   /// Views on enthalpies
-  ElementViewConst< arrayView2d< real64 const > > const m_enthalpy;
-  ElementViewConst< arrayView2d< real64 const > > const m_dEnthalpy_dPres;
-  ElementViewConst< arrayView2d< real64 const > > const m_dEnthalpy_dTemp;
+  ElementViewConst< arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > > const m_enthalpy;
+  ElementViewConst< arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > > const m_dEnthalpy;
 
   /// View on thermal conductivity
   ElementViewConst< arrayView3d< real64 const > > m_thermalConductivity;

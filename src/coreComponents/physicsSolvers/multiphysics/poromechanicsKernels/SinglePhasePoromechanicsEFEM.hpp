@@ -47,6 +47,7 @@ public:
                                                   3,
                                                   3 >;
 
+  using DerivOffset = constitutive::singlefluid::DerivativeOffsetC< 0 >;
   /// Maximum number of nodes per element, which is equal to the maxNumTestSupportPointPerElem and
   /// maxNumTrialSupportPointPerElem by definition. When the FE_TYPE is not a Virtual Element, this
   /// will be the actual number of nodes per element.
@@ -253,8 +254,10 @@ protected:
   arrayView1d< real64 const > const m_fluidMass_n;
 
   /// The rank global densities
-  arrayView2d< real64 const > const m_fluidDensity;
-  arrayView2d< real64 const > const m_dFluidDensity_dPressure;
+  arrayView2d< real64 const > const m_solidDensity;
+  arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const m_fluidDensity;
+  arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const m_fluidDensity_n;
+  arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > const m_dFluidDensity;
 
   /// The rank-global fluid pressure array.
   arrayView1d< real64 const > const m_matrixPressure;

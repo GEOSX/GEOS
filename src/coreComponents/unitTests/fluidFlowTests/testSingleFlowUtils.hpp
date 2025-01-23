@@ -19,6 +19,7 @@
 #include "codingUtilities/UnitTestUtilities.hpp"
 #include "constitutive/ConstitutiveManager.hpp"
 #include "constitutive/fluid/singlefluid/SingleFluidBase.hpp"
+#include "constitutive/fluid/singlefluid/SingleFluidLayouts.hpp"
 #include "mesh/MeshManager.hpp"
 #include "mainInterface/ProblemManager.hpp"
 #include "physicsSolvers/fluidFlow/SinglePhaseBase.hpp"
@@ -94,6 +95,7 @@ void testMobilityNumericalDerivatives( SinglePhaseFVM<> & solver,
                                        real64 const perturbParameter,
                                        real64 const relTol )
 {
+  using DerivOffset = constitutive::singlefluid::DerivativeOffsetC< 0 >;
   solver.forDiscretizationOnMeshTargets( domain.getMeshBodies(),
                                          [&]( string const,
                                               MeshLevel & mesh,
@@ -114,8 +116,8 @@ void testMobilityNumericalDerivatives( SinglePhaseFVM<> & solver,
       arrayView1d< real64 > const mob =
         subRegion.getField< fields::flow::mobility >();
 
-      arrayView1d< real64 > const dMob_dPres =
-        subRegion.getField< fields::flow::dMobility_dPressure >();
+      arrayView2d< real64, constitutive::singlefluid::USD_FLUID > const dMob =
+        subRegion.getField< fields::flow::dMobility >();
 
       // reset the solver state to zero out variable updates
       solver.resetStateToBeginningOfStep( domain );
@@ -144,7 +146,7 @@ void testMobilityNumericalDerivatives( SinglePhaseFVM<> & solver,
           real64 const delta = pres[ei] - pres_n[ei];
           checkDerivative( mob[ei],
                            mobOrig[ei],
-                           dMob_dPres[ei],
+                           dMob[ei][DerivOffset::dP],
                            delta,
                            relTol,
                            "mob",
@@ -156,13 +158,14 @@ void testMobilityNumericalDerivatives( SinglePhaseFVM<> & solver,
 
       if( isThermal )
       {
+        using DerivOffsetTherm = constitutive::singlefluid::DerivativeOffsetC< 1 >;
         arrayView1d< real64 > const temp =
           subRegion.getField< fields::flow::temperature >();
         arrayView1d< real64 const > const temp_n =
           subRegion.getField< fields::flow::temperature_n >();
 
-        arrayView1d< real64 > const dMob_dTemp =
-          subRegion.getField< fields::flow::dMobility_dTemperature >();
+        arrayView2d< real64, constitutive::singlefluid::USD_FLUID > const dMobTherm =
+          subRegion.getField< fields::flow::dMobility >();
 
         // reset the solver state to zero out variable updates (resetting the whole domain is overkill...)
         solver.resetStateToBeginningOfStep( domain );
@@ -184,7 +187,7 @@ void testMobilityNumericalDerivatives( SinglePhaseFVM<> & solver,
           real64 const delta = temp[ei] - temp_n[ei];
           checkDerivative( mob[ei],
                            mobOrig[ei],
-                           dMob_dTemp[ei],
+                           dMobTherm[ei][DerivOffsetTherm::dT],
                            delta,
                            relTol,
                            "mob",
