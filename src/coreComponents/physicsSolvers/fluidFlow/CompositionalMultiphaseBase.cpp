@@ -250,7 +250,7 @@ void CompositionalMultiphaseBase::postInputInitialization()
 
   if( m_formulationType == CompositionalMultiphaseFormulationType::OverallComposition )
   {
-    string const formulationName = EnumStrings<CompositionalMultiphaseFormulationType>::toString(CompositionalMultiphaseFormulationType::OverallComposition);
+    string const formulationName = EnumStrings< CompositionalMultiphaseFormulationType >::toString( CompositionalMultiphaseFormulationType::OverallComposition );
 
     if( m_isThermal ) // z_c formulation is not yet compatible with thermal
     {
@@ -334,8 +334,8 @@ void CompositionalMultiphaseBase::registerDataOnMesh( Group & meshBodies )
     // default formulation - component densities and pressure are primary unknowns
     // n_c components + one pressure ( + one temperature if needed )
     m_numDofPerCell = m_isThermal ? m_numComponents + 2 : m_numComponents + 1;
-  }  
-  else if( m_formulationType == CompositionalMultiphaseFormulationType::OverallComposition  )
+  }
+  else if( m_formulationType == CompositionalMultiphaseFormulationType::OverallComposition )
   {
     // z_c formulation - component densities and pressure are primary unknowns
     // (n_c-1) overall compositions + one pressure
@@ -1357,7 +1357,7 @@ void CompositionalMultiphaseBase::initializePostInitialConditionsPreSubGroups()
   {
     FieldIdentifiers fieldsToBeSync;
     fieldsToBeSync.addElementFields( { m_formulationType == CompositionalMultiphaseFormulationType::OverallComposition ?
-                                      fields::flow::globalCompFraction::key() : fields::flow::globalCompDensity::key() },
+                                       fields::flow::globalCompFraction::key() : fields::flow::globalCompDensity::key() },
                                      regionNames );
 
     CommunicationTools::getInstance().synchronizeFields( fieldsToBeSync, mesh, domain.getNeighbors(), false );

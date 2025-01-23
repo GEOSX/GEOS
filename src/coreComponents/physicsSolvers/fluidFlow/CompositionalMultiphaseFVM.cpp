@@ -136,7 +136,7 @@ void CompositionalMultiphaseFVM::postInputInitialization()
 
   if( m_formulationType == CompositionalMultiphaseFormulationType::OverallComposition )
   {
-    string const formulationName = EnumStrings<CompositionalMultiphaseFormulationType>::toString(CompositionalMultiphaseFormulationType::OverallComposition);
+    string const formulationName = EnumStrings< CompositionalMultiphaseFormulationType >::toString( CompositionalMultiphaseFormulationType::OverallComposition );
 
     if( m_dbcParams.useDBC ) // z_c formulation is not compatible with DBC
     {
