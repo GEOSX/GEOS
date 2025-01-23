@@ -91,8 +91,6 @@ void SinglePhaseBase::registerDataOnMesh( Group & meshBodies )
                                                               [&]( localIndex const,
                                                                    ElementSubRegionBase & subRegion )
     {
-      subRegion.registerField< fields::flow::deltaVolume >( getName() );
-
       subRegion.registerField< fields::flow::mobility >( getName() );
       subRegion.registerField< fields::flow::dMobility_dPressure >( getName() );
 

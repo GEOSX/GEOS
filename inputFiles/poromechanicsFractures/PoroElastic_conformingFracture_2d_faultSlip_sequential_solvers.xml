@@ -53,7 +53,7 @@
       name="SurfaceGen"
       targetRegions="{ Domain }"
       fractureRegion="Fracture"
-      rockToughness="1e6"
+      initialRockToughness="1e6"
       mpiCommOrder="1"/>
   </Solvers>
 </Problem>
