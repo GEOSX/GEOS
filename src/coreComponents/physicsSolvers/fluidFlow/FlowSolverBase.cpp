@@ -368,7 +368,7 @@ void FlowSolverBase::initializePreSubGroups()
   }
 }
 
-void FlowSolverBase::checkDiscretizationName()
+void FlowSolverBase::checkDiscretizationName() const
 {
   DomainPartition & domain = this->getGroupByPath< DomainPartition >( "/Problem/domain" );
   NumericalMethodsManager const & numericalMethodManager = domain.getNumericalMethodManager();
