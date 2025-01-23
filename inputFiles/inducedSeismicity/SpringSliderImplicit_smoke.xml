@@ -4,16 +4,16 @@
     <File
       name="./SpringSlider_base.xml"/>
   </Included>
-  
-   <Solvers>
-    <ExplicitSpringSlider
+
+  <Solvers>
+    <ImplicitSpringSlider
       name="SpringSlider"
       targetRegions="{ Fault }"
       shearImpedance="4.41"
-      initialDt="1e-5"
+      initialDt="1"
       logLevel="1"
       discretization="FE1">
-    </ExplicitSpringSlider>
+    </ImplicitSpringSlider>
   </Solvers>
 
   <Events
@@ -33,7 +33,7 @@
       name="solverApplications"
       maxEventDt="1e4"
       target="/Solvers/SpringSlider"/>
-
+    
     <!-- Time history collection -->
     <PeriodicEvent
       name="slipRateCollection"
@@ -58,7 +58,7 @@
       name="timeHistoryOutput"
       cycleFrequency="100"
       targetExactTimestep="0"
-      target="/Outputs/timeHistoryOutput"/>      
+      target="/Outputs/timeHistoryOutput"/>    
 
     <PeriodicEvent
       name="resarts"
