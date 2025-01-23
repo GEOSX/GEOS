@@ -230,7 +230,7 @@ protected:
 
   virtual void initializePreSubGroups() override;
 
-  void checkDiscretizationName();
+  void checkDiscretizationName() const;
 
   virtual void initializePostInitialConditionsPreSubGroups() override;
 
