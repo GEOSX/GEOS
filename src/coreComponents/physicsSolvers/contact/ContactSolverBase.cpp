@@ -25,6 +25,7 @@
 #include "mesh/SurfaceElementRegion.hpp"
 #include "physicsSolvers/solidMechanics/SolidMechanicsLagrangianFEM.hpp"
 #include "common/GEOS_RAJA_Interface.hpp"
+#include "fieldSpecification/FieldSpecificationManager.hpp"
 
 namespace geos
 {
@@ -65,6 +66,7 @@ void ContactSolverBase::registerDataOnMesh( dataRepository::Group & meshBodies )
   forFractureRegionOnMeshTargets( meshBodies, [&] ( SurfaceElementRegion & fractureRegion )
   {
     string const labels[3] = { "normal", "tangent1", "tangent2" };
+    string const labelsTangent[2] = { "tangent1", "tangent2" };
 
     fractureRegion.forElementSubRegions< SurfaceElementSubRegion >( [&]( SurfaceElementSubRegion & subRegion )
     {
@@ -82,6 +84,10 @@ void ContactSolverBase::registerDataOnMesh( dataRepository::Group & meshBodies )
         setDimLabels( 1, labels ).
         reference().resizeDimension< 1 >( 3 );
 
+      subRegion.registerField< fields::contact::dispJump_n >( getName() ).
+        setDimLabels( 1, labels ).
+        reference().resizeDimension< 1 >( 3 );
+
       subRegion.registerField< fields::contact::traction >( getName() ).
         setDimLabels( 1, labels ).
         reference().resizeDimension< 1 >( 3 );
@@ -92,7 +98,11 @@ void ContactSolverBase::registerDataOnMesh( dataRepository::Group & meshBodies )
 
       subRegion.registerField< fields::contact::slip >( getName() );
 
-      subRegion.registerField< fields::contact::deltaSlip >( getName() );
+      subRegion.registerField< fields::contact::deltaSlip >( getName() ).
+        setDimLabels( 1, labelsTangent ).reference().resizeDimension< 1 >( 2 );
+
+      subRegion.registerField< fields::contact::deltaSlip_n >( this->getName() ).
+        setDimLabels( 1, labelsTangent ).reference().resizeDimension< 1 >( 2 );
     } );
 
   } );
