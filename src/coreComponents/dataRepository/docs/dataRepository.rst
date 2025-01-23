@@ -19,4 +19,4 @@ The components/classes of the data structure that a developer should have some k
    /coreComponents/dataRepository/docs/Wrapper
    /coreComponents/dataRepository/docs/ObjectCatalog
    /coreComponents/dataRepository/docs/MappedVector
-   /coreComponents/dataRepository/docs/LogLevelDocumentation
+   /coreComponents/dataRepository/docs/LogLevel
