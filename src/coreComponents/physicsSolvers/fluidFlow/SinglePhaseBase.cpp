@@ -77,6 +77,8 @@ SinglePhaseBase::SinglePhaseBase( const string & name,
 
 void SinglePhaseBase::registerDataOnMesh( Group & meshBodies )
 {
+  using namespace fields::flow;
+
   FlowSolverBase::registerDataOnMesh( meshBodies );
 
   m_numDofPerCell = m_isThermal ? 2 : 1;
@@ -92,16 +94,16 @@ void SinglePhaseBase::registerDataOnMesh( Group & meshBodies )
                                                               [&]( localIndex const,
                                                                    ElementSubRegionBase & subRegion )
     {
-      subRegion.registerField< fields::flow::mobility >( getName() );
-      subRegion.registerField< fields::flow::dMobility >( getName()).reference().resizeDimension< 1 >( m_numDofPerCell );
+      subRegion.registerField< mobility >( getName() );
+      subRegion.registerField< dMobility >( getName()).reference().resizeDimension< 1 >( m_numDofPerCell );
 
-      subRegion.registerField< fields::flow::mass >( getName() );
-      subRegion.registerField< fields::flow::mass_n >( getName() );
-      subRegion.registerField< fields::flow::dMass >( getName() ).reference().resizeDimension< 1 >( m_numDofPerCell );
+      subRegion.registerField< mass >( getName() );
+      subRegion.registerField< mass_n >( getName() );
+      subRegion.registerField< dMass >( getName() ).reference().resizeDimension< 1 >( m_numDofPerCell );
 
       if( m_isThermal )
       {
-        subRegion.registerField< fields::flow::dEnergy >( getName() ).reference().resizeDimension< 1 >( m_numDofPerCell );
+        subRegion.registerField< dEnergy >( getName() ).reference().resizeDimension< 1 >( m_numDofPerCell );
       }
     } );
 
@@ -109,16 +111,16 @@ void SinglePhaseBase::registerDataOnMesh( Group & meshBodies )
                                                                  [&]( localIndex const,
                                                                       SurfaceElementSubRegion & subRegion )
     {
-      subRegion.registerField< fields::flow::massCreated >( getName() );
+      subRegion.registerField< massCreated >( getName() );
     } );
 
     FaceManager & faceManager = mesh.getFaceManager();
     {
-      faceManager.registerField< fields::flow::facePressure >( getName() );
+      faceManager.registerField< facePressure >( getName() );
 
       if( m_isThermal )
       {
-        faceManager.registerField< fields::flow::faceTemperature >( getName() );
+        faceManager.registerField< faceTemperature >( getName() );
       }
     }
   } );

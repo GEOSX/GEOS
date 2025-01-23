@@ -165,11 +165,11 @@ setup( localIndex const k,
     // need to grab the index.
     stack.jumpEqnRowIndices[i] = m_wDofNumber[embSurfIndex] + i - m_dofRankOffset;
     stack.jumpColIndices[i]    = m_wDofNumber[embSurfIndex] + i;
-    stack.wLocal[ i ] = m_w[ embSurfIndex ][i];
-    stack.tractionVec[ i ] = m_tractionVec[ embSurfIndex ][i] * m_surfaceArea[embSurfIndex];
+    stack.wLocal[i] = m_w[embSurfIndex][i];
+    stack.tractionVec[i] = m_tractionVec[embSurfIndex][i] * m_surfaceArea[embSurfIndex];
     for( int ii=0; ii < 3; ++ii )
     {
-      stack.dTractiondw[ i ][ ii ] = m_dTraction_dJump[embSurfIndex][i][ii] * m_surfaceArea[embSurfIndex];
+      stack.dTractiondw[i][ii] = m_dTraction_dJump[embSurfIndex][i][ii] * m_surfaceArea[embSurfIndex];
     }
   }
 }
@@ -318,8 +318,8 @@ complete( localIndex const k,
 
   // Mass balance accumulation
   real64 const localFlowResidual = m_fluidMass[embSurfIndex] - m_fluidMass_n[embSurfIndex];
-  real64 const localFlowJumpJacobian = m_fluidDensity( embSurfIndex, 0 ) * m_surfaceArea[ embSurfIndex ];
-  real64 const localFlowFlowJacobian = m_dFluidMass[ embSurfIndex ][ DerivOffset::dP ];
+  real64 const localFlowJumpJacobian = m_fluidDensity[embSurfIndex][0] * m_surfaceArea[embSurfIndex];
+  real64 const localFlowFlowJacobian = m_dFluidMass[embSurfIndex][DerivOffset::dP];
 
   for( localIndex i = 0; i < nUdof; ++i )
   {
@@ -367,12 +367,12 @@ complete( localIndex const k,
   {
 
     m_matrix.template addToRowBinarySearchUnsorted< parallelDeviceAtomic >( stack.jumpEqnRowIndices[0],
-                                                                            &m_fracturePresDofNumber[ embSurfIndex ],
+                                                                            &m_fracturePresDofNumber[embSurfIndex],
                                                                             &localJumpFracPressureJacobian,
                                                                             1 );
   }
 
-  localIndex const fracturePressureDof = m_fracturePresDofNumber[ embSurfIndex ] - m_dofRankOffset;
+  localIndex const fracturePressureDof = m_fracturePresDofNumber[embSurfIndex] - m_dofRankOffset;
   if( fracturePressureDof >= 0 && fracturePressureDof < m_matrix.numRows() )
   {
 
@@ -382,7 +382,7 @@ complete( localIndex const k,
                                                                             1 );
 
     m_matrix.template addToRowBinarySearchUnsorted< parallelDeviceAtomic >( fracturePressureDof,
-                                                                            &m_fracturePresDofNumber[ embSurfIndex ],
+                                                                            &m_fracturePresDofNumber[embSurfIndex],
                                                                             &localFlowFlowJacobian,
                                                                             1 );
 
