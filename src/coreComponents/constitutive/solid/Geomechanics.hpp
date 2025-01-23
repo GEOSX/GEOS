@@ -323,6 +323,7 @@ public:
                      const real64 & I1_trial, 
                      const real64 & rJ2_trial, 
 			               const real64 & I1_0,     
+                     const real64 & rJ2_0,     
 			               const real64 & d_evp,    
 			               const real64 & Gf,     
                            const real64 & fractureStress,  
@@ -934,13 +935,15 @@ int GeomechanicsUpdates::computeStep( real64 const ( & D )[6],               // 
     real64 stress_iso[6] = { 0 };
     real64 stress_dev[6] = { 0 };
     real64 iso_old;
-    real64 J2_old;
+
+    real64 vonMisesStress_old;
     twoInvariant::stressDecomposition( sigma_old,
                                        iso_old,
-                                       J2_old,
+                                       vonMisesStress_old,
                                        stress_dev); //This gives unit vector in direction of dev stress
     // rescale to have actual deviator
-    LvArray::tensorOps::scale< 6 >( stress_dev, sqrt(2/3) * J2_old);
+
+    LvArray::tensorOps::scale< 6 >( stress_dev, sqrt(2/3) * vonMisesStress_old);
                                     
     stress_iso[0] = iso_old;
     stress_iso[1] = iso_old;
@@ -959,7 +962,7 @@ int GeomechanicsUpdates::computeStep( real64 const ( & D )[6],               // 
     ep_iso[1] = ep_iso_old;
     ep_iso[2] = ep_iso_old;
 
-   	real64 sigma_vm_old = sqrt( 3.0 * J2_old );
+   	//real64 sigma_vm_old = sqrt( 3.0 * J2_old );
 
   // Compute actual elastic properties, above we computed the "conservative" upper limit
   // for elastic properties to be used in the step division calc.
@@ -975,7 +978,7 @@ int GeomechanicsUpdates::computeStep( real64 const ( & D )[6],               // 
                               bulk,
                               shear
     );
-		real64 elasticVMShearStrain = sigma_vm_old / ( 3 * shear ); // This is equivalent to sqrt(2/3) * J2 invariant of sigma_dev/(2*shear)
+		real64 elasticVMShearStrain = vonMisesStress_old / ( 3 * shear ); // This is equivalent to sqrt(2/3) * J2 invariant of sigma_dev/(2*shear)
 
 		if ( elasticVMShearStrain > 1.e-12 )
 		{  // only apply creep if there is elastic strain
@@ -1427,23 +1430,21 @@ void GeomechanicsUpdates::computeInvariants( real64 const ( & stress )[6],
 //   S = dev(stress); // stress - one_third*Identity*I1
 
 //   real64 deviator[6] = { 0 };
+  real64 vonMisesStress;
   twoInvariant::stressDecomposition( stress,
                                      I1,
-                                     J2, //this is rootJ2
+                                     vonMisesStress, //this is actually von Mises
                                      S); //this gives a unit verctor
     I1 *= 3.0;
-    LvArray::tensorOps::scale< 6 >( S, sqrt(2.0 / 3.0) * J2 );
-    J2 = 3 * J2 * J2;  //MH: why are we squaring and then taking a square root?
-
-
-//   // Compute the second invariant
-//   J2 = computeJ2fromDevStress(S);  // 0.5*S.Contract(S);
+    LvArray::tensorOps::scale< 6 >( S, sqrt(2.0 / 3.0) * vonMisesStress ); //Stress tensor in voight notation.
+    rJ2 = vonMisesStress/sqrt(3.);
+    J2 = rJ2 * rJ2; 
 
   if( J2 < 1e-16*( I1 * I1 + J2 ) )
   {
     J2 = 0.0;
+    rJ2 = 0.0;
   }
-  rJ2 = sqrt(J2);
 }
 
 // update the coherence (1-damage) variable based on dilational plastic work
@@ -1451,8 +1452,9 @@ GEOS_HOST_DEVICE
 GEOS_FORCE_INLINE
 void GeomechanicsUpdates::computeCoher( const real64 & lch,       // length scale
                                         const real64 & I1_trial,  // trial value of I1
-                                        const real64 & rJ2_trial,  // trial value of rootJ2
-			                                  const real64 & I1_0,      // I1 value on yield surface
+                                        const real64 & GEOS_UNUSED_PARAM(rJ2_trial),  // trial value of rootJ2
+			                                  const real64 & I1_0,       // I1 value on yield surface
+                                        const real64 & rJ2_0,      // rJ2 value on yield surface
 			                                  const real64 & d_evp,     // increment in vol plastic strain
 			                                  const real64 & Gf,        // fracture energy per unit area
                                               const real64 & fractureStress,   // stress required before coher evolves (input is von Mises stress)
@@ -1467,7 +1469,7 @@ void GeomechanicsUpdates::computeCoher( const real64 & lch,       // length scal
 	if( Gf > 1.e-16 )
 	{
 		// real64 d_I1 = I1_trial - I1_0; // Seemed unused
-		if ( d_evp > 0 && ( I1_trial - I1_0 ) > 0 && ( (rJ2_trial > fractureStressRootJ2 || coher_old < 1 )    ))
+		if ( d_evp > 0 && ( I1_trial - I1_0 ) > 0 && ( (rJ2_0 > fractureStressRootJ2 || coher_old < 1 )    ))
 		{
 			// increment in work per unit volume.
 			real64 d_dilationalPlasticWork = d_evp*0.5*(I1_trial - I1_0);
@@ -1816,6 +1818,7 @@ int GeomechanicsUpdates::computeSubstep( real64 const ( & D )[6],         // str
                   I1_trial,
                   rJ2_trial,
                   I1_0,
+                  rJ2_0,
                   d_evp,
                   m_fractureEnergyReleaseRate,
                   m_fractureStress,
@@ -2086,7 +2089,7 @@ int GeomechanicsUpdates::nonHardeningReturn( const real64 & I1_trial,           
   //  yield function updates, which have branch points based on the peakI1 value.
   real64 peakI1_h, fSlope_h; //  
   fSlope_h = coher*m_fSlope + ( 1. - coher )*m_fSlopeFailed;
-  peakI1_h = coher*(m_peakI1 + hardening/fSlope_h) ? (fSlope_h > 1.e-12) : coher*m_peakI1;
+  peakI1_h = (fSlope_h > 1.e-12) ? coher*(m_peakI1 + hardening/fSlope_h) : coher*m_peakI1;
 
   // It may be better to use an interior point at the center of the yield surface, rather than at zeta, in particular
   // when PEAKI1=0.  Picking the midpoint between PEAKI1 and X would be problematic when the user has specified
@@ -2404,6 +2407,8 @@ int GeomechanicsUpdates::computeYieldFunction( const real64 & I1,
 									                             const real64 & a4
 ) const    
 {
+   //std::cout<<"I1 = "<<I1<<", rJ2 = "<<rJ2<<", Zeta = "<<Zeta<<", coher = "<<coher<<", hardening = "<<hardening<<", a1 = "<<a1<<", a2 = "<<a2<<", a3 = "<<a3<<", a4 = "<<a4<<std::endl;
+
 	// Evaluate the yield criteria and return:
 	//  -1: elastic
 	//   0: on yield surface within tolerance (not used)
@@ -2420,7 +2425,7 @@ int GeomechanicsUpdates::computeYieldFunction( const real64 & I1,
   // Parameters modified by damage and/or hardening
   real64 peakI1_h, fSlope_h; //  
   fSlope_h = coher*m_fSlope + ( 1. - coher )*m_fSlopeFailed;
-  peakI1_h = coher*(m_peakI1 + hardening/fSlope_h) ? (fSlope_h > 1.e-12) : m_peakI1;
+  peakI1_h = (fSlope_h > 1.e-12) ? coher*(m_peakI1 + hardening/fSlope_h) : coher*m_peakI1;
 
 
 	// --------------------------------------------------------------------
@@ -2470,6 +2475,8 @@ int GeomechanicsUpdates::computeYieldFunction( const real64 & I1,
 	{// --------------------------------(peakI1<I1)
     YIELD = 1;
 	};
+
+  //std::cout<<"Ff = "<<Ff<<", kappa = "<<Kappa<<", YIELD = "<<YIELD<<std::endl;
 
   return YIELD;
 } 
@@ -2527,7 +2534,7 @@ void GeomechanicsUpdates::computeLimitParameters( real64 & a1,
   stren_h = m_stren + hardening;
   fSlope_h = coher*m_fSlope + ( 1. - coher )*m_fSlopeFailed;
   ySlope_h = std::min( 0.99999*fSlope_h, m_ySlope );
-  peakI1_h = coher*(m_peakI1 + hardening/fSlope_h) ? (fSlope_h > 1.e-12) : coher*m_peakI1;
+  peakI1_h = (fSlope_h > 1.e-12) ? coher*(m_peakI1 + hardening/fSlope_h) : coher*m_peakI1;
   
   if (fSlope_h > 0.0 && peakI1_h >= 0.0 && m_stren == 0.0 && ySlope_h == 0.0)
   {// ----------------------------------------------Linear Drucker-Prager
@@ -2554,13 +2561,17 @@ void GeomechanicsUpdates::computeLimitParameters( real64 & a1,
   { // ------------------------------------------------------- Nonlinear Drucker-Prager
     a1 = stren_h;
     a2 = (fSlope_h-ySlope_h )/(stren_h - ySlope_h*peakI1_h);
-    a3 = (stren_h-ySlope_h*peakI1_h)*exp(-a2*peakI1_h);
+    a3 = (stren_h-ySlope_h*peakI1_h)*std::exp(-a2*peakI1_h);
     a4 = ySlope_h ;
   }
   else
   {
 	  std::cout<<"bad limit surface parameters."<<std::endl;
   }
+
+  //std::cout<<"m_peakI1 = "<<m_peakI1<<", m_stren = "<<m_stren<<", m_ySlope = "<<m_ySlope<<", m_fSlope = "<<m_fSlope<<std::endl;
+  //std::cout<<"peakI1_h = "<<peakI1_h<<", stren_h = "<<stren_h<<", ySlope_h = "<<ySlope_h<<", fSlope_h = "<<fSlope_h<<std::endl;
+  //std::cout<<"a1 = "<<a1<<", a2 = "<<a2<<", a3 = "<<a3<<", a4 = "<<a4<<std::endl;
 }
 
 
