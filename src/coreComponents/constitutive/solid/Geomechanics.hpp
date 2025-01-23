@@ -69,7 +69,8 @@ public:
    * @param[in] t1RateDependence The value for the rate dependence parameter 1
    * @param[in] t2RateDependence The value for the rate dependence parameter 2
    * @param[in] fractureEnergyReleaseRate The value for the fracture energy release rate
-   * @param[in] fractureStress The value for the fracture energy release rate  
+   * @param[in] fractureSofteningExponent controls shape of softening with damage
+   * @param[in] fractureStress The root J2 value for the fracture stress 
    * @param[in] cr The value for the cap shape paramter
    * @param[in] fluidBulkModulus The value for the fluid bulk modulus
    * @param[in] fluidInitialPressure The value for the fluid initial pressure
@@ -110,6 +111,7 @@ public:
                        real64 const & t1RateDependence,
                        real64 const & t2RateDependence,
                        real64 const & fractureEnergyReleaseRate,
+                       real64 const & fractureSofteningExponent,
                        real64 const & fractureStress,
                        real64 const & cr,
                        real64 const & fluidBulkModulus,
@@ -172,6 +174,7 @@ public:
     m_t1RateDependence( t1RateDependence ),
     m_t2RateDependence( t2RateDependence ),
     m_fractureEnergyReleaseRate( fractureEnergyReleaseRate ),
+    m_fractureSofteningExponent( fractureSofteningExponent ),
     m_fractureStress( fractureStress ),
     m_cr( cr ),
     m_fluidBulkModulus( fluidBulkModulus ),
@@ -478,6 +481,7 @@ private:
   real64 const & m_t1RateDependence;
   real64 const & m_t2RateDependence;
   real64 const & m_fractureEnergyReleaseRate;
+  real64 const & m_fractureSofteningExponent;
   real64 const & m_fractureStress;
   real64 const & m_cr;
   real64 const & m_fluidBulkModulus;
@@ -833,11 +837,7 @@ int GeomechanicsUpdates::computeStep( real64 const ( & D )[6],               // 
   real64 bulk, shear;
 
 
-  real64 p_old;
-  real64 evp_old;
-  real64 p_new;
-  real64 evp_new;
-  real64 trDdt;
+
 
   // (1) Define conservative elastic properties based on the high-pressure
   // limit of the bulk modulus function. The bulk modulus function can be
@@ -1091,13 +1091,18 @@ int GeomechanicsUpdates::computeStep( real64 const ( & D )[6],               // 
                                   Zeta_new,
                                   coher_new );
 
-    p_old = (-1./3.)*( sigma_old[0] + sigma_old[1] + sigma_old[2] );
-    evp_old = ( ep_old[0] + ep_old[1] + ep_old[2] );
-    p_new = (-1./3.)*( sigma_new[0] + sigma_new[1] + sigma_new[2] );
-    evp_new = ( ep_new[0] + ep_new[1] + ep_new[2] );
-    trDdt = ( D[0] + D[1] + D[2] )*dt;
-
-    std::cout<<"Substep: trDdt = "<<trDdt<<", p_old = "<<p_old<<", evp_old = "<<evp_old<<", X_old = "<<X_old<<", p_new = "<<p_new<<", evp_new = "<<evp_new<<", X_new = "<<X_new<<std::endl;
+    // These are temp variables used for debugging.
+    // real64 p_old;
+    // real64 evp_old;
+    // real64 p_new;
+    // real64 evp_new;
+    // real64 trDdt;
+    // p_old = (-1./3.)*( sigma_old[0] + sigma_old[1] + sigma_old[2] );
+    // evp_old = ( ep_old[0] + ep_old[1] + ep_old[2] );
+    // p_new = (-1./3.)*( sigma_new[0] + sigma_new[1] + sigma_new[2] );
+    // evp_new = ( ep_new[0] + ep_new[1] + ep_new[2] );
+    // trDdt = ( D[0] + D[1] + D[2] )*dt;
+    //std::cout<<"Substep: trDdt = "<<trDdt<<", p_old = "<<p_old<<", evp_old = "<<evp_old<<", X_old = "<<X_old<<", p_new = "<<p_new<<", evp_new = "<<evp_new<<", X_new = "<<X_new<<std::endl;
 
 
 
@@ -1457,26 +1462,28 @@ void GeomechanicsUpdates::computeCoher( const real64 & lch,       // length scal
                                         const real64 & rJ2_0,      // rJ2 value on yield surface
 			                                  const real64 & d_evp,     // increment in vol plastic strain
 			                                  const real64 & Gf,        // fracture energy per unit area
-                                              const real64 & fractureStress,   // stress required before coher evolves (input is von Mises stress)
+                                        const real64 & fractureStress,   // stress required before coher evolves (input is rootJ2 stress)
 			                                  const real64 & coher_old, // old coherence = 1-damage
 			                                  real64 & coher_new      // OUPUT: new value of coher
 ) const
 {
+  // This approach is designed to increment damage when there is plastic loading with dilation above some
+  // threshold stress.  The damage evolution is based on dilational plastic work.  Other formulat could
+  // be used, but might not work well with the consistency bisection algorithm, which is solving for
+  // an increment in volumetric plastic strain.
 
-    real64 fractureStressRootJ2 = sqrt(2./3.)*fractureStress;  // fix this.
-    //see formula in Homel et al 2015, section 1.2
+  //see formula in Homel et al 2015, section 1.2
 	coher_new = coher_old;
 	if( Gf > 1.e-16 )
 	{
-		// real64 d_I1 = I1_trial - I1_0; // Seemed unused
-		if ( d_evp > 0 && ( I1_trial - I1_0 ) > 0 && ( (rJ2_0 > fractureStressRootJ2 || coher_old < 1 )    ))
+		if ( d_evp > 0 && ( I1_trial - I1_0 ) > 0 && ( (rJ2_0 > fractureStress || coher_old < 1 )    ))
 		{
 			// increment in work per unit volume.
 			real64 d_dilationalPlasticWork = d_evp*0.5*(I1_trial - I1_0);
-			// particle length scale
-			// real64 lch = m_lengthScale[k]; //m_plane_strain ? sqrt( m_dx * m_dx + m_dy * m_dy ) : sqrt( m_dx * m_dx + m_dy * m_dy + m_dz * m_dz );
-			// fracture energy
-			real64 d_damage = ( d_dilationalPlasticWork*lch ) / Gf;
+      // increment damage based on increment in plastic dilatational work relative to the fracture
+      // energy release rate, normalized by the length scale, to be per-unit-volume     
+			real64 d_damage = ( d_dilationalPlasticWork*lch ) / (Gf/lch);
+      // force coher = 1-damage to be 0<=coher<=1
 			coher_new = std::max( 0.0, coher_old - d_damage );
 		}
 	}
@@ -2087,9 +2094,12 @@ int GeomechanicsUpdates::nonHardeningReturn( const real64 & I1_trial,           
   // The following are the input parameters, modified by hardening and or damage
   //  Any change to peakI1 should be copied in the non-hardening return and
   //  yield function updates, which have branch points based on the peakI1 value.
-  real64 peakI1_h, fSlope_h; //  
-  fSlope_h = coher*m_fSlope + ( 1. - coher )*m_fSlopeFailed;
-  peakI1_h = (fSlope_h > 1.e-12) ? coher*(m_peakI1 + hardening/fSlope_h) : coher*m_peakI1;
+  real64 peakI1_h, fSlope_h; //
+
+  // raise coher to an exponent before softening to allow control of softening rate.
+  real64 nonlinearCoher = std::pow(coher,m_fractureSofteningExponent);
+  fSlope_h = nonlinearCoher*m_fSlope + ( 1. - nonlinearCoher )*m_fSlopeFailed;
+  peakI1_h = (fSlope_h > 1.e-12) ? nonlinearCoher*(m_peakI1 + hardening/fSlope_h) : nonlinearCoher*m_peakI1;
 
   // It may be better to use an interior point at the center of the yield surface, rather than at zeta, in particular
   // when PEAKI1=0.  Picking the midpoint between PEAKI1 and X would be problematic when the user has specified
@@ -2423,9 +2433,10 @@ int GeomechanicsUpdates::computeYieldFunction( const real64 & I1,
 	real64 I1mZ = I1 - Zeta;    // Shifted stress to evalue yield criteria
 
   // Parameters modified by damage and/or hardening
-  real64 peakI1_h, fSlope_h; //  
-  fSlope_h = coher*m_fSlope + ( 1. - coher )*m_fSlopeFailed;
-  peakI1_h = (fSlope_h > 1.e-12) ? coher*(m_peakI1 + hardening/fSlope_h) : coher*m_peakI1;
+  real64 peakI1_h, fSlope_h; //
+  real64 nonlinearCoher = std::pow(coher,m_fractureSofteningExponent);
+  fSlope_h = nonlinearCoher*m_fSlope + ( 1. - nonlinearCoher )*m_fSlopeFailed;
+  peakI1_h = (fSlope_h > 1.e-12) ? nonlinearCoher*(m_peakI1 + hardening/fSlope_h) : nonlinearCoher*m_peakI1;
 
 
 	// --------------------------------------------------------------------
@@ -2531,10 +2542,12 @@ void GeomechanicsUpdates::computeLimitParameters( real64 & a1,
   //  Any change to peakI1 should be copied in the non-hardening return and
   //  yield function updates, which have branch points based on the peakI1 value.
   real64 stren_h, peakI1_h, fSlope_h, ySlope_h;  
+  real64 nonlinearCoher = std::pow(coher,m_fractureSofteningExponent);
+
   stren_h = m_stren + hardening;
-  fSlope_h = coher*m_fSlope + ( 1. - coher )*m_fSlopeFailed;
+  fSlope_h = nonlinearCoher*m_fSlope + ( 1. - nonlinearCoher )*m_fSlopeFailed;
   ySlope_h = std::min( 0.99999*fSlope_h, m_ySlope );
-  peakI1_h = (fSlope_h > 1.e-12) ? coher*(m_peakI1 + hardening/fSlope_h) : coher*m_peakI1;
+  peakI1_h = (fSlope_h > 1.e-12) ? nonlinearCoher*(m_peakI1 + hardening/fSlope_h) : nonlinearCoher*m_peakI1;
   
   if (fSlope_h > 0.0 && peakI1_h >= 0.0 && m_stren == 0.0 && ySlope_h == 0.0)
   {// ----------------------------------------------Linear Drucker-Prager
@@ -2545,7 +2558,7 @@ void GeomechanicsUpdates::computeLimitParameters( real64 & a1,
   }
   else if (fSlope_h == 0.0 && peakI1_h == 0.0 && stren_h > 0.0 && ySlope_h == 0.0)
   { // ------------------------------------------------------- Von Mises
-    a1 = stren_h*coher;
+    a1 = stren_h*nonlinearCoher;
     a2 = 0.0;
     a3 = 0.0;
     a4 = 0.0;
@@ -2690,6 +2703,10 @@ public:
     /// string/key for fracture energy release rate
     static constexpr char const * fractureEnergyReleaseRateString() { return "fractureEnergyReleaseRate"; }
 
+    /// string/key for fracture softening shape parameter
+    static constexpr char const * fractureSofteningExponentString() { return "fractureSofteningExponent"; }
+   
+
     /// string/key for fracture stress
     static constexpr char const * fractureStressString() { return "fractureStress"; }
 
@@ -2808,6 +2825,7 @@ public:
                                 m_t1RateDependence,
                                 m_t2RateDependence,
                                 m_fractureEnergyReleaseRate,
+                                m_fractureSofteningExponent,
                                 m_fractureStress,
                                 m_cr,
                                 m_fluidBulkModulus,
@@ -2877,6 +2895,7 @@ public:
                           m_t1RateDependence,
                           m_t2RateDependence,
                           m_fractureEnergyReleaseRate,
+                          m_fractureSofteningExponent,
                           m_fractureStress,
                           m_cr,
                           m_fluidBulkModulus,
@@ -3022,6 +3041,7 @@ protected:
 
   // Fracture energy release rate
   real64 m_fractureEnergyReleaseRate;
+  real64 m_fractureSofteningExponent;  // shape parameter that controls softening with damage
   real64 m_fractureStress;
 
   // Cap shape parameter
