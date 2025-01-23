@@ -257,14 +257,6 @@ DECLARE_FIELD( energy_n,
                NO_WRITE,
                "Energy at the previous converged time step" );
 
-DECLARE_FIELD( dEnergy,
-               "dEnergy",
-               array1d< real64 >, // TODO: change to array2d< real64 >
-               0,
-               NOPLOT,
-               NO_WRITE,
-               "Derivatives of energy" );
-
 }
 
 }

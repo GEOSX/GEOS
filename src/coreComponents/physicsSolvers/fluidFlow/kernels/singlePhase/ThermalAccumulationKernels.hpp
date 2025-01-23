@@ -48,6 +48,7 @@ public:
   using Base::m_elemGhostRank;
   using Base::m_localMatrix;
   using Base::m_localRhs;
+  using Base::m_dMass;
 
   /// Note: Derivative lineup only supports dP & dT, not component terms
   static constexpr integer isThermal = NUM_DOF-1;
@@ -70,8 +71,7 @@ public:
     : Base( rankOffset, dofKey, subRegion, localMatrix, localRhs ),
     m_energy( subRegion.template getField< fields::flow::energy >() ),
     m_energy_n( subRegion.template getField< fields::flow::energy_n >() ),
-    m_dEnergy( subRegion.template getField< fields::flow::dEnergy >() ),
-    m_dMass( subRegion.template getField< fields::flow::dMass >() )
+    m_dEnergy( subRegion.template getField< fields::flow::dEnergy >() )
   {}
 
   /**
@@ -128,10 +128,7 @@ protected:
   /// View on energy
   arrayView1d< real64 const > const m_energy;
   arrayView1d< real64 const > const m_energy_n;
-  arrayView2d< real64 const > const m_dEnergy;
-
-  /// View on mass derivative
-  arrayView2d< real64 const > const m_dMass;
+  arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const m_dEnergy;
 
 };
 

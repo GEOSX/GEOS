@@ -63,7 +63,6 @@ public:
   using Base::m_elemsToNodes;
   using Base::m_constitutiveUpdate;
   using Base::m_finiteElementSpace;
-  using Base::m_dt;
 
 
   SinglePhasePoromechanicsEFEM( NodeManager const & nodeManager,
@@ -250,23 +249,17 @@ protected:
 
   /// The rank global fluid mass
   arrayView1d< real64 const > const m_fluidMass;
-  arrayView1d< real64 const > const m_dFluidMass_dPressure;
   arrayView1d< real64 const > const m_fluidMass_n;
+  arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const m_dFluidMass;
 
   /// The rank global densities
-  arrayView2d< real64 const > const m_solidDensity;
   arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const m_fluidDensity;
-  arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const m_fluidDensity_n;
-  arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > const m_dFluidDensity;
 
   /// The rank-global fluid pressure array.
   arrayView1d< real64 const > const m_matrixPressure;
 
   /// The rank-global fluid pressure array.
   arrayView1d< real64 const > const m_fracturePressure;
-
-  /// The rank-global delta-fluid pressure array.
-  arrayView2d< real64 const > const m_porosity_n;
 
   arrayView2d< real64 const > const m_tractionVec;
 
@@ -285,10 +278,6 @@ protected:
   arrayView1d< real64 const > const m_surfaceArea;
 
   arrayView1d< real64 const > const m_elementVolumeCell;
-
-  arrayView1d< real64 const > const m_elementVolumeFrac;
-
-  arrayView1d< real64 const > const m_deltaVolume;
 
   SortedArrayView< localIndex const > const m_fracturedElems;
 

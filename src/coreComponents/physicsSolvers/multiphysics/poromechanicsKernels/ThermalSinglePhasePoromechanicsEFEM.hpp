@@ -58,13 +58,10 @@ public:
   using Base::m_fracturePresDofNumber;
   using Base::m_matrixPresDofNumber;
   using Base::m_wDofNumber;
-  using Base::m_dFluidDensity;
-  using Base::m_porosity_n;
+  using Base::m_dFluidMass;
+  using Base::m_fluidDensity;
   using Base::m_surfaceArea;
-  using Base::m_elementVolumeFrac;
-  using Base::m_deltaVolume;
   using Base::m_cellsToEmbeddedSurfaces;
-  using Base::m_dt;
 
   ThermalSinglePhasePoromechanicsEFEM( NodeManager const & nodeManager,
                                        EdgeManager const & edgeManager,
@@ -158,25 +155,15 @@ public:
 
 private:
 
-  /// Views on fluid density derivatives
-  arrayView2d< real64 const > const m_dFluidMass;
-
-  /// Views on fluid density derivatives
-  arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > const m_dFluidDensity;
+  /// Views on energy
+  arrayView1d< real64 const > const m_energy;
+  arrayView1d< real64 const > const m_energy_n;
+  arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const m_dEnergy;
 
   /// Views on fluid internal energy
   arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const m_fluidInternalEnergy;
 
-  /// Views on energy
-  arrayView1d< real64 const > const m_energy;
-  arrayView1d< real64 const > const m_energy_n;
-  arrayView2d< real64 const > const m_dEnergy;
-
-  /// Views on temperature
-  arrayView1d< real64 const > const m_temperature;
-  arrayView1d< real64 const > const m_temperature_n;
-
-  /// The rank-global fluid pressure array.
+  /// The rank-global fluid temperature array.
   arrayView1d< real64 const > const m_matrixTemperature;
 };
 

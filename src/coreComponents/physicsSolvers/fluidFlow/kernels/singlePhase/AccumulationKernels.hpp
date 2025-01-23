@@ -151,7 +151,7 @@ public:
     stack.localResidual[0] = m_mass[ei] - m_mass_n[ei];
 
     // Derivative of residual wrt to pressure in the cell
-    stack.localJacobian[0][0] = m_dMass[ei][0][DerivOffset::dP];
+    stack.localJacobian[0][0] = m_dMass[ei][DerivOffset::dP];
 
     // Customize the kernel with this lambda
     kernelOp();
@@ -218,7 +218,7 @@ protected:
   /// View on mass
   arrayView1d< real64 const > const m_mass;
   arrayView1d< real64 const > const m_mass_n;
-  arrayView2d< real64 const > const m_dMass; // TODO check...
+  arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const m_dMass;
 
   /// View on the local CRS matrix
   CRSMatrixView< real64, globalIndex const > const m_localMatrix;

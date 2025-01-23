@@ -97,7 +97,12 @@ void SinglePhaseBase::registerDataOnMesh( Group & meshBodies )
 
       subRegion.registerField< fields::flow::mass >( getName() );
       subRegion.registerField< fields::flow::mass_n >( getName() );
-      subRegion.registerField< fields::flow::dMass >( getName() ).reference().resizeDimension< 1 >( m_numDofPerCell );;
+      subRegion.registerField< fields::flow::dMass >( getName() ).reference().resizeDimension< 1 >( m_numDofPerCell );
+
+      if( m_isThermal )
+      {
+        subRegion.registerField< fields::flow::dEnergy >( getName() ).reference().resizeDimension< 1 >( m_numDofPerCell );
+      }
     } );
 
     elemManager.forElementSubRegions< SurfaceElementSubRegion >( regionNames,
@@ -256,9 +261,11 @@ void SinglePhaseBase::updateMass( ElementSubRegionBase & subRegion ) const
 {
   GEOS_MARK_FUNCTION;
 
+  using DerivOffset = constitutive::singlefluid::DerivativeOffsetC< 1 >; // TODO check if this is correct
+
   arrayView1d< real64 > const mass = subRegion.getField< fields::flow::mass >();
-  arrayView1d< real64 > const dMass_dP = subRegion.getField< fields::flow::dMass_dPressure >();
   arrayView1d< real64 > const mass_n = subRegion.getField< fields::flow::mass_n >();
+  arrayView2d< real64, constitutive::singlefluid::USD_FLUID > const dMass = subRegion.getField< fields::flow::dMass >();
 
   CoupledSolidBase const & porousSolid =
     getConstitutiveModel< CoupledSolidBase >( subRegion, subRegion.template getReference< string >( viewKeyStruct::solidNamesString() ) );
@@ -267,19 +274,19 @@ void SinglePhaseBase::updateMass( ElementSubRegionBase & subRegion ) const
   arrayView2d< real64 const > const porosity_n = porousSolid.getPorosity_n();
 
   arrayView1d< real64 const > const volume = subRegion.getElementVolume();
-  arrayView1d< real64 > const deltaVolume = subRegion.getField< fields::flow::deltaVolume >();
+  arrayView1d< real64 const > const deltaVolume = subRegion.getField< fields::flow::deltaVolume >();
 
   SingleFluidBase & fluid =
     getConstitutiveModel< SingleFluidBase >( subRegion, subRegion.getReference< string >( viewKeyStruct::fluidNamesString() ) );
   arrayView2d< real64 const, singlefluid::USD_FLUID > const density = fluid.density();
   arrayView2d< real64 const, singlefluid::USD_FLUID > const density_n = fluid.density_n();
-  arrayView2d< real64 const > const dDensity_dP = fluid.dDensity_dPressure();
+  arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > const dDensity = fluid.dDensity();
 
   forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const ei )
   {
     real64 const vol = volume[ei] + deltaVolume[ei];
     mass[ei] = porosity[ei][0] * density[ei][0] * vol;
-    dMass_dP[ei] = ( dPorosity_dP[ei][0] * density[ei][0] + porosity[ei][0] * dDensity_dP[ei][0] ) * vol;
+    dMass[ei][DerivOffset::dP] = ( dPorosity_dP[ei][0] * density[ei][0] + porosity[ei][0] * dDensity[ei][0][DerivOffset::dP] ) * vol;
     if( isZero( mass_n[ei] ) ) // this is a hack for hydrofrac cases
     {
       mass_n[ei] = porosity_n[ei][0] * volume[ei] * density_n[ei][0]; // initialize newly created element mass
@@ -288,13 +295,11 @@ void SinglePhaseBase::updateMass( ElementSubRegionBase & subRegion ) const
 
   if( m_isThermal )
   {
-    arrayView1d< real64 > const dMass_dT = subRegion.getField< fields::flow::dMass_dTemperature >();
     arrayView2d< real64 const > const dPorosity_dT = porousSolid.getDporosity_dTemperature();
-    arrayView2d< real64 const > const dDensity_dT = fluid.dDensity_dTemperature();
     forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const ei )
     {
       real64 const vol = volume[ei] + deltaVolume[ei];
-      dMass_dT[ei] = ( dPorosity_dT[ei][0] * density[ei][0] + porosity[ei][0] * dDensity_dT[ei][0] ) * vol;
+      dMass[ei][DerivOffset::dT] = ( dPorosity_dT[ei][0] * density[ei][0] + porosity[ei][0] * dDensity[ei][0][DerivOffset::dT] ) * vol;
     } );
   }
 }
@@ -303,12 +308,13 @@ void SinglePhaseBase::updateEnergy( ElementSubRegionBase & subRegion ) const
 {
   GEOS_MARK_FUNCTION;
 
+  using DerivOffset = constitutive::singlefluid::DerivativeOffsetC< 1 >;
+
   arrayView1d< real64 > const energy = subRegion.getField< fields::flow::energy >();
-  arrayView1d< real64 > const dEnergy_dP = subRegion.getField< fields::flow::dEnergy_dPressure >();
-  arrayView1d< real64 > const dEnergy_dT = subRegion.getField< fields::flow::dEnergy_dTemperature >();
+  arrayView2d< real64, constitutive::singlefluid::USD_FLUID > const dEnergy = subRegion.getField< fields::flow::dEnergy >();
 
   arrayView1d< real64 const > const volume = subRegion.getElementVolume();
-  arrayView1d< real64 > const deltaVolume = subRegion.getField< fields::flow::deltaVolume >();
+  arrayView1d< real64 const > const deltaVolume = subRegion.getField< fields::flow::deltaVolume >();
 
   CoupledSolidBase const & porousSolid =
     getConstitutiveModel< CoupledSolidBase >( subRegion, subRegion.template getReference< string >( viewKeyStruct::solidNamesString() ) );
@@ -322,10 +328,8 @@ void SinglePhaseBase::updateEnergy( ElementSubRegionBase & subRegion ) const
     getConstitutiveModel< SingleFluidBase >( subRegion, subRegion.getReference< string >( viewKeyStruct::fluidNamesString() ) );
   arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const density = fluid.density();
   arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const fluidInternalEnergy = fluid.internalEnergy();
-  arrayView2d< real64 const > const dDensity_dP = fluid.dDensity_dPressure();
-  arrayView2d< real64 const > const dDensity_dT = fluid.dDensity_dTemperature();
-  arrayView2d< real64 const > const dFluidInternalEnergy_dP = fluid.dInternalEnergy_dPressure();
-  arrayView2d< real64 const > const dFluidInternalEnergy_dT = fluid.dInternalEnergy_dTemperature();
+  arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > const dDensity = fluid.dDensity();
+  arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > const dFluidInternalEnergy = fluid.dInternalEnergy();
 
   forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const ei )
   {
@@ -333,17 +337,17 @@ void SinglePhaseBase::updateEnergy( ElementSubRegionBase & subRegion ) const
     energy[ei] = vol *
                  ( porosity[ei][0] * density[ei][0] * fluidInternalEnergy[ei][0] +
                    ( 1.0 - porosity[ei][0] ) * rockInternalEnergy[ei][0] );
-    dEnergy_dP[ei] = vol *
-                     ( dPorosity_dP[ei][0] * density[ei][0] * fluidInternalEnergy[ei][0] +
-                       porosity[ei][0] * dDensity_dP[ei][0] * fluidInternalEnergy[ei][0] +
-                       porosity[ei][0] * density[ei][0] * dFluidInternalEnergy_dP[ei][0] -
-                       dPorosity_dP[ei][0] * rockInternalEnergy[ei][0] );
-    dEnergy_dT[ei] = vol *
-                     ( dPorosity_dT[ei][0] * density[ei][0] * fluidInternalEnergy[ei][0] +
-                       porosity[ei][0] * dDensity_dT[ei][0] * fluidInternalEnergy[ei][0] +
-                       porosity[ei][0] * density[ei][0] * dFluidInternalEnergy_dT[ei][0] -
-                       dPorosity_dT[ei][0] * rockInternalEnergy[ei][0] +
-                       ( 1.0 - porosity[ei][0] ) * dRockInternalEnergy_dT[ei][0] );
+    dEnergy[ei][DerivOffset::dP] = vol *
+                                   ( dPorosity_dP[ei][0] * density[ei][0] * fluidInternalEnergy[ei][0] +
+                                     porosity[ei][0] * dDensity[ei][0][DerivOffset::dP] * fluidInternalEnergy[ei][0] +
+                                     porosity[ei][0] * density[ei][0] * dFluidInternalEnergy[ei][0][DerivOffset::dP] -
+                                     dPorosity_dP[ei][0] * rockInternalEnergy[ei][0] );
+    dEnergy[ei][DerivOffset::dT] = vol *
+                                   ( dPorosity_dT[ei][0] * density[ei][0] * fluidInternalEnergy[ei][0] +
+                                     porosity[ei][0] * dDensity[ei][0][DerivOffset::dT] * fluidInternalEnergy[ei][0] +
+                                     porosity[ei][0] * density[ei][0] * dFluidInternalEnergy[ei][0][DerivOffset::dT] -
+                                     dPorosity_dT[ei][0] * rockInternalEnergy[ei][0] +
+                                     ( 1.0 - porosity[ei][0] ) * dRockInternalEnergy_dT[ei][0] );
   } );
 }
 

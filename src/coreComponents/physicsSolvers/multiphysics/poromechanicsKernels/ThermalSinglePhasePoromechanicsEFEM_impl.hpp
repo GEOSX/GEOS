@@ -66,13 +66,10 @@ ThermalSinglePhasePoromechanicsEFEM( NodeManager const & nodeManager,
         inputDt,
         inputGravityVector,
         fluidModelKey ),
-  m_dFluidMass_dTemperature( embeddedSurfSubRegion.template getField< fields::flow::dMass_dTemperature >() ),
-  m_fluidInternalEnergy( embeddedSurfSubRegion.template getConstitutiveModel< constitutive::SingleFluidBase >( elementSubRegion.template getReference< string >( fluidModelKey ) ).internalEnergy() ),
   m_energy( elementSubRegion.template getField< fields::flow::energy >() ),
   m_energy_n( elementSubRegion.template getField< fields::flow::energy_n >() ),
   m_dEnergy( elementSubRegion.template getField< fields::flow::dEnergy >() ),
-  m_temperature( embeddedSurfSubRegion.template getField< fields::flow::temperature >() ),
-  m_temperature_n( embeddedSurfSubRegion.template getField< fields::flow::temperature_n >() ),
+  m_fluidInternalEnergy( embeddedSurfSubRegion.template getConstitutiveModel< constitutive::SingleFluidBase >( elementSubRegion.template getReference< string >( fluidModelKey ) ).internalEnergy() ),
   m_matrixTemperature( elementSubRegion.template getField< fields::flow::temperature >() )
 {}
 
@@ -171,16 +168,16 @@ complete( localIndex const k,
 
   localIndex const embSurfIndex = m_cellsToEmbeddedSurfaces[k][0];
 
-  stack.dFluidMassIncrement_dTemperature = m_dFluidMass[ embSurfIndex ][ DerivOffset::dT ];
+  stack.dFluidMassIncrement_dTemperature = m_dFluidMass[embSurfIndex][DerivOffset::dT];
 
   // Energy balance accumulation
   stack.energyIncrement               = m_energy[embSurfIndex] - m_energy_n[embSurfIndex];
-  stack.dEnergyIncrement_dJump        = m_fluidDensity( embSurfIndex, 0 ) * m_fluidInternalEnergy( embSurfIndex, 0 ) * m_surfaceArea[ embSurfIndex ];
-  stack.dEnergyIncrement_dPressure    = m_dEnergy[ embSurfIndex ][ DerivOffset::dP ];
-  stack.dEnergyIncrement_dTemperature = m_dEnergy[ embSurfIndex ][ DerivOffset::dT ];
+  stack.dEnergyIncrement_dJump        = m_fluidDensity[embSurfIndex][0] * m_fluidInternalEnergy[embSurfIndex][0] * m_surfaceArea[embSurfIndex];
+  stack.dEnergyIncrement_dPressure    = m_dEnergy[embSurfIndex][DerivOffset::dP];
+  stack.dEnergyIncrement_dTemperature = m_dEnergy[embSurfIndex][DerivOffset::dT];
 
-  globalIndex const fracturePressureDof        = m_fracturePresDofNumber[ embSurfIndex ];
-  globalIndex const fractureTemperatureDof     = m_fracturePresDofNumber[ embSurfIndex ] + 1;
+  globalIndex const fracturePressureDof        = m_fracturePresDofNumber[embSurfIndex];
+  globalIndex const fractureTemperatureDof     = m_fracturePresDofNumber[embSurfIndex] + 1;
   localIndex const massBalanceEquationIndex   = fracturePressureDof - m_dofRankOffset;
   localIndex const energyBalanceEquationIndex = massBalanceEquationIndex + 1;
 

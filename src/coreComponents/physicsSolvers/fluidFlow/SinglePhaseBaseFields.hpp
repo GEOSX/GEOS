@@ -85,6 +85,14 @@ DECLARE_FIELD( dMobility,
                NO_WRITE,
                "dMobility" );
 
+DECLARE_FIELD( dEnergy,
+               "dEnergy",
+               array2dLayoutFluid,
+               0,
+               NOPLOT,
+               NO_WRITE,
+               "Derivatives of energy" );
+
 }
 
 }
