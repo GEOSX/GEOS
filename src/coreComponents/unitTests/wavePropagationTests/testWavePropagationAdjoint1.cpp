@@ -391,7 +391,7 @@ TEST_F( AcousticWaveEquationSEMTest, SeismoTrace )
   real32 diffToCheck;
   diffToCheck=std::abs( sum_ufb-sum_qff ) / std::max( std::sqrt( sum_fb2*sum_u2 ), std::sqrt( sum_q2*sum_ff2 ));
   std::cout << " Diff to compare with 9e-3: " << diffToCheck << std::endl;
-  ASSERT_TRUE( diffToCheck < 9e-3);
+  ASSERT_TRUE( diffToCheck < 9e-3 );
 }
 
 int main( int argc, char * * argv )
