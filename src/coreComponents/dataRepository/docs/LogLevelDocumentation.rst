@@ -21,9 +21,10 @@ If there is no ``LogLevelsInfos.hpp`` in the corresponding folder, you can creat
 Example of usage
 ----------------
 
-To fill in a log level, make sure it is declared in the constructor :
+To use a log level, make sure it is declared in the constructor :
 
 .. code-block:: c++
+
     addLogLevel< logInfo::StructName >();
 
 To log a message with a log level, 4 macros are defined in LogLevelsInfo.hpp located in dataRepository :
@@ -32,8 +33,6 @@ To log a message with a log level, 4 macros are defined in LogLevelsInfo.hpp loc
 * GEOS_LOG_LEVEL_INFO_RANK_0( logInfoStruct, msg ) 
 * GEOS_LOG_LEVEL_INFO_BY_RANK( logInfoStruct, msg ) 
 * GEOS_LOG_LEVEL_INFO_RANK_0_NLR( logInfoStruct, msg ) 
-
-with ``logInfoStruct`` the name of the associated structure.
 
 .. code-block:: c++
 
