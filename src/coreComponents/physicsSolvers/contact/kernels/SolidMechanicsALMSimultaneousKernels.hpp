@@ -276,9 +276,9 @@ public:
 
     // Compute the trial traction
     real64 dispJump[ 3 ];
-    dispJump[0] = stack.dispJumpLocal[0] * m_faceArea[k];
-    dispJump[1] = ( stack.dispJumpLocal[1] - stack.oldDispJumpLocal[1] ) * m_faceArea[k];
-    dispJump[2] = ( stack.dispJumpLocal[2] - stack.oldDispJumpLocal[2] ) * m_faceArea[k];
+    dispJump[0] = stack.dispJumpLocal[0];
+    dispJump[1] = ( stack.dispJumpLocal[1] - stack.oldDispJumpLocal[1] );
+    dispJump[2] = ( stack.dispJumpLocal[2] - stack.oldDispJumpLocal[2] );
 
     LvArray::tensorOps::scaledCopy< 3 >( tractionNew, stack.tLocal, -1.0 );
     LvArray::tensorOps::Ri_add_AijBj< 3, 3 >( tractionNew, stack.localPenalty, dispJump );
@@ -308,6 +308,10 @@ public:
     LvArray::tensorOps::Rij_eq_AikBkj< 3, numBdofs, 3 >( matDRtAtb, stack.localPenalty,
                                                          matRRtAtb );
 
+    real64 const fac = 1.0 / m_faceArea[k];
+    LvArray::tensorOps::scale< 3, numUdofs >( matDRtAtu, fac );
+    LvArray::tensorOps::scale< 3, numBdofs >( matDRtAtb, fac );
+
     // R*RtAtu
     LvArray::tensorOps::Rij_eq_AikBkj< 3, numUdofs, 3 >( matRRtAtu, stack.localRotationMatrix,
                                                          matDRtAtu );
@@ -329,6 +333,7 @@ public:
     // transp(Atu)*RRtAtb
     LvArray::tensorOps::Rij_eq_AkiBkj< numUdofs, numBdofs, 3 >( stack.localAutAtb, stack.localAtu,
                                                                 matRRtAtb );
+
 
     // Compute the local residuals
     LvArray::tensorOps::scaledAdd< numUdofs >( stack.localRu, tractionR, 1 );
@@ -423,17 +428,16 @@ struct ComputeTractionSimultaneousKernel
           arrayView2d< real64 const > const & traction,
           arrayView2d< real64 const > const & dispJump,
           arrayView2d< real64 const > const & deltaDispJump,
-          arrayView1d< real64 const > const & faceElementArea,
           arrayView2d< real64 > const & tractionNew )
   {
 
     forAll< POLICY >( size, [=] GEOS_HOST_DEVICE ( localIndex const kfe )
     {
-      tractionNew[kfe][0] = traction[kfe][0] + penalty[kfe][0] * dispJump[kfe][0] * faceElementArea[kfe];
+      tractionNew[kfe][0] = traction[kfe][0] + penalty[kfe][0] * dispJump[kfe][0];
       tractionNew[kfe][1] = traction[kfe][1] + ( penalty[kfe][2] * deltaDispJump[kfe][1]+
-                                                 penalty[kfe][4] * deltaDispJump[kfe][2] ) * faceElementArea[kfe];
+                                                 penalty[kfe][4] * deltaDispJump[kfe][2] );
       tractionNew[kfe][2] = traction[kfe][2] + ( penalty[kfe][3] * deltaDispJump[kfe][2] +
-                                                 penalty[kfe][4] * deltaDispJump[kfe][1] ) * faceElementArea[kfe];
+                                                 penalty[kfe][4] * deltaDispJump[kfe][1] );
     } );
   }
 

@@ -99,6 +99,8 @@ void ContactSolverBase::registerDataOnMesh( dataRepository::Group & meshBodies )
 
       subRegion.registerField< fields::contact::slip >( getName() );
 
+      subRegion.registerField< fields::contact::tangentialTraction >( getName() );
+
       subRegion.registerField< fields::contact::deltaSlip >( getName() ).
         setDimLabels( 1, labelsTangent ).reference().resizeDimension< 1 >( 2 );
 
