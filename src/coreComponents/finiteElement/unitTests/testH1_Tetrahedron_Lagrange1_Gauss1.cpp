@@ -17,7 +17,7 @@
  * @file testH1_Tetrahedron_Lagrange1_Gauss1.cpp
  */
 
-#include "finiteElement/elementFormulations/H1_Tetrahedron_Lagrange1_Gauss1.hpp"
+#include "finiteElement/elementFormulations/H1_Tetrahedron_Lagrange1_Gauss.hpp"
 #include "common/GEOS_RAJA_Interface.hpp"
 
 #include "gtest/gtest.h"
