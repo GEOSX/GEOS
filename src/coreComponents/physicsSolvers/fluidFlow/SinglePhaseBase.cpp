@@ -263,47 +263,51 @@ void SinglePhaseBase::updateMass( ElementSubRegionBase & subRegion ) const
 {
   GEOS_MARK_FUNCTION;
 
-  using DerivOffset = constitutive::singlefluid::DerivativeOffsetC< 1 >; // TODO check if this is correct
-
-  arrayView1d< real64 > const mass = subRegion.getField< fields::flow::mass >();
-  arrayView1d< real64 > const mass_n = subRegion.getField< fields::flow::mass_n >();
-  arrayView2d< real64, constitutive::singlefluid::USD_FLUID > const dMass = subRegion.getField< fields::flow::dMass >();
-
-  CoupledSolidBase const & porousSolid =
-    getConstitutiveModel< CoupledSolidBase >( subRegion, subRegion.template getReference< string >( viewKeyStruct::solidNamesString() ) );
-  arrayView2d< real64 const > const porosity = porousSolid.getPorosity();
-  arrayView2d< real64 const > const dPorosity_dP = porousSolid.getDporosity_dPressure();
-  arrayView2d< real64 const > const porosity_n = porousSolid.getPorosity_n();
-
-  arrayView1d< real64 const > const volume = subRegion.getElementVolume();
-  arrayView1d< real64 const > const deltaVolume = subRegion.getField< fields::flow::deltaVolume >();
-
-  SingleFluidBase & fluid =
-    getConstitutiveModel< SingleFluidBase >( subRegion, subRegion.getReference< string >( viewKeyStruct::fluidNamesString() ) );
-  arrayView2d< real64 const, singlefluid::USD_FLUID > const density = fluid.density();
-  arrayView2d< real64 const, singlefluid::USD_FLUID > const density_n = fluid.density_n();
-  arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > const dDensity = fluid.dDensity();
-
-  forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const ei )
+  geos::internal::kernelLaunchSelectorThermalSwitch ( m_isThermal, [&] ( auto ISTHERMAL )
   {
-    real64 const vol = volume[ei] + deltaVolume[ei];
-    mass[ei] = porosity[ei][0] * density[ei][0] * vol;
-    dMass[ei][DerivOffset::dP] = ( dPorosity_dP[ei][0] * density[ei][0] + porosity[ei][0] * dDensity[ei][0][DerivOffset::dP] ) * vol;
-    if( isZero( mass_n[ei] ) ) // this is a hack for hydrofrac cases
-    {
-      mass_n[ei] = porosity_n[ei][0] * volume[ei] * density_n[ei][0]; // initialize newly created element mass
-    }
-  } );
+    integer constexpr IS_THERMAL = ISTHERMAL();
+    using DerivOffset = constitutive::singlefluid::DerivativeOffsetC< IS_THERMAL >;
 
-  if( m_isThermal )
-  {
-    arrayView2d< real64 const > const dPorosity_dT = porousSolid.getDporosity_dTemperature();
+    arrayView1d< real64 > const mass = subRegion.getField< fields::flow::mass >();
+    arrayView1d< real64 > const mass_n = subRegion.getField< fields::flow::mass_n >();
+    arrayView2d< real64, constitutive::singlefluid::USD_FLUID > const dMass = subRegion.getField< fields::flow::dMass >();
+
+    CoupledSolidBase const & porousSolid =
+      getConstitutiveModel< CoupledSolidBase >( subRegion, subRegion.template getReference< string >( viewKeyStruct::solidNamesString() ) );
+    arrayView2d< real64 const > const porosity = porousSolid.getPorosity();
+    arrayView2d< real64 const > const dPorosity_dP = porousSolid.getDporosity_dPressure();
+    arrayView2d< real64 const > const porosity_n = porousSolid.getPorosity_n();
+
+    arrayView1d< real64 const > const volume = subRegion.getElementVolume();
+    arrayView1d< real64 const > const deltaVolume = subRegion.getField< fields::flow::deltaVolume >();
+
+    SingleFluidBase & fluid =
+      getConstitutiveModel< SingleFluidBase >( subRegion, subRegion.getReference< string >( viewKeyStruct::fluidNamesString() ) );
+    arrayView2d< real64 const, singlefluid::USD_FLUID > const density = fluid.density();
+    arrayView2d< real64 const, singlefluid::USD_FLUID > const density_n = fluid.density_n();
+    arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > const dDensity = fluid.dDensity();
+
     forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const ei )
     {
       real64 const vol = volume[ei] + deltaVolume[ei];
-      dMass[ei][DerivOffset::dT] = ( dPorosity_dT[ei][0] * density[ei][0] + porosity[ei][0] * dDensity[ei][0][DerivOffset::dT] ) * vol;
+      mass[ei] = porosity[ei][0] * density[ei][0] * vol;
+      dMass[ei][DerivOffset::dP] = ( dPorosity_dP[ei][0] * density[ei][0] + porosity[ei][0] * dDensity[ei][0][DerivOffset::dP] ) * vol;
+      if( isZero( mass_n[ei] ) ) // this is a hack for hydrofrac cases
+      {
+        mass_n[ei] = porosity_n[ei][0] * volume[ei] * density_n[ei][0]; // initialize newly created element mass
+      }
     } );
-  }
+
+    if constexpr (IS_THERMAL)
+    {
+      arrayView2d< real64 const > const dPorosity_dT = porousSolid.getDporosity_dTemperature();
+      forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const ei )
+      {
+        real64 const vol = volume[ei] + deltaVolume[ei];
+        dMass[ei][DerivOffset::dT] = ( dPorosity_dT[ei][0] * density[ei][0] + porosity[ei][0] * dDensity[ei][0][DerivOffset::dT] ) * vol;
+      } );
+    }
+  } );
 }
 
 void SinglePhaseBase::updateEnergy( ElementSubRegionBase & subRegion ) const
