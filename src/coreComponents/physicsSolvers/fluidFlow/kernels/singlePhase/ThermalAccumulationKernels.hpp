@@ -46,14 +46,9 @@ public:
   using Base::m_rankOffset;
   using Base::m_dofNumber;
   using Base::m_elemGhostRank;
-  using Base::m_volume;
-  using Base::m_deltaVolume;
-  using Base::m_porosity;
-  using Base::m_dPoro_dPres;
-  using Base::m_density;
-  using Base::m_dDensity;
   using Base::m_localMatrix;
   using Base::m_localRhs;
+  using Base::m_dMass;
 
   /// Note: Derivative lineup only supports dP & dT, not component terms
   static constexpr integer isThermal = NUM_DOF-1;
@@ -71,17 +66,12 @@ public:
   AccumulationKernel( globalIndex const rankOffset,
                       string const dofKey,
                       SUBREGION_TYPE const & subRegion,
-                      constitutive::SingleFluidBase const & fluid,
-                      constitutive::CoupledSolidBase const & solid,
                       CRSMatrixView< real64, globalIndex const > const & localMatrix,
                       arrayView1d< real64 > const & localRhs )
-    : Base( rankOffset, dofKey, subRegion, fluid, solid, localMatrix, localRhs ),
-    m_dPoro_dTemp( solid.getDporosity_dTemperature() ),
-    m_internalEnergy( fluid.internalEnergy() ),
-    m_dInternalEnergy( fluid.dInternalEnergy() ),
-    m_rockInternalEnergy( solid.getInternalEnergy() ),
-    m_dRockInternalEnergy_dTemp( solid.getDinternalEnergy_dTemperature() ),
-    m_energy_n( subRegion.template getField< fields::flow::energy_n >() )
+    : Base( rankOffset, dofKey, subRegion, localMatrix, localRhs ),
+    m_energy( subRegion.template getField< fields::flow::energy >() ),
+    m_energy_n( subRegion.template getField< fields::flow::energy_n >() ),
+    m_dEnergy( subRegion.template getField< fields::flow::dEnergy >() )
   {}
 
   /**
@@ -89,60 +79,7 @@ public:
    * @brief Kernel variables (dof numbers, jacobian and residual) located on the stack
    */
   struct StackVariables : public Base::StackVariables
-  {
-public:
-
-    GEOS_HOST_DEVICE
-    StackVariables()
-      : Base::StackVariables()
-    {}
-
-    using Base::StackVariables::poreVolume;
-    using Base::StackVariables::dPoreVolume_dPres;
-    using Base::StackVariables::localRow;
-    using Base::StackVariables::dofIndices;
-    using Base::StackVariables::localResidual;
-    using Base::StackVariables::localJacobian;
-
-    /// Derivative of pore volume with respect to temperature
-    real64 dPoreVolume_dTemp = 0.0;
-
-    // Solid energy
-
-    /// Solid energy at time n+1
-    real64 solidEnergy = 0.0;
-
-    /// Derivative of solid internal energy with respect to pressure
-    real64 dSolidEnergy_dPres = 0.0;
-
-    /// Derivative of solid internal energy with respect to temperature
-    real64 dSolidEnergy_dTemp = 0.0;
-  };
-
-
-  /**
-   * @brief Performs the setup phase for the kernel.
-   * @param[in] ei the element index
-   * @param[in] stack the stack variables
-   */
-  GEOS_HOST_DEVICE
-  void setup( localIndex const ei,
-              StackVariables & stack ) const
-  {
-    Base::setup( ei, stack );
-
-    stack.dPoreVolume_dTemp = ( m_volume[ei] + m_deltaVolume[ei] ) * m_dPoro_dTemp[ei][0];
-
-    // initialize the solid volume
-    real64 const solidVolume = ( m_volume[ei] + m_deltaVolume[ei] ) * ( 1.0 - m_porosity[ei][0] );
-    real64 const dSolidVolume_dPres = -( m_volume[ei] + m_deltaVolume[ei] ) * m_dPoro_dPres[ei][0];
-    real64 const dSolidVolume_dTemp = -( m_volume[ei] + m_deltaVolume[ei] ) * m_dPoro_dTemp[ei][0];
-
-    // initialize the solid internal energy
-    stack.solidEnergy = solidVolume * m_rockInternalEnergy[ei][0];
-    stack.dSolidEnergy_dPres = dSolidVolume_dPres * m_rockInternalEnergy[ei][0];
-    stack.dSolidEnergy_dTemp = solidVolume * m_dRockInternalEnergy_dTemp[ei][0] + dSolidVolume_dTemp * m_rockInternalEnergy[ei][0];
-  }
+  {};
 
   /**
    * @brief Compute the local accumulation contributions to the residual and Jacobian
@@ -155,35 +92,15 @@ public:
   void computeAccumulation( localIndex const ei,
                             StackVariables & stack ) const
   {
-    stack.localResidual[numEqn-1] = -m_energy_n[ei];
+    Base::computeAccumulation( ei, stack );
 
-    Base::computeAccumulation( ei, stack, [&] ()
-    {
-      // Step 1: assemble the derivatives of the mass balance equation w.r.t temperature
-      stack.localJacobian[0][numDof-1] = stack.poreVolume * m_dDensity[ei][0][DerivOffset::dT] + stack.dPoreVolume_dTemp * m_density[ei][0];
+    // assemble the derivatives of the mass balance equation w.r.t temperature
+    stack.localJacobian[0][numDof-1] = m_dMass[ei][DerivOffset::dT];
 
-      // Step 2: assemble the fluid part of the accumulation term of the energy equation
-      real64 const fluidEnergy = stack.poreVolume * m_density[ei][0] * m_internalEnergy[ei][0];
-
-      real64 const dFluidEnergy_dP = stack.dPoreVolume_dPres * m_density[ei][0] * m_internalEnergy[ei][0]
-                                     + stack.poreVolume * m_dDensity[ei][0][DerivOffset::dP] * m_internalEnergy[ei][0]
-                                     + stack.poreVolume * m_density[ei][0] * m_dInternalEnergy[ei][0][DerivOffset::dP];
-
-      real64 const dFluidEnergy_dT = stack.poreVolume * m_dDensity[ei][0][DerivOffset::dT] * m_internalEnergy[ei][0]
-                                     + stack.poreVolume * m_density[ei][0] * m_dInternalEnergy[ei][0][DerivOffset::dT]
-                                     + stack.dPoreVolume_dTemp * m_density[ei][0] * m_internalEnergy[ei][0];
-      // local accumulation
-      stack.localResidual[numEqn-1] += fluidEnergy;
-
-      // derivatives w.r.t. pressure and temperature
-      stack.localJacobian[numEqn-1][0]        = dFluidEnergy_dP;
-      stack.localJacobian[numEqn-1][numDof-1] = dFluidEnergy_dT;
-    } );
-
-    // Step 3: assemble the solid part of the accumulation term of the energy equation
-    stack.localResidual[numEqn-1] += stack.solidEnergy;
-    stack.localJacobian[numEqn-1][0] += stack.dSolidEnergy_dPres;
-    stack.localJacobian[numEqn-1][numDof-1] += stack.dSolidEnergy_dTemp;
+    // assemble the accumulation term of the energy equation
+    stack.localResidual[numEqn-1] = m_energy[ei] - m_energy_n[ei];
+    stack.localJacobian[numEqn-1][0] += m_dEnergy[ei][DerivOffset::dP];
+    stack.localJacobian[numEqn-1][numDof-1] += m_dEnergy[ei][DerivOffset::dT];
   }
 
   /**
@@ -208,20 +125,10 @@ public:
 
 protected:
 
-
-  /// View on derivative of porosity w.r.t temperature
-  arrayView2d< real64 const > const m_dPoro_dTemp;
-
-  /// Views on fluid internal energy
-  arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const m_internalEnergy;
-  arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > const m_dInternalEnergy;
-
-  /// Views on rock internal energy
-  arrayView2d< real64 const > const m_rockInternalEnergy;
-  arrayView2d< real64 const > const m_dRockInternalEnergy_dTemp;
-
   /// View on energy
+  arrayView1d< real64 const > const m_energy;
   arrayView1d< real64 const > const m_energy_n;
+  arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const m_dEnergy;
 
 };
 
@@ -249,11 +156,9 @@ public:
   SurfaceElementAccumulationKernel( globalIndex const rankOffset,
                                     string const dofKey,
                                     SurfaceElementSubRegion const & subRegion,
-                                    constitutive::SingleFluidBase const & fluid,
-                                    constitutive::CoupledSolidBase const & solid,
                                     CRSMatrixView< real64, globalIndex const > const & localMatrix,
                                     arrayView1d< real64 > const & localRhs )
-    : Base( rankOffset, dofKey, subRegion, fluid, solid, localMatrix, localRhs ),
+    : Base( rankOffset, dofKey, subRegion, localMatrix, localRhs ),
     m_creationMass( subRegion.getField< fields::flow::massCreated >() )
   {}
 
@@ -303,25 +208,23 @@ public:
   createAndLaunch( globalIndex const rankOffset,
                    string const dofKey,
                    SUBREGION_TYPE const & subRegion,
-                   constitutive::SingleFluidBase const & fluid,
-                   constitutive::CoupledSolidBase const & solid,
                    CRSMatrixView< real64, globalIndex const > const & localMatrix,
                    arrayView1d< real64 > const & localRhs )
   {
     if constexpr ( std::is_base_of_v< CellElementSubRegion, SUBREGION_TYPE > )
     {
       integer constexpr NUM_DOF = 2;
-      AccumulationKernel< CellElementSubRegion, NUM_DOF > kernel( rankOffset, dofKey, subRegion, fluid, solid, localMatrix, localRhs );
+      AccumulationKernel< CellElementSubRegion, NUM_DOF > kernel( rankOffset, dofKey, subRegion, localMatrix, localRhs );
       AccumulationKernel< CellElementSubRegion, NUM_DOF >::template launch< POLICY >( subRegion.size(), kernel );
     }
     else if constexpr ( std::is_base_of_v< SurfaceElementSubRegion, SUBREGION_TYPE > )
     {
-      SurfaceElementAccumulationKernel kernel( rankOffset, dofKey, subRegion, fluid, solid, localMatrix, localRhs );
+      SurfaceElementAccumulationKernel kernel( rankOffset, dofKey, subRegion, localMatrix, localRhs );
       SurfaceElementAccumulationKernel::launch< POLICY >( subRegion.size(), kernel );
     }
     else
     {
-      GEOS_UNUSED_VAR( rankOffset, dofKey, subRegion, fluid, solid, localMatrix, localRhs );
+      GEOS_UNUSED_VAR( rankOffset, dofKey, subRegion, localMatrix, localRhs );
       GEOS_ERROR( "Unsupported subregion type: " << typeid(SUBREGION_TYPE).name() );
     }
   }

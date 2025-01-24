@@ -105,7 +105,9 @@ public:
     dPorosity_dPressure = biotSkeletonModulusInverse;
     dPorosity_dTemperature = -porosityThermalExpansion;
 
-    savePorosity( k, q, porosity, dPorosity_dPressure, dPorosity_dTemperature );
+    m_newPorosity[k][q] = porosity;
+    m_dPorosity_dPressure[k][q] = dPorosity_dPressure;
+    m_dPorosity_dTemperature[k][q] = dPorosity_dTemperature;
   }
 
   GEOS_HOST_DEVICE

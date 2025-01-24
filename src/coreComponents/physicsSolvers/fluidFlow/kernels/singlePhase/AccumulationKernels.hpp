@@ -26,6 +26,7 @@
 #include "constitutive/fluid/singlefluid/SingleFluidUtils.hpp"
 #include "constitutive/solid/CoupledSolidBase.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
+#include "physicsSolvers/fluidFlow/SinglePhaseBaseFields.hpp"
 #include "codingUtilities/Utilities.hpp"
 
 namespace geos
@@ -63,29 +64,21 @@ public:
    * @param[in] rankOffset the offset of my MPI rank
    * @param[in] dofKey the string key to retrieve the degress of freedom numbers
    * @param[in] subRegion the element subregion
-   * @param[in] fluid the fluid model
-   * @param[in] solid the solid model
    * @param[inout] localMatrix the local CRS matrix
    * @param[inout] localRhs the local right-hand side vector
    */
   AccumulationKernel( globalIndex const rankOffset,
                       string const dofKey,
                       SUBREGION_TYPE const & subRegion,
-                      constitutive::SingleFluidBase const & fluid,
-                      constitutive::CoupledSolidBase const & solid,
                       CRSMatrixView< real64, globalIndex const > const & localMatrix,
                       arrayView1d< real64 > const & localRhs )
     :
     m_rankOffset( rankOffset ),
     m_dofNumber( subRegion.template getReference< array1d< globalIndex > >( dofKey ) ),
     m_elemGhostRank( subRegion.ghostRank() ),
-    m_volume( subRegion.getElementVolume() ),
-    m_deltaVolume( subRegion.template getField< fields::flow::deltaVolume >() ),
-    m_porosity( solid.getPorosity() ),
-    m_dPoro_dPres( solid.getDporosity_dPressure() ),
-    m_density( fluid.density() ),
-    m_dDensity ( fluid.dDensity() ),
+    m_mass( subRegion.template getField< fields::flow::mass >() ),
     m_mass_n( subRegion.template getField< fields::flow::mass_n >() ),
+    m_dMass( subRegion.template getField< fields::flow::dMass >() ),
     m_localMatrix( localMatrix ),
     m_localRhs( localRhs )
   {}
@@ -97,14 +90,6 @@ public:
   struct StackVariables
   {
 public:
-
-    // Pore volume information
-
-    /// Pore volume at time n+1
-    real64 poreVolume = 0.0;
-
-    /// Derivative of pore volume with respect to pressure
-    real64 dPoreVolume_dPres = 0.0;
 
     // Residual information
 
@@ -141,10 +126,6 @@ public:
   void setup( localIndex const ei,
               StackVariables & stack ) const
   {
-    // initialize the pore volume
-    stack.poreVolume = ( m_volume[ei] + m_deltaVolume[ei] ) * m_porosity[ei][0];
-    stack.dPoreVolume_dPres = ( m_volume[ei] + m_deltaVolume[ei] ) * m_dPoro_dPres[ei][0];
-
     // set row index and degrees of freedom indices for this element
     stack.localRow = m_dofNumber[ei] - m_rankOffset;
     for( integer idof = 0; idof < numDof; ++idof )
@@ -167,8 +148,11 @@ public:
                             FUNC && kernelOp = NoOpFunc{} ) const
   {
     // Residual contribution is mass conservation in the cell
-    stack.localResidual[0] = stack.poreVolume * m_density[ei][0] - m_mass_n[ei];
-    stack.localJacobian[0][0] = stack.dPoreVolume_dPres * m_density[ei][0] + m_dDensity[ei][0][DerivOffset::dP] * stack.poreVolume;
+    stack.localResidual[0] = m_mass[ei] - m_mass_n[ei];
+
+    // Derivative of residual wrt to pressure in the cell
+    stack.localJacobian[0][0] = m_dMass[ei][DerivOffset::dP];
+
     // Customize the kernel with this lambda
     kernelOp();
   }
@@ -231,20 +215,10 @@ protected:
   /// View on the ghost ranks
   arrayView1d< integer const > const m_elemGhostRank;
 
-  /// View on the element volumes
-  arrayView1d< real64 const > const m_volume;
-  arrayView1d< real64 const > const m_deltaVolume;
-
-  /// Views on the porosity
-  arrayView2d< real64 const > const m_porosity;
-  arrayView2d< real64 const > const m_dPoro_dPres;
-
-  /// Views on density
-  arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID >  const m_density;
-  arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > const m_dDensity;
-
   /// View on mass
+  arrayView1d< real64 const > const m_mass;
   arrayView1d< real64 const > const m_mass_n;
+  arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const m_dMass;
 
   /// View on the local CRS matrix
   CRSMatrixView< real64, globalIndex const > const m_localMatrix;
@@ -277,11 +251,9 @@ public:
   SurfaceElementAccumulationKernel( globalIndex const rankOffset,
                                     string const dofKey,
                                     SurfaceElementSubRegion const & subRegion,
-                                    constitutive::SingleFluidBase const & fluid,
-                                    constitutive::CoupledSolidBase const & solid,
                                     CRSMatrixView< real64, globalIndex const > const & localMatrix,
                                     arrayView1d< real64 > const & localRhs )
-    : Base( rankOffset, dofKey, subRegion, fluid, solid, localMatrix, localRhs )
+    : Base( rankOffset, dofKey, subRegion, localMatrix, localRhs )
     , m_creationMass( subRegion.getField< fields::flow::massCreated >() )
   {}
 
@@ -295,13 +267,11 @@ public:
   void computeAccumulation( localIndex const ei,
                             Base::StackVariables & stack ) const
   {
-    Base::computeAccumulation( ei, stack, [&] ()
+    Base::computeAccumulation( ei, stack );
+    if( Base::m_mass_n[ei] > 1.1 * m_creationMass[ei] )
     {
-      if( Base::m_mass_n[ei] > 1.1 * m_creationMass[ei] )
-      {
-        stack.localResidual[0] += m_creationMass[ei] * 0.25;
-      }
-    } );
+      stack.localResidual[0] += m_creationMass[ei] * 0.25;
+    }
   }
 
 protected:
@@ -333,25 +303,23 @@ public:
   createAndLaunch( globalIndex const rankOffset,
                    string const dofKey,
                    SUBREGION_TYPE const & subRegion,
-                   constitutive::SingleFluidBase const & fluid,
-                   constitutive::CoupledSolidBase const & solid,
                    CRSMatrixView< real64, globalIndex const > const & localMatrix,
                    arrayView1d< real64 > const & localRhs )
   {
     if constexpr ( std::is_base_of_v< CellElementSubRegion, SUBREGION_TYPE > )
     {
       integer constexpr NUM_DOF = 1;
-      AccumulationKernel< CellElementSubRegion, NUM_DOF > kernel( rankOffset, dofKey, subRegion, fluid, solid, localMatrix, localRhs );
+      AccumulationKernel< CellElementSubRegion, NUM_DOF > kernel( rankOffset, dofKey, subRegion, localMatrix, localRhs );
       AccumulationKernel< CellElementSubRegion, NUM_DOF >::template launch< POLICY >( subRegion.size(), kernel );
     }
     else if constexpr ( std::is_base_of_v< SurfaceElementSubRegion, SUBREGION_TYPE > )
     {
-      SurfaceElementAccumulationKernel kernel( rankOffset, dofKey, subRegion, fluid, solid, localMatrix, localRhs );
+      SurfaceElementAccumulationKernel kernel( rankOffset, dofKey, subRegion, localMatrix, localRhs );
       SurfaceElementAccumulationKernel::launch< POLICY >( subRegion.size(), kernel );
     }
     else
     {
-      GEOS_UNUSED_VAR( rankOffset, dofKey, subRegion, fluid, solid, localMatrix, localRhs );
+      GEOS_UNUSED_VAR( rankOffset, dofKey, subRegion, localMatrix, localRhs );
       GEOS_ERROR( "Unsupported subregion type: " << typeid(SUBREGION_TYPE).name() );
     }
   }

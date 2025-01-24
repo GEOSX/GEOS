@@ -37,6 +37,38 @@ namespace flow
 
 using array2dLayoutFluid = array2d< real64, constitutive::singlefluid::LAYOUT_FLUID >;
 
+DECLARE_FIELD( mass,
+               "mass",
+               array1d< real64 >,
+               0,
+               LEVEL_0,
+               WRITE_AND_READ,
+               "Fluid mass" );
+
+DECLARE_FIELD( mass_n,
+               "mass_n",
+               array1d< real64 >,
+               0,
+               NOPLOT,
+               NO_WRITE,
+               "Fluid mass at the previous converged time step" );
+
+DECLARE_FIELD( dMass,
+               "dMass",
+               array2dLayoutFluid,
+               0,
+               NOPLOT,
+               NO_WRITE,
+               "Derivatives of the fluid mass" );
+
+DECLARE_FIELD( massCreated,
+               "massCreated",
+               array1d< real64 >,
+               0,
+               LEVEL_1,
+               WRITE_AND_READ,
+               "The amount of remaining mass that was introduced when the SurfaceElement was created." );
+
 DECLARE_FIELD( mobility,
                "mobility",
                array1d< real64 >,
@@ -50,8 +82,16 @@ DECLARE_FIELD( dMobility,
                array2dLayoutFluid,
                0,
                NOPLOT,
-               WRITE_AND_READ,
+               NO_WRITE,
                "dMobility" );
+
+DECLARE_FIELD( dEnergy,
+               "dEnergy",
+               array2dLayoutFluid,
+               0,
+               NOPLOT,
+               NO_WRITE,
+               "Derivatives of energy" );
 
 }
 

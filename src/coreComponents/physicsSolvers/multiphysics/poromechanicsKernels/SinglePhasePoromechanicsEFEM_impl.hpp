@@ -75,14 +75,12 @@ SinglePhasePoromechanicsEFEM( NodeManager const & nodeManager,
   m_matrixPresDofNumber( elementSubRegion.template getReference< array1d< globalIndex > >( inputFlowDofKey ) ),
   m_fracturePresDofNumber( embeddedSurfSubRegion.template getReference< array1d< globalIndex > >( inputFlowDofKey ) ),
   m_wDofNumber( jumpDofNumber ),
-  m_solidDensity( inputConstitutiveType.getDensity() ),
+  m_fluidMass( embeddedSurfSubRegion.template getField< fields::flow::mass >() ),
+  m_fluidMass_n( embeddedSurfSubRegion.template getField< fields::flow::mass_n >() ),
+  m_dFluidMass( embeddedSurfSubRegion.template getField< fields::flow::dMass >() ),
   m_fluidDensity( embeddedSurfSubRegion.template getConstitutiveModel< constitutive::SingleFluidBase >( elementSubRegion.template getReference< string >( fluidModelKey ) ).density() ),
-  m_fluidDensity_n( embeddedSurfSubRegion.template getConstitutiveModel< constitutive::SingleFluidBase >( elementSubRegion.template getReference< string >( fluidModelKey ) ).density_n() ),
-  m_dFluidDensity( embeddedSurfSubRegion.template getConstitutiveModel< constitutive::SingleFluidBase >( elementSubRegion.template getReference< string >(
-                                                                                                           fluidModelKey ) ).dDensity() ),
   m_matrixPressure( elementSubRegion.template getField< fields::flow::pressure >() ),
   m_fracturePressure( embeddedSurfSubRegion.template getField< fields::flow::pressure >() ),
-  m_porosity_n( inputConstitutiveType.getPorosity_n() ),
   m_tractionVec( embeddedSurfSubRegion.getField< fields::contact::traction >() ),
   m_dTraction_dJump( embeddedSurfSubRegion.getField< fields::contact::dTraction_dJump >() ),
   m_dTraction_dPressure( embeddedSurfSubRegion.getField< fields::contact::dTraction_dPressure >() ),
@@ -92,8 +90,6 @@ SinglePhasePoromechanicsEFEM( NodeManager const & nodeManager,
   m_surfaceCenter( embeddedSurfSubRegion.getElementCenter() ),
   m_surfaceArea( embeddedSurfSubRegion.getElementArea() ),
   m_elementVolumeCell( elementSubRegion.getElementVolume() ),
-  m_elementVolumeFrac( embeddedSurfSubRegion.getElementVolume() ),
-  m_deltaVolume( embeddedSurfSubRegion.template getField< fields::flow::deltaVolume >() ),
   m_fracturedElems( elementSubRegion.fracturedElementsList() ),
   m_cellsToEmbeddedSurfaces( elementSubRegion.embeddedSurfacesList().toViewConst() ),
   m_gravityVector{ inputGravityVector[0], inputGravityVector[1], inputGravityVector[2] },
@@ -169,11 +165,11 @@ setup( localIndex const k,
     // need to grab the index.
     stack.jumpEqnRowIndices[i] = m_wDofNumber[embSurfIndex] + i - m_dofRankOffset;
     stack.jumpColIndices[i]    = m_wDofNumber[embSurfIndex] + i;
-    stack.wLocal[ i ] = m_w[ embSurfIndex ][i];
-    stack.tractionVec[ i ] = m_tractionVec[ embSurfIndex ][i] * m_surfaceArea[embSurfIndex];
+    stack.wLocal[i] = m_w[embSurfIndex][i];
+    stack.tractionVec[i] = m_tractionVec[embSurfIndex][i] * m_surfaceArea[embSurfIndex];
     for( int ii=0; ii < 3; ++ii )
     {
-      stack.dTractiondw[ i ][ ii ] = m_dTraction_dJump[embSurfIndex][i][ii] * m_surfaceArea[embSurfIndex];
+      stack.dTractiondw[i][ii] = m_dTraction_dJump[embSurfIndex][i][ii] * m_surfaceArea[embSurfIndex];
     }
   }
 }
@@ -321,12 +317,9 @@ complete( localIndex const k,
   real64 const localJumpFracPressureJacobian = m_surfaceArea[embSurfIndex];
 
   // Mass balance accumulation
-  real64 const newVolume = m_elementVolumeFrac( embSurfIndex ) + m_deltaVolume( embSurfIndex );
-  real64 const newMass = m_fluidDensity( embSurfIndex, 0 ) * newVolume;
-  real64 const oldMass = m_fluidDensity_n( embSurfIndex, 0 ) * m_elementVolumeFrac( embSurfIndex );
-  real64 const localFlowResidual = ( newMass - oldMass );
-  real64 const localFlowJumpJacobian = m_fluidDensity( embSurfIndex, 0 ) * m_surfaceArea[ embSurfIndex ];
-  real64 const localFlowFlowJacobian = m_dFluidDensity( embSurfIndex, 0, DerivOffset::dP ) * newVolume;
+  real64 const localFlowResidual = m_fluidMass[embSurfIndex] - m_fluidMass_n[embSurfIndex];
+  real64 const localFlowJumpJacobian = m_fluidDensity[embSurfIndex][0] * m_surfaceArea[embSurfIndex];
+  real64 const localFlowFlowJacobian = m_dFluidMass[embSurfIndex][DerivOffset::dP];
 
   for( localIndex i = 0; i < nUdof; ++i )
   {
@@ -374,12 +367,12 @@ complete( localIndex const k,
   {
 
     m_matrix.template addToRowBinarySearchUnsorted< parallelDeviceAtomic >( stack.jumpEqnRowIndices[0],
-                                                                            &m_fracturePresDofNumber[ embSurfIndex ],
+                                                                            &m_fracturePresDofNumber[embSurfIndex],
                                                                             &localJumpFracPressureJacobian,
                                                                             1 );
   }
 
-  localIndex const fracturePressureDof = m_fracturePresDofNumber[ embSurfIndex ] - m_dofRankOffset;
+  localIndex const fracturePressureDof = m_fracturePresDofNumber[embSurfIndex] - m_dofRankOffset;
   if( fracturePressureDof >= 0 && fracturePressureDof < m_matrix.numRows() )
   {
 
@@ -389,7 +382,7 @@ complete( localIndex const k,
                                                                             1 );
 
     m_matrix.template addToRowBinarySearchUnsorted< parallelDeviceAtomic >( fracturePressureDof,
-                                                                            &m_fracturePresDofNumber[ embSurfIndex ],
+                                                                            &m_fracturePresDofNumber[embSurfIndex],
                                                                             &localFlowFlowJacobian,
                                                                             1 );
 

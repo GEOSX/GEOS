@@ -59,30 +59,6 @@ public:
     m_referencePorosity ( referencePorosity )
   {}
 
-  /**
-   * @brief Helper to save porosity back to m_newPorosity array
-   *
-   * This is mostly defined for improving code readability.
-   *
-   * @param[in] k Element index.
-   * @param[in] q Quadrature point index.
-   * @param[in] porosity porosity to be saved to m_newPorosity[k][q]
-   * @param[in] dPorosity_dPressure porosity derivative w.r.t pressure to be saved to m_dPorosity_dPressure[k][q]
-   * @param[in] dPorosity_dTemperature porosity derivative w.r.t temperature to be saved to m_dPorosity_dTemperature[k][q]
-   */
-  GEOS_HOST_DEVICE
-  GEOS_FORCE_INLINE
-  void savePorosity( localIndex const k,
-                     localIndex const q,
-                     real64 const & porosity,
-                     real64 const & dPorosity_dPressure,
-                     real64 const & dPorosity_dTemperature ) const
-  {
-    m_newPorosity[k][q] = porosity;
-    m_dPorosity_dPressure[k][q] = dPorosity_dPressure;
-    m_dPorosity_dTemperature[k][q] = dPorosity_dTemperature;
-  }
-
   GEOS_HOST_DEVICE
   inline
   real64 getPorosity( localIndex const k,
