@@ -1,0 +1,217 @@
+<?xml version="1.0" ?>
+<Problem>
+  <NumericalMethods>
+    <FiniteElements>
+      <FiniteElementSpace
+        name="FE1"
+        order="1"/>
+    </FiniteElements>
+
+    <FiniteVolume>
+      <TwoPointFluxApproximation
+        name="singlePhaseTPFA"/>
+    </FiniteVolume>
+  </NumericalMethods>
+
+  <Mesh>
+    <InternalMesh
+      name="mesh1"
+      elementTypes="{ C3D8 }"
+      xCoords="{ -10.0e3, 10.0e3 }"
+      yCoords="{ -0.5e3, 0.5e3 }"
+      zCoords="{ -20.0e3, -10.0e3, 10.0e3, 20.0e3 }"
+      nx="{ 100 }"
+      ny="{ 1 }"
+      nz="{ 20, 201, 20 }"
+      cellBlockNames="{ cb1 }"/>
+  </Mesh>
+
+  <Geometry>    
+    <Box
+      name="faultPlane"
+      xMin="{ -0.01, -1.01e3, -10.0e3 }"
+      xMax="{ 0.01,   1.01e3,  10.0e3 }"/>
+    
+    <Box
+      name="source"
+      xMin="{ -0.01, -1.01e3, -50.0 }"
+      xMax="{ 0.01,   1.01e3,  50.0 }"/>
+  </Geometry>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="Domain"
+      cellBlocks="{ cb1 }"
+      materialList="{rock}"/>
+
+    <SurfaceElementRegion
+      name="Fault"
+      materialList="{frictionLaw, faultMaterial, water}"
+      defaultAperture="1e-3"/>  
+    </ElementRegions>
+  
+    <Constitutive>
+
+    <CompressibleSinglePhaseFluid
+      name="water"
+      defaultDensity="1000"
+      defaultViscosity="1.0e-3"
+      referencePressure="0.0"
+      compressibility="1.0e-8"
+      viscosibility="0.0"/>
+
+    <CompressibleSolidConstantPermeability
+      name="faultMaterial"
+      solidModelName="nullSolid"
+      porosityModelName="faultPorosity"
+      permeabilityModelName="faultPermeability"/>  
+    
+    <PressurePorosity
+      name="faultPorosity"
+      defaultReferencePorosity="0.100"
+      referencePressure="0.0"
+      compressibility="0.0"/>
+      
+    <NullModel
+      name="nullSolid"/>  
+
+    <ConstantPermeability
+      name="faultPermeability"
+      permeabilityComponents="{ 1.0e-13, 1.0e-13, 1.0e-13 }"/>
+
+    <ElasticIsotropic
+     name="rock"
+     defaultDensity="2670"
+     defaultBulkModulus="50.0e9"
+     defaultShearModulus="32.04e9"/>
+
+    <RateAndStateFriction
+      name="frictionLaw"
+      defaultA="0.007"
+      defaultB="0.005"
+      defaultDc="4.0e-3"  
+      defaultReferenceVelocity="1.0e-6"
+      defaultReferenceFrictionCoefficient="0.6"/>  
+  </Constitutive>
+
+  <Outputs>
+    <VTK
+      name="vtkOutput"
+      plotFileRoot="BP6_QD_S"/>
+
+    <TimeHistory
+      name="timeHistoryOutput"
+      sources="{/Tasks/pressureCollection, /Tasks/slipRateCollection}"
+      filename="BP6_DQ_S" />  
+  </Outputs>
+
+  <Tasks>
+    <PackCollection
+      name="slipRateCollection"
+      objectPath="ElementRegions/Fault/FractureSubRegion"
+      fieldName="slipRate"
+      setNames="{source}"/>
+
+    <PackCollection
+      name="pressureCollection"
+      objectPath="ElementRegions/Fault/FractureSubRegion"
+      fieldName="pressure"
+      setNames="{source}"/>    
+   </Tasks>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="Domain"
+      cellBlocks="{ cb1 }"
+      materialList="{rock}"/>
+
+    <SurfaceElementRegion
+      name="Fault"
+      materialList="{frictionLaw}"
+      defaultAperture="1e-3"/>  
+    </ElementRegions>
+
+  <FieldSpecifications>
+    <FieldSpecification
+      name="fault"
+      fieldName="ruptureState"
+      initialCondition="1"
+      objectPath="faceManager"
+      scale="1"
+      setNames="{ faultPlane }"/>
+
+    <FieldSpecification
+      name="xconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="0"
+      scale="0.0"
+      setNames="{ xneg, xpos }"/>
+
+    <FieldSpecification
+      name="yconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="1"
+      scale="0.0"
+      setNames="{ ypos, yneg }"/>
+
+    <FieldSpecification
+      name="zconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="2"
+      scale="0.0"
+      setNames="{ zpos, zneg }"/>
+
+    <FieldSpecification
+      name="initialStateVariable"
+      objectPath="ElementRegions/Fault"
+      fieldName="stateVariable"
+      scale="0.68070857"
+      setNames="{ all }"
+      initialCondition="1"/>  
+      
+    <FieldSpecification
+      name="slipVelocity1"
+      fieldName="slipVelocity"
+      initialCondition="1"
+      objectPath="ElementRegions/Fault/FractureSubRegion"
+      component="0"
+      scale="1.0e-12"
+      setNames="{all}"/>
+
+    <FieldSpecification
+      name="slipVelocity2"
+      fieldName="slipVelocity"
+      initialCondition="1"
+      objectPath="ElementRegions/Fault/FractureSubRegion"
+      component="1"
+      scale="0."
+      setNames="{all}"/>
+
+    <FieldSpecification
+      name="backgroundShearStress"
+      fieldName="backgroundShearStress"
+      initialCondition="1"
+      objectPath="ElementRegions/Fault/FractureSubRegion"
+      component="0"
+      scale="29.2e6"
+      setNames="{all}"/> 
+
+    <FieldSpecification
+      name="backgroundNormalStress"
+      fieldName="backgroundNormalStress"
+      initialCondition="1"
+      objectPath="ElementRegions/Fault/FractureSubRegion"
+      scale="50.0e6"
+      setNames="{all}"/>                      
+
+    <SourceFlux
+      name="sourceTerm"
+      objectPath="ElementRegions/Fault"
+      scale="-1.25e-3"
+      setNames="{ source }"
+      endTime="8.64e6"/>
+  </FieldSpecifications>
+</Problem>

@@ -75,7 +75,7 @@ DECLARE_FIELD( dispJump,
                "Displacement jump vector in the local reference system" );
 
 DECLARE_FIELD( dispJump_n,
-               "displacementJump",
+               "displacementJump_n",
                array2d< real64 >,
                0,
                NOPLOT,
@@ -87,8 +87,16 @@ DECLARE_FIELD( slip,
                array1d< real64 >,
                0,
                LEVEL_0,
-               NO_WRITE,
-               "Slip." );
+               WRITE_AND_READ,
+               "Slip" );
+
+DECLARE_FIELD( tangentialTraction,
+               "tangentialTraction",
+               array1d< real64 >,
+               0,
+               LEVEL_0,
+               WRITE_AND_READ,
+               "Tangential traction" );
 
 DECLARE_FIELD( deltaSlip,
                "deltaSlip",
@@ -97,6 +105,14 @@ DECLARE_FIELD( deltaSlip,
                LEVEL_0,
                WRITE_AND_READ,
                "Slip increment" );
+
+DECLARE_FIELD( deltaSlip_n,
+               "deltaSlip_n",
+               array2d< real64 >,
+               0.0,
+               NOPLOT,
+               WRITE_AND_READ,
+               "Initial slip increment at this time step" );
 
 DECLARE_FIELD( deltaDispJump,
                "deltaDisplacementJump",

@@ -1,0 +1,228 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <!-- SPHINX_ELEMENTREGIONS -->
+  <ElementRegions>
+    <CellElementRegion
+      name="Domain"
+      cellBlocks="{ cb1 }"
+      materialList="{ water, rock }"/>
+
+    <SurfaceElementRegion
+      name="Fracture"      
+      defaultAperture="0.02e-3"
+      materialList="{ water, fractureFilling, fractureContact, hApertureModel }"/>
+  </ElementRegions>
+  <!-- SPHINX_ELEMENTREGIONS_END -->
+
+  <!-- SPHINX_MATERIAL -->
+  <Constitutive>
+    <CompressibleSinglePhaseFluid
+      name="water"
+      defaultDensity="1000"
+      defaultViscosity="1.0e-6"
+      referencePressure="0.0"
+      compressibility="5e-13"
+      referenceViscosity="1.0e-6"
+      viscosibility="0.0"/>
+
+    <ElasticIsotropic
+      name="rock"
+      defaultDensity="2700"
+      defaultBulkModulus="20.0e9"
+      defaultShearModulus="12.0e9"/>
+
+    <CompressibleSolidParallelPlatesPermeability
+      name="fractureFilling"
+      solidModelName="nullSolid"
+      porosityModelName="fracturePorosity"
+      permeabilityModelName="fracturePerm"/>
+
+    <NullModel
+      name="nullSolid"/>
+
+    <PressurePorosity
+      name="fracturePorosity"
+      defaultReferencePorosity="1.00"
+      referencePressure="0.0"
+      compressibility="0.0"/>
+
+    <ParallelPlatesPermeability
+      name="fracturePerm"/>
+
+    <FrictionlessContact
+      name="fractureContact"/>
+
+    <HydraulicApertureTable
+      name="hApertureModel"
+      apertureTableName="apertureTable"/>  
+
+  </Constitutive>
+  <!-- SPHINX_MATERIAL_END -->
+  
+  <!-- SPHINX_NUMERICAL -->
+  <NumericalMethods>
+    <FiniteElements>
+      <FiniteElementSpace
+        name="FE1"
+        order="1"/>
+    </FiniteElements>
+
+    <FiniteVolume>
+      <TwoPointFluxApproximation
+        name="singlePhaseTPFA"
+        />
+    </FiniteVolume>
+  </NumericalMethods>
+  <!-- SPHINX_NUMERICAL_END -->
+
+  <!-- SPHINX_BC -->
+  <FieldSpecifications>
+    <FieldSpecification
+      name="waterDensity"
+      initialCondition="1"
+      setNames="{ fracture }"
+      objectPath="ElementRegions"
+      fieldName="water_density"
+      scale="1000"/>
+
+    <FieldSpecification
+      name="separableFace"
+      initialCondition="1"
+      setNames="{ core }"
+      objectPath="faceManager"
+      fieldName="isFaceSeparable"
+      scale="1"/>
+
+    <FieldSpecification
+      name="frac"
+      initialCondition="1"
+      setNames="{ fracture }"
+      objectPath="faceManager"
+      fieldName="ruptureState"
+      scale="1"/>
+
+    <FieldSpecification
+      name="yconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="1"
+      scale="0.0"
+      setNames="{ yneg, ypos }"/>
+
+    <FieldSpecification
+      name="zconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="2"
+      scale="0.0"
+      setNames="{ zneg, zpos }"/>
+
+    <FieldSpecification
+      name="xconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="0"
+      scale="0.0"
+      setNames="{ xneg, xpos }"/>
+
+    <SourceFlux
+      name="sourceTerm"
+      objectPath="ElementRegions/Fracture"
+      scale="-6.625"
+      setNames="{ source }"/>
+
+    <FieldSpecification
+      name="KIC_00"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions"
+      fieldName="K_IC_00"
+      scale="3e6"/>
+    
+    <FieldSpecification
+      name="KIC_10"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions"
+      fieldName="K_IC_10"
+      scale="3e6"/>
+    
+    <FieldSpecification
+      name="KIC_20"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions"
+      fieldName="K_IC_20"
+      scale="3e6"/>
+
+    <FieldSpecification
+      name="KIC_01"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions"
+      fieldName="K_IC_01"
+      scale="6e6"/>
+    
+    <FieldSpecification
+      name="KIC_11"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions"
+      fieldName="K_IC_11"
+      scale="6e6"/>
+    
+    <FieldSpecification
+      name="KIC_21"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions"
+      fieldName="K_IC_21"
+      scale="6e6"/>
+    
+    <FieldSpecification
+      name="KIC_02"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions"
+      fieldName="K_IC_02"
+      scale="3e6"/>
+    
+    <FieldSpecification
+      name="KIC_12"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions"
+      fieldName="K_IC_12"
+      scale="3e6"/>
+    
+    <FieldSpecification
+      name="KIC_22"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions"
+      fieldName="K_IC_22"
+      scale="3e6"/>
+  </FieldSpecifications>
+  <!-- SPHINX_BC_END -->
+
+  <Functions>
+    <TableFunction
+      name="apertureTable"
+      coordinates="{ -1.0e-3, 0.0 }"
+      values="{ 0.002e-3, 0.02e-3 }"/>
+  </Functions>
+
+  <!-- SPHINX_OUTPUT -->    
+  <Outputs>
+    <VTK
+      name="vtkOutput"
+      plotFileRoot="zeroViscosity"
+      plotLevel="3"
+      parallelThreads="48"/>
+
+    <Restart
+      name="restartOutput"/>
+  </Outputs>
+  <!-- SPHINX_OUTPUT_END -->
+</Problem>
