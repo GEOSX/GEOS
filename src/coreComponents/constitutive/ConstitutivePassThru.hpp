@@ -101,7 +101,6 @@ struct ConstitutivePassThru< FrictionBase >
   }
 };
 
-
 /**
  * Specialization for models that derive from CoulombFriction.
  */

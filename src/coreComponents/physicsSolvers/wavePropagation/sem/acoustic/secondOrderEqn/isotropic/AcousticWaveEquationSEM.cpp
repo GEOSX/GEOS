@@ -223,7 +223,7 @@ void AcousticWaveEquationSEM::precomputeSourceAndReceiverTerm( MeshLevel & baseM
           dtCompute,
           m_timeSourceFrequency,
           m_timeSourceDelay,
-          m_rickerOrder);
+          m_rickerOrder );
       }
     } );
     elementSubRegion.faceList().freeOnDevice();
@@ -253,7 +253,8 @@ void AcousticWaveEquationSEM::addSourceToRightHandSide( integer const & cycleNum
     if( sourceIsAccessible[isrc] == 1 )
     {
       //real64 const srcValue =
-      //  useSourceWaveletTables ? sourceWaveletTableWrappers[ isrc ].compute( &time_n ) : WaveSolverUtils::evaluateRicker( time_n, timeSourceFrequency, timeSourceDelay, rickerOrder );
+      //  useSourceWaveletTables ? sourceWaveletTableWrappers[ isrc ].compute( &time_n ) : WaveSolverUtils::evaluateRicker( time_n,
+      // timeSourceFrequency, timeSourceDelay, rickerOrder );
 
       for( localIndex inode = 0; inode < sourceConstants.size( 1 ); ++inode )
       {
@@ -283,12 +284,10 @@ void AcousticWaveEquationSEM::initializePostInitialConditionsPreSubGroups()
 
 
 
-  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const & meshBodyName,
+  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
                                                                 MeshLevel & mesh,
                                                                 arrayView1d< string const > const & regionNames )
   {
-    // MeshLevel & baseMesh = domain.getMeshBodies().getGroup< MeshBody >( meshBodyName ).getBaseDiscretization();
-    // precomputeSourceAndReceiverTerm( baseMesh, mesh, regionNames );
 
     NodeManager & nodeManager = mesh.getNodeManager();
     FaceManager & faceManager = mesh.getFaceManager();
@@ -369,7 +368,7 @@ void AcousticWaveEquationSEM::initializePostInitialConditionsPreSubGroups()
     m_timeStep=dtOut;
   }
 
-    forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const & meshBodyName,
+  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const & meshBodyName,
                                                                 MeshLevel & mesh,
                                                                 arrayView1d< string const > const & regionNames )
   {

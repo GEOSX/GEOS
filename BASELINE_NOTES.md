@@ -6,6 +6,34 @@ This file is designed to track changes to the integrated test baselines.
 Any developer who updates the baseline ID in the .integrated_tests.yaml file is expected to create an entry in this file with the pull request number, date, and their justification for rebaselining.
 These notes should be in reverse-chronological order, and use the following time format: (YYYY-MM-DD).
 
+PR  #3395 (2024-01-22)
+=====================
+Add new fields and change the default input for some tests.
+
+PR #3416 (2024-01-21)
+=====================
+Refactoring of induced seismicity EQ solvers to add coupling.
+
+PR #3310 (2024-01-21)
+======================
+Scalable rock toughness required new field.
+
+PR #3228 (2024-01-15)
+=====================
+deltaVolume added in multiphase.
+
+PR #3495 (2024-01-08)
+=====================
+Add missing logic to support switching from fixed mass rate injection rate constraint to max injection pressure.
+
+PR #3384 (2024-01-07)
+=====================
+Added plastic strain output.
+
+PR #3486 (2025-01-06)
+=====================
+useNewGravity became gravityDensityScheme.
+
 PR #3479 (2024-12-15)
 =====================
 Refine inputFiles/compositionalMultiphaseFlow: shift reference pressures to initial pressures, make nonlinear tuning more reasonable, minimize output.
