@@ -46,6 +46,19 @@ struct MobilityKernel
     mob = dens / visc;
   }
 
+// derivatives-only  version
+  GEOS_HOST_DEVICE
+  inline
+  static void
+  compute_derivative( real64 const & mobility,
+                      real64 const & dDensity,
+                      real64 const & viscosity,
+                      real64 const & dViscosity,
+                      real64 & dMobility )
+  {
+    dMobility = dDensity/viscosity - mobility/viscosity*dViscosity;
+  }
+
   // Computes mobility and derivtives
   template< typename POLICY, integer NUMDOF >
   static void compute_value_and_derivatives( localIndex const size,
@@ -58,10 +71,10 @@ struct MobilityKernel
   {
     forAll< POLICY >( size, [=] GEOS_HOST_DEVICE ( localIndex const a )
     {
-      mobility[a] = density[a][0] / viscosity[a][0];
+      compute( density[a][0], viscosity[a][0], mobility[a] );
       for( int i=0; i<NUMDOF; i++ )
       {
-        dMobility[a][i] = dDensity[a][0][i]/viscosity[a][0] - mobility[a]/viscosity[a][0]*dViscosity[a][0][i];
+        compute_derivative( mobility[a], dDensity[a][0][i], viscosity[a][0], dViscosity[a][0][i], dMobility[a][i] );
       }
 
     } );
