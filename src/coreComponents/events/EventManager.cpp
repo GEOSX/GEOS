@@ -174,7 +174,8 @@ bool EventManager::run( DomainPartition & domain )
     LogPart logPart( "TIMESTEP" );
     outputTime( logPart );
     logPart.begin();
-
+    std::vector< real64 > subStepDt;
+    integer numTimeSteps = 0;
     // Execute
     for(; m_currentSubEvent<this->numSubGroups(); ++m_currentSubEvent )
     {
@@ -189,6 +190,7 @@ bool EventManager::run( DomainPartition & domain )
 
       // Execute, signal events
       bool earlyReturn = false;
+      std::cout << " pp d" << subEvent->getEventTarget()->getTimesteppingBehavior()<<std::endl;
       if( subEvent->hasToPrepareForExec() )
       {
         subEvent->signalToPrepareForExecution( m_time, m_dt, m_cycle, domain );
@@ -196,6 +198,14 @@ bool EventManager::run( DomainPartition & domain )
       else if( subEvent->isReadyForExec() )
       {
         earlyReturn = subEvent->execute( m_time, m_dt, m_cycle, 0, 0, domain );
+
+        if( subEvent->getEventTarget()->getTimesteppingBehavior() == ExecutableGroup::TimesteppingBehavior::DeterminesTimeStepSize )
+        {
+
+          subStepDt = subEvent->getSubStepDt();
+          numTimeSteps = subEvent->getNumOfSubSteps();
+        }
+
       }
 
       // Check the exit flag
@@ -211,8 +221,8 @@ bool EventManager::run( DomainPartition & domain )
     }
 
 
+    logEndOfCycleInformation( logPart, m_cycle, numTimeSteps, subStepDt );
 
-    logPart.end();
     // Increment time/cycle, reset the subevent counter
     m_time += m_dt;
     ++m_cycle;
@@ -296,6 +306,33 @@ void EventManager::outputTime( LogPart & logPart ) const
   {
     GEOS_ERROR( "Unknown time output format requested." );
   }
+}
+
+void EventManager::logEndOfCycleInformation( LogPart & logpart,
+                                             integer const cycleNumber,
+                                             integer const numOfSubSteps,
+                                             std::vector< real64 > const & subStepDt ) const
+{
+  logpart.addEndDescription( "- Cycle:", cycleNumber );
+  logpart.addEndDescription( "- N substeps:", numOfSubSteps );
+  std::string logMessage;
+  for( integer i = 0; i < numOfSubSteps; ++i )
+  {
+    logMessage += "  " + units::TimeFormatInfo::fromSeconds( subStepDt[i] ).toString();
+  }
+  logpart.addEndDescription( "- dt:", logMessage );
+  logpart.end();
+
+
+  // The formating here is a work in progress.
+  // GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, "\n------------------------- TIMESTEP END -------------------------" );
+  // GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "    - Cycle:      {}", cycleNumber ) );
+  // GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "    - N substeps: {}", numOfSubSteps ) );
+
+
+  // Log the complete message once
+  // GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, logMessage );
+  // GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, "------------------------------------------------------------------\n" );
 }
 
 } /* namespace geos */

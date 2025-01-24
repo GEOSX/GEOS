@@ -1076,17 +1076,6 @@ private:
                              real64 const & dt,
                              integer const cycleNumber,
                              DomainPartition & domain );
-
-  /**
-   * @brief output information about the cycle to the log
-   * @param cycleNumber the current cycle number
-   * @param numOfSubSteps the number of substeps taken
-   * @param subStepDt the time step size for each substep
-   */
-  void logEndOfCycleInformation( integer const cycleNumber,
-                                 integer const numOfSubSteps,
-                                 std::vector< real64 > const & subStepDt ) const;
-
 };
 
 template< typename CONSTITUTIVE_BASE_TYPE >

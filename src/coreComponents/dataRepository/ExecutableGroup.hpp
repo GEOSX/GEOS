@@ -119,7 +119,21 @@ public:
    */
   TimesteppingBehavior getTimesteppingBehavior() const { return m_timesteppingBehavior; }
 
+  std::vector< real64 > const & getSubStepDt() const { return m_subStepDt; }
+
+  std::vector< real64 > & getSubStepDt() { return m_subStepDt; }
+
+  integer const & getNumOfSubSteps() const { return m_numOfSubSteps; }
+
+  integer & getNumOfSubSteps()  { return m_numOfSubSteps; }
+
+  void setNumOfSubSteps( integer nbStep )  { m_numOfSubSteps =  nbStep;}
+
 private:
+
+  std::vector< real64 > m_subStepDt = {};
+
+  integer m_numOfSubSteps = 0;
 
   TimesteppingBehavior m_timesteppingBehavior = TimesteppingBehavior::DoesNotDetermineTimeStepSize;
 };

@@ -277,8 +277,10 @@ bool PhysicsSolverBase::execute( real64 const time_n,
   integer const maxSubSteps = m_nonlinearSolverParameters.m_maxSubSteps;
 
   // Keep track of substeps. It is useful to output these.
-  std::vector< real64 > subStepDt( maxSubSteps, 0.0 );
-  integer numOfSubSteps = 0;
+  std::vector< real64 > & subStepDt =  getSubStepDt();
+  subStepDt.resize( maxSubSteps, 0.0 );
+
+  setNumOfSubSteps( 0 );
 
   for( integer subStep = 0; subStep < maxSubSteps && dtRemaining > 0.0; ++subStep )
   {
@@ -289,7 +291,7 @@ bool PhysicsSolverBase::execute( real64 const time_n,
                                           nextDt,
                                           cycleNumber,
                                           domain );
-    numOfSubSteps++;
+    getNumOfSubSteps()++;
     subStepDt[subStep] = dtAccepted;
 
     // increment the cumulative number of nonlinear and linear iterations
@@ -342,36 +344,7 @@ bool PhysicsSolverBase::execute( real64 const time_n,
     m_numTimestepsSinceLastDtCut++;
   }
 
-  logEndOfCycleInformation( cycleNumber, numOfSubSteps, subStepDt );
-
   return false;
-}
-
-void PhysicsSolverBase::logEndOfCycleInformation( integer const cycleNumber,
-                                                  integer const numOfSubSteps,
-                                                  std::vector< real64 > const & subStepDt ) const
-{
-  LogPart endTimeStep( "TIMESTEP END" );
-  endTimeStep.addDescription( "- Cycle:", cycleNumber );
-  endTimeStep.addDescription( "- N substeps:", numOfSubSteps );
-  std::string logMessage;
-  for( integer i = 0; i < numOfSubSteps; ++i )
-  {
-    logMessage += "  " + units::TimeFormatInfo::fromSeconds( subStepDt[i] ).toString();
-  }
-  endTimeStep.addDescription( "- dt:", logMessage );
-  endTimeStep.end();
-
-
-  // The formating here is a work in progress.
-  // GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, "\n------------------------- TIMESTEP END -------------------------" );
-  // GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "    - Cycle:      {}", cycleNumber ) );
-  // GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "    - N substeps: {}", numOfSubSteps ) );
-
-
-  // Log the complete message once
-  // GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, logMessage );
-  // GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, "------------------------------------------------------------------\n" );
 }
 
 real64 PhysicsSolverBase::setNextDt( real64 const & currentDt,

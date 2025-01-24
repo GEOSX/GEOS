@@ -137,6 +137,11 @@ private:
    */
   void outputTime( LogPart & section ) const;
 
+  void logEndOfCycleInformation( LogPart & logpart,
+                                 integer const cycleNumber,
+                                 integer const numOfSubSteps,
+                                 std::vector< real64 > const & subStepDt ) const;
+
   /// Min time for a simulation
   real64 m_minTime;
 
