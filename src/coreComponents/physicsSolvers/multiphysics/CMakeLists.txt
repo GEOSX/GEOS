@@ -38,6 +38,7 @@ set( physicsSolvers_headers
      multiphysics/SinglePhasePoromechanics.hpp
      multiphysics/SinglePhasePoromechanicsEmbeddedFractures.hpp
      multiphysics/SinglePhasePoromechanicsConformingFractures.hpp
+     multiphysics/SinglePhasePoromechanicsConformingFracturesALM.hpp
      multiphysics/SinglePhaseReservoirAndWells.hpp
      PARENT_SCOPE )
 
@@ -56,6 +57,7 @@ set( physicsSolvers_sources
      multiphysics/SinglePhasePoromechanics.cpp
      multiphysics/SinglePhasePoromechanicsEmbeddedFractures.cpp
      multiphysics/SinglePhasePoromechanicsConformingFractures.cpp
+     multiphysics/SinglePhasePoromechanicsConformingFracturesALM.cpp
      multiphysics/SinglePhaseReservoirAndWells.cpp
      PARENT_SCOPE )
 
