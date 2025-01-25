@@ -91,9 +91,14 @@ if( NOT DEFINED ENV{MKLROOT} )
     message( FATAL_ERROR "MKL is not loaded. Please load the intel-oneapi-mkl/2023.2.0 module." )
 endif()
 
+if ( NOT DEFINED ENV{GOMP_ROOT} )
+    message( STATUS "GOMP_ROOT is not set. Setting it to $ENV{GCC_PATH}/lib/gcc/x86_64-redhat-linux/12" )
+    set( ENV{GOMP_ROOT} $ENV{GCC_PATH}/lib/gcc/x86_64-redhat-linux/12 )
+endif()
+
 set( MKL_INCLUDE_DIRS $ENV{MKLROOT}/include CACHE STRING "" )
 set( MKL_LIBRARIES    $ENV{MKLROOT}/lib/intel64/libmkl_rt.so
-                      $ENV{GCC_PATH}/lib/gcc/x86_64-redhat-linux/12/libgomp.so
+                      $ENV{GOMP_ROOT}/libgomp.so
                       CACHE STRING "" )
 
-include( ${CMAKE_CURRENT_LIST_DIR}/../tpls.cmake )
+include( ${CMAKE_CURRENT_LIST_DIR}/../../tpls.cmake )

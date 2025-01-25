@@ -1,7 +1,7 @@
 # hostconfig to build only the wave solver on pangea3
 #
 #
-include( ${CMAKE_CURRENT_LIST_DIR}/pangea3-gcc8.4.1-openmpi-4.1.2.cmake )
+include( ${CMAKE_CURRENT_LIST_DIR}/pangea3-gcc11.4.0-openmpi-4.1.6.cmake )
 
 set ( GEOS_ENABLE_CONTACT OFF CACHE BOOL "" FORCE )
 set ( GEOS_ENABLE_FLUIDFLOW OFF CACHE BOOL "" FORCE )
