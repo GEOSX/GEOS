@@ -188,7 +188,8 @@ WaveSolverBase::WaveSolverBase( const std::string & name,
   registerWrapper( viewKeyStruct::timestepStabilityLimitString(), &m_timestepStabilityLimit ).
     setInputFlag( InputFlags::OPTIONAL ).
     setApplyDefaultValue( 0 ).
-    setDescription( "Flag that indicateshow to deal with timeStep: if it is set to 0 (default value) we do not compute the timeStep and use the one defines inside the xml, 1 means that we use a routine to compute the timeStep but only one time (even with Pygeos) 2 if to say that we compute the timeStep each time" );
+    setDescription(
+    "Flag that indicateshow to deal with timeStep: if it is set to 0 (default value) we do not compute the timeStep and use the one defines inside the xml, 1 means that we use a routine to compute the timeStep but only one time (even with Pygeos) 2 if to say that we compute the timeStep each time" );
 
   registerWrapper( viewKeyStruct::timeStepString(), &m_timeStep ).
     setInputFlag( InputFlags::FALSE ).
