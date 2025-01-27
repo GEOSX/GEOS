@@ -352,14 +352,16 @@ void AcousticWaveEquationSEM::initializePostInitialConditionsPreSubGroups()
 
       } );
     } );
+    // Here we compute the timeStep only one time (beginning of the simulation). 
     if( m_timestepStabilityLimit==1 )
     {
       real64 dtOut = 0.0;
       computeTimeStep( dtOut );
-      m_timestepStabilityLimit = 0;
+      m_timestepStabilityLimit = -1;
       m_timeStep=dtOut;
     }
-    else
+    //We use the timeStep defined inside the xml
+    else if (m_timestepStabilityLimit==0)
     {
       EventManager const & event = getGroupByPath< EventManager >( "/Problem/Events" );
       for( localIndex numSubEvent = 0; numSubEvent < event.numSubGroups(); ++numSubEvent )
@@ -371,6 +373,13 @@ void AcousticWaveEquationSEM::initializePostInitialConditionsPreSubGroups()
         }
       }
 
+    }
+    //We compute the timeStep even several times if needed (used mainly with PyGeos)
+    else if (m_timestepStabilityLimit==2)
+    {
+      real64 dtOut = 0.0;
+      computeTimeStep( dtOut );
+      m_timeStep=dtOut;
     }
 
     if( m_useTaper==1 )
@@ -496,6 +505,8 @@ real64 AcousticWaveEquationSEM::computeTimeStep( real64 & dtOut )
 
     stiffnessVector.zero();
     p.zero();
+    //Lien to ensure that the using array stays on GPU (useful when we cal this routine several times)
+    forAll< parallelHostPolicy >( sizeNode, [p] ( localIndex const a ){});
   } );
   return m_timeStep * m_cflFactor;
 }

@@ -478,15 +478,17 @@ void ElasticWaveEquationSEM::initializePostInitialConditionsPreSubGroups()
       }
       GEOS_WARNING_IF( ySum > minQVal, "The anelasticity parameters are too high for the given quality factor. This could lead to solution artifacts such as zero-velocity waves." );
     }
-
+    
+    // Here we compute the timeStep only one time (beginning of the simulation). 
     if( m_timestepStabilityLimit==1 )
     {
       real64 dtOut = 0.0;
       computeTimeStep( dtOut );
-      m_timestepStabilityLimit = 0;
+      m_timestepStabilityLimit = -1;
       m_timeStep=dtOut;
     }
-    else
+    //We use the timeStep defined inside the xml
+    else if (m_timestepStabilityLimit==0)
     {
       EventManager const & event = getGroupByPath< EventManager >( "/Problem/Events" );
       for( localIndex numSubEvent = 0; numSubEvent < event.numSubGroups(); ++numSubEvent )
@@ -499,6 +501,14 @@ void ElasticWaveEquationSEM::initializePostInitialConditionsPreSubGroups()
       }
 
     }
+    //We compute the timeStep even several times if needed (used mainly with PyGeos)
+    else if (m_timestepStabilityLimit==2)
+    {
+      real64 dtOut = 0.0;
+      computeTimeStep( dtOut );
+      m_timeStep=dtOut;
+    }
+
 
     if( m_useTaper==1 )
     {
@@ -674,6 +684,9 @@ real64 ElasticWaveEquationSEM::computeTimeStep( real64 & dtOut )
     ux_n.zero();
     uy_n.zero();
     uz_n.zero();
+     //Lien to ensure that the using array stays on GPU (useful when we cal this routine several times)
+    forAll< parallelHostPolicy >( sizeNode, [ux_n, uy_n, uz_n] ( localIndex const a ){});
+
   } );
   return m_timeStep * m_cflFactor;
 }
