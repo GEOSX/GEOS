@@ -61,22 +61,28 @@ std::vector< string > splitAndFormatStringByDelimiter( string & description, siz
 {
   std::vector< string > formattedDescription;
   size_t idxBeginCapture = 0;
-  size_t idxEndCapture = 0;
-  std::vector< std::string > descriptions;
+  size_t limitCharTracker = 0;
   std::stringstream currLine;
+  size_t prevIdxChar = 0;
   for( auto strIt = description.begin(); strIt != description.end(); ++strIt )
   {
     if( *strIt == delimiter )
     {
-      size_t const dist = std::distance( description.begin(), strIt ) + 1;
-      idxEndCapture = dist - idxEndCapture;
-      if( dist > maxLength )
+      size_t const idxChar = std::distance( description.begin(), strIt ) + 1;
+
+      limitCharTracker += (idxChar - idxBeginCapture);
+      size_t captureLength = idxChar - prevIdxChar;
+
+      currLine << description.substr( idxBeginCapture, captureLength );
+
+      idxBeginCapture = idxChar;
+      prevIdxChar = idxChar;
+      if( limitCharTracker > maxLength )
       {
         formattedDescription.push_back( currLine.str() );
         currLine.str( "" );
+        limitCharTracker = 0;
       }
-      currLine << description.substr( idxBeginCapture, idxEndCapture );
-      idxBeginCapture = dist;
     }
   }
   formattedDescription.push_back( description.substr( idxBeginCapture ) );
@@ -133,6 +139,7 @@ void LogPart::formatDescriptions( LogPart::Description & description )
 
       if( formattedName.size() + firstValue.size() > logPartMaxWidth )
       {
+        std::cout << "logPartMaxWidth " << logPartMaxWidth << std::endl;
         std::vector< string > formattedDescription =
           splitAndFormatStringByDelimiter( firstValue, logPartMaxWidth - formattedName.size());
         for( auto const & format : formattedDescription )
