@@ -485,7 +485,7 @@ void ElasticWaveEquationSEM::initializePostInitialConditionsPreSubGroups()
       real64 dtOut = 0.0;
       computeTimeStep( dtOut );
       m_timestepStabilityLimit = -1;
-      m_timeStep=dtOut;
+      m_timeStep=dtOut*m_cflFactor;
     }
     //We use the timeStep defined inside the xml
     else if( m_timestepStabilityLimit==0 )
@@ -506,7 +506,7 @@ void ElasticWaveEquationSEM::initializePostInitialConditionsPreSubGroups()
     {
       real64 dtOut = 0.0;
       computeTimeStep( dtOut );
-      m_timeStep=dtOut;
+      m_timeStep=dtOut*m_cflFactor;
     }
 
 
@@ -685,10 +685,10 @@ real64 ElasticWaveEquationSEM::computeTimeStep( real64 & dtOut )
     uy_n.zero();
     uz_n.zero();
     //Lien to ensure that the using array stays on GPU (useful when we cal this routine several times)
-    forAll< parallelHostPolicy >( sizeNode, [ux_n, uy_n, uz_n] ( localIndex const a ){} );
+    forAll< parallelHostPolicy >( sizeNode, [ux_n, uy_n, uz_n] ( localIndex const ){} );
 
   } );
-  return m_timeStep * m_cflFactor;
+  return 0;
 }
 
 real32 ElasticWaveEquationSEM::computeGlobalMinQFactor()

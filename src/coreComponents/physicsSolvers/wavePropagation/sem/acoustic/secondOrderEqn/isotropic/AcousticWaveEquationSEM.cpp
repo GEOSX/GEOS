@@ -358,7 +358,7 @@ void AcousticWaveEquationSEM::initializePostInitialConditionsPreSubGroups()
       real64 dtOut = 0.0;
       computeTimeStep( dtOut );
       m_timestepStabilityLimit = -1;
-      m_timeStep=dtOut;
+      m_timeStep=dtOut*m_cflFactor;
     }
     //We use the timeStep defined inside the xml
     else if( m_timestepStabilityLimit==0 )
@@ -379,7 +379,7 @@ void AcousticWaveEquationSEM::initializePostInitialConditionsPreSubGroups()
     {
       real64 dtOut = 0.0;
       computeTimeStep( dtOut );
-      m_timeStep=dtOut;
+      m_timeStep=dtOut*m_cflFactor;
     }
 
     if( m_useTaper==1 )
@@ -506,9 +506,9 @@ real64 AcousticWaveEquationSEM::computeTimeStep( real64 & dtOut )
     stiffnessVector.zero();
     p.zero();
     //Lien to ensure that the using array stays on GPU (useful when we cal this routine several times)
-    forAll< parallelHostPolicy >( sizeNode, [p] ( localIndex const a ){} );
+    forAll< parallelHostPolicy >( sizeNode, [p] ( localIndex const ){} );
   } );
-  return m_timeStep * m_cflFactor;
+  return 0;
 }
 
 
