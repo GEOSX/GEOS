@@ -315,24 +315,19 @@ void EventManager::logEndOfCycleInformation( LogPart & logpart,
 {
   logpart.addEndDescription( "- Cycle:", cycleNumber );
   logpart.addEndDescription( "- N substeps:", numOfSubSteps );
-  std::string logMessage;
-  for( integer i = 0; i < numOfSubSteps; ++i )
+  std::stringstream logMessage;
+  std::cout << units::TimeFormatInfo::fromSeconds( subStepDt[0] ).toString() << std::endl;
+  for( integer i = 0; i < 25; ++i )
   {
-    logMessage += "  " + units::TimeFormatInfo::fromSeconds( subStepDt[i] ).toString();
+    if (i > 0)
+    {
+      logMessage << ", ";
+    }
+    logMessage << "00h00m01s (1 s)";
   }
-  logpart.addEndDescription( "- dt:", logMessage );
+  logpart.addEndDescription( "- dt:", logMessage.str() );
+  logpart.setMaxWidth( 100 );//todo min > max
   logpart.end();
-
-
-  // The formating here is a work in progress.
-  // GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, "\n------------------------- TIMESTEP END -------------------------" );
-  // GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "    - Cycle:      {}", cycleNumber ) );
-  // GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, GEOS_FMT( "    - N substeps: {}", numOfSubSteps ) );
-
-
-  // Log the complete message once
-  // GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, logMessage );
-  // GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::TimeStep, "------------------------------------------------------------------\n" );
 }
 
 } /* namespace geos */

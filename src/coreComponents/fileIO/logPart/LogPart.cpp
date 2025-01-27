@@ -34,13 +34,13 @@ LogPart::LogPart( string_view logPartTitle )
 void LogPart::addDescription( string const & description )
 {
   m_startDesc.m_descriptionNames.push_back( description );
-  m_startDesc.m_descriptionValues.push_back( std::vector< string >() );
+  m_startDesc.m_descriptionsValues.push_back( std::vector< string >() );
 }
 
 void LogPart::addEndDescription( string const & description )
 {
   m_endDesc.m_descriptionNames.push_back( description );
-  m_endDesc.m_descriptionValues.push_back( std::vector< string >() );
+  m_endDesc.m_descriptionsValues.push_back( std::vector< string >() );
 }
 
 
@@ -51,45 +51,115 @@ void LogPart::setMinWidth( size_t const & minWidth )
   m_endDesc.m_logPartWidth = std::max( m_rowMinWidth, m_endDesc.m_logPartWidth );
 }
 
+void LogPart::setMaxWidth( size_t const & maxWidth )
+{
+  m_startDesc.m_logPartMaxWidth = std::min( maxWidth, m_startDesc.m_logPartMaxWidth );
+  m_endDesc.m_logPartMaxWidth = std::min( maxWidth, m_endDesc.m_logPartMaxWidth );
+}
+
+std::vector< string > splitAndFormatStringByDelimiter( string & description, size_t maxLength, char delimiter = ',' )
+{
+  std::vector< string > formattedDescription;
+  size_t idxBeginCapture = 0;
+  size_t idxEndCapture = 0;
+  std::vector< std::string > descriptions;
+  std::stringstream currLine;
+  for( auto strIt = description.begin(); strIt != description.end(); ++strIt )
+  {
+    if( *strIt == delimiter )
+    {
+      size_t const dist = std::distance( description.begin(), strIt ) + 1;
+      idxEndCapture = dist - idxEndCapture;
+      if( dist > maxLength )
+      {
+        formattedDescription.push_back( currLine.str() );
+        currLine.str( "" );
+      }
+      currLine << description.substr( idxBeginCapture, idxEndCapture );
+      idxBeginCapture = dist;
+    }
+  }
+  formattedDescription.push_back( description.substr( idxBeginCapture ) );
+
+  return formattedDescription;
+}
+
 void LogPart::formatDescriptions( LogPart::Description & description )
 {
   size_t maxNameSize = 1;
   std::vector< string > & descriptionName = description.m_descriptionNames;
-  std::vector< std::vector< string > > & descriptionValues = description.m_descriptionValues;
+  std::vector< std::vector< string > > & m_descriptionsValues = description.m_descriptionsValues;
+
   for( auto const & name : descriptionName )
   {
     size_t const idx = &name - &(*descriptionName.begin());
 
-    if( !descriptionValues[idx].empty())
+    if( !m_descriptionsValues[idx].empty())
     {
       maxNameSize = std::max( maxNameSize, name.size() );
     }
   }
 
   std::vector< string > & formattedDescriptionLines = description.m_formattedDescriptionLines;
-  size_t logPartWidth = description.m_logPartWidth;
+  size_t & logPartWidth = description.m_logPartWidth;
+  size_t & logPartMaxWidth = description.m_logPartMaxWidth;
   for( size_t idxName = 0; idxName < descriptionName.size(); idxName++ )
   {
+    string & name = descriptionName[idxName];
+    std::vector< string > & values = m_descriptionsValues[idxName];
 
-    if( descriptionValues[idxName].empty())
+    if( values.empty())
     {
-      formattedDescriptionLines.push_back( descriptionName[idxName] );
+      if( name.size() > logPartMaxWidth )
+      {
+        std::vector< string > formattedName = splitAndFormatStringByDelimiter( name, logPartMaxWidth );
+        for( auto const & format : formattedName )
+        {
+          formattedDescriptionLines.push_back( format );
+        }
+      }
+      else
+      {
+        formattedDescriptionLines.push_back( name );
+      }
     }
     else
     {
-      string const name = descriptionName[idxName];
       // +1 for extra space in case of delimiter ":"
       string const spaces = std::string( maxNameSize - name.size() + 1, ' ' );
-      string const nameFormatted = GEOS_FMT( "{}{}", name, spaces );
+      string const formattedName = GEOS_FMT( "{}{}", name, spaces );
 
-      formattedDescriptionLines.push_back( GEOS_FMT( "{}{}", nameFormatted, descriptionValues[idxName][0] ));
+      string firstValue = values[0];
+
+      if( formattedName.size() + firstValue.size() > logPartMaxWidth )
+      {
+        std::vector< string > formattedDescription =
+          splitAndFormatStringByDelimiter( firstValue, logPartMaxWidth - formattedName.size());
+        for( auto const & format : formattedDescription )
+        {
+          if( &format == &formattedDescription.front())
+          {
+
+            formattedDescriptionLines.push_back( GEOS_FMT( "{}{}", formattedName, format ));
+          }
+          else
+          {
+            formattedDescriptionLines.push_back(
+              GEOS_FMT( "{:>{}}", format, formattedName.size() + format.size() ));
+          }
+        }
+      }
+      else
+      {
+        formattedDescriptionLines.push_back( GEOS_FMT( "{}{}", formattedName, firstValue ));
+      }
+
       logPartWidth = std::max( logPartWidth, formattedDescriptionLines[idxName].size() );
 
-      for( size_t idxValue = 1; idxValue < descriptionValues[idxName].size(); idxValue++ )
+      for( size_t idxValue = 1; idxValue < values.size(); idxValue++ )
       {
         formattedDescriptionLines.push_back(
-          GEOS_FMT( "{:>{}}", descriptionValues[idxName][idxValue],
-                    nameFormatted.size() + descriptionValues[idxName][idxValue].size() ));
+          GEOS_FMT( "{:>{}}", values[idxValue], formattedName.size() + values[idxValue].size() ));
         logPartWidth = std::max( logPartWidth, formattedDescriptionLines.back().size() );
       }
     }

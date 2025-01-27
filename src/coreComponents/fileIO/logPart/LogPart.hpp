@@ -75,6 +75,12 @@ public:
   void setMinWidth( size_t const & minWidth );
 
   /**
+   * @brief Set the minimal width of a row
+   * @param minWidth The minimal width of the table
+   */
+  void setMaxWidth( size_t const & maxWidth );
+
+  /**
    * @brief Draw the first part of the logPart. It include the title and optionnaly, the end description(s).
    * @param os An output stream (by default, std::cout)
    */
@@ -95,13 +101,15 @@ private:
 
     /// Name of the description, formatted to be : [Name] : [Values1]\n[Values2]
     std::vector< string > m_descriptionNames;
-    /// Values in the descrpption the description
-    std::vector< std::vector< string > > m_descriptionValues;
+    /// Values in the description 
+    std::vector< std::vector< string > > m_descriptionsValues;
     /// Vector containing the descriptions formatted by formatDescriptions()
     std::vector< string > m_formattedDescriptionLines;
 
     /// logPart length
     size_t m_logPartWidth;
+    /// logPart length
+    size_t m_logPartMaxWidth;
   };
 
   /**
@@ -125,10 +133,10 @@ private:
   string const m_prefixEndTitle = "End of ";
 
   /// min width of logPart length
-  size_t m_rowMinWidth = 70;
+  size_t m_rowMinWidth = 50;
 
-  Description m_startDesc = { "", {}, {}, {}, m_rowMinWidth};
-  Description m_endDesc  = { "", {}, {}, {}, m_rowMinWidth};
+  Description m_startDesc = { "", {}, {}, {}, m_rowMinWidth, SIZE_MAX};
+  Description m_endDesc  = { "", {}, {}, {}, m_rowMinWidth, SIZE_MAX };
 
   /// description border margin
   static constexpr size_t m_borderMargin = 2;
@@ -152,7 +160,7 @@ void LogPart::addDescription( string const & name, Args const &... args )
     values.push_back( value );
   } (), ...);
   m_startDesc.m_descriptionNames.push_back( name );
-  m_startDesc.m_descriptionValues.push_back( values );
+  m_startDesc.m_descriptionsValues.push_back( values );
 }
 
 template< typename ... Args >
@@ -167,7 +175,7 @@ void LogPart::addEndDescription( string const & name, Args const &... args )
   } (), ...);
 
   m_endDesc.m_descriptionNames.push_back( name );
-  m_endDesc.m_descriptionValues.push_back( values );
+  m_endDesc.m_descriptionsValues.push_back( values );
 }
 
 }
