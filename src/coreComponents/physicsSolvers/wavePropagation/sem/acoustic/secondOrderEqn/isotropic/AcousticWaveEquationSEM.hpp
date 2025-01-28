@@ -123,7 +123,7 @@ public:
    */
   real64 explicitStepInternal( real64 const & time_n,
                                real64 const & dt,
-                               integer const & cycleNumber, 
+                               integer const & cycleNumber,
                                DomainPartition & domain );
 
   void computeUnknowns( real64 const & time_n,

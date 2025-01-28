@@ -250,8 +250,8 @@ void AcousticWaveEquationSEM::addSourceToRightHandSide( integer const & cycleNum
   //arrayView1d< TableFunction::KernelWrapper const > const sourceWaveletTableWrappers = m_sourceWaveletTableWrappers.toViewConst();
 
   GEOS_THROW_IF( cycleNumber > sourceValue.size( 0 ),
-                getDataContext() << ": Too many steps compared to array size",
-               std::runtime_error );
+                 getDataContext() << ": Too many steps compared to array size",
+                 std::runtime_error );
   forAll< EXEC_POLICY >( sourceConstants.size( 0 ), [=] GEOS_HOST_DEVICE ( localIndex const isrc )
   {
     if( sourceIsAccessible[isrc] == 1 )
@@ -1294,7 +1294,7 @@ real64 AcousticWaveEquationSEM::explicitStepInternal( real64 const & time_n,
   {
     localIndex nSubSteps = (int) ceil( dt/m_timeStep );
     dtCompute = dt/nSubSteps;
-    computeUnknowns( time_n, dtCompute, cycleNumber,  domain, mesh, regionNames );
+    computeUnknowns( time_n, dtCompute, cycleNumber, domain, mesh, regionNames );
     synchronizeUnknowns( time_n, dtCompute, cycleNumber, domain, mesh, regionNames );
   } );
 
