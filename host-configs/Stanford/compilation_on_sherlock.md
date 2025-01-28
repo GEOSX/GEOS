@@ -10,15 +10,14 @@ Ensure that the CMake file (for example, `sherlock-custom.cmake`, as shown below
 The following illustrates the proposed file structure. If you run `ls` and `ls -l build_utils/` commands in your working directory, you should see something like this:
 
 ```
-[suid@sh04-ln04 login /home/groups/tchelepi/suid]$ ls
+[suid@sh04-ln04 login /home/groups/pi_suid/suid]$ ls
 build_utils  compile_geos.sh
 
-[suid@sh04-ln04 login /home/groups/tchelepi/suid]$ ls -l build_utils/
+[suid@sh04-ln04 login /home/groups/pi_suid/suid]$ ls -l build_utils/
 total 96
--rw-r--r-- 1 suid tchelepi  565 Jan 24 18:07 clone.sh
--rw-r--r-- 1 suid tchelepi 1424 Jan 24 18:46 geos.sh
--rw-r--r-- 1 suid tchelepi 2103 Jan 24 18:38 sherlock-custom.cmake
--rw-r--r-- 1 suid tchelepi 1380 Jan 24 18:46 tpls.sh
+-rw-r--r-- 1 suid pi_suid  565 Jan 24 18:07 clone.sh
+-rw-r--r-- 1 suid pi_suid 1424 Jan 24 18:46 geos.sh
+-rw-r--r-- 1 suid pi_suid 1380 Jan 24 18:46 tpls.sh
 ```
 
 ## Compilation Steps
