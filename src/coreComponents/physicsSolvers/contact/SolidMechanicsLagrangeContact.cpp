@@ -42,7 +42,7 @@
 #include "linearAlgebra/solvers/PreconditionerBlockJacobi.hpp"
 #include "linearAlgebra/solvers/BlockPreconditioner.hpp"
 #include "linearAlgebra/solvers/SeparateComponentPreconditioner.hpp"
-#include "finiteElement/elementFormulations/H1_TriangleFace_Lagrange1_Gauss1.hpp"
+#include "finiteElement/elementFormulations/H1_TriangleFace_Lagrange1_Gauss.hpp"
 #include "finiteElement/elementFormulations/H1_QuadrilateralFace_Lagrange1_GaussLegendre2.hpp"
 
 #if defined( __INTEL_COMPILER )
