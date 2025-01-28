@@ -178,7 +178,7 @@ To start the compilation process, simply run:
 source compile_geos.sh
 ```
 
-This will initiate the compilation while managing job dependencies. You will receive two email notifications regarding job completion or failure.
+This will initiate the compilation while managing job dependencies. You will receive email notifications regarding job completion or failure.
 
 ### Monitoring Progress
 To monitor the compilation progress, use the following command:
