@@ -201,7 +201,7 @@ tail -f geos_output.log
 ```
 
 ## Summary
-This guide documents the compilation process of GEOS on Stanford's Sherlock cluster. The process effectively employs SLURM's functionalities to streamline jobs execution in sequence. For advanced usage or specific needs, additional configurations and modifications may be required.
+This guide documents the compilation process of GEOS on Stanford's Sherlock cluster. The process effectively employs [SLURM](https://www.sherlock.stanford.edu/docs/getting-started/submitting/#requesting-resources:~:text=of%20pending%20jobs-,Slurm,-%23)'s functionalities to streamline jobs execution in sequence. For advanced usage or specific needs, additional configurations and modifications may be required.
 
 ## References
 - [GEOSX Documentation](https://geosx-geosx.readthedocs-hosted.com/en/latest/#)
