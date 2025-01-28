@@ -74,20 +74,15 @@ WellGeneratorBase::WellGeneratorBase( string const & name, Group * const parent 
 
 Group * WellGeneratorBase::createChild( string const & childKey, string const & childName )
 {
-  if( childKey == viewKeyStruct::perforationString() )
-  {
-    ++m_numPerforations;
+  GEOS_LOG_RANK_0( GEOS_FMT( "{}: adding {} {}", getName(), childKey, childName ) );
+  const auto childTypes = { viewKeyStruct::perforationString() };
+  GEOS_ERROR_IF( childKey != viewKeyStruct::perforationString(),
+                 CatalogInterface::unknownTypeError( childKey, getDataContext(), childTypes ) );
 
-    // keep track of the perforations that have been added
-    m_perforationList.emplace_back( childName );
-    GEOS_LOG_RANK_0( GEOS_FMT( "{}: adding {} {}", getName(), childKey, childName ) );
-    return &registerGroup< Perforation >( childName );
-  }
-  else
-  {
-    GEOS_THROW( "Unrecognized node: " << childKey, InputError );
-  }
-  return nullptr;
+  ++m_numPerforations;
+  m_perforationList.emplace_back( childName );
+
+  return &registerGroup< Perforation >( childName );
 }
 
 void WellGeneratorBase::expandObjectCatalogs()
@@ -518,7 +513,7 @@ void WellGeneratorBase::mergePerforations( array1d< array1d< localIndex > > cons
 
 void WellGeneratorBase::logInternalWell() const
 {
-  TableData tableWellData;
+  TableData wellData;
   for( globalIndex iwelem = 0; iwelem < m_numElems; ++iwelem )
   {
     std::optional< globalIndex > nextElement;
@@ -534,40 +529,38 @@ void WellGeneratorBase::logInternalWell() const
       prevElement =  m_prevElemId[iwelem][0];
     }
 
-    tableWellData.addRow( iwelem,
-                          m_elemCenterCoords[iwelem][0],
-                          m_elemCenterCoords[iwelem][1],
-                          m_elemCenterCoords[iwelem][2],
-                          prevElement,
-                          nextElement );
+    wellData.addRow( iwelem,
+                     m_elemCenterCoords[iwelem][0],
+                     m_elemCenterCoords[iwelem][1],
+                     m_elemCenterCoords[iwelem][2],
+                     prevElement,
+                     nextElement );
   }
 
-  string const wellTitle = GEOS_FMT( "Well '{}' Element Table", getName() );
-  TableLayout const tableWellLayout = TableLayout( {
-      TableLayout::ColumnParam{"Element no.", TableLayout::Alignment::right},
-      TableLayout::ColumnParam{"CoordX", TableLayout::Alignment::right},
-      TableLayout::ColumnParam{"CoordY", TableLayout::Alignment::right},
-      TableLayout::ColumnParam{"CoordZ", TableLayout::Alignment::right},
-      TableLayout::ColumnParam{"Prev\nElement", TableLayout::Alignment::right},
-      TableLayout::ColumnParam{"Next\nElement", TableLayout::Alignment::right},
-    }, wellTitle );
+  TableLayout const wellLayout( GEOS_FMT( "Well '{}' Element Table", getName() ),
+                                {"Element no.",
+                                 "CoordX",
+                                 "CoordY",
+                                 "CoordZ",
+                                 "Prev\nElement",
+                                 "Next\nElement"} );
 
-  TableTextFormatter const tableFormatter( tableWellLayout );
-  GEOS_LOG_RANK_0( tableFormatter.toString( tableWellData ));
+  TableTextFormatter const wellFormatter( wellLayout );
+  GEOS_LOG_RANK_0( wellFormatter.toString( wellData ));
 }
 
 void WellGeneratorBase::logPerforationTable() const
 {
-  TableData tablePerfoData;
+  TableData dataPerforation;
   for( globalIndex iperf = 0; iperf < m_numPerforations; ++iperf )
   {
-    tablePerfoData.addRow( iperf, m_perfCoords[iperf], m_perfElemId[iperf] );
+    dataPerforation.addRow( iperf, m_perfCoords[iperf], m_perfElemId[iperf] );
   }
 
-  TableLayout const tableLayoutPerfo ( {"Perforation no.", "Coordinates", "Well element no."},
-                                       GEOS_FMT( "Well '{}' Perforation Table", getName() ) );
-  TableTextFormatter const tablePerfoLog( tableLayoutPerfo );
-  GEOS_LOG_RANK_0( tablePerfoLog.toString( tablePerfoData ));
+  TableLayout const layoutPerforation ( GEOS_FMT( "Well '{}' Perforation Table", getName()),
+                                        { "Perforation no.", "Coordinates", "Well element no." } );
+  TableTextFormatter const logPerforation( layoutPerforation );
+  GEOS_LOG_RANK_0( logPerforation.toString( dataPerforation ));
 }
 
 }

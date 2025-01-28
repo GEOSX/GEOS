@@ -24,19 +24,20 @@
 #include "elementFormulations/ConformingVirtualElementOrder1.hpp"
 #include "elementFormulations/H1_Hexahedron_Lagrange1_GaussLegendre2.hpp"
 #include "elementFormulations/H1_Pyramid_Lagrange1_Gauss5.hpp"
-#include "elementFormulations/H1_Tetrahedron_Lagrange1_Gauss1.hpp"
+#include "elementFormulations/H1_Tetrahedron_Lagrange1_Gauss.hpp"
 #include "elementFormulations/H1_Wedge_Lagrange1_Gauss6.hpp"
 #if !defined( GEOS_USE_HIP )
 #include "elementFormulations/Qk_Hexahedron_Lagrange_GaussLobatto.hpp"
 #endif
 #include "elementFormulations/H1_QuadrilateralFace_Lagrange1_GaussLegendre2.hpp"
-#include "elementFormulations/H1_TriangleFace_Lagrange1_Gauss1.hpp"
+#include "elementFormulations/H1_TriangleFace_Lagrange1_Gauss.hpp"
 #include "LvArray/src/system.hpp"
 
 #define FE_1_TYPES \
   finiteElement::H1_Hexahedron_Lagrange1_GaussLegendre2, \
   finiteElement::H1_Wedge_Lagrange1_Gauss6, \
   finiteElement::H1_Tetrahedron_Lagrange1_Gauss1, \
+  finiteElement::H1_Tetrahedron_Lagrange1_Gauss14, \
   finiteElement::H1_Pyramid_Lagrange1_Gauss5
 
 #define GL_FE_TYPES \
@@ -88,7 +89,8 @@
 
 #define FE_TYPES_2D \
   finiteElement::H1_QuadrilateralFace_Lagrange1_GaussLegendre2, \
-  finiteElement::H1_TriangleFace_Lagrange1_Gauss1
+  finiteElement::H1_TriangleFace_Lagrange1_Gauss1, \
+  finiteElement::H1_TriangleFace_Lagrange1_Gauss4
 
 #define BASE_FE_TYPES_2D FE_TYPES_2D
 

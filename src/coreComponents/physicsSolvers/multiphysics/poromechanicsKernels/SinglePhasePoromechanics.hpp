@@ -22,6 +22,7 @@
 
 #include "physicsSolvers/multiphysics/PoromechanicsFields.hpp"
 #include "physicsSolvers/multiphysics/poromechanicsKernels/PoromechanicsBase.hpp"
+#include "physicsSolvers/fluidFlow/SinglePhaseBase.hpp"
 
 namespace geos
 {

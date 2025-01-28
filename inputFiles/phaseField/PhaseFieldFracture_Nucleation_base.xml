@@ -52,7 +52,7 @@
     <SurfaceGenerator
       name="SurfaceGen"
       targetRegions="{ Region1 }"
-      rockToughness="0"
+      initialRockToughness="0"
       mpiCommOrder="1"/>
   </Solvers>
 

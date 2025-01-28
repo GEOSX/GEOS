@@ -13,7 +13,7 @@
       logLevel="0"
       fractureRegion="Fracture"
       targetRegions="{ Region }"
-      rockToughness="1.0e6"
+      initialRockToughness="1.0e6"
       mpiCommOrder="1"/>
   </Solvers>
 
