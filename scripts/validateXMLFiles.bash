@@ -65,6 +65,10 @@ list_xml_files_git ()
     git --git-dir=$git_root/.git ls-files $prefix | grep -e .*[.]xml$ | sed "s|^|$git_root/|g"
 }
 
+# emit location
+ls -l
+pwd
+
 # create/nullify the log file
 echo -n > $LOGFILE
 
