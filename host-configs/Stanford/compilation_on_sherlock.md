@@ -112,9 +112,7 @@ make
 cd ../..
 ```
 
-The above is an employing a CMake configuration file `sherlock-gcc10.cmake` wich is test in the continuous integratoin pipline. This file maps some of the loaded modules to configure TPLs (Third-Party Libraries) and GEOS.
-
-The aforementioned process utilizes a CMake configuration file, sherlock-gcc10.cmake, which is tested within the continuous integration pipeline. The file `sherlock-modules.sh` load modules employed in the cmake configuration file for both TPL's and GEOS.
+The aforementioned process utilizes a CMake configuration file, `sherlock-gcc10.cmake`, which configuration is tested within the continuous integration process. The file `sherlock-modules.sh` load modules employed by `sherlock-gcc10.cmake`.
 
 
 ### Step 3: Configure GEOS
