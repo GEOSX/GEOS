@@ -1,54 +1,5 @@
 <?xml version="1.0" ?>
 <Problem>
-  <Solvers
-    gravityVector="{0.0, 0.0, 0.0}">
-    <!-- <ImplicitQuasiDynamicEQ
-      name="QDSolver"
-      targetRegions="{ Domain, Fault }"
-      shearImpedance="4.6247113164e6"
-      initialDt="1000"
-      logLevel="1"
-      discretization="FE1"
-      stressSolverName="stressSolver"
-      targetSlipIncrement="1.0e-6">
-      <NonlinearSolverParameters
-        newtonTol="1.0e-8"
-        logLevel="2"
-        newtonMaxIter="20"
-        maxNumConfigurationAttempts="1"
-        lineSearchAction="Require"
-        lineSearchMaxCuts="2"
-        maxTimeStepCuts="1"/>
-     </QuasiDynamicEQ> -->
-
-    <SolidMechanicsLagrangeContactBubbleStab
-      name="stressSolver"
-      timeIntegrationOption="QuasiStatic"
-      logLevel="2"
-      writeLinearSystem="0"
-      discretization="FE1"
-      targetRegions="{ Domain, Fault }">
-      <NonlinearSolverParameters
-        newtonTol="1.0e-8"
-        logLevel="2"
-        newtonMaxIter="10"
-        maxNumConfigurationAttempts="1"
-        lineSearchAction="Require"
-        lineSearchMaxCuts="2"
-        maxTimeStepCuts="1"/>
-      <LinearSolverParameters
-        solverType="direct"
-        directParallel="0"
-        logLevel="0"/>
-    </SolidMechanicsLagrangeContactBubbleStab>
-    
-    <SurfaceGenerator
-      name="SurfaceGen"
-      targetRegions="{ Domain }"
-      initialRockToughness="1.0"
-      mpiCommOrder="1"
-      fractureRegion="Fault"/>  
-  </Solvers>
 
   <NumericalMethods>
     <FiniteElements>
@@ -222,30 +173,4 @@
       fieldName="pressure"
       setNames="{source}"/>    
    </Tasks> -->
-
-  <Events
-    maxTime="4.5e4"
-    maxCycle="1">
-
-    <SoloEvent 
-      name="generateFault"
-      target="/Solvers/SurfaceGen"/>
-
-    <PeriodicEvent
-      name="vtkOutput"
-      cycleFrequency="1"
-      targetExactTimestep="0"
-      target="/Outputs/vtkOutput"/>  
-      
-    <PeriodicEvent
-      name="solverApplications"
-      maxEventDt="1e4"
-      target="/Solvers/stressSolver"/>
-
-    <!-- <PeriodicEvent
-      name="resarts"
-      timeFrequency="2e4"
-      targetExactTimestep="0"
-      target="/Outputs/restart"/>   -->
-  </Events> 
 </Problem>

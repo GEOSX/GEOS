@@ -3,6 +3,7 @@ import numpy as np
 from geos.hdf5_wrapper import hdf5_wrapper
 import matplotlib.pyplot as plt
 import os
+from scipy.special import erfc
 
 def remove_padding(data):
     """Removes trailing zeros from a NumPy array."""
@@ -22,9 +23,23 @@ def getDataFromHDF5( hdf5FilePath, var_name ):
     # Remove padding
     var = remove_padding(var)
     time = time[:len(var)]  # Match the length of the time array to the variable
-    return time, var    
+    return time, var 
 
+def analytical_pressure( time, x ):
+    alpha = 0.1 # m^2 / s
+    phi = 0.1
+    beta = 1e-8 # Pa^-1
+    t_off = 100 * 24 * 3600
+    q0 = 1.25 * 1e-6 #m/s
 
+    pressure = q0 / (beta * phi * np.sqrt(alpha)) * (G(time, x, alpha) - np.where(time > t_off, G(time - t_off, x, alpha), 0))
+    return pressure 
+
+def G( t, x, alpha ):
+    A = np.abs(x) / np.sqrt( 4*alpha*t )
+    B = -x**2 / (4 * alpha * t)
+    return np.sqrt(t) * ( np.exp(B) / np.sqrt(np.pi)  - A * erfc( A ) )
+     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--dir', type=str, help='Path to hdf5 file')
@@ -43,6 +58,9 @@ if __name__ == "__main__":
     time, pressure = getDataFromHDF5( filePath, "pressure" )
     time, slipRate = getDataFromHDF5( filePath, "slipRate" )
 
+    pressure_analytical = analytical_pressure( time, 0.0 )
+    print(pressure_analytical)
+
     # Convert time to years
     time_in_years = time / (365 * 24 * 3600)  # Assuming time is in seconds
 
@@ -50,13 +68,16 @@ if __name__ == "__main__":
     fig, ax1 = plt.subplots()
     
     print(len(time_in_years))
-    print(len(pressure)) 
+    print(len(pressure))
+    print(len(pressure_analytical))  
 
     # Plot pressure on the left y-axis
     ax1.set_xlabel('Time (years)')
     ax1.set_ylabel('Pressure (Pa)', color='tab:blue')
     ax1.plot(time_in_years, pressure, label="Pressure", color='tab:blue')
+    ax1.plot(time_in_years, pressure_analytical, label="Pressure Analytical", color='black', linestyle='--')
     ax1.tick_params(axis='y', labelcolor='tab:blue')
+    ax1.legend()
   
 
     # Plot slipRate on the right y-axis (log scale)
