@@ -65,7 +65,7 @@
     <SurfaceGenerator
       name="SurfaceGen"
       targetRegions="{ Domain }"
-      rockToughness="1.0"
+      initialRockToughness="1.0"
       mpiCommOrder="1"
       fractureRegion="Fault"/>  
 

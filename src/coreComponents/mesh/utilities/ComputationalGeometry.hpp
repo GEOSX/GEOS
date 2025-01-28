@@ -24,7 +24,7 @@
 #include "common/DataLayouts.hpp"
 #include "finiteElement/elementFormulations/H1_Hexahedron_Lagrange1_GaussLegendre2.hpp"
 #include "finiteElement/elementFormulations/H1_Pyramid_Lagrange1_Gauss5.hpp"
-#include "finiteElement/elementFormulations/H1_Tetrahedron_Lagrange1_Gauss1.hpp"
+#include "finiteElement/elementFormulations/H1_Tetrahedron_Lagrange1_Gauss.hpp"
 #include "finiteElement/elementFormulations/H1_Wedge_Lagrange1_Gauss6.hpp"
 #include "LvArray/src/output.hpp"
 #include "LvArray/src/tensorOps.hpp"

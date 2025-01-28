@@ -22,7 +22,7 @@
 #include "gtest/gtest.h"
 
 #include <chrono>
-#include "finiteElement/elementFormulations/H1_TriangleFace_Lagrange1_Gauss1.hpp"
+#include "finiteElement/elementFormulations/H1_TriangleFace_Lagrange1_Gauss.hpp"
 
 using namespace geos;
 using namespace finiteElement;
