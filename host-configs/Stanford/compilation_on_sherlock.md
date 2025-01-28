@@ -7,7 +7,7 @@ This guide provides a step-by-step process for compiling GEOS simulator on the S
 
 The shell scripts `clone.sh`, `tpls.sh`, `geos.sh` (partial scripts) and `compile_geos.sh` (main script) must be created and populated with the relevant content outlined in this document.
 
-To facilitate this, please follow these organizational instructions:
+To facilitate this, follow these organizational instructions:
 
 * In your working directory, create a folder named `build_utils`;
 * Place the partial scripts  `clone.sh`, `tpls.sh`, `geos.sh` within the build_utils directory;
@@ -15,7 +15,7 @@ To facilitate this, please follow these organizational instructions:
 
 This organizational structure is relevant to ensure the successful execution of the compilation process. 
 
-The following illustrates the files structure. If you run `ls` and `ls -l build_utils/` commands in your working directory, you should see something like this:
+The following illustrates the files structure. If you run `ls` and `ls -l build_utils/` on your working directory, you should observe an output similar to the following:
 
 ```
 [suid@sh04-ln04 login /home/groups/pi_suid/suid]$ ls
@@ -31,22 +31,23 @@ total 96
 ## Compilation Steps
 
 ### Main Step: Execute the Compile Script
-The compile_geos.sh script executes the compilation process:
+The script `compile_geos.sh` executes the compilation process:
 
 ```bash
 source compile_geos.sh
 ```
 
-This script orchestrates the compilation process by calling other scripts in a defined order:
+This script orchestrates the compilation process the following order:
+
 1. Clone the Sources
 2. Compile TPLs
 3. Compile GEOS
 
 ### Step 1: Clone the Sources
-The **`clone.sh`** script is responsible for fetching the required repositories and initializing the necessary submodules. The script performs the following actions:
+The script **`clone.sh`** is dedicated for fetching the repositories and initializing the necessary submodules. The script performs the following actions:
 
 - It loads the appropriate modules for Git.
-- It clones the Third-Party Libraries (`thirdPartyLibs`) and the GEOS source code.
+- It clones the Third-Party Libraries (`thirdPartyLibs`) and GEOS source code.
 - It initializes the Git Large File Storage (LFS) and updates the submodules.
 
 **Content of `clone.sh`:**
@@ -75,11 +76,10 @@ cd ..
 ```
 
 ### Step 2: Compile TPLs
-The **`tpls.sh`** script configures and compiles the Third-Party Libraries. This involves copying a custom configuration file and executing the build commands:
+The script **`tpls.sh`** configures and compiles the Third-Party Libraries. The main steps it performs are as follows:
 
 - It loads the necessary modules.
-- It copies the CMake configuration file (`sherlock-custom.cmake`) into the appropriate directory for GEOS.
-- It executes the `config-build.py` script to configure TPLs for Debug builds before running `make` to compile them.
+- It executes the `config-build.py` script to configure TPLs for Debug builds and runs `make` to compile them.
 
 **Content of `tpls.sh`:**
 
@@ -112,16 +112,16 @@ make
 cd ../..
 ```
 
-The aforementioned process utilizes a CMake configuration file, `sherlock-gcc10.cmake`, which configuration is tested within the continuous integration process. The file `sherlock-modules.sh` is designed to load the specific modules utilized by `sherlock-gcc10.cmake`, it ensures a successful compilation process.
+The aforementioned process utilizes a CMake configuration file, `sherlock-gcc10.cmake`, which configuration is tested within the continuous integration process on GitHub. The file `sherlock-modules.sh` is designed to load the specific modules utilized by `sherlock-gcc10.cmake`, it ensures a successful compilation process.
 
 
 ### Step 3: Configure GEOS
-The **`geos.sh`** script takes care of configuring and compiling the GEOS simulator itself. It performs these tasks:
+The script **`geos.sh`** takes care of configuring and compiling GEOS. It performs these tasks:
 
 - It loads the necessary modules (the same as for the TPLs).
 - It retrieves the absolute path for the TPLs installation.
 - It executes the `config-build.py` script for GEOS, linking it to the previously built TPLs.
-- Finally, it compiles GEOS using `make -j`.
+- It compiles GEOS by running `make -j 4`.
 
 **Content of `geos.sh`:**
 
@@ -159,7 +159,7 @@ cd ../..
 
 ## Compiling GEOS
 
-The `compile_geos.sh` file combines the above steps into a unified process. It handles the sequence and dependencies between the jobs via the flag `--dependency`:
+The script `compile_geos.sh` combines the above steps into a unified process. It handles the sequence and dependencies between the jobs via the flag `--dependency`:
 
 **Content of `compile_geos.sh`:**
 
@@ -170,11 +170,11 @@ source build_utils/clone.sh
 # Submit the first job for TPLs compilation
 tpls_id=$(sbatch build_utils/tpls.sh | awk '{print $4}')
 
-# Submit the GEOS compilation job with a dependency on the TPLs job
+# Submit GEOS compilation job with a dependency on the TPLs job
 sbatch --dependency=afterok:$tpls_id build_utils/geos.sh
 ```
 
-The GEOS compilation will be submitted only if the TPL job succeeds. This allows us to rapidly allocate small resources in the form of a `dev` partition. See [Sherlock documentation](https://www.sherlock.stanford.edu/docs/user-guide/running-jobs/?h=sh_part#available-resources) for available resources and types of partitions.
+Note that GEOS compilation will be submitted only if the TPL job succeeds. This allows us to rapidly allocate small resources in the form of a `dev` partition. See [Sherlock documentation](https://www.sherlock.stanford.edu/docs/user-guide/running-jobs/?h=sh_part#available-resources) for available resources and types of partitions.
 
 ### Execution
 To start the compilation process, simply run:
@@ -183,7 +183,7 @@ To start the compilation process, simply run:
 source compile_geos.sh
 ```
 
-This will initiate the compilation while managing job dependencies. You will receive email notifications regarding job completion or failure.
+This will initiate the compilation while managing job dependencies. You will receive two email notifications regarding job completion or failure.
 
 ### Monitoring Progress
 To monitor the output while the compilation is in progress, use the following command:
@@ -201,7 +201,7 @@ tail -f geos_output.log
 ```
 
 ## Summary
-This guide document the compilation process of GEOS on Stanford's Sherlock cluster. The process effectively employs SLURM's resource management functionalities to streamline jobs execution in sequence. For advanced usage or specific needs, additional configurations and modifications may be required.
+This guide documents the compilation process of GEOS on Stanford's Sherlock cluster. The process effectively employs SLURM's functionalities to streamline jobs execution in sequence. For advanced usage or specific needs, additional configurations and modifications may be required.
 
 ## References
 - [GEOSX Documentation](https://geosx-geosx.readthedocs-hosted.com/en/latest/#)
