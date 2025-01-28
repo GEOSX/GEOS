@@ -1,0 +1,6 @@
+<VTKFile type="vtkMultiBlockDataSet" version="1.0" byte_order="LittleEndian" header_type="UInt64">
+  <vtkMultiBlockDataSet>
+    <DataSet index="0" name="main" file="edfm_vtk_matrix.vtu"/>
+    <DataSet index="1" name="edfm_vtk_fractures" file="edfm_vtk_fractures.vtu"/>
+  </vtkMultiBlockDataSet>
+</VTKFile>

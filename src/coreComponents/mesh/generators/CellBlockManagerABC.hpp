@@ -102,6 +102,14 @@ public:
   virtual Group & getFaceBlocks() = 0;
 
   /**
+   * @brief Returns a group containing the embedded surface block as @p EmbeddedSurfaceBlockABC instances.
+   * @return Mutable reference to the embedded surface blocks group.
+   *
+   * @note It should probably be better not to expose a non-const accessor here.
+   */
+  virtual Group & getEmbeddedSurfaceBlocks() = 0;
+
+  /**
    * @brief Returns LineBlockABC corresponding to the given identifier
    * @param name the name of the required LineBlockABC
    * @return The LineBlockABC associated with the given name
@@ -125,6 +133,12 @@ public:
    * @return A map of the cellblocks list for each region attribute values.
    */
   virtual std::map< integer, std::set< string > > const & getRegionAttributesCellBlocks() const = 0;
+
+  /**
+   * @brief Returns a group containing the embedded surfaces blocks as EmbeddedSurfaceBlockABC instances
+   * @return Const reference to the Group instance.
+   */
+  virtual Group const & getEmbeddedSurfaceBlocks() const = 0;
 
   /**
    * @brief Total number of nodes across all the cell blocks.

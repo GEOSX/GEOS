@@ -76,11 +76,14 @@ public:
    * @brief Builds the compound from values.
    * @param main The main 3d mesh (the matrix).
    * @param faceBlocks The fractures meshes.
+   * @param edfmSurfBlocks The edfm fractures meshes.
    */
   AllMeshes( vtkSmartPointer< vtkDataSet > const & main,
-             std::map< string, vtkSmartPointer< vtkDataSet > > const & faceBlocks )
+             std::map< string, vtkSmartPointer< vtkDataSet > > const & faceBlocks,
+             std::map< string, vtkSmartPointer< vtkDataSet > > const & edfmSurfBlocks )
     : m_main( main ),
-    m_faceBlocks( faceBlocks )
+    m_faceBlocks( faceBlocks ),
+    m_embeddedSurfaceBlocks( edfmSurfBlocks )
   { }
 
   /**
@@ -97,6 +100,14 @@ public:
   std::map< string, vtkSmartPointer< vtkDataSet > > & getFaceBlocks()
   {
     return m_faceBlocks;
+  }
+
+  /**
+   * @return a mapping linking the name of each edfm block to its mesh.
+   */
+  std::map< string, vtkSmartPointer< vtkDataSet > > & getEmbeddedSurfaceBlocks()
+  {
+    return m_embeddedSurfaceBlocks;
   }
 
   /**
@@ -117,12 +128,23 @@ public:
     m_faceBlocks = faceBlocks;
   }
 
+  /**
+   * @brief Defines the face blocks/fractures.
+   * @param edfmSurfBlocks A map which connects each name of the face block to its mesh.
+   */
+  void setEmbeddedSurfaceBlocks( std::map< string, vtkSmartPointer< vtkDataSet > > const & edfmSurfBlocks )
+  {
+    m_embeddedSurfaceBlocks = edfmSurfBlocks;
+  }
 private:
   /// The main 3d mesh (namely the matrix).
   vtkSmartPointer< vtkDataSet > m_main;
 
   /// The face meshes (namely the fractures).
   std::map< string, vtkSmartPointer< vtkDataSet > > m_faceBlocks;
+
+  /// The EDFM meshes (namely the EDFM fractures).
+  std::map< string, vtkSmartPointer< vtkDataSet > > m_embeddedSurfaceBlocks;
 };
 
 /**
@@ -130,11 +152,13 @@ private:
  * @param[in] filePath the Path of the file to load
  * @param[in] mainBlockName The name of the block to import (will be considered for multi-block files only).
  * @param[in] faceBlockNames The names of the face blocks to import  (will be considered for multi-block files only).
+ * @param[in] edfmSurfBlockNames The names of the EDFM blocks to import  (will be considered for multi-block files only).
  * @return The compound of the main mesh and the face block meshes.
  */
 AllMeshes loadAllMeshes( Path const & filePath,
                          string const & mainBlockName,
-                         array1d< string > const & faceBlockNames );
+                         array1d< string > const & faceBlockNames,
+                         array1d< string > const & edfmSurfBlockNames );
 
 /**
  * @brief Compute the rank neighbor candidate list.
@@ -149,6 +173,7 @@ findNeighborRanks( std::vector< vtkBoundingBox > boundingBoxes );
  * @param[in] logLevel the log level
  * @param[in] loadedMesh the mesh that was loaded on one or several MPI ranks
  * @param[in] namesToFractures the fracture meshes
+ * @param[in] namesToEdfmFractures the EDFM meshes
  * @param[in] comm the MPI communicator
  * @param[in] method the partitionning method
  * @param[in] partitionRefinement number of graph partitioning refinement cycles
@@ -159,6 +184,7 @@ AllMeshes
 redistributeMeshes( integer const logLevel,
                     vtkSmartPointer< vtkDataSet > loadedMesh,
                     std::map< string, vtkSmartPointer< vtkDataSet > > & namesToFractures,
+                    std::map< string, vtkSmartPointer< vtkDataSet > > & namesToEdfmFractures,
                     MPI_Comm const comm,
                     PartitionMethod const method,
                     int const partitionRefinement,

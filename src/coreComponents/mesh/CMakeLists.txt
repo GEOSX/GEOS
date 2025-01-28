@@ -38,6 +38,7 @@ set( mesh_headers
      ExternalDataSourceBase.hpp
      ExternalDataSourceManager.hpp
      EmbeddedSurfaceNodeManager.hpp
+     EmbeddedSurfacesParallelSynchronization.hpp
      EmbeddedSurfaceSubRegion.hpp
      MeshFields.hpp
      FaceElementSubRegion.hpp
@@ -79,6 +80,8 @@ set( mesh_headers
      generators/ExternalMeshGeneratorBase.hpp
      generators/FaceBlock.hpp
      generators/FaceBlockABC.hpp
+     generators/EmbeddedSurfaceBlock.hpp
+     generators/EmbeddedSurfaceBlockABC.hpp
      generators/InternalMeshGenerator.hpp
      generators/InternalWellGenerator.hpp
      generators/InternalWellboreGenerator.hpp
@@ -126,6 +129,7 @@ set( mesh_sources
      ElementRegionManager.cpp
      ElementSubRegionBase.cpp
      EmbeddedSurfaceNodeManager.cpp
+     EmbeddedSurfacesParallelSynchronization.cpp
      EmbeddedSurfaceSubRegion.cpp
      ExternalDataSourceBase.cpp
      ExternalDataSourceManager.cpp
@@ -158,6 +162,7 @@ set( mesh_sources
      generators/LineBlock.cpp
      generators/ExternalMeshGeneratorBase.cpp
      generators/FaceBlock.cpp
+     generators/EmbeddedSurfaceBlock.cpp
      generators/InternalMeshGenerator.cpp
      generators/InternalWellGenerator.cpp
      generators/InternalWellboreGenerator.cpp
@@ -191,6 +196,7 @@ if( ENABLE_VTK )
     set( mesh_headers ${mesh_headers}
          generators/CollocatedNodes.hpp
          generators/VTKFaceBlockUtilities.hpp
+         generators/VTKEmbeddedSurfaceBlockUtilities.hpp
          generators/VTKHierarchicalDataSource.hpp
          generators/VTKMeshGenerator.hpp
          generators/VTKMeshGeneratorTools.hpp
@@ -200,6 +206,7 @@ if( ENABLE_VTK )
     set( mesh_sources ${mesh_sources}
          generators/CollocatedNodes.cpp
          generators/VTKFaceBlockUtilities.cpp
+         generators/VTKEmbeddedSurfaceBlockUtilities.cpp
          generators/VTKHierarchicalDataSource.cpp
          generators/VTKMeshGenerator.cpp
          generators/VTKMeshGeneratorTools.cpp
@@ -241,4 +248,3 @@ endif()
 if( GEOS_ENABLE_TESTS )
     add_subdirectory( unitTests )
 endif( )
-

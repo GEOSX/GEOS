@@ -375,6 +375,7 @@ splitMeshByPartition( vtkSmartPointer< vtkDataSet > mesh,
   ArrayOfArrays< vtkIdType > cellsLists;
   cellsLists.resizeFromCapacities< serialPolicy >( numParts, cellCounts.data() );
 
+  //Matteo: in here we need to make sure that the edfmMesh gets split according to the same partitioning as the main mesh
   forAll< parallelHostPolicy >( part.size(), [part, cellsLists = cellsLists.toView()] ( localIndex const cellIdx )
   {
     cellsLists.emplaceBackAtomic< parallelHostAtomic >( LvArray::integerConversion< localIndex >( part[cellIdx] ),
@@ -565,18 +566,25 @@ loadMesh( Path const & filePath,
 
 AllMeshes loadAllMeshes( Path const & filePath,
                          string const & mainBlockName,
-                         array1d< string > const & faceBlockNames )
+                         array1d< string > const & faceBlockNames,
+                         array1d< string > const & edfmSurfBlockNames )
 {
   int const lastRank = MpiWrapper::commSize() - 1;
   vtkSmartPointer< vtkDataSet > main = loadMesh( filePath, mainBlockName );
   std::map< string, vtkSmartPointer< vtkDataSet > > faces;
+  std::map< string, vtkSmartPointer< vtkDataSet > > edfmSurfaces;
 
   for( string const & faceBlockName: faceBlockNames )
   {
     faces[faceBlockName] = loadMesh( filePath, faceBlockName, lastRank );
   }
 
-  return AllMeshes( main, faces );
+  for( string const & edfmSurfBlockName: edfmSurfBlockNames )
+  {
+    // Matteo: we want to load this on the same rank as the 3D mesh.
+    edfmSurfaces[edfmSurfBlockName] = loadMesh( filePath, edfmSurfBlockName, 0 );
+  }
+  return AllMeshes( main, faces, edfmSurfaces );
 }
 
 
@@ -688,7 +696,13 @@ AllMeshes redistributeByCellGraph( AllMeshes & input,
     finalFractures[fractureName] = finalFracMesh;
   }
 
-  return AllMeshes( finalMesh, finalFractures );
+  // Matteo: Create edfmMeshPartitions using newPartitions and the map between the global cell ids and the global edfm fracture cell ids
+  // vtkSmartPointer< vtkPartitionedDataSet > const edfmSplitMesh = splitMeshByPartition( input.getEmbeddedSurfaceBlocks(), numRanks,
+  // edfmMeshPartitions.toViewConst() );
+  // vtkSmartPointer< vtkUnstructuredGrid > finalEDFMMesh = vtk::redistribute( *edfmSplitMesh, MPI_COMM_GEOS );
+  // Ouassim: just add the edfm mesh at the moment and see.
+  auto finalEDFMMesh = input.getEmbeddedSurfaceBlocks();
+  return AllMeshes( finalMesh, finalFractures, finalEDFMMesh );
 }
 
 /**
@@ -746,6 +760,7 @@ vtkSmartPointer< vtkDataSet > manageGlobalIds( vtkSmartPointer< vtkDataSet > mes
   {
     // Add global ids on the fly if needed
     int const me = hasGlobalIds( mesh );
+    GEOS_LOG_RANK( "me hasGlobalIds="<<me );
     int everyone;
     MpiWrapper::allReduce( &me, &everyone, 1, MPI_MAX, MPI_COMM_GEOS );
 
@@ -753,6 +768,7 @@ vtkSmartPointer< vtkDataSet > manageGlobalIds( vtkSmartPointer< vtkDataSet > mes
     {
       mesh->GetPointData()->SetGlobalIds( vtkIdTypeArray::New() );
       mesh->GetCellData()->SetGlobalIds( vtkIdTypeArray::New() );
+      GEOS_LOG_RANK( "SetGlobalIds" );
     }
   }
 
@@ -900,6 +916,7 @@ AllMeshes
 redistributeMeshes( integer const logLevel,
                     vtkSmartPointer< vtkDataSet > loadedMesh,
                     std::map< string, vtkSmartPointer< vtkDataSet > > & namesToFractures,
+                    std::map< string, vtkSmartPointer< vtkDataSet > > & namesToEdfmFractures,
                     MPI_Comm const comm,
                     PartitionMethod const method,
                     int const partitionRefinement,
@@ -913,14 +930,26 @@ redistributeMeshes( integer const logLevel,
     fractures.push_back( nameToFracture.second );
   }
 
+  std::vector< vtkSmartPointer< vtkDataSet > > edfms;
+  for( auto & nameToEdfm: namesToEdfmFractures )
+  {
+    edfms.push_back( nameToEdfm.second );
+  }
+
   // Generate global IDs for vertices and cells, if needed
   vtkSmartPointer< vtkDataSet > mesh = manageGlobalIds( loadedMesh, useGlobalIds, !std::empty( fractures ) );
+  //vtkSmartPointer< vtkDataSet > mesh = manageGlobalIds( loadedMesh, useGlobalIds, !std::empty( fractures ) || !std::empty( edfms ) );
 
   if( MpiWrapper::commRank( comm ) != ( MpiWrapper::commSize( comm ) - 1 ) )
   {
     for( auto nameToFracture: namesToFractures )
     {
       GEOS_ASSERT_EQ( nameToFracture.second->GetNumberOfCells(), 0 );
+    }
+
+    for( auto nameToEdfm: namesToEdfmFractures )
+    {
+      GEOS_ASSERT_EQ( nameToEdfm.second->GetNumberOfCells(), 0 );
     }
   }
 
@@ -944,13 +973,14 @@ redistributeMeshes( integer const logLevel,
   // Redistribute the mesh again using higher-quality graph partitioner
   if( partitionRefinement > 0 )
   {
-    AllMeshes input( mesh, namesToFractures );
+    AllMeshes input( mesh, namesToFractures, namesToEdfmFractures );
     result = redistributeByCellGraph( input, method, comm, partitionRefinement - 1 );
   }
   else
   {
     result.setMainMesh( mesh );
     result.setFaceBlocks( namesToFractures );
+    result.setEmbeddedSurfaceBlocks( namesToEdfmFractures );
   }
 
   // Logging some information about the redistribution.
@@ -961,6 +991,10 @@ redistributeMeshes( integer const logLevel,
     for( auto const & [faceName, faceMesh]: result.getFaceBlocks() )
     {
       messages.push_back( GEOS_FMT( pattern, faceName, faceMesh->GetNumberOfCells() ) );
+    }
+    for( auto const & [edfmName, edfmMesh]: result.getEmbeddedSurfaceBlocks() )
+    {
+      messages.push_back( GEOS_FMT( pattern, edfmName, edfmMesh->GetNumberOfCells() ) );
     }
     if( logLevel >= 5 )
     {
@@ -1770,6 +1804,7 @@ void fillCellBlock( vtkDataSet & mesh,
   localIndex const numNodesPerElement = cellBlock.numNodesPerElement();
   arrayView2d< localIndex, cells::NODE_MAP_USD > const cellToVertex = cellBlock.getElemToNode();
   arrayView1d< globalIndex > const & localToGlobal = cellBlock.localToGlobalMap();
+  auto & globalToLocal = cellBlock.globalToLocalMap();
   vtkIdTypeArray const * const globalCellId = vtkIdTypeArray::FastDownCast( mesh.GetCellData()->GetGlobalIds() );
   GEOS_ERROR_IF( !cellIds.empty() && globalCellId == nullptr, "Global cell IDs have not been generated" );
 
@@ -1780,7 +1815,10 @@ void fillCellBlock( vtkDataSet & mesh,
     {
       cellToVertex[cellCount][v] = cell->GetPointId( nodeOrder[v] );
     }
-    localToGlobal[cellCount++] = globalCellId->GetValue( c );
+    globalIndex g = globalCellId->GetValue( c );
+    localToGlobal[cellCount] = g;
+    globalToLocal[g] = cellCount;
+    cellCount++;
   };
 
   // Writing connectivity and Local to Global

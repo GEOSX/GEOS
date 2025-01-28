@@ -25,7 +25,8 @@
 #include "mesh/MeshFields.hpp"
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
 #include "mesh/mpiCommunications/MPI_iCommData.hpp"
-
+#include "mesh/mpiCommunications/NeighborCommunicator.hpp"
+#include "mesh/MeshLevel.hpp"
 
 namespace geos
 {

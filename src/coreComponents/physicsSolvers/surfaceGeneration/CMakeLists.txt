@@ -2,7 +2,6 @@
 set( physicsSolvers_headers
      ${physicsSolvers_headers}
      surfaceGeneration/EmbeddedSurfaceGenerator.hpp
-     surfaceGeneration/EmbeddedSurfacesParallelSynchronization.hpp
      surfaceGeneration/ParallelTopologyChange.hpp
      surfaceGeneration/SurfaceGenerator.hpp
      surfaceGeneration/SurfaceGeneratorFields.hpp
@@ -15,7 +14,6 @@ set( physicsSolvers_headers
 set( physicsSolvers_sources
      ${physicsSolvers_sources}
      surfaceGeneration/EmbeddedSurfaceGenerator.cpp
-     surfaceGeneration/EmbeddedSurfacesParallelSynchronization.cpp
      surfaceGeneration/ParallelTopologyChange.cpp
      surfaceGeneration/ParallelTopologyChangeNoFixup.cpp
      surfaceGeneration/SurfaceGenerator.cpp

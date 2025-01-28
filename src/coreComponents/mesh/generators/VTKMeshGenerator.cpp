@@ -21,6 +21,7 @@
 
 #include "mesh/ExternalDataSourceManager.hpp"
 #include "mesh/generators/VTKFaceBlockUtilities.hpp"
+#include "mesh/generators/VTKEmbeddedSurfaceBlockUtilities.hpp"
 #include "mesh/generators/VTKMeshGeneratorTools.hpp"
 #include "mesh/generators/CellBlockManager.hpp"
 #include "mesh/generators/Region.hpp"
@@ -64,6 +65,11 @@ VTKMeshGenerator::VTKMeshGenerator( string const & name,
     setRTTypeName( rtTypes::CustomTypes::groupNameRefArray ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "For multi-block files, names of the face mesh block." );
+
+  registerWrapper( viewKeyStruct::embeddedSurfaceBlockNamesString(), &m_embeddedSurfaceBlockNames ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRefArray ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "For multi-block files, names of the EDFM mesh block." );
 
   registerWrapper( viewKeyStruct::partitionRefinementString(), &m_partitionRefinement ).
     setInputFlag( InputFlags::OPTIONAL ).
@@ -130,7 +136,7 @@ void VTKMeshGenerator::fillCellBlockManager( CellBlockManager & cellBlockManager
     if( !m_filePath.empty())
     {
       GEOS_LOG_RANK_0( GEOS_FMT( "{} '{}': reading mesh from {}", catalogName(), getName(), m_filePath ) );
-      allMeshes = vtk::loadAllMeshes( m_filePath, m_mainBlockName, m_faceBlockNames );
+      allMeshes = vtk::loadAllMeshes( m_filePath, m_mainBlockName, m_faceBlockNames, m_embeddedSurfaceBlockNames );
     }
     else if( !m_dataSourceName.empty())
     {
@@ -185,9 +191,11 @@ void VTKMeshGenerator::fillCellBlockManager( CellBlockManager & cellBlockManager
 
     GEOS_LOG_LEVEL_RANK_0( 2, GEOS_FMT( "{} '{}': redistributing mesh...", catalogName(), getName() ) );
     vtk::AllMeshes redistributedMeshes =
-      vtk::redistributeMeshes( getLogLevel(), allMeshes.getMainMesh(), allMeshes.getFaceBlocks(), comm, m_partitionMethod, m_partitionRefinement, m_useGlobalIds );
+      vtk::redistributeMeshes( getLogLevel(), allMeshes.getMainMesh(), allMeshes.getFaceBlocks(), allMeshes.getEmbeddedSurfaceBlocks(), comm, m_partitionMethod, m_partitionRefinement,
+                               m_useGlobalIds );
     m_vtkMesh = redistributedMeshes.getMainMesh();
     m_faceBlockMeshes = redistributedMeshes.getFaceBlocks();
+    m_embeddedSurfaceBlockMeshes = redistributedMeshes.getEmbeddedSurfaceBlocks();
     GEOS_LOG_LEVEL_RANK_0( 2, GEOS_FMT( "{} '{}': finding neighbor ranks...", catalogName(), getName() ) );
     std::vector< vtkBoundingBox > boxes = vtk::exchangeBoundingBoxes( *m_vtkMesh, comm );
     std::vector< int > const neighbors = vtk::findNeighborRanks( std::move( boxes ) );
@@ -214,7 +222,13 @@ void VTKMeshGenerator::fillCellBlockManager( CellBlockManager & cellBlockManager
 
   for( auto const & [name, mesh]: m_faceBlockMeshes )
   {
+    GEOS_LOG_LEVEL_RANK_0( 2, GEOS_FMT( "{} '{}': importing fracture network {}...", catalogName(), getName(), name ) );
     vtk::importFractureNetwork( name, mesh, m_vtkMesh, cellBlockManager );
+  }
+  for( auto const & [name, mesh]: m_embeddedSurfaceBlockMeshes )
+  {
+    GEOS_LOG_LEVEL_RANK_0( 2, GEOS_FMT( "{} '{}': importing embedded fracture network {}...", catalogName(), getName(), name ) );
+    vtk::importEmbeddedFractureNetwork( name, mesh, cellBlockManager );
   }
 
   GEOS_LOG_LEVEL_RANK_0( 2, GEOS_FMT( "{} '{}': done!", catalogName(), getName() ) );

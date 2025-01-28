@@ -102,11 +102,10 @@ void EmbeddedSurfaceSubRegion::calculateElementGeometricQuantities( arrayView2d<
   {
     LvArray::tensorOps::add< 3 >( m_elementCenter[k], intersectionPoints[ p ] );
   }
+  LvArray::tensorOps::scale< 3 >( m_elementCenter[ k ], 1.0 / intersectionPoints.size( 0 ) );
 
   // update area
   m_elementArea[ k ] = computationalGeometry::ComputeSurfaceArea( intersectionPoints, m_normalVector[k] );
-
-  LvArray::tensorOps::scale< 3 >( m_elementCenter[ k ], 1.0 / intersectionPoints.size( 0 ) );
 
   // update volume
   m_elementVolume[k] = m_elementAperture[k] * m_elementArea[k];
@@ -276,6 +275,144 @@ bool EmbeddedSurfaceSubRegion::addNewEmbeddedSurface( localIndex const cellIndex
     this->calculateElementGeometricQuantities( intersectionPoints.toViewConst(), this->size()-1 );
   }
   return addEmbeddedElem;
+}
+array1d< localIndex > EmbeddedSurfaceSubRegion::getEdfmNodeParentEdgeIndex( ArrayOfArraysView< real64 > const & elemNodesLocations,
+                                                                            ArrayOfArraysView< localIndex > const & elemToNodes,
+                                                                            ToCellRelation< ArrayOfArrays< localIndex > > const & elemTo3dElem,
+                                                                            FixedOneToManyRelation const & cellToEdges,
+                                                                            arrayView2d< localIndex const > const & edgeToNodes,
+                                                                            arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const & nodesCoord )
+{
+  // first we build a node index to parent cell index map (we only need one)
+  array1d< int > nodeToElem( elemNodesLocations.size() );
+  for( int i = 0; i<elemNodesLocations.size(); i++ )
+  {
+    nodeToElem[i] = -1;
+  }
+  // Assign each node to the first element that contains it
+  for( int elementIndex = 0; elementIndex < elemToNodes.size(); ++elementIndex )
+  {
+    for( int node : elemToNodes[elementIndex] )
+    {
+      if( nodeToElem[node] == -1 )
+      {
+        nodeToElem[node] = elementIndex;
+      }
+    }
+  }
+
+  array1d< localIndex > parentEdgeIndex( elemNodesLocations.size());
+  for( localIndex i = 0; i < elemNodesLocations.size(); ++i )
+  {
+
+    auto elementIndex =nodeToElem[i];
+    auto cell3dIndex = elemTo3dElem.toCellIndex[elementIndex][0];
+    double elemMinDistance = std::numeric_limits< double >::max();
+    localIndex targetEdgeIndex = -1;
+
+    R1Tensor nodexyz;
+    LvArray::tensorOps::copy< 3 >( nodexyz, elemNodesLocations[i] );
+    for( localIndex ke = 0; ke < cellToEdges.size( 1 ); ke++ )
+    {
+      R1Tensor v1;
+      R1Tensor v2;
+      R1Tensor crossProd;
+      localIndex edgeIndex = cellToEdges[cell3dIndex][ke];
+      LvArray::tensorOps::copy< 3 >( v1, nodesCoord[edgeToNodes[edgeIndex][0]] );
+      LvArray::tensorOps::subtract< 3 >( v1, nodesCoord[edgeToNodes[edgeIndex][1]] );
+
+      LvArray::tensorOps::copy< 3 >( v2, nodesCoord[edgeToNodes[edgeIndex][1]] );
+      LvArray::tensorOps::subtract< 3 >( v2, nodexyz );
+
+      LvArray::tensorOps::crossProduct( crossProd, v1, v2 );
+      auto numeratorNorm = LvArray::tensorOps::l2Norm< 3 >( crossProd );
+      auto denomNorm = LvArray::tensorOps::l2Norm< 3 >( v1 );
+      auto dist = numeratorNorm / denomNorm;
+      if( dist < elemMinDistance )
+      {
+        elemMinDistance = dist;
+        targetEdgeIndex = edgeIndex;
+      }
+    }
+
+    parentEdgeIndex[i] = targetEdgeIndex;
+  }
+  return parentEdgeIndex;
+}
+
+void EmbeddedSurfaceSubRegion::copyFromEmbeddedSurfaceBlock( localIndex const regionIndex,
+                                                             localIndex const subRegionIndex,
+                                                             NodeManager const & nodeManager,
+                                                             EmbeddedSurfaceNodeManager & embSurfNodeManager,
+                                                             EdgeManager const & edgeManager,
+                                                             FixedOneToManyRelation const & cellToEdges,
+                                                             EmbeddedSurfaceBlockABC const & embeddedSurfaceBlock )
+{
+
+  arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const & nodesCoord = nodeManager.referencePosition();
+  arrayView2d< localIndex const > const edgeToNodes = edgeManager.nodeList();
+  arrayView1d< integer const > const edgeGhostRank = edgeManager.ghostRank();
+  arrayView1d< globalIndex const > const & edgeLocalToGlobal = edgeManager.localToGlobalMap();
+
+  localIndex const numElems = embeddedSurfaceBlock.numEmbeddedSurfElem();
+
+  resize( embeddedSurfaceBlock.numEmbeddedSurfElem());
+
+  ToCellRelation< ArrayOfArrays< localIndex > > elemTo3dElem = embeddedSurfaceBlock.getEmbeddedSurfElemTo3dElem();
+  ArrayOfArrays< localIndex > elemToNodes = embeddedSurfaceBlock.getEmbeddedSurfElemToNodes();
+  ArrayOfArrays< real64 > elemNodesLocations = embeddedSurfaceBlock.getEmbeddedSurfElemNodesCoords();
+  ArrayOfArrays< real64 > elemNormalVectors = embeddedSurfaceBlock.getEmbeddedSurfElemNormalVectors();
+  ArrayOfArrays< real64 > elemTangentialVectors1 = embeddedSurfaceBlock.getEmbeddedSurfElemTangentialWidthVectors();
+  ArrayOfArrays< real64 > elemTangentialVectors2 = embeddedSurfaceBlock.getEmbeddedSurfElemTangentialLengthVectors();
+
+  localIndex numEdfmNodes = elemNodesLocations.size();
+  array1d< localIndex > allPointsParentIndex =  getEdfmNodeParentEdgeIndex( elemNodesLocations.toView(), elemToNodes.toView(), elemTo3dElem, cellToEdges, edgeToNodes, nodesCoord );
+
+  // EDFM nodes get their gost rank and global parent index
+  // from their parent 3d element local edge index.
+  array1d< integer > allPointsGhostRank( numEdfmNodes );
+  array1d< integer > allPointsGlobalParenIndex( numEdfmNodes );
+  for( auto i = 0; i < numEdfmNodes; ++i )
+  {
+    integer pointGhostRank = edgeGhostRank[allPointsParentIndex[i]];
+    localIndex pointLocalParentEdgeIndex = allPointsParentIndex[i];
+    globalIndex pointGlobalParentEdgeIndex = edgeLocalToGlobal[allPointsParentIndex[i]];
+
+    embSurfNodeManager.appendNode( elemNodesLocations[i].toSliceConst(), pointGhostRank );
+
+    arrayView1d< localIndex > const & parentIndex = embSurfNodeManager.getField< fields::parentEdgeIndex >();
+
+    parentIndex[i] = pointLocalParentEdgeIndex;
+
+    array1d< globalIndex > & parentEdgeGlobalIndex = embSurfNodeManager.getParentEdgeGlobalIndex();
+    parentEdgeGlobalIndex[i] = pointGlobalParentEdgeIndex;
+  }
+
+  for( auto i = 0; i < numElems; ++i )
+  {
+    m_toNodesRelation.resizeArray( i, 4 );
+    localIndex elem3dIndex = elemTo3dElem.toCellIndex[i][0];
+    //localIndex elemRegionIndex = elemTo3dElem.toBlockIndex[i][0];
+    // region and subregion will be filled later.
+    m_2dElemToElems.m_toElementIndex.emplaceBack( i, elem3dIndex );
+    m_2dElemToElems.m_toElementSubRegion.emplaceBack( i, subRegionIndex );
+    m_2dElemToElems.m_toElementRegion.emplaceBack( i, regionIndex );
+
+    // we only accept quads
+    array2d< real64 > elemNodeCoords( 4, 3 );
+    for( localIndex inode = 0; inode < 4; inode++ )
+    {
+      auto nodeGlobalIndex = elemToNodes[i][inode];
+      m_toNodesRelation( i, inode ) = nodeGlobalIndex;
+      LvArray::tensorOps::copy< 3 >( elemNodeCoords[inode], elemNodesLocations[nodeGlobalIndex] );
+    }
+
+    m_parentPlaneName[i] = "elem_" + std::to_string( i );
+    LvArray::tensorOps::copy< 3 >( m_normalVector[i], elemNormalVectors[i] );
+    LvArray::tensorOps::copy< 3 >( m_tangentVector1[i], elemTangentialVectors1[i] );
+    LvArray::tensorOps::copy< 3 >( m_tangentVector2[i], elemTangentialVectors2[i] );
+    this->calculateElementGeometricQuantities( elemNodeCoords.toViewConst(), i );
+  }
 }
 
 void EmbeddedSurfaceSubRegion::inheritGhostRank( array1d< array1d< arrayView1d< integer const > > > const & cellGhostRank )

@@ -109,6 +109,7 @@ private:
     constexpr static char const * regionAttributeString() { return "regionAttribute"; }
     constexpr static char const * mainBlockNameString() { return "mainBlockName"; }
     constexpr static char const * faceBlockNamesString() { return "faceBlocks"; }
+    constexpr static char const * embeddedSurfaceBlockNamesString() { return "embeddedSurfaceBlocks"; }
     constexpr static char const * nodesetNamesString() { return "nodesetNames"; }
     constexpr static char const * partitionRefinementString() { return "partitionRefinement"; }
     constexpr static char const * partitionMethodString() { return "partitionMethod"; }
@@ -148,8 +149,15 @@ private:
   /// Name of the face blocks to be imported (for multi-block files).
   array1d< string > m_faceBlockNames;
 
+  /// Name of the edfm blocks to be imported (for multi-block files).
+  array1d< string >  m_embeddedSurfaceBlockNames;
+
   /// Maps the face block name to its vtk mesh instance.
   std::map< string, vtkSmartPointer< vtkDataSet > > m_faceBlockMeshes;
+
+  // Maps the edfm surface block name to its vtk mesh instance.
+
+  std::map< string, vtkSmartPointer< vtkDataSet > >  m_embeddedSurfaceBlockMeshes;
 
   /// Names of VTK nodesets to import
   string_array m_nodesetNames;

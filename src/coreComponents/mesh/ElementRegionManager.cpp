@@ -123,7 +123,6 @@ void ElementRegionManager::setSchemaDeviations( xmlWrapper::xmlNode schemaRoot,
   }
 }
 
-
 void ElementRegionManager::generateMesh( CellBlockManagerABC const & cellBlockManager )
 {
   { // cellBlocks loading
@@ -142,7 +141,16 @@ void ElementRegionManager::generateMesh( CellBlockManagerABC const & cellBlockMa
 
   this->forElementRegions< SurfaceElementRegion >( [&]( SurfaceElementRegion & elemRegion )
   {
-    elemRegion.generateMesh( cellBlockManager.getFaceBlocks() );
+
+    if( elemRegion.subRegionType() == SurfaceElementRegion::SurfaceSubRegionType::faceElement )
+    {
+      elemRegion.generateMesh( cellBlockManager.getFaceBlocks() );
+    }
+    else if( elemRegion.subRegionType() == SurfaceElementRegion::SurfaceSubRegionType::embeddedElement )
+    {
+      elemRegion.generateMesh( cellBlockManager.getEmbeddedSurfaceBlocks() );
+    }
+
   } );
 
   // Some mappings of the surfaces subregions point to elements in other subregions and regions.

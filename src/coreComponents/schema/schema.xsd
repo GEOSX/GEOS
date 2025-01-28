@@ -1777,6 +1777,8 @@ stress - traction is applied to the faces as specified by the inner product of i
 				</xsd:unique>
 			</xsd:element>
 		</xsd:choice>
+		<!--embeddedSurfaceBlocks => For multi-block files, names of the EDFM mesh block.-->
+		<xsd:attribute name="embeddedSurfaceBlocks" type="groupNameRef_array" default="{}" />
 		<!--dataSourceName => Name of the VTK data source-->
 		<xsd:attribute name="dataSourceName" type="string" default="" />
 		<!--faceBlocks => For multi-block files, names of the face mesh block.-->

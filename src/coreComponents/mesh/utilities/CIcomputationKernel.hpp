@@ -44,17 +44,13 @@ public:
   /**
    * @brief Construct a new CIcomputationKernel object
    *
-   * @param finiteElementSpace the finite element space
    * @param nodeManager the nodeManager
    * @param elementSubRegion the element subRegion
    * @param embeddedSurfSubRegion the embeddedSurfaceSubRegion
    */
-  CIcomputationKernel( FE_TYPE const & finiteElementSpace,
-                       NodeManager const & nodeManager,
+  CIcomputationKernel( NodeManager const & nodeManager,
                        CellElementSubRegion const & elementSubRegion,
                        EmbeddedSurfaceSubRegion & embeddedSurfSubRegion ):
-    m_finiteElementSpace( finiteElementSpace ),
-    m_elementType( elementSubRegion.getElementType() ),
     m_X( nodeManager.referencePosition() ),
     m_elemsToNodes( elementSubRegion.nodeList().toViewConst() ),
     m_fracturedElems( elementSubRegion.fracturedElementsList().toViewConst()),
@@ -211,12 +207,6 @@ public:
 
 private:
 
-  /// the finite element space
-  FE_TYPE const & m_finiteElementSpace;
-
-  /// the element type
-  ElementType const m_elementType;
-
   /// the reference position of the nodes
   arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const m_X;
 
@@ -241,6 +231,32 @@ private:
   /// the connectivity index
   arrayView1d< real64 > const m_connectivityIndex;
 };
+
+using KernelVariant = std::variant< CIcomputationKernel< finiteElement::H1_Hexahedron_Lagrange1_GaussLegendre2 >,
+                                    CIcomputationKernel< finiteElement::H1_Wedge_Lagrange1_Gauss6 >,
+                                    CIcomputationKernel< finiteElement::H1_Tetrahedron_Lagrange1_Gauss1 >,
+                                    CIcomputationKernel< finiteElement::H1_Pyramid_Lagrange1_Gauss5 > >;
+
+
+KernelVariant createKernel( ElementType elemType,
+                            NodeManager const & nodeManager,
+                            CellElementSubRegion const & subRegion,
+                            EmbeddedSurfaceSubRegion & esr )
+{
+  switch( elemType )
+  {
+    case ElementType::Tetrahedron:
+      return CIcomputationKernel< finiteElement::H1_Tetrahedron_Lagrange1_Gauss1 >( nodeManager, subRegion, esr );
+    case ElementType::Hexahedron:
+      return CIcomputationKernel< finiteElement::H1_Hexahedron_Lagrange1_GaussLegendre2 >( nodeManager, subRegion, esr );
+    case ElementType::Pyramid:
+      return CIcomputationKernel< finiteElement::H1_Pyramid_Lagrange1_Gauss5 >( nodeManager, subRegion, esr );
+    case ElementType::Wedge:
+      return CIcomputationKernel< finiteElement::H1_Wedge_Lagrange1_Gauss6 >( nodeManager, subRegion, esr );
+    default:
+      GEOS_THROW( "Element type not supported", std::runtime_error );
+  }
+}
 
 }
 

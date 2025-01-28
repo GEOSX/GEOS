@@ -28,16 +28,6 @@
 namespace geos
 {
 
-struct NewObjectLists
-{
-  std::set< localIndex > newNodes;
-  std::set< localIndex > newEdges;
-  map< std::pair< localIndex, localIndex >, std::set< localIndex > > newElements;
-
-  void insert( NewObjectLists const & lists );
-};
-
-
 class SpatialPartition;
 
 class NodeManager;
@@ -96,8 +86,6 @@ public:
 protected:
 
   virtual void initializePostSubGroups() override final;
-
-  virtual void initializePostInitialConditionsPreSubGroups() override final;
 
   virtual void postRestartInitialization() override final
   {
