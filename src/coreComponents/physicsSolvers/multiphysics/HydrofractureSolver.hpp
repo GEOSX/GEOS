@@ -179,6 +179,8 @@ public:
 
     constexpr static char const * isLaggingFractureStencilWeightsUpdateString() { return "isLaggingFractureStencilWeightsUpdate"; }
 
+    constexpr static char const * leakoffConstString() {return "leakoffConst"; }
+
 #ifdef GEOS_USE_SEPARATION_COEFFICIENT
     constexpr static char const * separationCoeff0String() { return "separationCoeff0"; }
     constexpr static char const * apertureAtFailureString() { return "apertureAtFailure"; }
@@ -225,11 +227,17 @@ private:
                                          DomainPartition & domain ) override final;
 
 
+  void assembleFluidLeakSource( double time,
+                                double dt,
+                                DomainPartition & domain,
+                                DofManager const & dofManager,
+                                CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                                arrayView1d< real64 > const & localRhs ) const;
   /**
    * @brief Initialize fields on the newly created elements of the fracture.
    * @param domain the physical domain object
    */
-  void initializeNewFractureFields( DomainPartition & domain );
+  void initializeNewFractureFields( double time, DomainPartition & domain );
 
   // name of the contact relation
   string m_contactRelationName;
@@ -256,6 +264,11 @@ private:
   // flag to determine whether or not to apply lagging update for the fracture stencil weights
   integer m_isLaggingFractureStencilWeightsUpdate;
 
+  // record to fracture cell creatition time
+  std::vector<double> m_fractureCreationTime;
+
+  // analytical leakoff coefficient
+  real64 m_leakoffConst;
 };
 
 ENUM_STRINGS( HydrofractureSolver< SinglePhasePoromechanics< SinglePhaseBase > >::InitializationType,
