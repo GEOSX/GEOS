@@ -93,80 +93,25 @@ The **`tpls.sh`** script configures and compiles the Third-Party Libraries. This
 #SBATCH --mail-user=suid@stanford.edu    # Replace with your email address
 
 # Load necessary modules
-module load system devel math
-module load cmake/3.24.2 gcc/12.4.0 python/3.12.1 openmpi/5.0.5 openblas/0.3.28 cuda/12.6.1
+source /GEOS/host-configs/Stanford/sherlock-modules.sh
 
 # Step 2: Configure TPLs
-cp build_utils/sherlock-custom.cmake GEOS/host-configs/Stanford/.
 cd thirdPartyLibs/ || { echo "Failed to enter thirdPartyLibs directory"; exit 1; }
-python3 scripts/config-build.py -hc ../GEOS/host-configs/Stanford/sherlock-custom.cmake -bt Debug -DNUM_PROC=4
+python3 scripts/config-build.py -hc ../GEOS/host-configs/Stanford/sherlock-gcc10.cmake -bt Debug -DNUM_PROC=4
 
 # Step 3: Compile TPLs Debug
-cd build-sherlock-custom-debug/ || { echo "Failed to enter build-sherlock-custom-debug directory"; exit 1; }
+cd build-sherlock-gcc10-debug/ || { echo "Failed to enter build-sherlock-gcc10-debug directory"; exit 1; }
 make
 cd ../..
 ```
 
-The following is an example CMake configuration file `sherlock-custom.cmake`. This file maps some of the loaded modules to configure TPLs (Third-Party Libraries) and GEOS. For completeness, the file `sherlock-custom.cmake` is provided as an example. However, please note that you can use other configuration files located in [GEOS/host-configs/Stanford](https://github.com/GEOS-DEV/GEOS/tree/develop/host-configs/Stanford).
+The following is an example CMake configuration file `sherlock-gcc10.cmake`. This file maps some of the loaded modules to configure TPLs (Third-Party Libraries) and GEOS.
 
-```cmake
-# Custom Configuration
-set(CONFIG_NAME "sherlock-custom" CACHE PATH "")
-set(GCC_ROOT "/share/software/user/open/gcc/12.4.0" CACHE PATH "")
-set(MPI_ROOT "/share/software/user/open/openmpi/5.0.5" CACHE PATH "")
-set(BLAS_LIBRARIES "/share/software/user/open/openblas/0.3.28/lib/libblas.so" CACHE STRING "")
-set(LAPACK_LIBRARIES "/share/software/user/open/openblas/0.3.28/lib/liblapack.so" CACHE STRING "")
-
-# Base Configuration
-site_name(HOST_NAME)
-
-# Compiler Settings
-set(CMAKE_C_COMPILER       "${GCC_ROOT}/bin/gcc"      CACHE PATH "")
-set(CMAKE_CXX_COMPILER     "${GCC_ROOT}/bin/g++"      CACHE PATH "")
-set(CMAKE_Fortran_COMPILER "${GCC_ROOT}/bin/gfortran" CACHE PATH "")
-
-# MPI Options
-set(ENABLE_MPI ON CACHE PATH "" FORCE)
-set(MPI_C_COMPILER       "${MPI_ROOT}/bin/mpicc"   CACHE PATH "")
-set(MPI_CXX_COMPILER     "${MPI_ROOT}/bin/mpic++"  CACHE PATH "")
-set(MPI_Fortran_COMPILER "${MPI_ROOT}/bin/mpifort" CACHE PATH "")
-set(MPIEXEC              "${MPI_ROOT}/bin/mpirun"  CACHE PATH "")
-set(MPIEXEC_NUMPROC_FLAG "-n" CACHE STRING "")
-set(ENABLE_WRAP_ALL_TESTS_WITH_MPIEXEC ON CACHE BOOL "")
-
-# CUDA Options
-if(ENABLE_CUDA)
-  set(CMAKE_CUDA_HOST_COMPILER ${MPI_CXX_COMPILER} CACHE STRING "")
-  set(CMAKE_CUDA_COMPILER ${CUDA_TOOLKIT_ROOT_DIR}/bin/nvcc CACHE STRING "")
-  set(CMAKE_CUDA_FLAGS "-restrict -arch ${CUDA_ARCH} --expt-extended-lambda --expt-relaxed-constexpr -Werror cross-execution-space-call,reorder,deprecated-declarations" CACHE STRING "")
-  set(CMAKE_CUDA_FLAGS_RELEASE "-O3 -DNDEBUG -Xcompiler -DNDEBUG -Xcompiler -O3" CACHE STRING "")
-  set(CMAKE_CUDA_FLAGS_RELWITHDEBINFO "-g -lineinfo ${CMAKE_CUDA_FLAGS_RELEASE}" CACHE STRING "")
-  set(CMAKE_CUDA_FLAGS_DEBUG "-g -G -O0 -Xcompiler -O0" CACHE STRING "")
-endif()
-
-# Valgrind Options
-set(ENABLE_VALGRIND OFF CACHE BOOL "")
-
-# Caliper Options
-set(ENABLE_CALIPER ON CACHE BOOL "")
-
-# Hypre Options
-if(ENABLE_HYPRE_CUDA)
-  set(ENABLE_PETSC OFF CACHE BOOL "")
-  set(ENABLE_TRILINOS OFF CACHE BOOL "")
-  set(GEOS_LA_INTERFACE "Hypre" CACHE STRING "")
-endif()
-
-# Include TPL Configuration
-include(${CMAKE_CURRENT_LIST_DIR}/../tpls.cmake)
-```
-
-Copy the custom configuration file and configure TPLs for both Debug and Release builds:
+Configure TPLs for Debug build:
 
 ```bash
-cp build_utils/sherlock-custom.cmake GEOS/host-configs/Stanford/.
 cd thirdPartyLibs/
-python3 scripts/config-build.py -hc ../GEOS/host-configs/Stanford/sherlock-custom.cmake -bt Debug
+python3 scripts/config-build.py -hc ../GEOS/host-configs/Stanford/sherlock-gcc10.cmake -bt Debug
 cd ..
 ```
 
@@ -197,18 +142,17 @@ The **`geos.sh`** script takes care of configuring and compiling the GEOS simula
 #SBATCH --mail-user=suid@stanford.edu    # Replace with your email address
 
 # Load necessary modules
-module load system devel math
-module load cmake/3.24.2 gcc/12.4.0 python/3.12.1 openmpi/5.0.5 openblas/0.3.28 cuda/12.6.1
+source /GEOS/host-configs/Stanford/sherlock-modules.sh
 
 # Step 4: Configure GEOS
 cd GEOS/ || { echo "Failed to enter GEOS directory"; exit 1; }
 
 # Get absolute path for TPLs installation
-tpls_path=$(realpath ../thirdPartyLibs/install-sherlock-custom-debug/)
-python3 scripts/config-build.py -hc host-configs/Stanford/sherlock-custom.cmake -bt Debug -D GEOS_TPL_DIR="$tpls_path"
+tpls_path=$(realpath ../thirdPartyLibs/install-sherlock-gcc10-debug/)
+python3 scripts/config-build.py -hc host-configs/Stanford/sherlock-gcc10.cmake -bt Debug -D GEOS_TPL_DIR="$tpls_path"
 
 # Step 5: Compile GEOS Debug
-cd build-sherlock-custom-debug/ || { echo "Failed to enter build-sherlock-custom-debug directory"; exit 1; }
+cd build-sherlock-gcc10-debug/ || { echo "Failed to enter build-sherlock-gcc10-debug directory"; exit 1; }
 make -j 4
 cd ../..
 ```
