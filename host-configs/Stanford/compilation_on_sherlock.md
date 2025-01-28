@@ -100,7 +100,7 @@ The **`tpls.sh`** script configures and compiles the Third-Party Libraries. This
 #SBATCH --mail-user=suid@stanford.edu    # Replace with your email address
 
 # Load necessary modules
-source /GEOS/host-configs/Stanford/sherlock-modules.sh
+source GEOS/host-configs/Stanford/sherlock-modules.sh
 
 # Step 2: Configure TPLs
 cd thirdPartyLibs/ || { echo "Failed to enter thirdPartyLibs directory"; exit 1; }
@@ -112,15 +112,10 @@ make
 cd ../..
 ```
 
-The following is an example CMake configuration file `sherlock-gcc10.cmake`. This file maps some of the loaded modules to configure TPLs (Third-Party Libraries) and GEOS.
+The above is an employing a CMake configuration file `sherlock-gcc10.cmake` wich is test in the continuous integratoin pipline. This file maps some of the loaded modules to configure TPLs (Third-Party Libraries) and GEOS.
 
-Configure TPLs for Debug build:
+The aforementioned process utilizes a CMake configuration file, sherlock-gcc10.cmake, which is tested within the continuous integration pipeline. The file `sherlock-modules.sh` load modules employed in the cmake configuration file for both TPL's and GEOS.
 
-```bash
-cd thirdPartyLibs/
-python3 scripts/config-build.py -hc ../GEOS/host-configs/Stanford/sherlock-gcc10.cmake -bt Debug
-cd ..
-```
 
 ### Step 3: Configure GEOS
 The **`geos.sh`** script takes care of configuring and compiling the GEOS simulator itself. It performs these tasks:
@@ -149,7 +144,7 @@ The **`geos.sh`** script takes care of configuring and compiling the GEOS simula
 #SBATCH --mail-user=suid@stanford.edu    # Replace with your email address
 
 # Load necessary modules
-source /GEOS/host-configs/Stanford/sherlock-modules.sh
+source GEOS/host-configs/Stanford/sherlock-modules.sh
 
 # Step 4: Configure GEOS
 cd GEOS/ || { echo "Failed to enter GEOS directory"; exit 1; }
