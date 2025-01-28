@@ -100,9 +100,6 @@ void ImmiscibleMultiphaseFlow::registerDataOnMesh( Group & meshBodies )
 {
   FlowSolverBase::registerDataOnMesh( meshBodies );
 
-  // DomainPartition const & domain = this->getGroupByPath< DomainPartition >( "/Problem/domain" );
-  // ConstitutiveManager const & cm = domain.getConstitutiveManager();
-
   // 0. Find a "reference" fluid model name (at this point, models are already attached to subregions)
   forDiscretizationOnMeshTargets( meshBodies, [&]( string const &,
                                                    MeshLevel & mesh,
@@ -174,10 +171,6 @@ void ImmiscibleMultiphaseFlow::registerDataOnMesh( Group & meshBodies )
 
     } );
 
-    // FaceManager & faceManager = mesh.getFaceManager();
-    // {
-    //   faceManager.registerField< totalMassFlux >( getName() );
-    // }
   } );
 }
 
@@ -213,16 +206,10 @@ void ImmiscibleMultiphaseFlow::initializePreSubGroups()
   FlowSolverBase::initializePreSubGroups();
 
   DomainPartition & domain = this->getGroupByPath< DomainPartition >( "/Problem/domain" );
-  // ConstitutiveManager const & cm = domain.getConstitutiveManager();
 
-  // // 1. Validate various models against each other (must have same phases and components)
-  // validateConstitutiveModels( domain );
-
-  // 2. Set the value of temperature
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
                                                                MeshLevel & mesh,
                                                                arrayView1d< string const > const & regionNames )
-
   {
     mesh.getElemManager().forElementSubRegions( regionNames,
                                                 [&]( localIndex const,
@@ -251,7 +238,6 @@ void ImmiscibleMultiphaseFlow::updateFluidModel( ObjectManagerBase & dataGroup )
     FluidUpdateKernel::launch< parallelDevicePolicy<> >( dataGroup.size(), fluidWrapper, pres );
   } );
 }
-
 
 
 void ImmiscibleMultiphaseFlow::updateRelPermModel( ObjectManagerBase & dataGroup ) const
@@ -683,17 +669,10 @@ void ImmiscibleMultiphaseFlow::applyBoundaryConditions( real64 const time_n,
   // apply pressure boundary conditions.
   applyDirichletBC( time_n, dt, dofManager, domain, localMatrix.toViewConstSizes(), localRhs.toView() );
 
-// apply flux boundary conditions
+  // apply flux boundary conditions
   applySourceFluxBC( time_n, dt, dofManager, domain, localMatrix.toViewConstSizes(), localRhs.toView() );
-
-  //   for( localIndex row = 0; row < localMatrix.toViewConstSizes().numRows(); ++row )
-  // {
-  //   std::cout << "row " << row << std::endl;
-  //   std::cout << "\tcolumns: " << localMatrix.toViewConstSizes().getColumns( row ) << std::endl;
-  //   std::cout << "\tvalues: " << localMatrix.toViewConstSizes().getEntries( row ) << std::endl;
-  // }
-
 }
+
 
 namespace
 {
@@ -1065,10 +1044,8 @@ void ImmiscibleMultiphaseFlow::applySystemSolution( DofManager const & dofManage
   GEOS_UNUSED_VAR( dt );
 
   DofManager::CompMask pressureMask( m_numDofPerCell, 0, 1 );
-  //DofManager::CompMask PhaseMask( m_numDofPerCell, 1, m_numPhases );
 
   // 1. apply the pressure update
-
   dofManager.addVectorToField( localSolution,
                                viewKeyStruct::elemDofFieldString(),
                                fields::flow::pressure::key(),
@@ -1076,7 +1053,6 @@ void ImmiscibleMultiphaseFlow::applySystemSolution( DofManager const & dofManage
                                pressureMask );
 
   // 2. apply the phaseVolumeFraction update
-
   dofManager.addVectorToField( localSolution,
                                viewKeyStruct::elemDofFieldString(),
                                fields::immiscibleMultiphaseFlow::phaseVolumeFraction::key(),
@@ -1095,7 +1071,6 @@ void ImmiscibleMultiphaseFlow::applySystemSolution( DofManager const & dofManage
 
     CommunicationTools::getInstance().synchronizeFields( fieldsToBeSync, mesh, domain.getNeighbors(), true );
   } );
-
 }
 
 

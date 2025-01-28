@@ -105,13 +105,6 @@ void TwoPhaseFluid::postInputInitialization()
   m_tableFiles.empty() ? readInputDataFromTableFunctions() : readInputDataFromFileTableFunctions();
 
   checkTableConsistency();
-  /* TODO
-     // call to correctly set member array tertiary sizes on the 'main' material object
-     resizeFields( 0, 0 );
-
-     // set labels on array wrappers for plottable fields
-     setLabels();
-   */
 }
 
 
