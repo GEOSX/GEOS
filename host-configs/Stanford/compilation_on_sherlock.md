@@ -112,7 +112,7 @@ make
 cd ../..
 ```
 
-The aforementioned process utilizes a CMake configuration file, `sherlock-gcc10.cmake`, which configuration is tested within the continuous integration process. The file `sherlock-modules.sh` load modules employed by `sherlock-gcc10.cmake`.
+The aforementioned process utilizes a CMake configuration file, `sherlock-gcc10.cmake`, which configuration is tested within the continuous integration process. The file `sherlock-modules.sh` is designed to load the specific modules utilized by `sherlock-gcc10.cmake`, it ensures a successful compilation process.
 
 
 ### Step 3: Configure GEOS
