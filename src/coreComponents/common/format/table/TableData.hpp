@@ -23,6 +23,7 @@
 #include "common/Units.hpp"
 #include "common/DataTypes.hpp"
 #include "common/format/Format.hpp"
+#include "TableTypes.hpp"
 
 namespace geos
 {
@@ -33,10 +34,22 @@ namespace geos
 class TableData
 {
 public:
+
+  /**
+   * @brief Representing a data in TableData
+   */
+  struct CellData
+  {
+    /// The cell type
+    CellType type;
+    /// The cell value
+    string value = "";
+  };
+
   /**
    * @brief Add a row to the table.
    * The values passed to addRow (can be any type).
-   * @param args Cell values to be added to the row.
+   * @param args CellData values to be added to the row.
    */
   template< typename ... Args >
   void addRow( Args const & ... args );
@@ -45,7 +58,13 @@ public:
    * @brief Add a row to the table
    * @param row A vector of string representing a row
    */
-  void addRow( std::vector< string > const & row );
+  void addRow( std::vector< CellData > const & row );
+
+  /**
+   * @brief Add a line separator to the table
+   * You must have filled values in TableData before using it
+   */
+  void addSeparator();
 
   /**
    * @brief Reset data in the table
@@ -55,7 +74,7 @@ public:
   /**
    * @return The rows of the table
    */
-  std::vector< std::vector< string > > const & getTableDataRows() const;
+  std::vector< std::vector< CellData > > const & getTableDataRows() const;
 
   /**
    * @brief Get all error messages
@@ -66,10 +85,7 @@ public:
 private:
 
   /// vector containing all rows with cell values
-  std::vector< std::vector< string > > m_rows;
-
-  /// store error if there are any inconsistencies related to the table
-  std::vector< string > m_errorsMsg;
+  std::vector< std::vector< CellData > > m_rows;
 
 };
 
@@ -98,7 +114,7 @@ public:
   /**
    * @brief Add a cell to the table. If necessary, create automatically the containing column & row.
    * @tparam T The value passed to addCell (can be any type).
-   * @param value Cell value to be added.
+   * @param value CellData value to be added.
    * @param rowValue The value of the row containing the cell.
    * @param columnValue The value of the column containing the cell.
    */
@@ -149,17 +165,35 @@ private:
   std::set< real64 > m_columnValues;
 };
 
+/**
+ * @brief Trait to check is the args is a special type of cell
+ * @tparam T The type of a cell
+ */
+template< typename T >
+constexpr bool isCellType = std::is_same_v< T, CellType >;
+
 template< typename ... Args >
 void TableData::addRow( Args const &... args )
 {
-  std::vector< string > m_cellsValue;
+  std::vector< CellData > cells;
   ( [&] {
-    static_assert( has_formatter_v< decltype(args) >, "Argument passed in addRow cannot be converted to string" );
-    string const cellValue = GEOS_FMT( "{}", args );
-    m_cellsValue.push_back( cellValue );
+    static_assert( has_formatter_v< decltype(args) > || isCellType< std::decay_t< decltype(args) > >, "Argument passed in addRow cannot be converted to string nor a CellType" );
+    if constexpr (std::is_same_v< Args, CellType >) {
+      if( args == CellType::Separator )
+      {
+        cells.push_back( {CellType::Separator} );
+      }
+      else
+      {
+        cells.push_back( {CellType::MergeNext} );
+      }
+    }
+    else
+    {
+      cells.push_back( {CellType::Value, GEOS_FMT( "{}", args )} );
+    }
   } (), ...);
-
-  addRow( m_cellsValue );
+  addRow( cells );
 }
 
 template< typename T >

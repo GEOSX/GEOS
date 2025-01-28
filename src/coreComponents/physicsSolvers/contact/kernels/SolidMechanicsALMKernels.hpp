@@ -265,7 +265,6 @@ public:
                                          m_dispJump[k],
                                          m_penalty[k],
                                          m_traction[k],
-                                         m_faceArea[k],
                                          m_symmetric,
                                          m_symmetric,
                                          zero,
@@ -273,6 +272,10 @@ public:
                                          stack.localPenalty,
                                          tractionNew,
                                          fractureState );
+
+    // Divide localPenalty by area
+    real64 const fac = 1.0/m_faceArea[k];
+    LvArray::tensorOps::scale< 3, 3 >( stack.localPenalty, fac );
 
     // transp(R) * Atu
     LvArray::tensorOps::Rij_eq_AkiBkj< 3, numUdofs, 3 >( matRRtAtu, stack.localRotationMatrix,
@@ -412,7 +415,6 @@ struct ComputeTractionKernel
           arrayView2d< real64 const > const & traction,
           arrayView2d< real64 const > const & dispJump,
           arrayView2d< real64 const > const & deltaDispJump,
-          arrayView1d< real64 const > const & faceArea,
           arrayView2d< real64 > const & tractionNew )
   {
 
@@ -420,7 +422,7 @@ struct ComputeTractionKernel
     {
 
       contactWrapper.updateTractionOnly( dispJump[k], deltaDispJump[k],
-                                         penalty[k], traction[k], faceArea[k], tractionNew[k] );
+                                         penalty[k], traction[k], tractionNew[k] );
 
     } );
   }
