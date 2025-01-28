@@ -1,7 +1,7 @@
 # GEOS Compilation on Sherlock
 
 ## Overview
-This guide provides a step-by-step process for compiling GEOS simulator on the Stanford Sherlock cluster. The compilation involves both Third-Party Libraries (TPLs) and GEOS. 
+This guide provides a step-by-step process for compiling [GEOS simulator](https://www.geos.dev/) on Stanford's Sherlock cluster. The guide documents the compilation for both Third-Party Libraries (TPLs) and GEOS.
 
 ### Important Note
 
@@ -30,18 +30,7 @@ total 96
 
 ## Compilation Steps
 
-### Main Step: Execute the Compile Script
-The script `compile_geos.sh` executes the compilation process:
-
-```bash
-source compile_geos.sh
-```
-
-This script orchestrates the compilation process the following order:
-
-1. Clone the Sources
-2. Compile TPLs
-3. Compile GEOS
+The following section will describe the main steps in the compilation process and provide the content for all shell scripts.
 
 ### Step 1: Clone the Sources
 The script **`clone.sh`** is dedicated for fetching the repositories and initializing the necessary submodules. The script performs the following actions:
@@ -102,11 +91,11 @@ The script **`tpls.sh`** configures and compiles the Third-Party Libraries. The 
 # Load necessary modules
 source GEOS/host-configs/Stanford/sherlock-modules.sh
 
-# Step 2: Configure TPLs
+# Configure TPLs
 cd thirdPartyLibs/ || { echo "Failed to enter thirdPartyLibs directory"; exit 1; }
 python3 scripts/config-build.py -hc ../GEOS/host-configs/Stanford/sherlock-gcc10.cmake -bt Debug -DNUM_PROC=4
 
-# Step 3: Compile TPLs Debug
+# Compile TPLs
 cd build-sherlock-gcc10-debug/ || { echo "Failed to enter build-sherlock-gcc10-debug directory"; exit 1; }
 make
 cd ../..
@@ -144,14 +133,14 @@ The script **`geos.sh`** takes care of configuring and compiling GEOS. It perfor
 # Load necessary modules
 source GEOS/host-configs/Stanford/sherlock-modules.sh
 
-# Step 4: Configure GEOS
+# Configure GEOS
 cd GEOS/ || { echo "Failed to enter GEOS directory"; exit 1; }
 
 # Get absolute path for TPLs installation
 tpls_path=$(realpath ../thirdPartyLibs/install-sherlock-gcc10-debug/)
 python3 scripts/config-build.py -hc host-configs/Stanford/sherlock-gcc10.cmake -bt Debug -D GEOS_TPL_DIR="$tpls_path"
 
-# Step 5: Compile GEOS Debug
+# Compile GEOS
 cd build-sherlock-gcc10-debug/ || { echo "Failed to enter build-sherlock-gcc10-debug directory"; exit 1; }
 make -j 4
 cd ../..
@@ -159,7 +148,13 @@ cd ../..
 
 ## Compiling GEOS
 
-The script `compile_geos.sh` combines the above steps into a unified process. It handles the sequence and dependencies between the jobs via the flag `--dependency`:
+The script `compile_geos.sh` combines the above steps into a unified process. It handles the sequence and dependencies between the jobs via the flag `--dependency`.
+
+This script orchestrates the compilation process in the following order:
+
+1. Clone the Sources
+2. Compile TPLs
+3. Compile GEOS
 
 **Content of `compile_geos.sh`:**
 
@@ -174,7 +169,7 @@ tpls_id=$(sbatch build_utils/tpls.sh | awk '{print $4}')
 sbatch --dependency=afterok:$tpls_id build_utils/geos.sh
 ```
 
-Note that GEOS compilation will be submitted only if the TPL job succeeds. This allows us to rapidly allocate small resources in the form of a `dev` partition. See [Sherlock documentation](https://www.sherlock.stanford.edu/docs/user-guide/running-jobs/?h=sh_part#available-resources) for available resources and types of partitions.
+Note that GEOS compilation will be submitted only if the TPL job succeeds. This allows to allocate small resources in the form of a `dev` partition. See [Sherlock documentation](https://www.sherlock.stanford.edu/docs/user-guide/running-jobs/?h=sh_part#available-resources) for available resources and types of partitions.
 
 ### Execution
 To start the compilation process, simply run:
@@ -186,7 +181,7 @@ source compile_geos.sh
 This will initiate the compilation while managing job dependencies. You will receive two email notifications regarding job completion or failure.
 
 ### Monitoring Progress
-To monitor the output while the compilation is in progress, use the following command:
+To monitor the compilation progress, use the following command:
 
 For step 2:
 
