@@ -83,7 +83,7 @@ HydrofractureSolver< POROMECHANICS_SOLVER >::HydrofractureSolver( const string &
   registerWrapper( viewKeyStruct::leakoffConstString(), &m_leakoffConst ).
     setApplyDefaultValue( -1.0 ).
     setInputFlag( InputFlags::OPTIONAL ).
-    setDescription( " Analytical leakoff coefficient. " );
+    setDescription( "Analytical leakoff coefficient." );
 
 
   m_numResolves[0] = 0;
