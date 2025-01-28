@@ -248,6 +248,10 @@ void AcousticWaveEquationSEM::addSourceToRightHandSide( integer const & cycleNum
   arrayView2d< real32 const > const sourceValue   = m_sourceValue.toViewConst();
   //bool useSourceWaveletTables = m_useSourceWaveletTables;
   //arrayView1d< TableFunction::KernelWrapper const > const sourceWaveletTableWrappers = m_sourceWaveletTableWrappers.toViewConst();
+
+  GEOS_THROW_IF( cycleNumber > sourceValue.size( 0 ),
+                getDataContext() << ": Too many steps compared to array size",
+               std::runtime_error );
   forAll< EXEC_POLICY >( sourceConstants.size( 0 ), [=] GEOS_HOST_DEVICE ( localIndex const isrc )
   {
     if( sourceIsAccessible[isrc] == 1 )
@@ -915,7 +919,7 @@ real64 AcousticWaveEquationSEM::explicitStepForward( real64 const & time_n,
                                                      DomainPartition & domain,
                                                      bool computeGradient )
 {
-  real64 dtCompute = explicitStepInternal( time_n, dt, domain );
+  real64 dtCompute = explicitStepInternal( time_n, dt, cycleNumber, domain );
 
   forDiscretizationOnMeshTargets( domain.getMeshBodies(),
                                   [&] ( string const &,
@@ -986,7 +990,7 @@ real64 AcousticWaveEquationSEM::explicitStepBackward( real64 const & time_n,
                                                       DomainPartition & domain,
                                                       bool computeGradient )
 {
-  real64 dtCompute = explicitStepInternal( time_n, dt, domain );
+  real64 dtCompute = explicitStepInternal( time_n, dt, cycleNumber, domain );
   forDiscretizationOnMeshTargets( domain.getMeshBodies(),
                                   [&] ( string const &,
                                         MeshLevel & mesh,
@@ -1116,6 +1120,7 @@ void AcousticWaveEquationSEM::prepareNextTimestep( MeshLevel & mesh )
 
 void AcousticWaveEquationSEM::computeUnknowns( real64 const & time_n,
                                                real64 const & dt,
+                                               integer const & cycleNumber,
                                                DomainPartition & domain,
                                                MeshLevel & mesh,
                                                arrayView1d< string const > const & regionNames )
@@ -1147,7 +1152,7 @@ void AcousticWaveEquationSEM::computeUnknowns( real64 const & time_n,
   //Modification of cycleNember useful when minTime < 0
   EventManager const & event = getGroupByPath< EventManager >( "/Problem/Events" );
   real64 const & minTime = event.getReference< real64 >( EventManager::viewKeyStruct::minTimeString() );
-  localIndex const cycleNumber = time_n/dt;
+  //localIndex const cycleNumber = time_n/dt;
   integer const cycleForSource = int(round( -minTime / dt + cycleNumber ));
 
   addSourceToRightHandSide( cycleForSource, rhs );
@@ -1228,6 +1233,7 @@ void AcousticWaveEquationSEM::computeUnknowns( real64 const & time_n,
 
 void AcousticWaveEquationSEM::synchronizeUnknowns( real64 const & time_n,
                                                    real64 const & dt,
+                                                   integer const & cycleNumber,
                                                    DomainPartition & domain,
                                                    MeshLevel & mesh,
                                                    arrayView1d< string const > const & )
@@ -1274,6 +1280,7 @@ void AcousticWaveEquationSEM::synchronizeUnknowns( real64 const & time_n,
 
 real64 AcousticWaveEquationSEM::explicitStepInternal( real64 const & time_n,
                                                       real64 const & dt,
+                                                      integer const & cycleNumber,
                                                       DomainPartition & domain )
 {
   GEOS_MARK_FUNCTION;
@@ -1287,8 +1294,8 @@ real64 AcousticWaveEquationSEM::explicitStepInternal( real64 const & time_n,
   {
     localIndex nSubSteps = (int) ceil( dt/m_timeStep );
     dtCompute = dt/nSubSteps;
-    computeUnknowns( time_n, dtCompute, domain, mesh, regionNames );
-    synchronizeUnknowns( time_n, dtCompute, domain, mesh, regionNames );
+    computeUnknowns( time_n, dtCompute, cycleNumber,  domain, mesh, regionNames );
+    synchronizeUnknowns( time_n, dtCompute, cycleNumber, domain, mesh, regionNames );
   } );
 
   return dtCompute;
