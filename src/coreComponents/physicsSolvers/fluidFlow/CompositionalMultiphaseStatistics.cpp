@@ -342,7 +342,7 @@ void CompositionalMultiphaseStatistics::computeRegionStatistics( real64 const ti
     {
       regionStatistics.phasePoreVolume[ip] += subRegionPhaseDynamicPoreVol[ip];
       regionStatistics.phaseMass[ip] += subRegionPhaseMass[ip];
-      for( int dir = 0; dir < 3; ++dir )
+      //for( int dir = 0; dir < 3; ++dir )
         {
         regionStatistics.trappedPhaseMass[ip] += subRegionTrappedPhaseMass[ip];  // again should be calculated for minimum direction in isocomp
         }
