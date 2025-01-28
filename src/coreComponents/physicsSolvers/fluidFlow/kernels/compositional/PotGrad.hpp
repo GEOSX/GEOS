@@ -80,22 +80,22 @@ struct PotGrad
       }
     }
 
-    // create local work arrays
-    real64 densMean = 0.0;
-    real64 dDensMean_dP[numFluxSupportPoints]{};
-    real64 dDensMean_dC[numFluxSupportPoints][numComp]{};
-
     real64 presGrad = 0.0;
     real64 dPresGrad_dTrans = 0.0;
     real64 gravHead = 0.0;
     real64 dGravHead_dTrans = 0.0;
     real64 dCapPressure_dC[numComp]{};
 
-    calculateMeanDensity( checkPhasePresenceInGravity, ip,
-                          seri, sesri, sei,
-                          phaseVolFrac, dCompFrac_dCompDens,
-                          phaseMassDens, dPhaseMassDens,
-                          densMean, dDensMean_dP, dDensMean_dC );
+    // create local work arrays
+    real64 densMean = 0.0;
+    real64 dDensMean_dP[numFluxSupportPoints]{};
+    real64 dDensMean_dC[numFluxSupportPoints][numComp]{};
+    isothermalCompositionalMultiphaseFVMKernels::helpers::
+      calculateMeanDensity( ip, seri, sesri, sei,
+                            checkPhasePresenceInGravity,
+                            phaseVolFrac, dCompFrac_dCompDens,
+                            phaseMassDens, dPhaseMassDens,
+                            densMean, dDensMean_dP, dDensMean_dC );
 
     /// compute the TPFA potential difference
     for( integer i = 0; i < numFluxSupportPoints; i++ )
@@ -162,68 +162,6 @@ struct PotGrad
     // compute phase potential gradient
     potGrad = presGrad - gravHead;
     dPotGrad_dTrans = dPresGrad_dTrans - dGravHead_dTrans;
-  }
-
-  template< integer numComp, integer numFluxSupportPoints >
-  GEOS_HOST_DEVICE
-  static void
-  calculateMeanDensity( integer const checkPhasePresenceInGravity,
-                        integer const ip,
-                        localIndex const ( &seri )[numFluxSupportPoints],
-                        localIndex const ( &sesri )[numFluxSupportPoints],
-                        localIndex const ( &sei )[numFluxSupportPoints],
-                        ElementViewConst< arrayView2d< real64 const, compflow::USD_PHASE > > const & phaseVolFrac,
-                        ElementViewConst< arrayView3d< real64 const, compflow::USD_COMP_DC > > const & dCompFrac_dCompDens,
-                        ElementViewConst< arrayView3d< real64 const, constitutive::multifluid::USD_PHASE > > const & phaseMassDens,
-                        ElementViewConst< arrayView4d< real64 const, constitutive::multifluid::USD_PHASE_DC > > const & dPhaseMassDens,
-                        real64 & densMean, real64 ( & dDensMean_dP)[numFluxSupportPoints], real64 ( & dDensMean_dC )[numFluxSupportPoints][numComp] )
-  {
-    real64 dDens_dC[numComp]{};
-
-    integer denom = 0;
-    for( integer i = 0; i < numFluxSupportPoints; ++i )
-    {
-      localIndex const er  = seri[i];
-      localIndex const esr = sesri[i];
-      localIndex const ei  = sei[i];
-
-      bool const phaseExists = (phaseVolFrac[er][esr][ei][ip] > 0);
-      if( checkPhasePresenceInGravity && !phaseExists )
-      {
-        continue;
-      }
-
-      // density
-      real64 const density  = phaseMassDens[er][esr][ei][0][ip];
-      real64 const dDens_dP = dPhaseMassDens[er][esr][ei][0][ip][Deriv::dP];
-
-      applyChainRule( numComp,
-                      dCompFrac_dCompDens[er][esr][ei],
-                      dPhaseMassDens[er][esr][ei][0][ip],
-                      dDens_dC,
-                      Deriv::dC );
-
-      // average density and derivatives
-      densMean += density;
-      dDensMean_dP[i] = dDens_dP;
-      for( integer jc = 0; jc < numComp; ++jc )
-      {
-        dDensMean_dC[i][jc] = dDens_dC[jc];
-      }
-      denom++;
-    }
-    if( denom > 1 )
-    {
-      densMean /= denom;
-      for( integer i = 0; i < numFluxSupportPoints; ++i )
-      {
-        dDensMean_dP[i] /= denom;
-        for( integer jc = 0; jc < numComp; ++jc )
-        {
-          dDensMean_dC[i][jc] /= denom;
-        }
-      }
-    }
   }
 
 };

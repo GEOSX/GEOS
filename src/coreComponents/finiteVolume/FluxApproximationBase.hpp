@@ -39,7 +39,8 @@ enum class UpwindingScheme : integer
 {
   PPU,    ///< PPU upwinding
   C1PPU,  ///< C1-PPU upwinding from https://doi.org/10.1016/j.advwatres.2017.07.028
-  IHU ///< IHU as in https://link.springer.com/content/pdf/10.1007/s10596-019-09835-6.pdf
+  IHU,    ///< IHU as in https://link.springer.com/content/pdf/10.1007/s10596-019-09835-6.pdf
+  HU2PH   ///< HU simplified 2-phase version
 };
 
 /**
@@ -48,7 +49,8 @@ enum class UpwindingScheme : integer
 ENUM_STRINGS( UpwindingScheme,
               "PPU",
               "C1PPU",
-              "IHU" );
+              "IHU",
+              "HU2PH" );
 
 /**
  * @struct UpwindingParameters
@@ -57,7 +59,7 @@ ENUM_STRINGS( UpwindingScheme,
  */
 struct UpwindingParameters
 {
-  /// PPU or C1-PPU or IHU
+  /// PPU or C1-PPU or IHU or HU2PH
   UpwindingScheme upwindingScheme;
 
   /// C1-PPU smoothing tolerance

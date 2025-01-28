@@ -21,7 +21,7 @@
 #define GEOS_PHYSICSSOLVERS_MULTIPHYSICS_POROMECHANICSKERNELS_MULTIPHASEPOROMECHANICSCONFORMINGFRACTURES_HPP
 
 #include "physicsSolvers/fluidFlow/kernels/compositional/FluxComputeKernel.hpp"
-//#include "physicsSolvers/fluidFlow/FluxKernelsHelper.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/PhaseComponentFlux.hpp"
 
 namespace geos
 {
@@ -221,9 +221,7 @@ public:
           real64 phaseFlux = 0.0;
           real64 dPhaseFlux_dP[numFluxSupportPoints]{};
           real64 dPhaseFlux_dC[numFluxSupportPoints][numComp]{};
-
-          localIndex k_up = -1;
-
+          real64 dPhaseFlux_dTrans = 0.0;
 
           isothermalCompositionalMultiphaseFVMKernelUtilities::PPUPhaseFlux::compute< numComp, numFluxSupportPoints >
             ( m_numPhases,
@@ -236,27 +234,31 @@ public:
             m_pres,
             m_gravCoef,
             m_phaseMob, m_dPhaseMob,
-            m_phaseVolFrac,
-            m_dPhaseVolFrac,
-            m_phaseCompFrac, m_dPhaseCompFrac,
+            m_phaseVolFrac, m_dPhaseVolFrac,
             m_dCompFrac_dCompDens,
             m_phaseMassDens, m_dPhaseMassDens,
             m_phaseCapPressure, m_dPhaseCapPressure_dPhaseVolFrac,
-            k_up,
             potGrad,
             phaseFlux,
             dPhaseFlux_dP,
             dPhaseFlux_dC,
-            compFlux,
-            dCompFlux_dP,
-            dCompFlux_dC,
-            dCompFlux_dTrans );
+            dPhaseFlux_dTrans );
+
+          // choose upstream cell for composition upwinding
+          localIndex const k_up = (phaseFlux >= 0) ? 0 : 1;
+
+          // distribute on phaseComponentFlux here
+          isothermalCompositionalMultiphaseFVMKernelUtilities::PhaseComponentFlux::
+            compute( ip, k_up, seri, sesri, sei,
+                     m_phaseCompFrac, m_dPhaseCompFrac, m_dCompFrac_dCompDens,
+                     phaseFlux, dPhaseFlux_dP, dPhaseFlux_dC, dPhaseFlux_dTrans,
+                     compFlux, dCompFlux_dP, dCompFlux_dC, dCompFlux_dTrans );
 
           // call the lambda in the phase loop to allow the reuse of the phase fluxes and their derivatives
           // possible use: assemble the derivatives wrt temperature, and the flux term of the energy equation for this phase
           compFluxKernelOp( ip, k, seri, sesri, sei, connectionIndex,
                             k_up, seri[k_up], sesri[k_up], sei[k_up], potGrad,
-                            phaseFlux, dPhaseFlux_dP, dPhaseFlux_dC );
+                            phaseFlux, dPhaseFlux_dP, dPhaseFlux_dC, dPhaseFlux_dTrans );
 
         } // loop over phases
 
@@ -295,7 +297,7 @@ public:
           stack.dFlux_dAperture[ic][k[1]][k[0]] -= dFlux_dAper[0];
           stack.dFlux_dAperture[ic][k[1]][k[1]] -= dFlux_dAper[1];
         }
-//
+
         connectionIndex++;
       }
     }

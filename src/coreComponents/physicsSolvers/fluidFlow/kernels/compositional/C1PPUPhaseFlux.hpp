@@ -26,7 +26,6 @@
 #include "constitutive/capillaryPressure/layouts.hpp"
 #include "mesh/ElementRegionManager.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/PotGrad.hpp"
-#include "physicsSolvers/fluidFlow/kernels/compositional/PhaseComponentFlux.hpp"
 
 
 namespace geos
@@ -67,7 +66,6 @@ struct C1PPUPhaseFlux
    * @param dPhaseMassDens derivative of phase mass density wrt pressure, temperature, comp fraction
    * @param phaseCapPressure phase capillary pressure
    * @param dPhaseCapPressure_dPhaseVolFrac derivative of phase capillary pressure wrt phase volume fraction
-   * @param k_up uptream index for this phase
    * @param potGrad potential gradient for this phase
    * @param phaseFlux phase flux
    * @param dPhaseFlux_dP derivative of phase flux wrt pressure
@@ -91,21 +89,15 @@ struct C1PPUPhaseFlux
            ElementViewConst< arrayView3d< real64 const, compflow::USD_PHASE_DC > > const & dPhaseMob,
            ElementViewConst< arrayView2d< real64 const, compflow::USD_PHASE > > const & phaseVolFrac,
            ElementViewConst< arrayView3d< real64 const, compflow::USD_PHASE_DC > > const & dPhaseVolFrac,
-           ElementViewConst< arrayView4d< real64 const, constitutive::multifluid::USD_PHASE_COMP > > const & phaseCompFrac,
-           ElementViewConst< arrayView5d< real64 const, constitutive::multifluid::USD_PHASE_COMP_DC > > const & dPhaseCompFrac,
            ElementViewConst< arrayView3d< real64 const, compflow::USD_COMP_DC > > const & dCompFrac_dCompDens,
            ElementViewConst< arrayView3d< real64 const, constitutive::multifluid::USD_PHASE > > const & phaseMassDens,
            ElementViewConst< arrayView4d< real64 const, constitutive::multifluid::USD_PHASE_DC > > const & dPhaseMassDens,
            ElementViewConst< arrayView3d< real64 const, constitutive::cappres::USD_CAPPRES > > const & phaseCapPressure,
            ElementViewConst< arrayView4d< real64 const, constitutive::cappres::USD_CAPPRES_DS > > const & dPhaseCapPressure_dPhaseVolFrac,
-           localIndex & k_up,
            real64 & potGrad,
            real64 ( &phaseFlux ),
            real64 ( & dPhaseFlux_dP )[numFluxSupportPoints],
-           real64 ( & dPhaseFlux_dC )[numFluxSupportPoints][numComp],
-           real64 ( & compFlux )[numComp],
-           real64 ( & dCompFlux_dP )[numFluxSupportPoints][numComp],
-           real64 ( & dCompFlux_dC )[numFluxSupportPoints][numComp][numComp] )
+           real64 ( & dPhaseFlux_dC )[numFluxSupportPoints][numComp] )
   {
     real64 dPotGrad_dTrans = 0.0;
     real64 dPresGrad_dP[numFluxSupportPoints]{};
@@ -214,13 +206,6 @@ struct C1PPUPhaseFlux
     }
 
     potGrad = potGrad * Ttrans;
-
-    // choose upstream cell for composition upwinding
-    k_up = (phaseFlux >= 0) ? 0 : 1;
-
-    //distribute on phaseComponentFlux here
-    PhaseComponentFlux::compute( ip, k_up, seri, sesri, sei, phaseCompFrac, dPhaseCompFrac, dCompFrac_dCompDens, phaseFlux
-                                 , dPhaseFlux_dP, dPhaseFlux_dC, compFlux, dCompFlux_dP, dCompFlux_dC );
   }
 };
 

@@ -56,9 +56,9 @@ enum class KernelFlags
   /// Flag indicating whether C1-PPU is used or not
   C1PPU = 1 << 5, // 32
   /// Flag indicating whether IHU is used or not
-  IHU = 1 << 6 // 64
-        /// Add more flags like that if needed:
-        // Flag8 = 1 << 7  //128
+  IHU = 1 << 6, // 64
+  /// Flag indicating whether HU 2-phase simplified version is used or not
+  HU2PH = 1 << 7 // 128
 };
 
 /******************************** FluxComputeKernelBase ********************************/
@@ -175,6 +175,81 @@ protected:
 
   BitFlags< KernelFlags > const m_kernelFlags;
 };
+
+namespace helpers
+{
+template< typename VIEWTYPE >
+using ElementViewConst = ElementRegionManager::ElementViewConst< VIEWTYPE >;
+
+template< localIndex numComp, localIndex numFluxSupportPoints >
+GEOS_HOST_DEVICE
+static void calculateMeanDensity( localIndex const ip,
+                                  localIndex const (&seri)[numFluxSupportPoints],
+                                  localIndex const (&sesri)[numFluxSupportPoints],
+                                  localIndex const (&sei)[numFluxSupportPoints],
+                                  integer const checkPhasePresenceInGravity,
+                                  ElementViewConst< arrayView2d< real64 const, compflow::USD_PHASE > > const & phaseVolFrac,
+                                  ElementViewConst< arrayView3d< real64 const, compflow::USD_COMP_DC > > const & dCompFrac_dCompDens,
+                                  ElementViewConst< arrayView3d< real64 const, constitutive::multifluid::USD_PHASE > > const & phaseMassDens,
+                                  ElementViewConst< arrayView4d< real64 const, constitutive::multifluid::USD_PHASE_DC > > const & dPhaseMassDens,
+                                  real64 & densMean, real64 (& dDensMean_dPres)[numFluxSupportPoints], real64 (& dDensMean_dComp)[numFluxSupportPoints][numComp] )
+{
+  using Deriv = constitutive::multifluid::DerivativeOffset;
+
+  densMean = 0;
+  integer denom = 0;
+  real64 dDens_dC[numComp]{};
+  for( localIndex i = 0; i < numFluxSupportPoints; ++i )
+  {
+    localIndex const er = seri[i];
+    localIndex const esr = sesri[i];
+    localIndex const ei = sei[i];
+
+    bool const phaseExists = (phaseVolFrac[er][esr][ei][ip] > 0);
+    if( checkPhasePresenceInGravity && !phaseExists )
+    {
+      dDensMean_dPres[i] = 0.0;
+      for( localIndex jc = 0; jc < numComp; ++jc )
+      {
+        dDensMean_dComp[i][jc] = 0.0;
+      }
+      continue;
+    }
+
+    // density
+    real64 const density = phaseMassDens[er][esr][ei][0][ip];
+    real64 const dDens_dPres = dPhaseMassDens[er][esr][ei][0][ip][Deriv::dP];
+
+    applyChainRule( numComp,
+                    dCompFrac_dCompDens[er][esr][ei],
+                    dPhaseMassDens[er][esr][ei][0][ip],
+                    dDens_dC,
+                    Deriv::dC );
+
+    // average density and derivatives
+    densMean += density;
+    dDensMean_dPres[i] = dDens_dPres;
+    for( localIndex jc = 0; jc < numComp; ++jc )
+    {
+      dDensMean_dComp[i][jc] = dDens_dC[jc];
+    }
+    denom++;
+  }
+  if( denom > 1 )
+  {
+    densMean /= denom;
+    for( localIndex i = 0; i < numFluxSupportPoints; ++i )
+    {
+      dDensMean_dPres[i] /= denom;
+      for( integer jc = 0; jc < numComp; ++jc )
+      {
+        dDensMean_dComp[i][jc] /= denom;
+      }
+    }
+  }
+}
+
+}
 
 } // namespace isothermalCompositionalMultiphaseFVMKernels
 

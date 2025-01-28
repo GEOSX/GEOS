@@ -35,6 +35,8 @@
 #include "physicsSolvers/fluidFlow/kernels/compositional/PPUPhaseFlux.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/C1PPUPhaseFlux.hpp"
 #include "physicsSolvers/fluidFlow/kernels/compositional/IHUPhaseFlux.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/HU2PhaseFlux.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/PhaseComponentFlux.hpp"
 
 namespace geos
 {
@@ -228,6 +230,7 @@ public:
                     StackVariables & stack,
                     FUNC && compFluxKernelOp = NoOpFunc{} ) const
   {
+    using namespace isothermalCompositionalMultiphaseFVMKernelUtilities;
 
     // first, compute the transmissibilities at this face
     m_stencilWrapper.computeWeights( iconn,
@@ -269,12 +272,11 @@ public:
           real64 phaseFlux = 0.0;
           real64 dPhaseFlux_dP[numFluxSupportPoints]{};
           real64 dPhaseFlux_dC[numFluxSupportPoints][numComp]{};
-
-          localIndex k_up = -1;
+          real64 dPhaseFlux_dTrans = 0.0; // not really used
 
           if( m_kernelFlags.isSet( KernelFlags::C1PPU ) )
           {
-            isothermalCompositionalMultiphaseFVMKernelUtilities::C1PPUPhaseFlux::compute< numComp, numFluxSupportPoints >
+            C1PPUPhaseFlux::compute< numComp, numFluxSupportPoints >
               ( m_numPhases,
               ip,
               m_kernelFlags.isSet( KernelFlags::CapPressure ),
@@ -286,22 +288,17 @@ public:
               m_gravCoef,
               m_phaseMob, m_dPhaseMob,
               m_phaseVolFrac, m_dPhaseVolFrac,
-              m_phaseCompFrac, m_dPhaseCompFrac,
               m_dCompFrac_dCompDens,
               m_phaseMassDens, m_dPhaseMassDens,
               m_phaseCapPressure, m_dPhaseCapPressure_dPhaseVolFrac,
-              k_up,
               potGrad,
               phaseFlux,
               dPhaseFlux_dP,
-              dPhaseFlux_dC,
-              compFlux,
-              dCompFlux_dP,
-              dCompFlux_dC );
+              dPhaseFlux_dC );
           }
           else if( m_kernelFlags.isSet( KernelFlags::IHU ) )
           {
-            isothermalCompositionalMultiphaseFVMKernelUtilities::IHUPhaseFlux::compute< numComp, numFluxSupportPoints >
+            IHUPhaseFlux::compute< numComp, numFluxSupportPoints >
               ( m_numPhases,
               ip,
               m_kernelFlags.isSet( KernelFlags::CapPressure ),
@@ -313,22 +310,39 @@ public:
               m_gravCoef,
               m_phaseMob, m_dPhaseMob,
               m_phaseVolFrac, m_dPhaseVolFrac,
-              m_phaseCompFrac, m_dPhaseCompFrac,
               m_dCompFrac_dCompDens,
               m_phaseMassDens, m_dPhaseMassDens,
               m_phaseCapPressure, m_dPhaseCapPressure_dPhaseVolFrac,
-              k_up,
               potGrad,
               phaseFlux,
               dPhaseFlux_dP,
-              dPhaseFlux_dC,
-              compFlux,
-              dCompFlux_dP,
-              dCompFlux_dC );
+              dPhaseFlux_dC );
+          }
+          else if( m_kernelFlags.isSet( KernelFlags::HU2PH ) )
+          {
+            HU2PhaseFlux::compute< numComp, numFluxSupportPoints >
+              ( m_numPhases,
+              ip,
+              m_kernelFlags.isSet( KernelFlags::CapPressure ),
+              m_kernelFlags.isSet( KernelFlags::CheckPhasePresenceInGravity ),
+              seri, sesri, sei,
+              trans,
+              dTrans_dPres,
+              m_pres,
+              m_gravCoef,
+              m_phaseMob, m_dPhaseMob,
+              m_phaseVolFrac, m_dPhaseVolFrac,
+              m_dCompFrac_dCompDens,
+              m_phaseMassDens, m_dPhaseMassDens,
+              m_phaseCapPressure, m_dPhaseCapPressure_dPhaseVolFrac,
+              potGrad,
+              phaseFlux,
+              dPhaseFlux_dP,
+              dPhaseFlux_dC );
           }
           else
           {
-            isothermalCompositionalMultiphaseFVMKernelUtilities::PPUPhaseFlux::compute< numComp, numFluxSupportPoints >
+            PPUPhaseFlux::compute< numComp, numFluxSupportPoints >
               ( m_numPhases,
               ip,
               m_kernelFlags.isSet( KernelFlags::CapPressure ),
@@ -340,20 +354,24 @@ public:
               m_gravCoef,
               m_phaseMob, m_dPhaseMob,
               m_phaseVolFrac, m_dPhaseVolFrac,
-              m_phaseCompFrac, m_dPhaseCompFrac,
               m_dCompFrac_dCompDens,
               m_phaseMassDens, m_dPhaseMassDens,
               m_phaseCapPressure, m_dPhaseCapPressure_dPhaseVolFrac,
-              k_up,
               potGrad,
               phaseFlux,
               dPhaseFlux_dP,
               dPhaseFlux_dC,
-              compFlux,
-              dCompFlux_dP,
-              dCompFlux_dC,
-              dCompFlux_dTrans );
+              dPhaseFlux_dTrans );
           }
+
+          // choose upstream cell for composition upwinding
+          localIndex const k_up = (phaseFlux >= 0) ? 0 : 1;
+
+          // distribute on phaseComponentFlux here
+          PhaseComponentFlux::compute( ip, k_up, seri, sesri, sei,
+                                       m_phaseCompFrac, m_dPhaseCompFrac, m_dCompFrac_dCompDens,
+                                       phaseFlux, dPhaseFlux_dP, dPhaseFlux_dC, dPhaseFlux_dTrans,
+                                       compFlux, dCompFlux_dP, dCompFlux_dC, dCompFlux_dTrans );
 
           // call the lambda in the phase loop to allow the reuse of the phase fluxes and their derivatives
           // possible use: assemble the derivatives wrt temperature, and the flux term of the energy equation for this phase
