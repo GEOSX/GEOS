@@ -191,7 +191,7 @@ real64 AcousticElasticWaveEquationSEM::solverStep( real64 const & time_n,
       RAJA::atomicAdd< ATOMIC_POLICY >( &p_np1[n], localIncrement );
     } );
 
-    acousSolver->synchronizeUnknowns( time_n, dt, cycleNumber, domain, mesh, m_acousRegions );
+    acousSolver->synchronizeUnknowns( time_n, dt, domain, mesh, m_acousRegions );
 
     acousSolver->prepareNextTimestep( mesh );
     elasSolver->prepareNextTimestep( mesh );
