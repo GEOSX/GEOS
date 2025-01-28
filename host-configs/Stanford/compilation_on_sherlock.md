@@ -1,13 +1,21 @@
 # GEOS Compilation on Sherlock
 
 ## Overview
-This guide provides a step-by-step process for compiling the GEOS simulator on the Stanford Sherlock cluster. The compilation involves both the Third-Party Libraries (TPLs) and the GEOS simulator itself. These steps can be executed using a script that submits two jobs: one for the compilation of TPLs and a second for the compilation of GEOS.
+This guide provides a step-by-step process for compiling GEOS simulator on the Stanford Sherlock cluster. The compilation involves both Third-Party Libraries (TPLs) and GEOS. 
 
 ### Important Note
 
-Ensure that the CMake file (for example, `sherlock-custom.cmake`, as shown below) and the shell scripts (`clone.sh`, `tpls.sh`, `geos.sh`) are located in the same folder named `build_utils`. This organization is essential for the successful execution of the compilation process.
+The shell scripts `clone.sh`, `tpls.sh`, `geos.sh` (partial scripts) and `compile_geos.sh` (main script) must be created and populated with the relevant content outlined in this document.
 
-The following illustrates the proposed file structure. If you run `ls` and `ls -l build_utils/` commands in your working directory, you should see something like this:
+To facilitate this, please follow these organizational instructions:
+
+* In your working directory, create a folder named `build_utils`;
+* Place the partial scripts  `clone.sh`, `tpls.sh`, `geos.sh` within the build_utils directory;
+* Ensure that the main script `compile_geos.sh` is located in your working directory at the same level as the `build_utils` folder.
+
+This organizational structure is relevant to ensure the successful execution of the compilation process. 
+
+The following illustrates the files structure. If you run `ls` and `ls -l build_utils/` commands in your working directory, you should see something like this:
 
 ```
 [suid@sh04-ln04 login /home/groups/pi_suid/suid]$ ls
@@ -176,7 +184,7 @@ sbatch --dependency=afterok:$tpls_id build_utils/geos.sh
 The GEOS compilation will be submitted only if the TPL job succeeds. This allows us to rapidly allocate small resources in the form of a `dev` partition. See [Sherlock documentation](https://www.sherlock.stanford.edu/docs/user-guide/running-jobs/?h=sh_part#available-resources) for available resources and types of partitions.
 
 ### Execution
-To begin the entire process, simply run:
+To start the compilation process, simply run:
 
 ```bash
 source compile_geos.sh
@@ -199,8 +207,8 @@ For step 3:
 tail -f geos_output.log
 ```
 
-## Conclusion
-You have successfully compiled GEOS simulator on Sherlock cluster. The process effectively employs SLURM's resource management functionalities to streamline jobs execution in sequence. For advanced usage, additional configurations and modifications may be required based on specific needs.
+## Summary
+This guide document the compilation process of GEOS on Stanford's Sherlock cluster. The process effectively employs SLURM's resource management functionalities to streamline jobs execution in sequence. For advanced usage or specific needs, additional configurations and modifications may be required.
 
 ## References
 - [GEOSX Documentation](https://geosx-geosx.readthedocs-hosted.com/en/latest/#)
