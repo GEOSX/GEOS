@@ -1,0 +1,251 @@
+<?xml version="1.0" ?>
+<Problem>
+  <Solvers
+    gravityVector="{0.0, 0.0, 0.0}">
+    <!-- <ImplicitQuasiDynamicEQ
+      name="QDSolver"
+      targetRegions="{ Domain, Fault }"
+      shearImpedance="4.6247113164e6"
+      initialDt="1000"
+      logLevel="1"
+      discretization="FE1"
+      stressSolverName="stressSolver"
+      targetSlipIncrement="1.0e-6">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-8"
+        logLevel="2"
+        newtonMaxIter="20"
+        maxNumConfigurationAttempts="1"
+        lineSearchAction="Require"
+        lineSearchMaxCuts="2"
+        maxTimeStepCuts="1"/>
+     </QuasiDynamicEQ> -->
+
+    <SolidMechanicsLagrangeContactBubbleStab
+      name="stressSolver"
+      timeIntegrationOption="QuasiStatic"
+      logLevel="2"
+      writeLinearSystem="0"
+      discretization="FE1"
+      targetRegions="{ Domain, Fault }">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-8"
+        logLevel="2"
+        newtonMaxIter="10"
+        maxNumConfigurationAttempts="1"
+        lineSearchAction="Require"
+        lineSearchMaxCuts="2"
+        maxTimeStepCuts="1"/>
+      <LinearSolverParameters
+        solverType="direct"
+        directParallel="0"
+        logLevel="0"/>
+    </SolidMechanicsLagrangeContactBubbleStab>
+    
+    <SurfaceGenerator
+      name="SurfaceGen"
+      targetRegions="{ Domain }"
+      initialRockToughness="1.0"
+      mpiCommOrder="1"
+      fractureRegion="Fault"/>  
+  </Solvers>
+
+  <NumericalMethods>
+    <FiniteElements>
+      <FiniteElementSpace
+        name="FE1"
+        order="1"/>
+    </FiniteElements>
+  </NumericalMethods>
+
+  <Mesh>
+    <InternalMesh
+      name="mesh1"
+      elementTypes="{ C3D8 }"
+      xCoords="{ -500, 500 }"
+      yCoords="{ -500, 500 }"
+      zCoords="{ -500, 500 }"
+      nx="{ 100 }"
+      ny="{ 2 }"
+      nz="{ 100 }"
+      cellBlockNames="{ cb1 }"/>
+  </Mesh>
+
+   <ElementRegions>
+    <CellElementRegion
+      name="Domain"
+      cellBlocks="{ cb1 }"
+      materialList="{ rock }"/>
+
+    <SurfaceElementRegion
+      name="Fault"
+      materialList="{frictionLaw}"
+      defaultAperture="1e-3"/>  
+    </ElementRegions>
+  
+  <Constitutive>
+
+    <ElasticIsotropic
+     name="rock"
+     defaultDensity="2670"
+     defaultBulkModulus="50.0e9"
+     defaultShearModulus="32.04e9"/>
+
+    <RateAndStateFriction
+      name="frictionLaw"
+      defaultA="0.007"
+      defaultB="0.005"
+      defaultDc="4.0e-3"  
+      defaultReferenceVelocity="1.0e-6"
+      defaultReferenceFrictionCoefficient="0.6"/>  
+  </Constitutive>
+
+  <Geometry>    
+    <Box
+      name="faultPlane"
+      xMin="{ -400.01, -0.01, -400.01 }"
+      xMax="{  400.01,  0.01, 400.01 }"/>
+
+    <!-- <Box
+      name="slipWeakeningRegion"
+      xMin="{ -200.01, -500.01, -200.01 }"
+      xMax="{  200.01,  500.01, 200.01 }"/>   -->
+
+    <Cylinder
+      name="slipWeakeningRegion"
+      firstFaceCenter="{ 0.0, -500.01, 0.0 }"
+      secondFaceCenter="{ 0.0, 500.01, 0.0 }"
+      outerRadius="200"/> 
+  </Geometry>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="Domain"
+      cellBlocks="{ cb1 }"
+      materialList="{rock}"/>
+
+    <SurfaceElementRegion
+      name="Fault"
+      materialList="{frictionLaw}"
+      defaultAperture="1e-3"/>  
+    </ElementRegions>
+
+  <FieldSpecifications>
+    <FieldSpecification
+      name="fault"
+      fieldName="ruptureState"
+      initialCondition="1"
+      objectPath="faceManager"
+      scale="1"
+      setNames="{ faultPlane }"/>
+
+    <FieldSpecification
+      name="xconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="0"
+      scale="0.0"
+      setNames="{ xneg, xpos }"/>
+
+    <FieldSpecification
+      name="yconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="1"
+      scale="0.0"
+      setNames="{ ypos, yneg }"/>
+
+    <FieldSpecification
+      name="zconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="2"
+      scale="0.0"
+      setNames="{ zpos, zneg }"/>
+
+    <FieldSpecification
+      name="slipWeakeningRSA"
+      objectPath="ElementRegions/Fault"
+      fieldName="frictionLaw_a"
+      scale="1.0"
+      setNames="{ slipWeakeningRegion }"
+      initialCondition="1"/>
+
+    <!-- <FieldSpecification
+      name="initialStateVariable"
+      objectPath="ElementRegions/Fault"
+      fieldName="stateVariable"
+      scale="0.68070857"
+      setNames="{ all }"
+      initialCondition="1"/>  
+      
+    <FieldSpecification
+      name="slipVelocity1"
+      fieldName="slipVelocity"
+      initialCondition="1"
+      objectPath="ElementRegions/Fault/FractureSubRegion"
+      component="0"
+      scale="0."
+      setNames="{all}"/>
+
+    <FieldSpecification
+      name="slipVelocity2"
+      fieldName="slipVelocity"
+      initialCondition="1"
+      objectPath="ElementRegions/Fault/FractureSubRegion"
+      component="1"
+      scale="0."
+      setNames="{all}"/>                  -->
+  </FieldSpecifications>
+  
+  <Outputs>
+    <VTK
+      name="vtkOutput"
+      plotFileRoot="BP7_QD_S"/>
+
+    <!-- <TimeHistory
+      name="timeHistoryOutput"
+      sources="{/Tasks/slipRateCollection, /Tasks/pressureCollection}"
+      filename="BP7_DQ_S" />   -->
+  </Outputs>
+
+  <!-- <Tasks>
+    <PackCollection
+      name="slipRateCollection"
+      objectPath="ElementRegions/Fault/FractureSubRegion"
+      fieldName="slipRate"
+      setNames="{source}"/>
+
+    <PackCollection
+      name="pressureCollection"
+      objectPath="ElementRegions/Fault/FractureSubRegion"
+      fieldName="pressure"
+      setNames="{source}"/>    
+   </Tasks> -->
+
+  <Events
+    maxTime="4.5e4"
+    maxCycle="1">
+
+    <SoloEvent 
+      name="generateFault"
+      target="/Solvers/SurfaceGen"/>
+
+    <PeriodicEvent
+      name="vtkOutput"
+      cycleFrequency="1"
+      targetExactTimestep="0"
+      target="/Outputs/vtkOutput"/>  
+      
+    <PeriodicEvent
+      name="solverApplications"
+      maxEventDt="1e4"
+      target="/Solvers/stressSolver"/>
+
+    <!-- <PeriodicEvent
+      name="resarts"
+      timeFrequency="2e4"
+      targetExactTimestep="0"
+      target="/Outputs/restart"/>   -->
+  </Events> 
+</Problem>

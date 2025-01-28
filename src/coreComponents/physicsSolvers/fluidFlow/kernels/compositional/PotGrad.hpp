@@ -46,7 +46,7 @@ struct PotGrad
   compute ( integer const numPhase,
             integer const ip,
             integer const hasCapPressure,
-            integer const useNewGravity,
+            integer const checkPhasePresenceInGravity,
             localIndex const ( &seri )[numFluxSupportPoints],
             localIndex const ( &sesri )[numFluxSupportPoints],
             localIndex const ( &sei )[numFluxSupportPoints],
@@ -62,6 +62,7 @@ struct PotGrad
             ElementViewConst< arrayView3d< real64 const, constitutive::cappres::USD_CAPPRES > > const & phaseCapPressure,
             ElementViewConst< arrayView4d< real64 const, constitutive::cappres::USD_CAPPRES_DS > > const & dPhaseCapPressure_dPhaseVolFrac,
             real64 & potGrad,
+            real64 & dPotGrad_dTrans,
             real64 ( & dPresGrad_dP )[numFluxSupportPoints],
             real64 ( & dPresGrad_dC )[numFluxSupportPoints][numComp],
             real64 ( & dGravHead_dP )[numFluxSupportPoints],
@@ -85,10 +86,16 @@ struct PotGrad
     real64 dDensMean_dC[numFluxSupportPoints][numComp]{};
 
     real64 presGrad = 0.0;
+    real64 dPresGrad_dTrans = 0.0;
     real64 gravHead = 0.0;
+    real64 dGravHead_dTrans = 0.0;
     real64 dCapPressure_dC[numComp]{};
 
-    calculateMeanDensity( useNewGravity, ip, seri, sesri, sei, phaseVolFrac, dCompFrac_dCompDens, phaseMassDens, dPhaseMassDens, densMean, dDensMean_dP, dDensMean_dC );
+    calculateMeanDensity( checkPhasePresenceInGravity, ip,
+                          seri, sesri, sei,
+                          phaseVolFrac, dCompFrac_dCompDens,
+                          phaseMassDens, dPhaseMassDens,
+                          densMean, dDensMean_dP, dDensMean_dC );
 
     /// compute the TPFA potential difference
     for( integer i = 0; i < numFluxSupportPoints; i++ )
@@ -122,22 +129,25 @@ struct PotGrad
         }
       }
 
-      presGrad += trans[i] * (pres[er][esr][ei] - capPressure);
-      dPresGrad_dP[i] += trans[i] * (1 - dCapPressure_dP)
-                         + dTrans_dPres[i] * (pres[er][esr][ei] - capPressure);
+      real64 const dP = pres[er][esr][ei] - capPressure;
+      presGrad += trans[i] * dP;
+      dPresGrad_dTrans += dP;
+      dPresGrad_dP[i] += trans[i] * (1 - dCapPressure_dP) + dTrans_dPres[i] * dP;
       for( integer jc = 0; jc < numComp; ++jc )
       {
         dPresGrad_dC[i][jc] += -trans[i] * dCapPressure_dC[jc];
       }
 
-      real64 const gravD     = trans[i] * gravCoef[er][esr][ei];
-      real64 const dGravD_dP = dTrans_dPres[i] * gravCoef[er][esr][ei];
+      real64 const gC = gravCoef[er][esr][ei];
+      real64 const gravD = trans[i] * gC;
+      real64 const dGravD_dTrans = gC;
+      real64 const dGravD_dP = dTrans_dPres[i] * gC;
 
       // the density used in the potential difference is always a mass density
       // unlike the density used in the phase mobility, which is a mass density
       // if useMass == 1 and a molar density otherwise
       gravHead += densMean * gravD;
-
+      dGravHead_dTrans += densMean * dGravD_dTrans;
       // need to add contributions from both cells the mean density depends on
       for( integer j = 0; j < numFluxSupportPoints; ++j )
       {
@@ -151,13 +161,13 @@ struct PotGrad
 
     // compute phase potential gradient
     potGrad = presGrad - gravHead;
-
+    dPotGrad_dTrans = dPresGrad_dTrans - dGravHead_dTrans;
   }
 
   template< integer numComp, integer numFluxSupportPoints >
   GEOS_HOST_DEVICE
   static void
-  calculateMeanDensity( integer const useNewGravity,
+  calculateMeanDensity( integer const checkPhasePresenceInGravity,
                         integer const ip,
                         localIndex const ( &seri )[numFluxSupportPoints],
                         localIndex const ( &sesri )[numFluxSupportPoints],
@@ -178,7 +188,7 @@ struct PotGrad
       localIndex const ei  = sei[i];
 
       bool const phaseExists = (phaseVolFrac[er][esr][ei][ip] > 0);
-      if( useNewGravity && !phaseExists )
+      if( checkPhasePresenceInGravity && !phaseExists )
       {
         continue;
       }
