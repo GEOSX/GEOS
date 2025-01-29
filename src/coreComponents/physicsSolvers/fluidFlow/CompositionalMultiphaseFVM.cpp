@@ -633,8 +633,6 @@ real64 CompositionalMultiphaseFVM::scalingForSystemSolution( DomainPartition & d
     } );
   } );
 
-  GEOS_LOG( "x"<<pushCount<<" push!" );
-  GEOS_LOG( "regionDeltaPresMaxLoc.size()="<<regionDeltaPresMaxLoc.size());
   auto globalDeltaPresMax = MpiWrapper::maxPair< real64, globalIndex >( regionDeltaPresMaxLoc );
   auto globalDeltaCompDensMax = MpiWrapper::maxPair< real64, globalIndex >( regionDeltaCompDensMaxLoc );
 
