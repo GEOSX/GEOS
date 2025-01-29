@@ -62,7 +62,7 @@ list_xml_files_git ()
         exit 1
     fi
     local prefix=$(cd $path; git rev-parse --show-prefix 2>/dev/null)
-    git --git-dir=$git_root/.git ls-files $prefix | grep -e ".*[.]xml$" | sed "s|^|$git_root/|g"
+    cd $path; git --git-dir=$git_root/.git ls-files $prefix | grep -e ".*[.]xml$" | sed "s|^|$git_root/|g"
 }
 
 # emit location
