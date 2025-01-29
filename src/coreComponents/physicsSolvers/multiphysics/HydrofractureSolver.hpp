@@ -179,7 +179,7 @@ public:
 
     constexpr static char const * isLaggingFractureStencilWeightsUpdateString() { return "isLaggingFractureStencilWeightsUpdate"; }
 
-    constexpr static char const * leakoffConstString() {return "leakoffConst"; }
+    constexpr static char const * leakoffConstString() {return "leakoffCoefficient"; }
 
 #ifdef GEOS_USE_SEPARATION_COEFFICIENT
     constexpr static char const * separationCoeff0String() { return "separationCoeff0"; }
@@ -264,11 +264,8 @@ private:
   // flag to determine whether or not to apply lagging update for the fracture stencil weights
   integer m_isLaggingFractureStencilWeightsUpdate;
 
-  // record to fracture cell creatition time
-  std::vector<double> m_fractureCreationTime;
-
   // analytical leakoff coefficient
-  real64 m_leakoffConst;
+  real64 m_leakoffCoefficient;
 };
 
 ENUM_STRINGS( HydrofractureSolver< SinglePhasePoromechanics< SinglePhaseBase > >::InitializationType,
