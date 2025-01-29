@@ -83,9 +83,8 @@ list_xml_files_git ()
 }
 
 
-
+git --version
 # emit location
-ls -l
 pwd
 
 # create/nullify the log file
