@@ -146,16 +146,14 @@ void SolidMechanicsStatistics::computeNodeStatistics( MeshLevel & mesh, real64 c
   nodeStatistics.minDisplacement[1] = minDispY.get();
   nodeStatistics.minDisplacement[2] = minDispZ.get();
 
-  MpiWrapper::allReduce( nodeStatistics.maxDisplacement.data(),
-                         nodeStatistics.maxDisplacement.data(),
-                         3,
-                         MpiWrapper::getMpiOp( MpiWrapper::Reduction::Max ),
+  MpiWrapper::allReduce( nodeStatistics.maxDisplacement,
+                         nodeStatistics.maxDisplacement,
+                         MpiWrapper::Reduction::Max,
                          MPI_COMM_GEOS );
 
-  MpiWrapper::allReduce( nodeStatistics.minDisplacement.data(),
-                         nodeStatistics.minDisplacement.data(),
-                         3,
-                         MpiWrapper::getMpiOp( MpiWrapper::Reduction::Min ),
+  MpiWrapper::allReduce( nodeStatistics.minDisplacement,
+                         nodeStatistics.minDisplacement,
+                         MpiWrapper::Reduction::Min,
                          MPI_COMM_GEOS );
 
   TableData mechanicsData;

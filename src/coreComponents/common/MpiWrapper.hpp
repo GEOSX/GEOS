@@ -22,6 +22,7 @@
 
 #include "common/DataTypes.hpp"
 #include "common/Span.hpp"
+#include "common/TypesHelpers.hpp"
 
 #include <numeric>
 
@@ -130,7 +131,10 @@ public:
     Min,  //!< Min
     Sum,  //!< Sum
     Prod, //!< Prod
+    LogicalAnd, //!< Logical and
+    LogicalOr, //!< Logical or
   };
+
   /**
    * @enum PairReduction
    * Strongly typed enum class for calling collective functions processing pairs (ie. indexed values).
@@ -140,6 +144,7 @@ public:
     Max, //!< Max pair first value
     Min, //!< Min pair first value
   };
+
   /**
    * @struct PairType
    * Represents a pair of values. `first` (typically, a given measure) is the primary value for comparison,
@@ -374,18 +379,6 @@ public:
                         MPI_Comm comm = MPI_COMM_GEOS );
 
   /**
-   * @brief Strongly typed wrapper around MPI_Allreduce.
-   * @param[in] sendbuf The pointer to the sending buffer.
-   * @param[out] recvbuf The pointer to the receive buffer.
-   * @param[in] count The number of values to send/receive.
-   * @param[in] op The MPI_Op to perform.
-   * @param[in] comm The MPI_Comm over which the gather operates.
-   * @return The return value of the underlying call to MPI_Allreduce().
-   */
-  template< typename T >
-  static int allReduce( T const * sendbuf, T * recvbuf, int count, MPI_Op op, MPI_Comm comm = MPI_COMM_GEOS );
-
-  /**
    * @brief Convenience wrapper for the MPI_Allreduce function.
    * @tparam T type of data to reduce. Must correspond to a valid MPI_Datatype.
    * @param value The value to send to the reduction.
@@ -406,6 +399,29 @@ public:
    */
   template< typename T >
   static void allReduce( Span< T const > src, Span< T > dst, Reduction const op, MPI_Comm comm = MPI_COMM_GEOS );
+
+  /**
+   * @brief Convenience wrapper for the MPI_Allreduce function. Version for arrays.
+   * @tparam T type of data to reduce. Must correspond to a valid MPI_Datatype.
+   * @param src[in] The values to send to the reduction.
+   * @param dst[out] The resulting values.
+   * @param op The Reduction enum to perform.
+   * @param comm The communicator.
+   */
+  template< typename SRC_CONTAINER_TYPE, typename DST_CONTAINER_TYPE >
+  static void allReduce( SRC_CONTAINER_TYPE const & src, DST_CONTAINER_TYPE & dst, Reduction const op, MPI_Comm const comm = MPI_COMM_GEOS );
+
+  /**
+   * @brief Convenience wrapper for the MPI_Allreduce function. Version for arrays.
+   * @tparam T type of data to reduce. Must correspond to a valid MPI_Datatype.
+   * @param src[in] The values to send to the reduction.
+   * @param dst[out] The resulting values.
+   * @param count The number of contiguos elements of the arrays to perform the reduction on (must be leq than the size).
+   * @param op The Reduction enum to perform.
+   * @param comm The communicator.
+   */
+  template< typename SRC_CONTAINER_TYPE, typename DST_CONTAINER_TYPE >
+  static void allReduce( SRC_CONTAINER_TYPE const & src, DST_CONTAINER_TYPE & dst, int const count, Reduction const op, MPI_Comm const comm );
 
   /**
    * @brief Perform a collective reduction on a pair using MPI.
@@ -714,6 +730,19 @@ public:
   template< typename FIRST, typename SECOND, typename CONTAINER >
   static PairType< FIRST, SECOND > maxPair( CONTAINER const & pairs, MPI_Comm comm = MPI_COMM_GEOS );
 
+private:
+
+  /**
+   * @brief Strongly typed wrapper around MPI_Allreduce.
+   * @param[in] sendbuf The pointer to the sending buffer.
+   * @param[out] recvbuf The pointer to the receive buffer.
+   * @param[in] count The number of values to send/receive.
+   * @param[in] op The MPI_Op to perform.
+   * @param[in] comm The MPI_Comm over which the gather operates.
+   * @return The return value of the underlying call to MPI_Allreduce().
+   */
+  template< typename T >
+  static int allReduce( T const * sendbuf, T * recvbuf, int count, MPI_Op op, MPI_Comm comm = MPI_COMM_GEOS );
 };
 
 namespace internal
@@ -841,6 +870,14 @@ inline MPI_Op MpiWrapper::getMpiOp( Reduction const op )
     case Reduction::Prod:
     {
       return MPI_PROD;
+    }
+    case Reduction::LogicalAnd:
+    {
+      return MPI_LAND;
+    }
+    case Reduction::LogicalOr:
+    {
+      return MPI_LOR;
     }
     default:
       GEOS_ERROR( "Unsupported reduction operation" );
@@ -1250,6 +1287,35 @@ T MpiWrapper::allReduce( T const & value, Reduction const op, MPI_Comm const com
 template< typename T >
 void MpiWrapper::allReduce( Span< T const > const src, Span< T > const dst, Reduction const op, MPI_Comm const comm )
 {
+  GEOS_ASSERT_EQ( src.size(), dst.size() );
+  allReduce( src.data(), dst.data(), LvArray::integerConversion< int >( src.size() ), getMpiOp( op ), comm );
+}
+
+template< typename SRC_CONTAINER_TYPE, typename DST_CONTAINER_TYPE >
+void MpiWrapper::allReduce( SRC_CONTAINER_TYPE const & src, DST_CONTAINER_TYPE & dst, int const count, Reduction const op, MPI_Comm const comm )
+{
+  static_assert( std::is_trivially_copyable< typename get_value_type< SRC_CONTAINER_TYPE >::type >::value,
+                 "The type in the source container must be trivially copyable." );
+  static_assert( std::is_trivially_copyable< typename get_value_type< DST_CONTAINER_TYPE >::type >::value,
+                 "The type in the destination container must be trivially copyable." );
+  static_assert( std::is_same< typename get_value_type< SRC_CONTAINER_TYPE >::type,
+                               typename get_value_type< DST_CONTAINER_TYPE >::type >::value,
+                 "Source and destination containers must have the same value type." );
+  GEOS_ASSERT_GE( src.size(), count );
+  GEOS_ASSERT_GE( dst.size(), count );
+  allReduce( src.data(), dst.data(), count, getMpiOp( op ), comm );
+}
+
+template< typename SRC_CONTAINER_TYPE, typename DST_CONTAINER_TYPE >
+void MpiWrapper::allReduce( SRC_CONTAINER_TYPE const & src, DST_CONTAINER_TYPE & dst, Reduction const op, MPI_Comm const comm )
+{
+  static_assert( std::is_trivially_copyable< typename get_value_type< SRC_CONTAINER_TYPE >::type >::value,
+                 "The type in the source container must be trivially copyable." );
+  static_assert( std::is_trivially_copyable< typename get_value_type< DST_CONTAINER_TYPE >::type >::value,
+                 "The type in the destination container must be trivially copyable." );
+  static_assert( std::is_same< typename get_value_type< SRC_CONTAINER_TYPE >::type,
+                               typename get_value_type< DST_CONTAINER_TYPE >::type >::value,
+                 "Source and destination containers must have the same value type." );
   GEOS_ASSERT_EQ( src.size(), dst.size() );
   allReduce( src.data(), dst.data(), LvArray::integerConversion< int >( src.size() ), getMpiOp( op ), comm );
 }
