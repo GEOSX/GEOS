@@ -76,8 +76,8 @@ echo -n > $LOGFILE
 for path in "$@"; do
     # emit location
     echo $path
-    local git_root_c=$(cd $path; git rev-parse --show-toplevel 2>/dev/null)
-    local prefix_c=$(cd $path; git rev-parse --show-prefix 2>/dev/null)
+    git_root_c=$(cd $path; git rev-parse --show-toplevel 2>/dev/null)
+    prefix_c=$(cd $path; git rev-parse --show-prefix 2>/dev/null)
     echo $git_root_c
     echo $prefix_c
     echo $git_root"/.git"
