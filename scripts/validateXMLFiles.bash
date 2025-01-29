@@ -62,8 +62,7 @@ list_xml_files_git ()
         exit 1
     fi
     local prefix=$(cd $path; git rev-parse --show-prefix 2>/dev/null)
-    echo $git_root
-    cd $path; git --git-dir=$git_root"/.git" ls-files $prefix | grep -e ".*[.]xml$" | sed "s|^|$git_root/|g"
+    git --git-dir=$git_root"/.git" ls-files $prefix | grep -e ".*[.]xml$" | sed "s|^|$git_root/|g"
 }
 
 # emit location
@@ -77,6 +76,11 @@ echo -n > $LOGFILE
 for path in "$@"; do
     # emit location
     echo $path
+    local git_root_c=$(cd $path; git rev-parse --show-toplevel 2>/dev/null)
+    local prefix_c=$(cd $path; git rev-parse --show-prefix 2>/dev/null)
+    echo $git_root_c
+    echo $prefix_c
+    echo $git_root"/.git"
     list_xml_files_$METHOD $path | $XARGS xmllint --schema $SCHEMA --noout >> $LOGFILE 2>&1
 done
 
