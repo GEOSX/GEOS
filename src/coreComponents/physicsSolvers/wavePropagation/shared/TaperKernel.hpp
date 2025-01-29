@@ -31,7 +31,7 @@ struct TaperKernel
 
   /**
    * @brief Compute coefficients for the taper layers. In this computation the choice of the taper length (sizeT) and the coefficient of
-   *reflection (r)
+   * reflection (r)
    *        highly depends on the model. Usually R will be between 10^{-3} and 1 ans you need to find a compromise with sizeT.
    * @tparam EXEC_POLICY the execution policy
    * @param[in] size the number of nodes
