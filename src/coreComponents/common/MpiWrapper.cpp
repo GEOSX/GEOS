@@ -439,6 +439,7 @@ int MpiWrapper::nodeCommSize()
   MPI_Comm_size( nodeComm, &nodeCommSize );
   return nodeCommSize;
 }
+
 } /* namespace geos */
 
 #if defined(__clang__)
