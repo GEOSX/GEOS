@@ -62,15 +62,10 @@ list_xml_files_git ()
         exit 1
     fi
     local prefix=$(cd $path; git rev-parse --show-prefix 2>/dev/null)
-    git --git-dir=$git_root/.git ls-files $prefix | grep -e .*[.]xml$ | sed "s|^|$git_root/|g"
+    git --git-dir=$git_root/.git ls-files $prefix | grep -e ".*[.]xml$" | sed "s|^|$git_root/|g"
 }
 
 # emit location
-ls -l
-pwd
-echo $path
-
-cd ..
 ls -l
 pwd
 
@@ -79,6 +74,8 @@ echo -n > $LOGFILE
 
 # validate each path separately and write results in the log
 for path in "$@"; do
+    # emit location
+    echo $path
     list_xml_files_$METHOD $path | $XARGS xmllint --schema $SCHEMA --noout >> $LOGFILE 2>&1
 done
 
