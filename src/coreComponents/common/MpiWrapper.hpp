@@ -805,14 +805,15 @@ template< typename FIRST, typename SECOND >
 struct mpiPairType
 { /* no default get() implementation, please add a template specialization and add it in the "testMpiWrapper" unit test. */ };
 
-template<> struct mpiPairType< float, int32_t > {   static MPI_Datatype get() { return MPI_FLOAT_INT; } };
-template<> struct mpiPairType< double, int32_t > {  static MPI_Datatype get() { return MPI_DOUBLE_INT; } };
-template<> struct mpiPairType< int64_t, int32_t > { static MPI_Datatype get() { return MPI_LONG_INT; } };
-template<> struct mpiPairType< int32_t, int32_t > { static MPI_Datatype get() { return MPI_2INT; } };
-template<> struct mpiPairType< int16_t, int32_t > { static MPI_Datatype get() { return MPI_SHORT_INT; } };
-template<> struct mpiPairType< int64_t, int64_t > { static MPI_Datatype get() { return getMpiCustomPairType< long, int64_t >(); } };
-template<> struct mpiPairType< double, int64_t > {  static MPI_Datatype get() { return getMpiCustomPairType< double, int64_t >(); } };
-template<> struct mpiPairType< double, double > {   static MPI_Datatype get() { return getMpiCustomPairType< double, double >(); } };
+template<> struct mpiPairType< float, int > {    static MPI_Datatype get() { return MPI_FLOAT_INT; } };
+template<> struct mpiPairType< double, int > {   static MPI_Datatype get() { return MPI_DOUBLE_INT; } };
+template<> struct mpiPairType< int, int > {      static MPI_Datatype get() { return MPI_2INT; } };
+template<> struct mpiPairType< long int, int > { static MPI_Datatype get() { return MPI_LONG_INT; } };
+template<> struct mpiPairType< long int, long int > {           static MPI_Datatype get() { return getMpiCustomPairType< long int, long int >(); } };
+template<> struct mpiPairType< long long int, long long int > { static MPI_Datatype get() { return getMpiCustomPairType< long long int, long long int >(); } };
+template<> struct mpiPairType< double, long int > {             static MPI_Datatype get() { return getMpiCustomPairType< double, long int >(); } };
+template<> struct mpiPairType< double, long long int > {        static MPI_Datatype get() { return getMpiCustomPairType< double, long long int >(); } };
+template<> struct mpiPairType< double, double > {               static MPI_Datatype get() { return getMpiCustomPairType< double, double >(); } };
 
 // It is advised to always use this custom operator for pairs as MPI_MAXLOC is not a true lexicographical comparator.
 template< typename FIRST, typename SECOND, MpiWrapper::PairReduction OP >
