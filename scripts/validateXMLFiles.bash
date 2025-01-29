@@ -39,6 +39,8 @@ if [ "$METHOD" = "git" ] && ! (hash git &> /dev/null); then
     exit
 else
     GIT_REPO_DIR=$2;
+    echo "INFO: The specified GIT_REPO_DIR"
+    echo $GIT_REPO_DIR
     # Check GIT_REPO_DIR and its existence. Then add it to Git safe directories
     if [ -z "$GIT_REPO_DIR" ]; then
         echo "Error: GIT_REPO_DIR is not set." && exit 1
