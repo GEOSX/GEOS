@@ -30,8 +30,8 @@
 #include "physicsSolvers/solidMechanics/SolidMechanicsFields.hpp"
 #include "physicsSolvers/solidMechanics/SolidMechanicsLagrangianFEM.hpp"
 #include "physicsSolvers/solidMechanics/kernels/ImplicitSmallStrainQuasiStatic.hpp"
-#include "physicsSolvers/contact/SolidMechanicsLagrangeContact.hpp"
-#include "physicsSolvers/contact/SolidMechanicsEmbeddedFractures.hpp"
+#include "physicsSolvers/solidMechanics/contact/SolidMechanicsLagrangeContact.hpp"
+#include "physicsSolvers/solidMechanics/contact/SolidMechanicsEmbeddedFractures.hpp"
 #include "physicsSolvers/fluidFlow/SinglePhaseHybridFVM.hpp"
 
 namespace geos

@@ -22,7 +22,7 @@
 #define GEOS_PHYSICSSOLVERS_CONTACT_CONTACTSOLVERBASE_HPP_
 
 #include "physicsSolvers/solidMechanics/SolidMechanicsLagrangianFEM.hpp"
-#include "physicsSolvers/contact/ContactFields.hpp"
+#include "physicsSolvers/solidMechanics/contact/ContactFields.hpp"
 
 namespace geos
 {

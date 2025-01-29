@@ -20,7 +20,7 @@
 #include "SinglePhasePoromechanicsEmbeddedFractures.hpp"
 #include "constitutive/contact/HydraulicApertureRelationSelector.hpp"
 #include "constitutive/fluid/singlefluid/SingleFluidBase.hpp"
-#include "physicsSolvers/contact/kernels/SolidMechanicsEFEMKernelsHelper.hpp"
+#include "physicsSolvers/solidMechanics/contact/kernels/SolidMechanicsEFEMKernelsHelper.hpp"
 #include "physicsSolvers/fluidFlow/SinglePhaseBase.hpp"
 #include "physicsSolvers/multiphysics/poromechanicsKernels/SinglePhasePoromechanicsEFEM.hpp"
 #include "physicsSolvers/multiphysics/poromechanicsKernels/SinglePhasePoromechanics.hpp"
@@ -83,7 +83,7 @@ void SinglePhasePoromechanicsEmbeddedFractures::registerDataOnMesh( dataReposito
     elemManager.forElementSubRegions< EmbeddedSurfaceSubRegion >( regionNames, [&] ( localIndex const,
                                                                                      EmbeddedSurfaceSubRegion & subRegion )
     {
-      subRegion.registerField< fields::contact::dTraction_dPressure >( getName() );
+      subRegion.registerField< contact::dTraction_dPressure >( getName() );
     } );
   } );
 }
@@ -117,7 +117,7 @@ void SinglePhasePoromechanicsEmbeddedFractures::setupCoupling( DomainPartition c
   } );
 
   dofManager.addCoupling( SinglePhaseBase::viewKeyStruct::elemDofFieldString(),
-                          fields::contact::dispJump::key(),
+                          contact::dispJump::key(),
                           DofManager::Connector::Elem,
                           meshTargets );
 }
@@ -193,7 +193,7 @@ void SinglePhasePoromechanicsEmbeddedFractures::addCouplingNumNonzeros( DomainPa
   {
     ElementRegionManager const & elemManager = mesh.getElemManager();
 
-    string const jumpDofKey = dofManager.getKey( fields::contact::dispJump::key() );
+    string const jumpDofKey = dofManager.getKey( contact::dispJump::key() );
     string const flowDofKey = dofManager.getKey( SinglePhaseBase::viewKeyStruct::elemDofFieldString() );
 
     globalIndex const rankOffset = dofManager.rankOffset();
@@ -301,7 +301,7 @@ void SinglePhasePoromechanicsEmbeddedFractures::addCouplingSparsityPattern( Doma
   {
     ElementRegionManager const & elemManager = mesh.getElemManager();
 
-    string const jumpDofKey = dofManager.getKey( fields::contact::dispJump::key() );
+    string const jumpDofKey = dofManager.getKey( contact::dispJump::key() );
     string const pressureDofKey = dofManager.getKey( SinglePhaseBase::viewKeyStruct::elemDofFieldString() );
 
     globalIndex const rankOffset = dofManager.rankOffset();
@@ -440,7 +440,7 @@ void SinglePhasePoromechanicsEmbeddedFractures::assembleSystem( real64 const tim
     }
 
     // 3. Assemble poroelastic fluxes and all derivatives
-    string const jumpDofKey = dofManager.getKey( fields::contact::dispJump::key() );
+    string const jumpDofKey = dofManager.getKey( contact::dispJump::key() );
     flowSolver()->assembleEDFMFluxTerms( time_n, dt,
                                          domain,
                                          dofManager,
@@ -475,27 +475,27 @@ void SinglePhasePoromechanicsEmbeddedFractures::updateState( DomainPartition & d
                                                                                      auto & subRegion )
     {
       arrayView2d< real64 const > const dispJump =
-        subRegion.template getField< fields::contact::dispJump >();
+        subRegion.template getField< contact::dispJump >();
 
       arrayView1d< real64 > const aperture = subRegion.getElementAperture();
 
       arrayView1d< real64 > const hydraulicAperture =
-        subRegion.template getField< fields::flow::hydraulicAperture >();
+        subRegion.template getField< flow::hydraulicAperture >();
 
       arrayView1d< real64 const > const oldHydraulicAperture =
-        subRegion.template getField< fields::flow::aperture0 >();
+        subRegion.template getField< flow::aperture0 >();
 
       arrayView1d< real64 const > const volume = subRegion.getElementVolume();
 
       arrayView1d< real64 > const deltaVolume =
-        subRegion.template getField< fields::flow::deltaVolume >();
+        subRegion.template getField< flow::deltaVolume >();
 
       arrayView1d< real64 const > const area = subRegion.getElementArea().toViewConst();
 
-      arrayView2d< real64 > const & fractureContactTraction = subRegion.template getField< fields::contact::traction >();
+      arrayView2d< real64 > const & fractureContactTraction = subRegion.template getField< contact::traction >();
 
       arrayView1d< real64 const > const & pressure =
-        subRegion.template getField< fields::flow::pressure >();
+        subRegion.template getField< flow::pressure >();
 
       string const & hydraulicApertureRelationName = subRegion.template getReference< string >( viewKeyStruct::hydraulicApertureRelationNameString()  );
       HydraulicApertureBase const & hydraulicApertureModel = this->template getConstitutiveModel< HydraulicApertureBase >( subRegion, hydraulicApertureRelationName );

@@ -21,7 +21,7 @@
 #ifndef GEOS_PHYSICSSOLVERS_CONTACT_SOLIDMECHANICSEMBEDDEDFRACTURES_HPP_
 #define GEOS_PHYSICSSOLVERS_CONTACT_SOLIDMECHANICSEMBEDDEDFRACTURES_HPP_
 
-#include "physicsSolvers/contact/ContactSolverBase.hpp"
+#include "physicsSolvers/solidMechanics/contact/ContactSolverBase.hpp"
 
 namespace geos
 {

@@ -43,10 +43,6 @@ set( physicsSolvers_sources
      PhysicsSolverBase.cpp
      SolverStatistics.cpp )
 
-if( GEOS_ENABLE_CONTACT )
-  add_subdirectory( contact )
-endif()
-
 if( GEOS_ENABLE_FLUIDFLOW )
   add_subdirectory( fluidFlow )
 endif()

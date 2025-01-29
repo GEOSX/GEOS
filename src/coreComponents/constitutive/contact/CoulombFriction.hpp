@@ -21,6 +21,8 @@
 #define GEOS_CONSTITUTIVE_CONTACT_COULOMBFRICTION_HPP_
 
 #include "FrictionBase.hpp"
+#include "physicsSolvers/solidMechanics/contact/FractureState.hpp"
+#include "LvArray/src/tensorOps.hpp"
 
 namespace geos
 {
@@ -241,13 +243,15 @@ inline void CoulombFrictionUpdates::computeShearTraction( localIndex const k,
                                                           arraySlice1d< real64 > const & tractionVector,
                                                           arraySlice2d< real64 > const & dTractionVector_dJump ) const
 {
+  using namespace fields::contact;
+
   // Compute the slip
   real64 const slip[2] = { dispJump[1] - oldDispJump[1],
                            dispJump[2] - oldDispJump[2] };
 
   switch( fractureState )
   {
-    case fields::contact::FractureState::Stick:
+    case FractureState::Stick:
     {
       // Elastic tangential deformation
 
@@ -263,7 +267,7 @@ inline void CoulombFrictionUpdates::computeShearTraction( localIndex const k,
 
       break;
     }
-    case fields::contact::FractureState::Slip:
+    case FractureState::Slip:
     {
       // Plastic tangential deformation
 
@@ -553,7 +557,6 @@ inline void CoulombFrictionUpdates::constraintCheck( arraySlice1d< real64 const 
                                                      real64 const slidingCheckTolerance,
                                                      integer & condConv ) const
 {
-
   using namespace fields::contact;
 
   // Compute the slip

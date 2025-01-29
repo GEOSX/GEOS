@@ -21,8 +21,8 @@
 #define GEOS_PHYSICSSOLVERS_MULTIPHYSICS_ONEWAYCOUPLEDFRACTUREFLOWCONTACTMECHANICS_HPP_
 
 #include "physicsSolvers/multiphysics/CoupledSolver.hpp"
-#include "physicsSolvers/contact/SolidMechanicsLagrangeContactBubbleStab.hpp"
 #include "physicsSolvers/fluidFlow/SinglePhaseBase.hpp"
+#include "physicsSolvers/solidMechanics/contact/SolidMechanicsLagrangeContactBubbleStab.hpp"
 #include "dataRepository/Group.hpp"
 
 namespace geos

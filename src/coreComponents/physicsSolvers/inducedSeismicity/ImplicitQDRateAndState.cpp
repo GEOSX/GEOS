@@ -23,7 +23,7 @@
 #include "mesh/DomainPartition.hpp"
 #include "kernels/ImplicitRateAndStateKernels.hpp"
 #include "rateAndStateFields.hpp"
-#include "physicsSolvers/contact/ContactFields.hpp"
+#include "physicsSolvers/solidMechanics/contact/ContactFields.hpp"
 
 
 namespace geos

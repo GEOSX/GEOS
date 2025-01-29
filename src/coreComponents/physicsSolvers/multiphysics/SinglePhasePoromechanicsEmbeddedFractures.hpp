@@ -21,7 +21,7 @@
 #define GEOS_PHYSICSSOLVERS_MULTIPHYSICS_SINGLEPHASEPOROMECHANICSEMBEDDEDFRACTURES_HPP_
 
 #include "physicsSolvers/multiphysics/SinglePhasePoromechanics.hpp"
-#include "physicsSolvers/contact/SolidMechanicsEmbeddedFractures.hpp"
+#include "physicsSolvers/solidMechanics/contact/SolidMechanicsEmbeddedFractures.hpp"
 #include "physicsSolvers/fluidFlow/SinglePhaseBase.hpp"
 
 namespace geos

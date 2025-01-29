@@ -22,7 +22,7 @@
 #include "dataRepository/InputFlags.hpp"
 #include "mesh/DomainPartition.hpp"
 #include "rateAndStateFields.hpp"
-#include "physicsSolvers/contact/ContactFields.hpp"
+#include "physicsSolvers/solidMechanics/contact/ContactFields.hpp"
 #include "fieldSpecification/FieldSpecificationManager.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
 

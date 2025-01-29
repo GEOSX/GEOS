@@ -20,7 +20,7 @@
 #define GEOS_PHYSICSSOLVERS_MULTIPHYSICS_MULTIPHASEPOROMECHANICSCONFORMINGFRACTURES_HPP_
 
 #include "physicsSolvers/multiphysics/MultiphasePoromechanics.hpp"
-#include "physicsSolvers/contact/SolidMechanicsLagrangeContact.hpp"
+#include "physicsSolvers/solidMechanics/contact/SolidMechanicsLagrangeContact.hpp"
 
 namespace geos
 {

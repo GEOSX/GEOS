@@ -22,6 +22,25 @@ set( physicsSolvers_headers
      solidMechanics/kernels/ImplicitSmallStrainQuasiStatic_impl.hpp
      solidMechanics/SolidMechanicsStateReset.hpp
      solidMechanics/SolidMechanicsStatistics.hpp
+     solidMechanics/contact/ContactSolverBase.hpp
+     solidMechanics/contact/FractureState.hpp
+     solidMechanics/contact/ContactFields.hpp
+     solidMechanics/contact/SolidMechanicsEmbeddedFractures.hpp
+     solidMechanics/contact/SolidMechanicsLagrangeContact.hpp
+     solidMechanics/contact/SolidMechanicsLagrangeContactBubbleStab.hpp
+     solidMechanics/contact/SolidMechanicsAugmentedLagrangianContact.hpp
+     solidMechanics/contact/kernels/SolidMechanicsConformingContactKernelsBase.hpp
+     solidMechanics/contact/kernels/SolidMechanicsDisplacementJumpUpdateKernels.hpp
+     solidMechanics/contact/kernels/SolidMechanicsEFEMKernelsBase.hpp
+     solidMechanics/contact/kernels/SolidMechanicsEFEMKernels.hpp
+     solidMechanics/contact/kernels/SolidMechanicsEFEMStaticCondensationKernels.hpp
+     solidMechanics/contact/kernels/SolidMechanicsEFEMKernelsHelper.hpp
+     solidMechanics/contact/kernels/SolidMechanicsALMKernelsBase.hpp
+     solidMechanics/contact/kernels/SolidMechanicsALMKernels.hpp
+     solidMechanics/contact/kernels/SolidMechanicsConformingContactKernelsHelper.hpp
+     solidMechanics/contact/kernels/SolidMechanicsContactFaceBubbleKernels.hpp
+     solidMechanics/contact/kernels/SolidMechanicsLagrangeContactKernels.hpp 
+     solidMechanics/contact/LogLevelsInfo.hpp
      PARENT_SCOPE )
 
 # Specify solver sources
@@ -32,6 +51,11 @@ set( physicsSolvers_sources
      solidMechanics/SolidMechanicsMPM.cpp
      solidMechanics/SolidMechanicsStateReset.cpp
      solidMechanics/SolidMechanicsStatistics.cpp
+     solidMechanics/contact/ContactSolverBase.cpp
+     solidMechanics/contact/SolidMechanicsEmbeddedFractures.cpp
+     solidMechanics/contact/SolidMechanicsLagrangeContact.cpp
+     solidMechanics/contact/SolidMechanicsLagrangeContactBubbleStab.cpp
+     solidMechanics/contact/SolidMechanicsAugmentedLagrangianContact.cpp
      PARENT_SCOPE )
 
 #include( solidMechanics/kernels/SolidMechanicsKernels.cmake)
