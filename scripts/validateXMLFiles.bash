@@ -68,6 +68,7 @@ list_xml_files_git ()
 # emit location
 ls -l
 pwd
+echo $path
 
 # create/nullify the log file
 echo -n > $LOGFILE
