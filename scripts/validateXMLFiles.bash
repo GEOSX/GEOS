@@ -17,6 +17,7 @@ if [ -z "$1" ]; then
 fi
 
 SCHEMA=$1; shift
+GIT_REPO_DIR=$2;
 LOGFILE=xml_validation_results.log
 
 # "-r" in GNU xargs omits the call if input is empty
@@ -38,7 +39,6 @@ if [ "$METHOD" = "git" ] && ! (hash git &> /dev/null); then
     >&2 echo "Error: git is required when -g or --git is specified"
     exit
 else
-    GIT_REPO_DIR=$2;
     echo "INFO: The specified GIT_REPO_DIR"
     echo $GIT_REPO_DIR
     # Check GIT_REPO_DIR and its existence. Then add it to Git safe directories
