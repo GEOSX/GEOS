@@ -38,7 +38,7 @@ if [ "$METHOD" = "git" ] && ! (hash git &> /dev/null); then
     >&2 echo "Error: git is required when -g or --git is specified"
     exit
 else
-    GIT_REPO_DIR=$2; shift
+    GIT_REPO_DIR=$2;
     # Check GIT_REPO_DIR and its existence. Then add it to Git safe directories
     if [ -z "$GIT_REPO_DIR" ]; then
         echo "Error: GIT_REPO_DIR is not set." && exit 1
