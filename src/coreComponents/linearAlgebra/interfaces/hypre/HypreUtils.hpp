@@ -541,7 +541,8 @@ enum class MGRFRelaxationType : HYPRE_Int
   l1backwardGaussSeidel = 14,       //!< \f$\ell_1\f$ Gauss-Seidel, backward solve
   l1jacobi = 18,                    //!< \f$\ell_1\f$-scaled Jacobi
   gsElimWPivoting = 99,             //!< Gaussian Elimination with pivoting direct solver (for small systems)
-  gsElimWInverse = 199              //!< Direct Inversion with Gaussian Elimination (OK for larger systems)
+  gsElimWInverse = 199,             //!< Direct Inversion with Gaussian Elimination (OK for larger systems)
+  blockJacobi = 0
 };
 
 /**

@@ -22,9 +22,10 @@
         lineSearchMaxCuts="2"
         maxTimeStepCuts="1"/>
       <LinearSolverParameters
-        solverType="direct"
+        solverType="gmres"
+        preconditionerType="mgr"
         directParallel="0"
-        logLevel="0"/>
+        logLevel="1"/>
     </SolidMechanicsLagrangeContactBubbleStab>
     
     <SurfaceGenerator
@@ -43,7 +44,7 @@
       yCoords="{ -5, 5 }"
       zCoords="{ -0.05, 0.05 }"
       nx="{ 400 }"
-      ny="{ 100}"
+      ny="{ 100 }"
       nz="{ 1 }"
       cellBlockNames="{ cb1 }"/>  
   </Mesh>
