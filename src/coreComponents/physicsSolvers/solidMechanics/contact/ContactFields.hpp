@@ -34,6 +34,22 @@ namespace fields
 namespace contact
 {
 
+DECLARE_FIELD( totalBubbleDisplacement,
+               "totalBubbleDisplacement",
+               array2d< real64 >,
+               0,
+               LEVEL_0,
+               WRITE_AND_READ,
+               "Total bubble displacements at the faces" );
+
+DECLARE_FIELD( incrementalBubbleDisplacement,
+               "incrementalBubbleDisplacement",
+               array2d< real64 >,
+               0,
+               LEVEL_3,
+               WRITE_AND_READ,
+               "Incremental bubble displacements for the current time step on the nodes" );
+
 DECLARE_FIELD( iterativePenalty,
                "iterativePenalty",
                array2d< real64 >,
@@ -176,7 +192,7 @@ DECLARE_FIELD( targetIncrementalJump,
                0,
                NOPLOT,
                WRITE_AND_READ,
-               "Target incremental jump in a timestep (e.g., slip coming from RS)." );
+               "It's the target incremental jump in a timestep (e.g., slip coming from RS)." );
 
 }
 
