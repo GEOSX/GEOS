@@ -160,6 +160,7 @@ if( ENABLE_XML_UPDATES AND ENABLE_MPI AND UNIX AND NOT ENABLE_CUDA AND NOT ENABL
 
   set(SCHEMA_DIR ${CMAKE_SOURCE_DIR}/coreComponents/schema)
   set(SCRIPT_DIR ${CMAKE_SOURCE_DIR}/../scripts)
+  set(GIT_SOURCE_DIR "${CMAKE_SOURCE_DIR}/..")
 
   add_custom_target( geosx_generate_schema
                      ALL
@@ -179,7 +180,7 @@ if( ENABLE_XML_UPDATES AND ENABLE_MPI AND UNIX AND NOT ENABLE_CUDA AND NOT ENABL
 
   add_custom_target( geosx_validate_all_xml_files
                      ALL
-                     COMMAND bash ${SCRIPT_DIR}/validateXMLFiles.bash -g ${SCHEMA_DIR}/schema.xsd ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/../examples ${CMAKE_SOURCE_DIR}/../inputFiles
+                     COMMAND bash ${SCRIPT_DIR}/validateXMLFiles.bash -g ${SCHEMA_DIR}/schema.xsd ${GIT_SOURCE_DIR} ${GIT_SOURCE_DIR}/examples ${GIT_SOURCE_DIR}/inputFiles
                      WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
                      DEPENDS geosx_generate_schema
                      COMMENT "Validating all XML files in the repository against the schema"

@@ -37,6 +37,23 @@ fi
 if [ "$METHOD" = "git" ] && ! (hash git &> /dev/null); then
     >&2 echo "Error: git is required when -g or --git is specified"
     exit
+else
+    GIT_REPO_DIR=$1;
+    echo "INFO: The specified GIT_REPO_DIR"
+    echo $GIT_REPO_DIR
+    # Check GIT_REPO_DIR and its existence. Then add it to Git safe directories
+    if [ -z "$GIT_REPO_DIR" ]; then
+        echo "Error: GIT_REPO_DIR is not set." && exit 1
+    elif [ ! -d "$GIT_REPO_DIR" ]; then
+        echo "Error: The specified GIT_REPO_DIR '$GIT_REPO_DIR' does not exist." && exit 1
+    else
+        echo "Adding '$GIT_REPO_DIR' to Git safe directories..."
+        git config --global --add safe.directory "$GIT_REPO_DIR" && \
+        echo "'$GIT_REPO_DIR' has been successfully added." || \
+        echo "Error: Failed to add '$GIT_REPO_DIR'."
+        echo "INFO: Printing safe.directory: "
+        git config --global --list | grep safe.directory
+    fi
 fi
 
 abs_path ()
@@ -62,15 +79,33 @@ list_xml_files_git ()
         exit 1
     fi
     local prefix=$(cd $path; git rev-parse --show-prefix 2>/dev/null)
-    git --git-dir=$git_root/.git ls-files $prefix | grep -e .*[.]xml$ | sed "s|^|$git_root/|g"
+    git --git-dir=$git_root"/.git" ls-files $prefix | grep -e ".*[.]xml$" | sed "s|^|$git_root/|g"
 }
+
+
+git --version
+# emit location
+pwd
 
 # create/nullify the log file
 echo -n > $LOGFILE
 
 # validate each path separately and write results in the log
 for path in "$@"; do
-    list_xml_files_$METHOD $path | $XARGS xmllint --schema $SCHEMA --noout >> $LOGFILE 2>&1
+    # emit location
+    echo $path
+    cd "$path" || { echo "Directory not found: $path"; exit 1; }
+    pwd
+    ls -la
+    git status
+    git_root_c=$(git rev-parse --show-toplevel 2>/dev/null)
+    prefix_c=$(git rev-parse --show-prefix 2>/dev/null)
+    echo $git_root_c
+    echo $prefix_c
+    echo $git_root"/.git"
+    collected_xml_files=$(list_xml_files_$METHOD $path)
+    echo $collected_xml_files
+    $collected_xml_files | $XARGS xmllint --schema $SCHEMA --noout >> $LOGFILE 2>&1
 done
 
 # print any failed validations on the stderr
