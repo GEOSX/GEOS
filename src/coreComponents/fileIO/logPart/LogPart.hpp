@@ -101,7 +101,7 @@ private:
 
     /// Name of the description, formatted to be : [Name] : [Values1]\n[Values2]
     std::vector< string > m_descriptionNames;
-    /// Values in the description 
+    /// Values in the description
     std::vector< std::vector< string > > m_descriptionsValues;
     /// Vector containing the descriptions formatted by formatDescriptions()
     std::vector< string > m_formattedDescriptionLines;
@@ -110,8 +110,29 @@ private:
     size_t m_logPartWidth;
     /// logPart length
     size_t m_logPartMaxWidth;
+    /// min width of logPart length
+    size_t m_logPartMinWidth;
+    /// min width of logPart length
+    size_t m_logPartMaxNameWidth;
   };
 
+  /**
+   * @brief Add a description to a specific section
+   * @param name The description name
+   * @param args Descriptions values to be concatened.
+   * @note Descriptions values can be be any formatted types. Values will be aligned altogether.
+   */
+  template< typename ... Args >
+  void addDescriptionBySection( LogPart::Description & description, string const & name, Args const &... args );
+
+  /**
+   * @brief Computes the initial log width based on the provided description and names.
+   * @param description A description object that contains the current log part
+   * @param descriptionNames A vector containing all name used in the log Part
+   */
+  void computeInitialLogWidth( LogPart::Description & description,
+                               std::vector< string > const & descriptionNames,
+                               std::vector< std::vector< string > > m_descriptionsValues );
   /**
    * @brief Build a description from the name and description values
    * @param name The decription name
@@ -132,11 +153,8 @@ private:
   /// prefix to append to the title of closing section
   string const m_prefixEndTitle = "End of ";
 
-  /// min width of logPart length
-  size_t m_rowMinWidth = 50;
-
-  Description m_startDesc = { "", {}, {}, {}, m_rowMinWidth, SIZE_MAX};
-  Description m_endDesc  = { "", {}, {}, {}, m_rowMinWidth, SIZE_MAX };
+  Description m_startDesc = { "", {}, {}, {}, 50, SIZE_MAX, 50, 0 };
+  Description m_endDesc  = { "", {}, {}, {}, 50, SIZE_MAX, 50, 0 };
 
   /// description border margin
   static constexpr size_t m_borderMargin = 2;
@@ -150,32 +168,35 @@ private:
 };
 
 template< typename ... Args >
-void LogPart::addDescription( string const & name, Args const &... args )
+void LogPart::addDescriptionBySection( Description & description, string const & name, Args const &... args )
 {
   std::vector< string > values;
+  size_t maxValueSize = 0;
+
   ( [&] {
     static_assert( has_formatter_v< decltype(args) >,
-                   "Argument passed in addRow cannot be converted to string" );
+                   "Argument passed cannot be converted to string" );
     string const value = GEOS_FMT( "{}", args );
     values.push_back( value );
+    maxValueSize = std::max( maxValueSize, value.size());
   } (), ...);
-  m_startDesc.m_descriptionNames.push_back( name );
-  m_startDesc.m_descriptionsValues.push_back( values );
+
+  description.m_descriptionNames.push_back( name );
+  description.m_descriptionsValues.push_back( values );
+  description.m_logPartWidth = std::min( description.m_logPartWidth, maxValueSize + 6 );
+
+}
+
+template< typename ... Args >
+void LogPart::addDescription( string const & name, Args const &... args )
+{
+  addDescriptionBySection( m_startDesc, name, args ... );
 }
 
 template< typename ... Args >
 void LogPart::addEndDescription( string const & name, Args const &... args )
 {
-  std::vector< string > values;
-  ( [&] {
-    static_assert( has_formatter_v< decltype(args) >,
-                   "Argument passed in addRow cannot be converted to string" );
-    string const value = GEOS_FMT( "{}", args );
-    values.push_back( value );
-  } (), ...);
-
-  m_endDesc.m_descriptionNames.push_back( name );
-  m_endDesc.m_descriptionsValues.push_back( values );
+  addDescriptionBySection( m_endDesc, name, args ... );
 }
 
 }

@@ -190,7 +190,6 @@ bool EventManager::run( DomainPartition & domain )
 
       // Execute, signal events
       bool earlyReturn = false;
-      std::cout << " pp d" << subEvent->getEventTarget()->getTimesteppingBehavior()<<std::endl;
       if( subEvent->hasToPrepareForExec() )
       {
         subEvent->signalToPrepareForExecution( m_time, m_dt, m_cycle, domain );
@@ -267,10 +266,10 @@ void EventManager::outputTime( LogPart & logPart ) const
   string const timeInfosUnfolded = timeInfo.toUnfoldedString() + timeCompletionUnfolded;
   string const timeCompletionSeconds = timeInfo.toSecondsString() + timeCompletionSecond;
 
-  logPart.addDescription( "- Time :", timeInfosUnfolded, timeCompletionSeconds );
-  logPart.addDescription( "- Delta Time :", units::TimeFormatInfo::fromSeconds( m_dt ).toString() );
-  logPart.addDescription( "- Cycle :", m_cycle, cycleLimited );
-  logPart.setMinWidth( 70 );
+  logPart.addDescription( "- Time : ", timeInfosUnfolded, timeCompletionSeconds );
+  logPart.addDescription( "- Delta Time : ", units::TimeFormatInfo::fromSeconds( m_dt ).toString() );
+  logPart.addDescription( "- Cycle : ", m_cycle, cycleLimited );
+  logPart.setMaxWidth(70 );
 
   // We are keeping the old outputs to keep compatibility with current log reading scripts.
   if( m_timeOutputFormat==TimeOutputFormat::full )
@@ -313,20 +312,19 @@ void EventManager::logEndOfCycleInformation( LogPart & logpart,
                                              integer const numOfSubSteps,
                                              std::vector< real64 > const & subStepDt ) const
 {
-  logpart.addEndDescription( "- Cycle:", cycleNumber );
-  logpart.addEndDescription( "- N substeps:", numOfSubSteps );
+  logpart.addEndDescription( "- Cycle: ", cycleNumber );
+  logpart.addEndDescription( "- N substeps: ", numOfSubSteps );
   std::stringstream logMessage;
   std::cout << units::TimeFormatInfo::fromSeconds( subStepDt[0] ).toString() << std::endl;
-  for( integer i = 0; i < 25; ++i )
+  for( integer i = 0; i < numOfSubSteps; ++i )
   {
     if (i > 0)
     {
       logMessage << ", ";
     }
-    logMessage << "00h00m01s (1 s)";
+    logMessage << units::TimeFormatInfo::fromSeconds( subStepDt[i] ).toString();
   }
-  logpart.addEndDescription( "- dt:", logMessage.str() );
-  logpart.setMaxWidth( 100 );//todo min > max
+  logpart.addEndDescription( "- dt: ", logMessage.str() );
   logpart.end();
 }
 
