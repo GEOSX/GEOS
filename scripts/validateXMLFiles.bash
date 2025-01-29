@@ -17,6 +17,7 @@ if [ -z "$1" ]; then
 fi
 
 SCHEMA=$1; shift
+SOURCE_DIR=$2; shift
 LOGFILE=xml_validation_results.log
 
 # "-r" in GNU xargs omits the call if input is empty
@@ -64,6 +65,9 @@ list_xml_files_git ()
     local prefix=$(cd $path; git rev-parse --show-prefix 2>/dev/null)
     git --git-dir=$git_root"/.git" ls-files $prefix | grep -e ".*[.]xml$" | sed "s|^|$git_root/|g"
 }
+
+echo $SOURCE_DIR
+git config --global --add safe.directory $SOURCE_DIR
 
 # emit location
 ls -l
