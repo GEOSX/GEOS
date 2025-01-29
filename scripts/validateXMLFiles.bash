@@ -52,6 +52,8 @@ else
         git config --global --add safe.directory "$GIT_REPO_DIR" && \
         echo "'$GIT_REPO_DIR' has been successfully added." || \
         echo "Error: Failed to add '$GIT_REPO_DIR'."
+        echo "INFO: Printing safe.directory: "
+        git config --global --list | grep safe.directory
     fi
 fi
 
