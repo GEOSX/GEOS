@@ -179,7 +179,7 @@ if( ENABLE_XML_UPDATES AND ENABLE_MPI AND UNIX AND NOT ENABLE_CUDA AND NOT ENABL
 
   add_custom_target( geosx_validate_all_xml_files
                      ALL
-                     COMMAND bash ${SCRIPT_DIR}/validateXMLFiles.bash -g ${SCHEMA_DIR}/schema.xsd ${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/../examples ${CMAKE_SOURCE_DIR}/../inputFiles
+                     COMMAND bash ${SCRIPT_DIR}/validateXMLFiles.bash -g ${SCHEMA_DIR}/schema.xsd ${CMAKE_SOURCE_DIR}
                      WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
                      DEPENDS geosx_generate_schema
                      COMMENT "Validating all XML files in the repository against the schema"
