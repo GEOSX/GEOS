@@ -17,7 +17,6 @@ if [ -z "$1" ]; then
 fi
 
 SCHEMA=$1; shift
-GIT_REPO_DIR=$2; shift
 LOGFILE=xml_validation_results.log
 
 # "-r" in GNU xargs omits the call if input is empty
@@ -38,6 +37,19 @@ fi
 if [ "$METHOD" = "git" ] && ! (hash git &> /dev/null); then
     >&2 echo "Error: git is required when -g or --git is specified"
     exit
+else
+    GIT_REPO_DIR=$2; shift
+    # Check GIT_REPO_DIR and its existence. Then add it to Git safe directories
+    if [ -z "$GIT_REPO_DIR" ]; then
+        echo "Error: GIT_REPO_DIR is not set." && exit 1
+    elif [ ! -d "$GIT_REPO_DIR" ]; then
+        echo "Error: The specified GIT_REPO_DIR '$GIT_REPO_DIR' does not exist." && exit 1
+    else
+        echo "Adding '$GIT_REPO_DIR' to Git safe directories..."
+        git config --global --add safe.directory "$GIT_REPO_DIR" && \
+        echo "'$GIT_REPO_DIR' has been successfully added." || \
+        echo "Error: Failed to add '$GIT_REPO_DIR'."
+    fi
 fi
 
 abs_path ()
@@ -66,17 +78,7 @@ list_xml_files_git ()
     git --git-dir=$git_root"/.git" ls-files $prefix | grep -e ".*[.]xml$" | sed "s|^|$git_root/|g"
 }
 
-# Check GIT_REPO_DIR and its existence. Then add it to Git safe directories
-if [ -z "$GIT_REPO_DIR" ]; then
-    echo "Error: GIT_REPO_DIR is not set." && exit 1
-elif [ ! -d "$GIT_REPO_DIR" ]; then
-    echo "Error: The specified GIT_REPO_DIR '$GIT_REPO_DIR' does not exist." && exit 1
-else
-    echo "Adding '$GIT_REPO_DIR' to Git safe directories..."
-    git config --global --add safe.directory "$GIT_REPO_DIR" && \
-    echo "'$GIT_REPO_DIR' has been successfully added." || \
-    echo "Error: Failed to add '$GIT_REPO_DIR'."
-fi
+
 
 # emit location
 ls -l
