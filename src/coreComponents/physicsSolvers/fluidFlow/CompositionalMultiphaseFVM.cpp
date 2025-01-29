@@ -633,8 +633,8 @@ real64 CompositionalMultiphaseFVM::scalingForSystemSolution( DomainPartition & d
     } );
   } );
 
-  auto globalDeltaPresMax = MpiWrapper::maxPair< real64, globalIndex >( regionDeltaPresMaxLoc );
-  auto globalDeltaCompDensMax = MpiWrapper::maxPair< real64, globalIndex >( regionDeltaCompDensMaxLoc );
+  auto globalDeltaPresMax = MpiWrapper::max< real64, globalIndex >( regionDeltaPresMaxLoc );
+  auto globalDeltaCompDensMax = MpiWrapper::max< real64, globalIndex >( regionDeltaCompDensMaxLoc );
 
   scalingFactor = MpiWrapper::min( scalingFactor );
   minPresScalingFactor = MpiWrapper::min( minPresScalingFactor );
@@ -651,7 +651,7 @@ real64 CompositionalMultiphaseFVM::scalingForSystemSolution( DomainPartition & d
 
   if( m_isThermal )
   {
-    auto globalMaxDeltaTemp = MpiWrapper::maxPair< real64, globalIndex >( regionDeltaTempMaxLoc );
+    auto globalMaxDeltaTemp = MpiWrapper::max< real64, globalIndex >( regionDeltaTempMaxLoc );
 
     minTempScalingFactor = MpiWrapper::min( minTempScalingFactor );
     GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution,
