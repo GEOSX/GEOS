@@ -70,6 +70,10 @@ ls -l
 pwd
 echo $path
 
+cd ..
+ls -l
+pwd
+
 # create/nullify the log file
 echo -n > $LOGFILE
 
