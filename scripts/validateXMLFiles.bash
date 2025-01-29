@@ -41,7 +41,7 @@ else
     GIT_REPO_DIR=$1;
     echo "INFO: The specified GIT_REPO_DIR"
     echo $GIT_REPO_DIR
-    sudo chown -R root:root $GIT_REPO_DIR
+    chown -R root:root $GIT_REPO_DIR
     # Check GIT_REPO_DIR and its existence. Then add it to Git safe directories
     if [ -z "$GIT_REPO_DIR" ]; then
         echo "Error: GIT_REPO_DIR is not set." && exit 1
