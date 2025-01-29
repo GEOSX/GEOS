@@ -88,12 +88,12 @@ void runAllTestCases( int const rankId )
   };
   for( auto const & testCase : testCases )
   {
-    MpiWrapper::PairType< FIRST, SECOND > minPair = MpiWrapper::minPair( testCase.pairs[0][rankId] );
-    EXPECT_EQ( minPair.first, testCase.expectedMin.first ) << reductionTestFailureMsg( testCase, minPair, rankId, "Min" );
-    EXPECT_EQ( minPair.second, testCase.expectedMin.second ) << reductionTestFailureMsg( testCase, minPair, rankId, "Min" );
-    MpiWrapper::PairType< FIRST, SECOND > maxPair = MpiWrapper::maxPair( testCase.pairs[0][rankId] );
-    EXPECT_EQ( maxPair.first, testCase.expectedMax.first ) << reductionTestFailureMsg( testCase, maxPair, rankId, "Max" );
-    EXPECT_EQ( maxPair.second, testCase.expectedMax.second ) << reductionTestFailureMsg( testCase, maxPair, rankId, "Max" );
+    MpiWrapper::PairType< FIRST, SECOND > min = MpiWrapper::min( testCase.pairs[0][rankId] );
+    EXPECT_EQ( min.first, testCase.expectedMin.first ) << reductionTestFailureMsg( testCase, min, rankId, "Min" );
+    EXPECT_EQ( min.second, testCase.expectedMin.second ) << reductionTestFailureMsg( testCase, min, rankId, "Min" );
+    MpiWrapper::PairType< FIRST, SECOND > max = MpiWrapper::max( testCase.pairs[0][rankId] );
+    EXPECT_EQ( max.first, testCase.expectedMax.first ) << reductionTestFailureMsg( testCase, max, rankId, "Max" );
+    EXPECT_EQ( max.second, testCase.expectedMax.second ) << reductionTestFailureMsg( testCase, max, rankId, "Max" );
   }
 }
 
@@ -143,13 +143,13 @@ void runTestCase( PairTestCase< FIRST, SECOND > const & testCase, int rankId, in
     localPairs = testCase.pairs[rankId];
   }
 
-  MpiWrapper::PairType< FIRST, SECOND > minPair = MpiWrapper::minPair< FIRST, SECOND >( localPairs );
-  EXPECT_EQ( minPair.first, testCase.expectedMin.first ) << reductionTestFailureMsg( testCase, minPair, rankId, "Min" );
-  EXPECT_EQ( minPair.second, testCase.expectedMin.second ) << reductionTestFailureMsg( testCase, minPair, rankId, "Min" );
+  MpiWrapper::PairType< FIRST, SECOND > min = MpiWrapper::min< FIRST, SECOND >( localPairs );
+  EXPECT_EQ( min.first, testCase.expectedMin.first ) << reductionTestFailureMsg( testCase, min, rankId, "Min" );
+  EXPECT_EQ( min.second, testCase.expectedMin.second ) << reductionTestFailureMsg( testCase, min, rankId, "Min" );
 
-  MpiWrapper::PairType< FIRST, SECOND > maxPair = MpiWrapper::maxPair< FIRST, SECOND >( localPairs );
-  EXPECT_EQ( maxPair.first, testCase.expectedMax.first ) << reductionTestFailureMsg( testCase, maxPair, rankId, "Max" );
-  EXPECT_EQ( maxPair.second, testCase.expectedMax.second ) << reductionTestFailureMsg( testCase, maxPair, rankId, "Max" );
+  MpiWrapper::PairType< FIRST, SECOND > max = MpiWrapper::max< FIRST, SECOND >( localPairs );
+  EXPECT_EQ( max.first, testCase.expectedMax.first ) << reductionTestFailureMsg( testCase, max, rankId, "Max" );
+  EXPECT_EQ( max.second, testCase.expectedMax.second ) << reductionTestFailureMsg( testCase, max, rankId, "Max" );
 }
 
 template< typename FIRST, typename SECOND >
