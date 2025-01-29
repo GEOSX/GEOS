@@ -17,7 +17,7 @@ if [ -z "$1" ]; then
 fi
 
 SCHEMA=$1; shift
-SOURCE_DIR=$2; shift
+GIT_REPO_DIR=$2; shift
 LOGFILE=xml_validation_results.log
 
 # "-r" in GNU xargs omits the call if input is empty
@@ -66,8 +66,17 @@ list_xml_files_git ()
     git --git-dir=$git_root"/.git" ls-files $prefix | grep -e ".*[.]xml$" | sed "s|^|$git_root/|g"
 }
 
-echo $SOURCE_DIR
-git config --global --add safe.directory $SOURCE_DIR
+# Check GIT_REPO_DIR and its existence. Then add it to Git safe directories
+if [ -z "$GIT_REPO_DIR" ]; then
+    echo "Error: GIT_REPO_DIR is not set." && exit 1
+elif [ ! -d "$GIT_REPO_DIR" ]; then
+    echo "Error: The specified GIT_REPO_DIR '$GIT_REPO_DIR' does not exist." && exit 1
+else
+    echo "Adding '$GIT_REPO_DIR' to Git safe directories..."
+    git config --global --add safe.directory "$GIT_REPO_DIR" && \
+    echo "'$GIT_REPO_DIR' has been successfully added." || \
+    echo "Error: Failed to add '$GIT_REPO_DIR'."
+fi
 
 # emit location
 ls -l
@@ -90,7 +99,9 @@ for path in "$@"; do
     echo $git_root_c
     echo $prefix_c
     echo $git_root"/.git"
-    list_xml_files_$METHOD $path | $XARGS xmllint --schema $SCHEMA --noout >> $LOGFILE 2>&1
+    collected_xml_files=$(list_xml_files_$METHOD $path)
+    echo $collected_xml_files
+    $collected_xml_files | $XARGS xmllint --schema $SCHEMA --noout >> $LOGFILE 2>&1
 done
 
 # print any failed validations on the stderr
