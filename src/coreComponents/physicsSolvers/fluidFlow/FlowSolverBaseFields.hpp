@@ -281,6 +281,13 @@ DECLARE_FIELD( massCreated,
                WRITE_AND_READ,
                "The amount of remaining mass that was introduced when the SurfaceElement was created." );
 
+DECLARE_FIELD( fractureCreationTime,
+               "fractureCreationTime",
+               array1d< real64 >,
+               0,
+               LEVEL_1,
+               WRITE_AND_READ,
+               "The creation time for the fracture cell." );
 }
 
 }
