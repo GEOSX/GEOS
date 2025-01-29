@@ -160,7 +160,7 @@ if( ENABLE_XML_UPDATES AND ENABLE_MPI AND UNIX AND NOT ENABLE_CUDA AND NOT ENABL
 
   set(SCHEMA_DIR ${CMAKE_SOURCE_DIR}/coreComponents/schema)
   set(SCRIPT_DIR ${CMAKE_SOURCE_DIR}/../scripts)
-  set(SOURCE_DIR ${CMAKE_SOURCE_DIR}/..)
+  set(SOURCE_DIR ../${CMAKE_SOURCE_DIR})
 
   add_custom_target( geosx_generate_schema
                      ALL
