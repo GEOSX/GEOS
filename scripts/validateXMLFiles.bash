@@ -93,7 +93,6 @@ for path in "$@"; do
     pwd
     ls -la
     git status
-    sudo git status
     git_root_c=$(git rev-parse --show-toplevel 2>/dev/null)
     prefix_c=$(git rev-parse --show-prefix 2>/dev/null)
     echo $git_root_c
