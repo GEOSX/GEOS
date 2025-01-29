@@ -78,6 +78,7 @@ for path in "$@"; do
     echo $path
     cd "$path" || { echo "Directory not found: $path"; exit 1; }
     pwd
+    ls -la
     git_root_c=$(git rev-parse --show-toplevel 2>/dev/null)
     prefix_c=$(git rev-parse --show-prefix 2>/dev/null)
     echo $git_root_c
