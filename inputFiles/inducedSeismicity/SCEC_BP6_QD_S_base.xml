@@ -83,7 +83,7 @@
      name="rock"
      defaultDensity="2670"
      defaultBulkModulus="50.0e9"
-     defaultShearModulus="32.04e9"/>
+     defaultShearModulus="24.03e9"/>
 
     <RateAndStateFriction
       name="frictionLaw"
