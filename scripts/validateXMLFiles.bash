@@ -76,6 +76,7 @@ echo -n > $LOGFILE
 for path in "$@"; do
     # emit location
     echo $path
+    cd "$path" || { echo "Directory not found: $path"; exit 1; }
     git_root_c=$(cd $path; git rev-parse --show-toplevel 2>/dev/null)
     prefix_c=$(cd $path; git rev-parse --show-prefix 2>/dev/null)
     echo $git_root_c
