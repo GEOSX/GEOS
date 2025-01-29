@@ -684,7 +684,7 @@ public:
    * @return The maximum of all \p value across the ranks.
    */
   template< typename FIRST, typename SECOND >
-  static PairType< FIRST, SECOND > minPair( PairType< FIRST, SECOND > const & pair, MPI_Comm comm = MPI_COMM_GEOS );
+  static PairType< FIRST, SECOND > min( PairType< FIRST, SECOND > const & pair, MPI_Comm comm = MPI_COMM_GEOS );
 
   /**
    * @brief Convenience function for a MPI_Allreduce using a min-pair operation.
@@ -693,7 +693,7 @@ public:
    * @return The maximum of all \p value across the ranks.
    */
   template< typename FIRST, typename SECOND, typename CONTAINER >
-  static PairType< FIRST, SECOND > minPair( CONTAINER const & pairs, MPI_Comm comm = MPI_COMM_GEOS );
+  static PairType< FIRST, SECOND > min( CONTAINER const & pairs, MPI_Comm comm = MPI_COMM_GEOS );
 
   /**
    * @brief Convenience function for a MPI_Allreduce using a MPI_MAX operation.
@@ -719,7 +719,7 @@ public:
    * @return The maximum of all \p value across the ranks.
    */
   template< typename FIRST, typename SECOND >
-  static PairType< FIRST, SECOND > maxPair( PairType< FIRST, SECOND > const & pair, MPI_Comm comm = MPI_COMM_GEOS );
+  static PairType< FIRST, SECOND > max( PairType< FIRST, SECOND > const & pair, MPI_Comm comm = MPI_COMM_GEOS );
 
   /**
    * @brief Convenience function for a MPI_Allreduce using a max-pair operation.
@@ -728,7 +728,7 @@ public:
    * @return The maximum of all \p value across the ranks.
    */
   template< typename FIRST, typename SECOND, typename CONTAINER >
-  static PairType< FIRST, SECOND > maxPair( CONTAINER const & pairs, MPI_Comm comm = MPI_COMM_GEOS );
+  static PairType< FIRST, SECOND > max( CONTAINER const & pairs, MPI_Comm comm = MPI_COMM_GEOS );
 
 private:
 
@@ -1411,19 +1411,19 @@ MpiWrapper::allReduce( CONTAINER const & pairs, MPI_Comm const comm )
 }
 
 template< typename FIRST, typename SECOND >
-MpiWrapper::PairType< FIRST, SECOND > MpiWrapper::minPair( MpiWrapper::PairType< FIRST, SECOND > const & pair, MPI_Comm comm )
+MpiWrapper::PairType< FIRST, SECOND > MpiWrapper::min( MpiWrapper::PairType< FIRST, SECOND > const & pair, MPI_Comm comm )
 { return allReduce< FIRST, SECOND, PairReduction::Min >( pair, comm ); }
 
 template< typename FIRST, typename SECOND, typename CONTAINER >
-MpiWrapper::PairType< FIRST, SECOND > MpiWrapper::minPair( CONTAINER const & pairs, MPI_Comm comm )
+MpiWrapper::PairType< FIRST, SECOND > MpiWrapper::min( CONTAINER const & pairs, MPI_Comm comm )
 { return allReduce< FIRST, SECOND, CONTAINER, PairReduction::Min >( pairs, comm ); }
 
 template< typename FIRST, typename SECOND >
-MpiWrapper::PairType< FIRST, SECOND > MpiWrapper::maxPair( MpiWrapper::PairType< FIRST, SECOND > const & pair, MPI_Comm comm )
+MpiWrapper::PairType< FIRST, SECOND > MpiWrapper::max( MpiWrapper::PairType< FIRST, SECOND > const & pair, MPI_Comm comm )
 { return allReduce< FIRST, SECOND, PairReduction::Max >( pair, comm ); }
 
 template< typename FIRST, typename SECOND, typename CONTAINER >
-MpiWrapper::PairType< FIRST, SECOND > MpiWrapper::maxPair( CONTAINER const & pairs, MPI_Comm comm )
+MpiWrapper::PairType< FIRST, SECOND > MpiWrapper::max( CONTAINER const & pairs, MPI_Comm comm )
 { return allReduce< FIRST, SECOND, CONTAINER, PairReduction::Max >( pairs, comm ); }
 
 } /* namespace geos */
