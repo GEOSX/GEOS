@@ -30,6 +30,22 @@
 namespace geos
 {
 
+/**
+ * @brief Options for flow formulation
+ */
+enum class CompositionalMultiphaseFormulationType : integer
+{
+  ComponentDensities, ///< use component densities as primary variables
+  OverallComposition  ///< use overall composition (z_c) as primary variables
+};
+
+/**
+ * @brief Strings for options for flow formulation
+ */
+ENUM_STRINGS( CompositionalMultiphaseFormulationType,
+              "ComponentDensities",
+              "OverallComposition" );
+
 //START_SPHINX_INCLUDE_00
 /**
  * @class CompositionalMultiphaseBase
@@ -212,7 +228,7 @@ public:
   { return m_useMass ? units::Unit::Mass : units::Unit::Mole; }
 
   /**
-   * @brief assembles the accumulation and volume balance terms for all cells
+   * @brief assembles the accumulation other local terms for all cells
    * @param time_n previous time value
    * @param dt time step
    * @param domain the physical domain object
@@ -220,10 +236,10 @@ public:
    * @param localMatrix the system matrix
    * @param localRhs the system right-hand side vector
    */
-  void assembleAccumulationAndVolumeBalanceTerms( DomainPartition & domain,
-                                                  DofManager const & dofManager,
-                                                  CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                                                  arrayView1d< real64 > const & localRhs ) const;
+  void assembleLocalTerms( DomainPartition & domain,
+                           DofManager const & dofManager,
+                           CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                           arrayView1d< real64 > const & localRhs ) const;
 
   /**
    * @brief assembles the flux terms for all cells
@@ -255,7 +271,9 @@ public:
                                DofManager const & dofManager,
                                CRSMatrixView< real64, globalIndex const > const & localMatrix,
                                arrayView1d< real64 > const & localRhs ) const = 0;
+
   /**@}*/
+
 
   struct viewKeyStruct : FlowSolverBase::viewKeyStruct
   {
@@ -264,6 +282,7 @@ public:
     // inputs
 
     static constexpr char const * useMassFlagString() { return "useMass"; }
+    static constexpr char const * formulationTypeString() { return "formulationType"; }
     static constexpr char const * relPermNamesString() { return "relPermNames"; }
     static constexpr char const * capPressureNamesString() { return "capPressureNames"; }
     static constexpr char const * diffusionNamesString() { return "diffusionNames"; }
@@ -277,6 +296,7 @@ public:
     static constexpr char const * targetRelativeTempChangeString() { return "targetRelativeTemperatureChangeInTimeStep"; }
     static constexpr char const * targetPhaseVolFracChangeString() { return "targetPhaseVolFractionChangeInTimeStep"; }
     static constexpr char const * targetRelativeCompDensChangeString() { return "targetRelativeCompDensChangeInTimeStep"; }
+    static constexpr char const * targetCompFracChangeString() { return "targetCompFracChangeInTimeStep"; }
     static constexpr char const * targetFlowCFLString() { return "targetFlowCFL"; }
 
 
@@ -290,6 +310,7 @@ public:
     static constexpr char const * useTotalMassEquationString() { return "useTotalMassEquation"; }
     static constexpr char const * useSimpleAccumulationString() { return "useSimpleAccumulation"; }
     static constexpr char const * minCompDensString() { return "minCompDens"; }
+    static constexpr char const * minCompFracString() { return "minCompFrac"; }
     static constexpr char const * maxSequentialCompDensChangeString() { return "maxSequentialCompDensChange"; }
     static constexpr char const * minScalingFactorString() { return "minScalingFactor"; }
 
@@ -384,8 +405,13 @@ public:
    * @param domain the physical domain object
    */
   void chopNegativeDensities( DomainPartition & domain );
-
   void chopNegativeDensities( ElementSubRegionBase & subRegion );
+
+  /**
+   * @brief Sets all the negative component fractions (if any) to zero.
+   * @param domain the physical domain object
+   */
+  void chopNegativeCompFractions( DomainPartition & domain );
 
   virtual real64 setNextDtBasedOnStateChange( real64 const & currentDt,
                                               DomainPartition & domain ) override;
@@ -452,6 +478,9 @@ protected:
   /// flag indicating whether mass or molar formulation should be used
   integer m_useMass;
 
+  /// formulation type
+  CompositionalMultiphaseFormulationType m_formulationType;
+
   /// flag to determine whether or not to apply capillary pressure
   integer m_hasCapPressure;
 
@@ -488,6 +517,9 @@ protected:
   /// target (relative) change in component density in a time step
   real64 m_targetRelativeCompDensChange;
 
+  /// target (absolute) change in component fraction in a time step
+  real64 m_targetCompFracChange;
+
   /// minimum value of the scaling factor obtained by enforcing maxCompFracChange
   real64 m_minScalingFactor;
 
@@ -502,6 +534,9 @@ protected:
 
   /// minimum allowed global component density
   real64 m_minCompDens;
+
+  /// minimum allowed global component fraction
+  real64 m_minCompFrac;
 
   /// name of the fluid constitutive model used as a reference for component/phase description
   string m_referenceFluidModelName;

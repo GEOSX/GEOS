@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 TotalEnergies
+ * Copyright (c) 2018-2024 Total, S.A
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -14,11 +14,11 @@
  */
 
 /**
- * @file DirichletFluxComputeKernel.hpp
+ * @file DirichletFluxComputeZFormulationKernel.hpp
  */
 
-#ifndef GEOS_PHYSICSSOLVERS_FLUIDFLOW_COMPOSITIONAL_DIRICHLETFLUXCOMPUTEKERNEL_HPP
-#define GEOS_PHYSICSSOLVERS_FLUIDFLOW_COMPOSITIONAL_DIRICHLETFLUXCOMPUTEKERNEL_HPP
+#ifndef GEOS_PHYSICSSOLVERS_FLUIDFLOW_COMPOSITIONAL_DIRICHLETFLUXCOMPUTEZFORMULATIONKERNEL_HPP
+#define GEOS_PHYSICSSOLVERS_FLUIDFLOW_COMPOSITIONAL_DIRICHLETFLUXCOMPUTEZFORMULATIONKERNEL_HPP
 
 #include "codingUtilities/Utilities.hpp"
 #include "common/DataLayouts.hpp"
@@ -40,19 +40,19 @@ namespace geos
 namespace isothermalCompositionalMultiphaseFVMKernels
 {
 
-/******************************** DirichletFluxComputeKernel ********************************/
+/******************************** DirichletFluxComputeZFormulationKernel ********************************/
 
 /**
- * @class DirichletFluxComputeKernel
+ * @class DirichletFluxComputeZFormulationKernel
  * @tparam NUM_COMP number of fluid components
  * @tparam NUM_DOF number of degrees of freedom
  * @tparam FLUIDWRAPPER the type of the fluid wrapper
  * @brief Define the interface for the assembly kernel in charge of Dirichlet face flux terms
  */
 template< integer NUM_COMP, integer NUM_DOF, typename FLUIDWRAPPER >
-class DirichletFluxComputeKernel : public FluxComputeKernel< NUM_COMP,
-                                                             NUM_DOF,
-                                                             BoundaryStencilWrapper >
+class DirichletFluxComputeZFormulationKernel : public FluxComputeKernel< NUM_COMP,
+                                                                         NUM_DOF,
+                                                                         BoundaryStencilWrapper >
 {
 public:
 
@@ -81,7 +81,6 @@ public:
   using AbstractBase::m_pres;
   using AbstractBase::m_phaseCompFrac;
   using AbstractBase::m_dPhaseCompFrac;
-  using AbstractBase::m_dCompFrac_dCompDens;
   using AbstractBase::m_localMatrix;
   using AbstractBase::m_localRhs;
   using AbstractBase::m_kernelFlags;
@@ -118,20 +117,20 @@ public:
    * @param[inout] localRhs the local right-hand side vector
    * @param[in] kernelFlags flags packed together
    */
-  DirichletFluxComputeKernel( integer const numPhases,
-                              globalIndex const rankOffset,
-                              FaceManager const & faceManager,
-                              BoundaryStencilWrapper const & stencilWrapper,
-                              FLUIDWRAPPER const & fluidWrapper,
-                              DofNumberAccessor const & dofNumberAccessor,
-                              CompFlowAccessors const & compFlowAccessors,
-                              MultiFluidAccessors const & multiFluidAccessors,
-                              CapPressureAccessors const & capPressureAccessors,
-                              PermeabilityAccessors const & permeabilityAccessors,
-                              real64 const dt,
-                              CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                              arrayView1d< real64 > const & localRhs,
-                              BitFlags< KernelFlags > kernelFlags )
+  DirichletFluxComputeZFormulationKernel( integer const numPhases,
+                                          globalIndex const rankOffset,
+                                          FaceManager const & faceManager,
+                                          BoundaryStencilWrapper const & stencilWrapper,
+                                          FLUIDWRAPPER const & fluidWrapper,
+                                          DofNumberAccessor const & dofNumberAccessor,
+                                          CompFlowAccessors const & compFlowAccessors,
+                                          MultiFluidAccessors const & multiFluidAccessors,
+                                          CapPressureAccessors const & capPressureAccessors,
+                                          PermeabilityAccessors const & permeabilityAccessors,
+                                          real64 const dt,
+                                          CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                                          arrayView1d< real64 > const & localRhs,
+                                          BitFlags< KernelFlags > kernelFlags )
     : Base( numPhases,
             rankOffset,
             stencilWrapper,
@@ -277,7 +276,6 @@ public:
       // working variables
       real64 dDensMean_dC[numComp]{};
       real64 dF_dC[numComp]{};
-      real64 dProp_dC[numComp]{};
 
       real64 phaseFlux = 0.0; // for the lambda
       real64 dPhaseFlux_dP = 0.0;
@@ -285,19 +283,12 @@ public:
 
 
       // Step 3.1: compute the average phase mass density at the face
-
-      applyChainRule( numComp,
-                      m_dCompFrac_dCompDens[er][esr][ei],
-                      m_dPhaseMassDens[er][esr][ei][0][ip],
-                      dProp_dC,
-                      Deriv::dC );
-
       // average density and derivatives
       real64 const densMean = 0.5 * ( m_phaseMassDens[er][esr][ei][0][ip] + facePhaseMassDens[0][0][ip] );
       real64 const dDensMean_dP = 0.5 * m_dPhaseMassDens[er][esr][ei][0][ip][Deriv::dP];
       for( integer jc = 0; jc < numComp; ++jc )
       {
-        dDensMean_dC[jc] = 0.5 * dProp_dC[jc];
+        dDensMean_dC[jc] = 0.5 * m_dPhaseMassDens[er][esr][ei][0][ip][Deriv::dC+jc];
       }
 
 
@@ -358,14 +349,9 @@ public:
           stack.compFlux[ic] += phaseFlux * ycp;
           stack.dCompFlux_dP[ic] += dPhaseFlux_dP * ycp + phaseFlux * dPhaseCompFracSub[ic][Deriv::dP];
 
-          applyChainRule( numComp,
-                          m_dCompFrac_dCompDens[er][esr][ei],
-                          dPhaseCompFracSub[ic],
-                          dProp_dC,
-                          Deriv::dC );
           for( integer jc = 0; jc < numComp; ++jc )
           {
-            stack.dCompFlux_dC[ic][jc] += dPhaseFlux_dC[jc] * ycp + phaseFlux * dProp_dC[jc];
+            stack.dCompFlux_dC[ic][jc] += dPhaseFlux_dC[jc] * ycp + phaseFlux * dPhaseCompFracSub[ic][Deriv::dC+jc];
           }
         }
 
@@ -481,9 +467,9 @@ protected:
 
 
 /**
- * @class DirichletFluxComputeKernelFactory
+ * @class DirichletFluxComputeZFormulationKernelFactory
  */
-class DirichletFluxComputeKernelFactory
+class DirichletFluxComputeZFormulationKernelFactory
 {
 public:
 
@@ -531,7 +517,7 @@ public:
         elemManager.constructArrayViewAccessor< globalIndex, 1 >( dofKey );
       dofNumberAccessor.setName( solverName + "/accessors/" + dofKey );
 
-      using kernelType = DirichletFluxComputeKernel< NUM_COMP, NUM_DOF, typename FluidType::KernelWrapper >;
+      using kernelType = DirichletFluxComputeZFormulationKernel< NUM_COMP, NUM_DOF, typename FluidType::KernelWrapper >;
       typename kernelType::CompFlowAccessors compFlowAccessors( elemManager, solverName );
       typename kernelType::MultiFluidAccessors multiFluidAccessors( elemManager, solverName );
       typename kernelType::CapPressureAccessors capPressureAccessors( elemManager, solverName );
@@ -550,4 +536,4 @@ public:
 } // namespace geos
 
 
-#endif //GEOS_PHYSICSSOLVERS_FLUIDFLOW_COMPOSITIONAL_DIRICHLETFLUXCOMPUTEKERNEL_HPP
+#endif //GEOS_PHYSICSSOLVERS_FLUIDFLOW_COMPOSITIONAL_DIRICHLETFLUXCOMPUTEZFORMULATIONKERNEL_HPP

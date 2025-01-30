@@ -509,7 +509,6 @@ real64 CompositionalMultiphaseHybridFVM::scalingForSystemSolution( DomainPartiti
   return LvArray::math::max( MpiWrapper::min( scalingFactor ), m_minScalingFactor );
 }
 
-
 bool CompositionalMultiphaseHybridFVM::checkSystemSolution( DomainPartition & domain,
                                                             DofManager const & dofManager,
                                                             arrayView1d< real64 const > const & localSolution,
