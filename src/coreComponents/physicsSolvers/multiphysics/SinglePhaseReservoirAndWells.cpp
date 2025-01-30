@@ -35,7 +35,6 @@ namespace geos
 {
 
 using namespace dataRepository;
-using namespace constitutive;
 using namespace fields;
 
 template< typename RESERVOIR_SOLVER >

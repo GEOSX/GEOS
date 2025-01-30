@@ -235,10 +235,7 @@ template<> int GetTensorRank< string >()
   return DB_VARTYPE_SCALAR;
 }
 
-
-
 }
-
 
 
 using namespace constitutive;
@@ -264,7 +261,7 @@ SiloFile::SiloFile():
   m_writeFaceMesh( 0 ),
   m_writeCellElementMesh( 1 ),
   m_writeFaceElementMesh( 1 ),
-  m_plotLevel( dataRepository::PlotLevel::LEVEL_1 ),
+  m_plotLevel( PlotLevel::LEVEL_1 ),
   m_requireFieldRegistrationCheck( true ),
   m_ghostFlags( true )
 {
@@ -1223,7 +1220,7 @@ void SiloFile::writeElementRegionSilo( ElementRegionBase const & elemRegion,
 {
   // TODO: This is a hack.
   conduit::Node conduitNode;
-  dataRepository::Group fakeGroup( elemRegion.getName(), conduitNode );
+  Group fakeGroup( elemRegion.getName(), conduitNode );
 
   localIndex numElems = 0;
   std::vector< std::map< string, WrapperBase const * > > viewPointers;
@@ -1454,12 +1451,12 @@ void SiloFile::writeElementMesh( ElementRegionBase const & elementRegion,
     } );
 
     string_array
-      regionSolidMaterialList = elementRegion.getConstitutiveNames< constitutive::SolidBase >();
+      regionSolidMaterialList = elementRegion.getConstitutiveNames< SolidBase >();
 
     localIndex const numSolids = regionSolidMaterialList.size();
 
-    string_array regionFluidMaterialList = elementRegion.getConstitutiveNames< constitutive::SingleFluidBase >();
-    string_array regionMultiPhaseFluidList = elementRegion.getConstitutiveNames< constitutive::MultiFluidBase >();
+    string_array regionFluidMaterialList = elementRegion.getConstitutiveNames< SingleFluidBase >();
+    string_array regionMultiPhaseFluidList = elementRegion.getConstitutiveNames< MultiFluidBase >();
 
     for( string const & matName : regionMultiPhaseFluidList )
     {
@@ -1468,12 +1465,12 @@ void SiloFile::writeElementMesh( ElementRegionBase const & elementRegion,
     localIndex const numFluids = regionFluidMaterialList.size();
 
     string_array
-      fractureContactMaterialList = elementRegion.getConstitutiveNames< constitutive::FrictionBase >();
+      fractureContactMaterialList = elementRegion.getConstitutiveNames< FrictionBase >();
 
     localIndex const numContacts = fractureContactMaterialList.size();
 
     string_array
-      nullModelMaterialList = elementRegion.getConstitutiveNames< constitutive::NullModel >();
+      nullModelMaterialList = elementRegion.getConstitutiveNames< NullModel >();
 
     localIndex const numNullModels = nullModelMaterialList.size();
 
@@ -2010,7 +2007,7 @@ int getTensorRankOfArray( ArrayView< TYPE const, NDIM, USD > const & field )
 
 template< typename OUTPUTTYPE >
 void SiloFile::writeWrappersToSilo( string const & meshname,
-                                    const dataRepository::Group::wrapperMap & wrappers,
+                                    const Group::wrapperMap & wrappers,
                                     int const centering,
                                     int const cycleNum,
                                     real64 const problemTime,
@@ -2034,13 +2031,13 @@ void SiloFile::writeWrappersToSilo( string const & meshname,
       // TODO This is wrong. problem with uniqueness
       if( typeID==typeid(array1d< real64 >) )
       {
-        auto const & wrapperT = dynamic_cast< dataRepository::Wrapper< array1d< real64 > > const & >( *wrapper );
+        auto const & wrapperT = dynamic_cast< Wrapper< array1d< real64 > > const & >( *wrapper );
         this->writeDataField< real64 >( meshname.c_str(), fieldName,
                                         wrapperT.reference(), centering, cycleNum, problemTime, multiRoot );
       }
       if( typeID==typeid(array2d< real64 >) )
       {
-        auto const & wrapperT = dynamic_cast< dataRepository::Wrapper< array2d< real64 > > const & >( *wrapper );
+        auto const & wrapperT = dynamic_cast< Wrapper< array2d< real64 > > const & >( *wrapper );
 
         arrayView2d< real64 const > const & array = wrapperT.reference();
         this->writeDataField< real64 >( meshname.c_str(),
@@ -2056,7 +2053,7 @@ void SiloFile::writeWrappersToSilo( string const & meshname,
       }
       if( typeID==typeid(array2d< real64, RAJA::PERM_JI >) )
       {
-        auto const & wrapperT = dynamic_cast< dataRepository::Wrapper< array2d< real64, RAJA::PERM_JI > > const & >( *wrapper );
+        auto const & wrapperT = dynamic_cast< Wrapper< array2d< real64, RAJA::PERM_JI > > const & >( *wrapper );
 
         arrayView2d< real64 const, LvArray::typeManipulation::getStrideOneDimension( RAJA::PERM_JI {} ) > const &
         array = wrapperT.reference();
@@ -2072,25 +2069,25 @@ void SiloFile::writeWrappersToSilo( string const & meshname,
       }
       if( typeID==typeid(array3d< real64 >) )
       {
-        auto const & wrapperT = dynamic_cast< dataRepository::Wrapper< array3d< real64 > > const & >( *wrapper );
+        auto const & wrapperT = dynamic_cast< Wrapper< array3d< real64 > > const & >( *wrapper );
         this->writeDataField< real64 >( meshname.c_str(), fieldName,
                                         wrapperT.reference(), centering, cycleNum, problemTime, multiRoot );
       }
       if( typeID==typeid(integer_array) )
       {
-        auto const & wrapperT = dynamic_cast< dataRepository::Wrapper< integer_array > const & >( *wrapper );
+        auto const & wrapperT = dynamic_cast< Wrapper< integer_array > const & >( *wrapper );
         this->writeDataField< integer >( meshname.c_str(), fieldName,
                                          wrapperT.reference(), centering, cycleNum, problemTime, multiRoot );
       }
       if( typeID==typeid(localIndex_array) )
       {
-        auto const & wrapperT = dynamic_cast< dataRepository::Wrapper< localIndex_array > const & >( *wrapper );
+        auto const & wrapperT = dynamic_cast< Wrapper< localIndex_array > const & >( *wrapper );
         this->writeDataField< localIndex >( meshname.c_str(), fieldName,
                                             wrapperT.reference(), centering, cycleNum, problemTime, multiRoot );
       }
       if( typeID==typeid(globalIndex_array) )
       {
-        auto const & wrapperT = dynamic_cast< dataRepository::Wrapper< globalIndex_array > const & >( *wrapper );
+        auto const & wrapperT = dynamic_cast< Wrapper< globalIndex_array > const & >( *wrapper );
         this->writeDataField< globalIndex >( meshname.c_str(), fieldName,
                                              wrapperT.reference(), centering, cycleNum, problemTime, multiRoot );
       }
@@ -3195,7 +3192,7 @@ int SiloFile::getMeshType( string const & meshName ) const
   return meshType;
 }
 
-bool SiloFile::isFieldPlotEnabled( dataRepository::WrapperBase const & wrapper ) const
+bool SiloFile::isFieldPlotEnabled( WrapperBase const & wrapper ) const
 {
   return outputUtilities::isFieldPlotEnabled( wrapper.getPlotLevel(),
                                               m_plotLevel,

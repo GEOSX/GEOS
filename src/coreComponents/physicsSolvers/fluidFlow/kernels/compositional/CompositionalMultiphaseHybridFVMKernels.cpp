@@ -29,10 +29,11 @@
 
 namespace geos
 {
-using namespace constitutive;
 
 namespace compositionalMultiphaseHybridFVMKernels
 {
+
+using namespace constitutive;
 
 /******************************** UpwindingHelper ********************************/
 

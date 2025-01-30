@@ -422,12 +422,12 @@ void SolidMechanicsAugmentedLagrangianContact::assembleSystem( real64 const time
         real64 maxTraction = finiteElement::
                                interfaceBasedKernelApplication
                              < parallelDevicePolicy< >,
-                               constitutive::CoulombFriction >( mesh,
-                                                                fractureRegionName,
-                                                                faceElementList,
-                                                                subRegionFE,
-                                                                viewKeyStruct::frictionLawNameString(),
-                                                                kernelFactory );
+                               CoulombFriction >( mesh,
+                                                  fractureRegionName,
+                                                  faceElementList,
+                                                  subRegionFE,
+                                                  viewKeyStruct::frictionLawNameString(),
+                                                  kernelFactory );
 
         GEOS_UNUSED_VAR( maxTraction );
 
@@ -446,12 +446,12 @@ void SolidMechanicsAugmentedLagrangianContact::assembleSystem( real64 const time
         real64 maxTraction = finiteElement::
                                interfaceBasedKernelApplication
                              < parallelDevicePolicy< >,
-                               constitutive::CoulombFriction >( mesh,
-                                                                fractureRegionName,
-                                                                faceElementList,
-                                                                subRegionFE,
-                                                                viewKeyStruct::frictionLawNameString(),
-                                                                kernelFactory );
+                               CoulombFriction >( mesh,
+                                                  fractureRegionName,
+                                                  faceElementList,
+                                                  subRegionFE,
+                                                  viewKeyStruct::frictionLawNameString(),
+                                                  kernelFactory );
 
         GEOS_UNUSED_VAR( maxTraction );
       }
@@ -477,12 +477,12 @@ void SolidMechanicsAugmentedLagrangianContact::assembleSystem( real64 const time
         real64 maxTraction = finiteElement::
                                interfaceBasedKernelApplication
                              < parallelDevicePolicy< >,
-                               constitutive::CoulombFriction >( mesh,
-                                                                fractureRegionName,
-                                                                faceElementList,
-                                                                subRegionFE,
-                                                                viewKeyStruct::frictionLawNameString(),
-                                                                kernelFactory );
+                               CoulombFriction >( mesh,
+                                                  fractureRegionName,
+                                                  faceElementList,
+                                                  subRegionFE,
+                                                  viewKeyStruct::frictionLawNameString(),
+                                                  kernelFactory );
 
         GEOS_UNUSED_VAR( maxTraction );
 
@@ -501,12 +501,12 @@ void SolidMechanicsAugmentedLagrangianContact::assembleSystem( real64 const time
         real64 maxTraction = finiteElement::
                                interfaceBasedKernelApplication
                              < parallelDevicePolicy< >,
-                               constitutive::CoulombFriction >( mesh,
-                                                                fractureRegionName,
-                                                                faceElementList,
-                                                                subRegionFE,
-                                                                viewKeyStruct::frictionLawNameString(),
-                                                                kernelFactory );
+                               CoulombFriction >( mesh,
+                                                  fractureRegionName,
+                                                  faceElementList,
+                                                  subRegionFE,
+                                                  viewKeyStruct::frictionLawNameString(),
+                                                  kernelFactory );
 
         GEOS_UNUSED_VAR( maxTraction );
       }
@@ -543,7 +543,7 @@ void SolidMechanicsAugmentedLagrangianContact::assembleSystem( real64 const time
     real64 maxTraction = finiteElement::
                            regionBasedKernelApplication
                          < parallelDevicePolicy< >,
-                           constitutive::ElasticIsotropic,
+                           ElasticIsotropic,
                            CellElementSubRegion >( mesh,
                                                    regionNames,
                                                    getDiscretizationName(),
@@ -768,12 +768,12 @@ void SolidMechanicsAugmentedLagrangianContact::applySystemSolution( DofManager c
       real64 maxTraction = finiteElement::
                              interfaceBasedKernelApplication
                            < parallelDevicePolicy< >,
-                             constitutive::NullModel >( mesh,
-                                                        fractureRegionName,
-                                                        faceElementList,
-                                                        subRegionFE,
-                                                        "",
-                                                        kernelFactory );
+                             NullModel >( mesh,
+                                          fractureRegionName,
+                                          faceElementList,
+                                          subRegionFE,
+                                          "",
+                                          kernelFactory );
 
       GEOS_UNUSED_VAR( maxTraction );
 

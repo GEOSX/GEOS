@@ -28,7 +28,6 @@ namespace geos
 {
 
 using namespace dataRepository;
-using namespace constitutive;
 
 FlowProppantTransportSolver::FlowProppantTransportSolver( const string & name,
                                                           Group * const parent ):

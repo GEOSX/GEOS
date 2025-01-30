@@ -365,7 +365,7 @@ void SolidMechanicsLagrangeContactBubbleStab::assembleStabilization( real64 cons
     real64 maxTraction = finiteElement::
                            regionBasedKernelApplication
                          < parallelDevicePolicy< >,
-                           constitutive::ElasticIsotropic,
+                           ElasticIsotropic,
                            CellElementSubRegion >( mesh,
                                                    regionNames,
                                                    getDiscretizationName(),
@@ -416,12 +416,12 @@ void SolidMechanicsLagrangeContactBubbleStab::assembleContact( real64 const dt,
       real64 maxTraction = finiteElement::
                              interfaceBasedKernelApplication
                            < parallelDevicePolicy< >,
-                             constitutive::FrictionBase >( mesh,
-                                                           fractureRegionName,
-                                                           faceElementList,
-                                                           subRegionFE,
-                                                           viewKeyStruct::frictionLawNameString(),
-                                                           kernelFactory );
+                             FrictionBase >( mesh,
+                                             fractureRegionName,
+                                             faceElementList,
+                                             subRegionFE,
+                                             viewKeyStruct::frictionLawNameString(),
+                                             kernelFactory );
 
       GEOS_UNUSED_VAR( maxTraction );
     } );
@@ -587,12 +587,12 @@ void SolidMechanicsLagrangeContactBubbleStab::applySystemSolution( DofManager co
       real64 maxTraction = finiteElement::
                              interfaceBasedKernelApplication
                            < parallelDevicePolicy< >,
-                             constitutive::NullModel >( mesh,
-                                                        fractureRegionName,
-                                                        faceElementList,
-                                                        subRegionFE,
-                                                        "",
-                                                        kernelFactory );
+                             NullModel >( mesh,
+                                          fractureRegionName,
+                                          faceElementList,
+                                          subRegionFE,
+                                          "",
+                                          kernelFactory );
 
       GEOS_UNUSED_VAR( maxTraction );
 

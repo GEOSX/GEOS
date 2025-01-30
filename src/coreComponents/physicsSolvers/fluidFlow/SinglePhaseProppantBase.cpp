@@ -36,8 +36,6 @@ namespace geos
 using namespace constitutive;
 using namespace fields;
 
-using constitutive::SlurryFluidBase;
-
 template< typename POROUSWRAPPER_TYPE >
 void execute3( POROUSWRAPPER_TYPE porousWrapper,
                SurfaceElementSubRegion & subRegion,

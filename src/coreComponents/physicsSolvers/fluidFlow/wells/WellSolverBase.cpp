@@ -28,14 +28,12 @@
 #include "physicsSolvers/fluidFlow/wells/WellControls.hpp"
 #include "physicsSolvers/fluidFlow/wells/WellSolverBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/wells/LogLevelsInfo.hpp"
-#include "physicsSolvers/fluidFlow/wells/kernels/ThermalCompositionalMultiphaseWellKernels.hpp"
 #include "fileIO/Outputs/OutputBase.hpp"
 
 namespace geos
 {
 
 using namespace dataRepository;
-using namespace constitutive;
 using namespace fields;
 
 WellSolverBase::WellSolverBase( string const & name,

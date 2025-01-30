@@ -110,7 +110,7 @@ void PVTDriver::postInputInitialization()
 
   // get number of phases and components
 
-  constitutive::MultiFluidBase & baseFluid = getFluid();
+  MultiFluidBase & baseFluid = getFluid();
 
   m_numPhases = baseFluid.numFluidPhases();
   m_numComponents = baseFluid.numFluidComponents();
@@ -185,7 +185,7 @@ bool PVTDriver::execute( real64 const GEOS_UNUSED_PARAM( time_n ),
   // get the fluid out of the constitutive manager.
   // for the moment it is of type MultiFluidBase.
 
-  constitutive::MultiFluidBase & baseFluid = getFluid();
+  MultiFluidBase & baseFluid = getFluid();
 
   // depending on logLevel, print some useful info
 
@@ -361,7 +361,7 @@ void PVTDriver::compareWithBaseline()
   file.close();
 }
 
-constitutive::MultiFluidBase &
+MultiFluidBase &
 PVTDriver::getFluid()
 {
   ConstitutiveManager & constitutiveManager = this->getGroupByPath< ConstitutiveManager >( "/Problem/domain/Constitutive" );

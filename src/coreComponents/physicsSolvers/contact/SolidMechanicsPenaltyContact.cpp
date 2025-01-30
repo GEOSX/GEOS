@@ -32,10 +32,8 @@
 namespace geos
 {
 
-using namespace constitutive;
 using namespace dataRepository;
 using namespace fields;
-using namespace finiteElement;
 
 SolidMechanicsPenaltyContact::SolidMechanicsPenaltyContact( const string & name,
                                                             Group * const parent ):

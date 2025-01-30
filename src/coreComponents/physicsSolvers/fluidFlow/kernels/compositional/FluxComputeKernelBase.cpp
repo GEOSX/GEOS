@@ -27,7 +27,6 @@
 
 namespace geos
 {
-using namespace constitutive;
 using namespace fields;
 
 namespace isothermalCompositionalMultiphaseFVMKernels
@@ -54,8 +53,8 @@ FluxComputeKernelBase::FluxComputeKernelBase( integer const numPhases,
   m_phaseVolFrac( compFlowAccessors.get( flow::phaseVolumeFraction {} ) ),
   m_dPhaseVolFrac( compFlowAccessors.get( flow::dPhaseVolumeFraction {} ) ),
   m_dCompFrac_dCompDens( compFlowAccessors.get( flow::dGlobalCompFraction_dGlobalCompDensity {} ) ),
-  m_phaseCompFrac( multiFluidAccessors.get( fields::multifluid::phaseCompFraction {} ) ),
-  m_dPhaseCompFrac( multiFluidAccessors.get( fields::multifluid::dPhaseCompFraction {} ) ),
+  m_phaseCompFrac( multiFluidAccessors.get( multifluid::phaseCompFraction {} ) ),
+  m_dPhaseCompFrac( multiFluidAccessors.get( multifluid::dPhaseCompFraction {} ) ),
   m_localMatrix( localMatrix ),
   m_localRhs( localRhs ),
   m_kernelFlags( kernelFlags )

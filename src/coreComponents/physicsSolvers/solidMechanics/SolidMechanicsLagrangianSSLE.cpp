@@ -22,8 +22,6 @@
 namespace geos
 {
 
-using namespace constitutive;
-
 SolidMechanicsLagrangianSSLE::SolidMechanicsLagrangianSSLE( string const & name,
                                                             Group * const parent ):
   SolidMechanicsLagrangianFEM( name, parent )
