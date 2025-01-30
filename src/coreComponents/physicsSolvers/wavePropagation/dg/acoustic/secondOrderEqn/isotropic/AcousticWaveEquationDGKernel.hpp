@@ -219,23 +219,12 @@ struct PrecomputeNeighborhoodKernel
   {
     forAll< EXEC_POLICY >( size, [=] GEOS_HOST_DEVICE ( localIndex const k1 )
     {
-      printf("sizeeTN=%d\n",elemsToNodes.size());
       localIndex vertices[ 4 ] = { elemsToNodes( k1, 0 ), elemsToNodes( k1, 1 ), elemsToNodes( k1, 2 ), elemsToNodes( k1, 3 ) };
-      printf("vertices0=%d\n",elemsToNodes( k1, 0 ));
-      printf("vertices1=%d\n",elemsToNodes( k1, 1 ));
-      printf("vertices2=%d\n",elemsToNodes( k1, 2 ));
-      printf("vertices3=%d\n",elemsToNodes( k1, 3 ));
       for( int i = 0; i < 4; i++ )
       {
         localIndex  k1OrderedVertices[ 3 ];
         localIndex f = elemsToFaces( k1, i );
         localIndex faceVertices[ 3 ] = { facesToNodes( f, 0 ), facesToNodes( f, 1 ), facesToNodes( f, 2 ) };
-         printf("index=%d\n",i);
-        printf("face=%d\n",f);
-        printf("sizefacetonodes=%d\n",facesToNodes.size());
-        printf("faceVertices0=%d\n",facesToNodes( f, 0 ));
-        printf("faceVertices1=%d\n",facesToNodes( f, 1 ));
-        printf("faceVertices2=%d\n",facesToNodes( f, 2 ));
         // find neighboring element, if any
         localIndex k2 = facesToElems( f, 0 );
         if( k2 == k1 )
@@ -262,7 +251,6 @@ struct PrecomputeNeighborhoodKernel
           {
             o1 = vertex;
             indexo1=k;
-            printf("o1=%d\n",o1);
           }
           else
           {
@@ -279,12 +267,7 @@ struct PrecomputeNeighborhoodKernel
         }
         else
         {
-          printf("là\n");
-          printf("k1=%d\n",k1);
-          printf("o1=%d\n",o1);
-          printf("k2=%d\n",k2);
           elemsToOpposite( k1, indexo1 ) = k2;
-          printf("apres");
           localIndex oppositeElemVertices[ 4 ] = { elemsToNodes( k2, 0 ), elemsToNodes( k2, 1 ), elemsToNodes( k2, 2 ), elemsToNodes( k2, 3 ) };
           // find opposite vertex in second element
           int o2 = -1;
@@ -470,9 +453,13 @@ struct PressureComputationKernel
 
     real64 const rickerValue = useSourceWaveletTables ? 0 : WaveSolverUtils::evaluateRicker( time_n, timeSourceFrequency, timeSourceDelay, rickerOrder );
 
+     printf("herebefore");
+
     //For now lots of comments with ideas  + needed array to add to the method prototype
-    forAll< EXEC_POLICY >( size, [=] GEOS_HOST_DEVICE ( localIndex const k )
+    forAll< EXEC_POLICY >( 1, [=] GEOS_HOST_DEVICE ( localIndex const k )
     {
+
+      printf("here\n");
 
       real64 const dt2 = pow(dt,2);
 
@@ -519,98 +506,85 @@ struct PressureComputationKernel
         //We take the neighbour element
         const localIndex elemNeigh = elemsToOpposite(k,f1);
 
-      //   // Now we seek the degree of freedom on the neighbour element to use for the computation of the flux (or the penalty)
-      //   // First, we compute the four possible values of the permutation of the degrees of freedom depending on the the fixed
-      //   // permutation value contained inside elemsToOppositePermutation permutation
+        // Now we seek the degree of freedom on the neighbour element to use for the computation of the flux (or the penalty)
+        // First, we compute the four possible values of the permutation of the degrees of freedom depending on the the fixed
+        // permutation value contained inside elemsToOppositePermutation permutation
 
-      //   const int perm = elemsToOppositePermutation(elemNeigh,f1);
-
-      //   const int p1 = perm%4-1;
-      //   const int p2 = (perm/4)%4-1;
-      //   const int p3 = (perm/16)%4-1;
-      //   const int p4 = (perm/64)-1;
+        const int perm = elemsToOppositePermutation(elemNeigh,f1);
         const int p1 = perm%4-1;
         const int p2 = (perm/4)%4-1;
         const int p3 = (perm/16)%4-1;
-        // const int p4 = (perm/64)-1;
 
-      //   // Then we transform the 3 indices returned by the callback (i2,j2,k2) using the permutations. One of this permutation, will be 0 (depending on which
-      //   // degree of freedom is the one at the opposite of the face shared with the neighbour element) and will correspond to the one where p* will be negative
+        // Then we transform the 3 indices returned by the callback (i2,j2,k2) using the permutations. One of this permutation, will be 0 (depending on which
+        // degree of freedom is the one at the opposite of the face shared with the neighbour element) and will correspond to the one where p* will be negati
+        const int Indices[3] = {i2,j2,k2};
+        const int ii2 = p1 < 0 ? 0 : Indices[p1];
+        const int jj2 = p2 < 0 ? 0 : Indices[p2];
+        const int kk2 = p3 < 0 ? 0 : Indices[p3];
+        // Finally, using the dofIndex function, we compute the number of the global degree of freedom on the element
 
-      //   const int Indices[3] = {i2,j2,k2};
-
-      //   const int ii2 = p1 < 0 ? 0 : Indices[p1];
-      //   const int jj2 = p2 < 0 ? 0 : Indices[p2];
-      //   const int kk2 = p3 < 0 ? 0 : Indices[p3];
-
-      //   // Finally, using the dofIndex function, we compute the number of the global degree of freedom on the element
-
-      //   const int neighDof = m_finiteElement.dofIndex(ii2,jj2,kk2);
         const int neighDof = FE_TYPE::dofIndex( ii2, jj2, kk2 );
 
-      //   //Flux computation
+         //Flux computation
 
-      //   flowx[c1] -= 0.5*dt2*p_n[k][c2];
-      //   flowx[c1] += 0.5*dt2*p_n[elemNeigh][neighDof];
-
-
-      // },
-      // [&] (const int c1, const int c2, const int f1, const int i1, const int j1, const int k1, const int i2, const int j2, const int k2, real64 val)
-      // {
-      //   //We take the neighbour element
-      //    const int elemNeigh = elemsToOpposite(k,f1);
-
-      //   // Now we seek the degree of freedom on the neighbour element to use for the computation of the flux (or the penalty)
-      //   // First, we compute the four possible values of the permutation of the degrees of freedom depending on the the fixed
-      //   // permutation value contained inside elemsToOppositePermutation permutation
-
-      //   const int perm = elemsToOppositePermutation(elemNeigh,f1);
-
-      //   const int p1 = perm%4-1;
-      //   const int p2 = (perm/4)%4-1;
-      //   const int p3 = (perm/16)%4-1;
-
-      //   // Then we transform the 3 indices returned by the callback (i2,j2,k2) using the permutations. One of this permutation, will be 0 (depending on which
-      //   // degree of freedom is the one at the opposite of the face shared with the neighbour element) and will correspond to the one where p* will be negative
-
-      //   const int Indices[3] = {i2,j2,k2};
-
-      //   const int ii2 = p1 < 0 ? 0 : Indices[p1];
-      //   const int jj2 = p2 < 0 ? 0 : Indices[p2];
-      //   const int kk2 = p3 < 0 ? 0 : Indices[p3];
-
-      //   // Finally, using the dofIndex function, we compute the number of the global degree of freedom on the element
+         flowx[c1] -= 0.5*dt2*p_n[k][c2];
+         flowx[c1] += 0.5*dt2*p_n[elemNeigh][neighDof];
 
 
-      //   const int neighDof = m_finiteElement.dofIndex(ii2,jj2,kk2);
+       },
+       [&] (const int c1, const int c2, const int f1, const int i1, const int j1, const int k1, const int i2, const int j2, const int k2, real64 val)
+       {
+         //We take the neighbour element
+          const int elemNeigh = elemsToOpposite(k,f1);
+
+         // Now we seek the degree of freedom on the neighbour element to use for the computation of the flux (or the penalty)
+         // First, we compute the four possible values of the permutation of the degrees of freedom depending on the the fixed
+         // permutation value contained inside elemsToOppositePermutation permutation
+
+         const int perm = elemsToOppositePermutation(elemNeigh,f1);
+
+         const int p1 = perm%4-1;
+         const int p2 = (perm/4)%4-1;
+         const int p3 = (perm/16)%4-1;
+         // Then we transform the 3 indices returned by the callback (i2,j2,k2) using the permutations. One of this permutation, will be 0 (depending on which
+         // degree of freedom is the one at the opposite of the face shared with the neighbour element) and will correspond to the one where p* will be negative
+
+         const int Indices[3] = {i2,j2,k2};
+
+         const int ii2 = p1 < 0 ? 0 : Indices[p1];
+         const int jj2 = p2 < 0 ? 0 : Indices[p2];
+         const int kk2 = p3 < 0 ? 0 : Indices[p3];
+
+         // Finally, using the dofIndex function, we compute the number of the global degree of freedom on the element
+
+
         const int neighDof = FE_TYPE::dofIndex( ii2, jj2, kk2 );
 
-      //   //Flux computation
+         //Flux computation
 
-      //   flowx[c1] += 0.5*dt2*p_n[elemNeigh][neighDof];
-      //   flowx[c1] -= 0.5*dt2*p_n[k][c2];
+         flowx[c1] += 0.5*dt2*p_n[elemNeigh][neighDof];
+         flowx[c1] -= 0.5*dt2*p_n[k][c2];
 
-      //   //Then we need a second time where we take the transpose of the previous values:
+         //Then we need a second time where we take the transpose of the previous values:
 
 
-      //   const int IndicesTranspose[3] = {i1,j1,k1};
+         const int IndicesTranspose[3] = {i1,j1,k1};
 
-      //   const int ii1 = p1 < 0 ? 0 : IndicesTranspose[p1];
-      //   const int jj1 = p2 < 0 ? 0 : IndicesTranspose[p2];
-      //   const int kk1 = p3 < 0 ? 0 : IndicesTranspose[p3];
+         const int ii1 = p1 < 0 ? 0 : IndicesTranspose[p1];
+         const int jj1 = p2 < 0 ? 0 : IndicesTranspose[p2];
+         const int kk1 = p3 < 0 ? 0 : IndicesTranspose[p3];
 
-      //   // Finally, using the dofIndex function, we compute the number of the global degree of freedom on the element
+         // Finally, using the dofIndex function, we compute the number of the global degree of freedom on the element
 
-      //   const int neighDof2 = m_finiteElement.dofIndex(ii1,jj1,kk1);
         const int neighDof2 = FE_TYPE::dofIndex( ii1, jj1, kk1 );
 
-      //   //Flux computation
+         //Flux computation
 
-      //   flowx[c2] -= 0.5*dt2*p_n[elemNeigh][neighDof2];
-      //   flowx[c2] += 0.5*dt2*p_n[k][c1];
+         flowx[c2] -= 0.5*dt2*p_n[elemNeigh][neighDof2];
+         flowx[c2] += 0.5*dt2*p_n[k][c1];
 
 
-      // } );
+       } );
 
       //Source Injection
       for( localIndex isrc = 0; isrc < sourceConstants.size( 0 ); ++isrc )
