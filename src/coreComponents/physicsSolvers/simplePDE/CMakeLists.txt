@@ -6,6 +6,7 @@ set( physicsSolvers_headers
      simplePDE/LaplaceFEMKernels.hpp
      simplePDE/PhaseFieldDamageFEM.hpp
      simplePDE/PhaseFieldDamageFEMKernels.hpp 
+     simplePDE/PhaseFieldPressurizedDamageFEMKernels.hpp
      PARENT_SCOPE )
 
 # Specify solver sources

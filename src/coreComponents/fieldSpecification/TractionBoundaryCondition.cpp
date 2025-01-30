@@ -29,7 +29,9 @@ using namespace dataRepository;
 TractionBoundaryCondition::TractionBoundaryCondition( string const & name, Group * parent ):
   FieldSpecificationBase( name, parent ),
   m_tractionType( TractionType::vector ),
-  m_inputStress{}//,
+  m_inputStress{},
+  m_scaleSet(),
+  m_nodalScaleFlag( 0 )//,
 //  m_stressFunctionNames(),
 //  m_useStressFunctions(false),
 //  m_stressFunctions{nullptr}
@@ -51,6 +53,16 @@ TractionBoundaryCondition::TractionBoundaryCondition( string const & name, Group
 //    setInputFlag( InputFlags::OPTIONAL ).
 //    setDescription( string("Function names for description of stress for ") + viewKeyStruct::tractionTypeString() +
 //                    " = " + toString( TractionType::stress ) + ". Overrides " + viewKeyStruct::inputStressString() + "." );
+
+  registerWrapper( viewKeyStruct::scaleSetString(), &m_scaleSet ).
+    setApplyDefaultValue( 0.0 ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setSizedFromParent( 0 );
+
+  registerWrapper( viewKeyStruct::nodalScaleFlagString(), &m_nodalScaleFlag ).
+    setApplyDefaultValue( 0 ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "The flag to indicate whether to apply the nodal scale on the traction magnitude" );
 
   getWrapper< string >( FieldSpecificationBase::viewKeyStruct::fieldNameString() ).
     setInputFlag( InputFlags::FALSE );
@@ -170,8 +182,10 @@ void TractionBoundaryCondition::launch( real64 const time,
       localIndex const kf = targetSet[ i ];
       localIndex const numNodes = faceToNodeMap.sizeOfArray( kf );
 
+      real64 const nodalScale = ( m_nodalScaleFlag == 1 ) ? m_scaleSet[i] : 1.0;
+
       // TODO consider dispatch if appropriate
-      real64 const tractionMagnitude = spatialFunction ? tractionMagnitudeArrayView[i] : tractionMagnitude0;
+      real64 const tractionMagnitude = spatialFunction ? tractionMagnitudeArrayView[i] : (tractionMagnitude0 * nodalScale);
 
       real64 traction[3] = { 0 };
       // TODO consider dispatch if appropriate
@@ -218,6 +232,33 @@ void TractionBoundaryCondition::launch( real64 const time,
       }
     } );
   }
+}
+
+void TractionBoundaryCondition::reinitScaleSet( FaceManager const & faceManager,
+                                                SortedArrayView< localIndex const > const & targetSet,
+                                                arrayView1d< real64 const > const nodalScaleSet )
+{
+  ArrayOfArraysView< localIndex const > const faceToNodeMap = faceManager.nodeList().toViewConst();
+
+  localIndex const faceSize = targetSet.size();
+
+  m_scaleSet.resize( faceSize );
+
+  // Loop over targetSet to assign damage values to m_scaleSet
+  forAll< parallelDevicePolicy<> >( targetSet.size(), [=] GEOS_HOST_DEVICE ( localIndex const i )
+  {
+    localIndex const kf = targetSet[ i ];
+    localIndex const numNodes = faceToNodeMap.sizeOfArray( kf );
+
+    real64 faceScale = 0.0;
+
+    for( localIndex a=0; a<numNodes; ++a )
+    {
+      faceScale  += nodalScaleSet[ faceToNodeMap( kf, a ) ];
+    }
+
+    m_scaleSet[i] = LvArray::math::min( 1.0, (1.0 - faceScale/numNodes)*(1.0 - faceScale/numNodes) );
+  } );
 }
 
 REGISTER_CATALOG_ENTRY( FieldSpecificationBase, TractionBoundaryCondition, string const &, Group * const )

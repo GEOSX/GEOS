@@ -56,15 +56,31 @@
       defaultBulkModulus="4.4144e3"
       defaultShearModulus="4.3363e3"
       lengthScale="0.2"
-      criticalFractureEnergy="9.1e-2"
+      defaultCriticalFractureEnergy="9.1e-2"
       criticalStrainEnergy="0"
       extDrivingForceFlag="1"
-      tensileStrength="27.0"
-      compressiveStrength="77.0"
-      deltaCoefficient="3.22"/>
+      defaultTensileStrength="27.0"
+      defaultCompressiveStrength="77.0"
+      defaultDeltaCoefficient="3.22"/>
   </Constitutive>
 
   <FieldSpecifications>
+    <FieldSpecification
+       name="Gc"
+       initialCondition="1"
+       setNames="{ all }"
+       objectPath="ElementRegions/Region1"
+       fieldName="rock_criticalFractureEnergy"
+       scale="9.1e-2"/>
+
+    <FieldSpecification
+      name="tensileStrength"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Region1"
+      fieldName="rock_tensileStrength"
+      scale="27.0"/>
+
     <FieldSpecification
       name="yPosDisp"
       fieldName="totalDisplacement"

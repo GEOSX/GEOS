@@ -493,7 +493,10 @@ protected:
                                                            domain );
 
           // save fields (e.g. pressure and temperature) after inner solve
-          solver->saveSequentialIterationState( domain );
+          if( solver->getNonlinearSolverParameters().couplingType() == NonlinearSolverParameters::CouplingType::Sequential )
+          {
+            solver->saveSequentialIterationState( domain );
+          }
 
           mapSolutionBetweenSolvers( domain, idx() );
 

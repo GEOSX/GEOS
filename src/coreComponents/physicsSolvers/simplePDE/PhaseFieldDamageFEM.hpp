@@ -153,6 +153,7 @@ public:
     static constexpr char const * localDissipationOptionString() { return "localDissipation"; }
     static constexpr char const * irreversibilityFlagString() { return "irreversibilityFlag"; }
     static constexpr char const * damageUpperBoundString() { return "damageUpperBound"; }
+    static constexpr char const * fracturePressureTermFlagString() { return "fracturePressureTermFlag"; }
     static constexpr char const * solidModelNamesString() { return "solidMaterialNames"; }
 
     dataRepository::ViewKey timeIntegrationOption = { "timeIntegrationOption" };
@@ -184,6 +185,7 @@ private:
   LocalDissipation m_localDissipationOption;
   integer m_irreversibilityFlag;
   real64 m_damageUpperBound;
+  integer m_fracturePressureTermFlag;
 
   array1d< real64 > m_coeff;
 

@@ -1,0 +1,287 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Solvers
+    gravityVector="{ 0.0, 0.0, 0.0 }">
+    <PhaseFieldPoromechanics
+      name="phasefieldPoroSolve"
+      poromechanicsSolverName="poroSolve"
+      damageSolverName="damageSolve"
+      logLevel="1"
+      targetRegions="{ Region1 }">
+      <NonlinearSolverParameters
+        couplingType="Sequential"
+        lineSearchAction="None"  	  
+        newtonMaxIter="100"/>
+    </PhaseFieldPoromechanics>
+
+    <SinglePhasePoromechanics
+      name="poroSolve"
+      solidSolverName="solidMech"
+      flowSolverName="singlePhaseFlow"
+      logLevel="1"
+      targetRegions="{ Region1 }"
+      damageFlag="1">
+      <NonlinearSolverParameters
+        newtonMaxIter="100"
+        newtonTol="1.0e-6"/>
+      <LinearSolverParameters
+        solverType="gmres"
+        preconditionerType="mgr"
+        krylovTol="1e-4"/>
+    </SinglePhasePoromechanics>
+
+    <PhaseFieldDamageFEM
+      name="damageSolve"
+      discretization="FE1"
+      timeIntegrationOption="SteadyState"
+      fieldName="Damage"
+      localDissipation="Linear"
+      irreversibilityFlag="1"
+      damageUpperBound="1.0"
+      fracturePressureTermFlag="1"
+      logLevel="1"
+      targetRegions="{ Region1 }">
+      <NonlinearSolverParameters
+        newtonMaxIter="200"
+        newtonTol="1.0e-3"/>
+      <LinearSolverParameters
+        solverType="gmres"
+        preconditionerType="amg"/>
+    </PhaseFieldDamageFEM>
+
+    <SolidMechanicsLagrangianSSLE
+      name="solidMech"
+      timeIntegrationOption="QuasiStatic"
+      logLevel="1"
+      discretization="FE1"
+      targetRegions="{ Region1 }"/>
+
+    <SinglePhaseHybridFVM
+      name="singlePhaseFlow"
+      logLevel="1"
+      discretization="singlePhaseHybridMimetic"
+      targetRegions="{ Region1 }"/>
+  </Solvers>
+
+  <Mesh>
+    <InternalMesh
+      name="mesh1"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0, 84.85, 94.85, 94.9, 94.95, 99.95, 100, 100.05, 105.05, 105.1, 105.15, 115.15, 200 }"
+      yCoords="{ 0, 79.95, 80.0, 80.05, 100 }"
+      zCoords="{ 0, 1 }"
+      nx="{ 20, 40, 1, 1, 20, 1, 1, 20, 1, 1, 40, 20 }"
+      ny="{ 320, 1, 1, 80 }"
+      nz="{ 1 }"
+      cellBlockNames="{ cb1 }"/>
+  </Mesh>
+
+  <Events
+    minTime="-1000.0"
+    maxTime="35.0">
+
+    <PeriodicEvent
+      name="vtkOutput"
+      cycleFrequency="2"
+      target="/Outputs/VTKOutput"/>
+ 
+    <PeriodicEvent
+      name="solverApplication0"
+      beginTime="-1000.0"
+      endTime="0.0"
+      forceDt="1000.0"
+      target="/Solvers/phasefieldPoroSolve"/>
+
+    <PeriodicEvent
+      name="solverApplication1"
+      beginTime="0.0"
+      endTime="35.0"
+      forceDt="0.25"
+      target="/Solvers/phasefieldPoroSolve"/>
+
+    <PeriodicEvent
+      name="restarts"
+      cycleFrequency="50"
+      target="/Outputs/restartOutput"/>
+  </Events>
+
+  <NumericalMethods>
+    <FiniteElements>
+      <FiniteElementSpace 
+        name="FE1"
+        order="1"/>
+    </FiniteElements>
+    <FiniteVolume>
+      <HybridMimeticDiscretization
+        name="singlePhaseHybridMimetic"
+        innerProductType="quasiTPFA"/>
+    </FiniteVolume>
+  </NumericalMethods>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="Region1"
+      cellBlocks="{ cb1 }"
+      materialList="{ granite, water }"/>
+  </ElementRegions>
+
+  <Constitutive>
+    <PorousDamageElasticIsotropic
+      name="granite"
+      solidModelName="graniteSolid"
+      porosityModelName="granitePorosity"
+      permeabilityModelName="granitePerm"/>
+
+    <DamageElasticIsotropic
+      name="graniteSolid"
+      defaultDensity="2.7e-9"
+      defaultBulkModulus="24.6913580247e3"
+      defaultShearModulus="16.2601626016e3"
+      lengthScale="0.5"
+      defaultCriticalFractureEnergy="12e-3"
+      criticalStrainEnergy="0.0"
+      degradationLowerLimit="1e-6"/>
+
+    <BiotPorosity
+      name="granitePorosity"
+      defaultGrainBulkModulus="1e20"
+      defaultReferencePorosity="0.1"/>
+
+    <DamagePermeability
+      name="granitePerm"
+      bulkPermeability="1.0e-12"
+      damageDependenceConstant="7.0"/>
+
+    <CompressibleSinglePhaseFluid
+      name="water"
+      defaultDensity="1e-9"
+      defaultViscosity="1.0e-9"
+      referencePressure="0.000"
+      referenceDensity="1e-9"
+      compressibility="0.0"
+      referenceViscosity="1.0e-9"
+      viscosibility="0.0"/>
+  </Constitutive>
+
+  <FieldSpecifications>    
+    <FieldSpecification
+       name="Gc"
+       initialCondition="1"
+       setNames="{ all }"
+       objectPath="ElementRegions/Region1"
+       fieldName="graniteSolid_criticalFractureEnergy"
+       scale="12e-3"/>
+       
+    <FieldSpecification 
+      name="xconstraint"    
+      objectPath="nodeManager" 
+      fieldName="totalDisplacement" 
+      component="0" 
+      scale="0.0" 
+      setNames="{ xneg, xpos }"/>
+
+    <FieldSpecification 
+      name="yconstraint"    
+      objectPath="nodeManager" 
+      fieldName="totalDisplacement" 
+      component="1" 
+      scale="0.0" 
+      setNames="{ yneg, ypos }"/>
+
+    <FieldSpecification 
+      name="zconstraint" 
+      objectPath="nodeManager" 
+      fieldName="totalDisplacement" 
+      component="2" 
+      scale="0.0" 
+      setNames="{ zpos, zneg }"
+    />  
+
+    <FieldSpecification 
+      name="initialPressure"
+      initialCondition="1"
+      setNames="{all}"
+      objectPath="ElementRegions/Region1"
+      fieldName="pressure"
+      scale="0.0"
+    />
+
+    <FieldSpecification 
+      name="pressureConstraint"
+      setNames="{ xLeft, xRight }"
+      objectPath="ElementRegions/Region1"
+      fieldName="pressure"
+      scale="0.0"
+    />
+
+    <SourceFlux
+      name="sourceTerm"
+      objectPath="ElementRegions/Region1"
+      scale="-4e-11"
+      beginTime="1.0"
+      setNames="{ fracture1, fracture2, fracture3 }"/>
+
+    <FieldSpecification
+      name="noDamage"
+      fieldName="Damage"
+      objectPath="nodeManager"
+      scale="0.0"
+      setNames="{ intact }"/> 
+
+    <FieldSpecification
+      name="initialDamage"
+      fieldName="Damage"
+      objectPath="nodeManager"
+      scale="1.0"
+      setNames="{ fracture1, fracture2, fracture3 }"/> 
+
+  </FieldSpecifications>
+
+  <Geometry>
+    <Box
+      name="intact"
+      xMin="{ -0.1, 80.6, -0.1 }"
+      xMax="{ 200.1, 100.1, 1.1 }"/>
+
+    <Box
+      name="bottomPin"
+      xMin="{ 99.9, -0.1, -0.1 }"
+      xMax="{ 100.1, 0.1, 1.1 }"/>
+
+    <Box
+      name="fracture1"
+      xMin="{ 99.9, 76.9, -0.1 }"
+      xMax="{ 100.1, 80.0, 1.1 }"/>
+
+    <Box
+      name="fracture2"
+      xMin="{ 94.8, 76.9, -0.1 }"
+      xMax="{ 95.0, 80.0, 1.1 }"/>
+
+    <Box
+      name="fracture3"
+      xMin="{ 105.0, 76.9, -0.1 }"
+      xMax="{ 105.2, 80.0, 1.1 }"/>
+
+    <Box
+      name="xLeft"
+      xMin="{ -0.1, -0.1, -0.1 }"
+      xMax="{ 5.1, 100.1, 1.1 }"/>
+
+    <Box
+      name="xRight"
+      xMin="{ 194.9, -0.1, -0.1 }"
+      xMax="{ 200.1, 100.1, 1.1 }"/>
+  </Geometry>
+
+  <Outputs>
+    <VTK
+      name="VTKOutput"
+      plotFileRoot="phaseFieldPoro_multiCracks"/>
+
+    <Restart
+      name="restartOutput"/>
+  </Outputs>
+
+</Problem>

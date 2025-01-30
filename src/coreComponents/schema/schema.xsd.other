@@ -541,6 +541,7 @@
 			<xsd:element name="OneWayCoupledFractureFlowContactMechanics" type="OneWayCoupledFractureFlowContactMechanicsType" />
 			<xsd:element name="PhaseFieldDamageFEM" type="PhaseFieldDamageFEMType" />
 			<xsd:element name="PhaseFieldFracture" type="PhaseFieldFractureType" />
+			<xsd:element name="PhaseFieldPoromechanics" type="PhaseFieldPoromechanicsType" />
 			<xsd:element name="ProppantTransport" type="ProppantTransportType" />
 			<xsd:element name="ReactiveCompositionalMultiphaseOBL" type="ReactiveCompositionalMultiphaseOBLType" />
 			<xsd:element name="SeismicityRate" type="SeismicityRateType" />
@@ -1073,6 +1074,19 @@
 		<!--meshTargets => MeshBody/Region combinations that the solver will be applied to.-->
 		<xsd:attribute name="meshTargets" type="geos_mapBase_lt_std_pair_lt_string_cm_-string-_gt__cm_-LvArray_Array_lt_string_cm_-1_cm_-camp_int_seq_lt_long_cm_-0l_gt__cm_-int_cm_-LvArray_ChaiBuffer_gt__cm_-std_integral_constant_lt_bool_cm_-true_gt_-_gt_" />
 	</xsd:complexType>
+	<xsd:complexType name="PhaseFieldPoromechanicsType">
+		<xsd:choice minOccurs="0" maxOccurs="unbounded">
+			<xsd:element name="LinearSolverParameters" type="LinearSolverParametersType" maxOccurs="1" />
+			<xsd:element name="NonlinearSolverParameters" type="NonlinearSolverParametersType" maxOccurs="1" />
+			<xsd:element name="SolverStatistics" type="SolverStatisticsType" />
+		</xsd:choice>
+		<!--discretization => Name of discretization object (defined in the :ref:`NumericalMethodsManager`) to use for this solver. For instance, if this is a Finite Element Solver, the name of a :ref:`FiniteElement` should be specified. If this is a Finite Volume Method, the name of a :ref:`FiniteVolume` discretization should be specified.-->
+		<xsd:attribute name="discretization" type="groupNameRef" />
+		<!--maxStableDt => Value of the Maximum Stable Timestep for this solver.-->
+		<xsd:attribute name="maxStableDt" type="real64" />
+		<!--meshTargets => MeshBody/Region combinations that the solver will be applied to.-->
+		<xsd:attribute name="meshTargets" type="geos_mapBase_lt_std_pair_lt_string_cm_-string-_gt__cm_-LvArray_Array_lt_string_cm_-1_cm_-camp_int_seq_lt_long_cm_-0l_gt__cm_-int_cm_-LvArray_ChaiBuffer_gt__cm_-std_integral_constant_lt_bool_cm_-true_gt_-_gt_" />
+	</xsd:complexType>
 	<xsd:complexType name="ProppantTransportType">
 		<xsd:choice minOccurs="0" maxOccurs="unbounded">
 			<xsd:element name="LinearSolverParameters" type="LinearSolverParametersType" maxOccurs="1" />
@@ -1556,6 +1570,7 @@
 			<xsd:element name="ConstantPermeability" type="ConstantPermeabilityType" />
 			<xsd:element name="Coulomb" type="CoulombType" />
 			<xsd:element name="DamageElasticIsotropic" type="DamageElasticIsotropicType" />
+			<xsd:element name="DamagePermeability" type="DamagePermeabilityType" />
 			<xsd:element name="DamageSpectralElasticIsotropic" type="DamageSpectralElasticIsotropicType" />
 			<xsd:element name="DamageVolDevElasticIsotropic" type="DamageVolDevElasticIsotropicType" />
 			<xsd:element name="DeadOilFluid" type="DeadOilFluidType" />
@@ -2228,12 +2243,22 @@
 	<xsd:complexType name="DamageElasticIsotropicType">
 		<!--bulkModulus => Elastic Bulk Modulus Field-->
 		<xsd:attribute name="bulkModulus" type="real64_array" />
-		<!--damage => Material Damage Variable-->
-		<xsd:attribute name="damage" type="real64_array2d" />
+		<!--compressiveStrength => Compressive strength from the uniaxial compression test-->
+		<xsd:attribute name="compressiveStrength" type="real64_array" />
+		<!--criticalFractureEnergy => Critical fracture energy-->
+		<xsd:attribute name="criticalFractureEnergy" type="real64_array" />
+		<!--damageGrad => Material Damage Gradient-->
+		<xsd:attribute name="damageGrad" type="real64_array3d" />
+		<!--deltaCoefficient => Coefficient in the calculation of the external driving force-->
+		<xsd:attribute name="deltaCoefficient" type="real64_array" />
 		<!--density => Material Density-->
 		<xsd:attribute name="density" type="real64_array2d" />
 		<!--extDrivingForce => External Driving Force-->
 		<xsd:attribute name="extDrivingForce" type="real64_array2d" />
+		<!--newDamage => Material New Damage Variable-->
+		<xsd:attribute name="newDamage" type="real64_array2d" />
+		<!--oldDamage => Material Old Damage Variable-->
+		<xsd:attribute name="oldDamage" type="real64_array2d" />
 		<!--oldStress => Previous Material Stress-->
 		<xsd:attribute name="oldStress" type="real64_array3d" />
 		<!--shearModulus => Elastic Shear Modulus Field-->
@@ -2242,18 +2267,38 @@
 		<xsd:attribute name="strainEnergyDensity" type="real64_array2d" />
 		<!--stress => Current Material Stress-->
 		<xsd:attribute name="stress" type="real64_array3d" />
+		<!--tensileStrength => Tensile strength from the uniaxial tension test-->
+		<xsd:attribute name="tensileStrength" type="real64_array" />
 		<!--thermalExpansionCoefficient => Linear Thermal Expansion Coefficient Field-->
 		<xsd:attribute name="thermalExpansionCoefficient" type="real64_array" />
+		<!--volumetricStrain => Volumetric strain-->
+		<xsd:attribute name="volumetricStrain" type="real64_array2d" />
+	</xsd:complexType>
+	<xsd:complexType name="DamagePermeabilityType">
+		<!--dPerm_dPressure => Derivative of rock permeability with respect to pressure-->
+		<xsd:attribute name="dPerm_dPressure" type="real64_array3d" />
+		<!--permeability => Rock permeability-->
+		<xsd:attribute name="permeability" type="real64_array3d" />
 	</xsd:complexType>
 	<xsd:complexType name="DamageSpectralElasticIsotropicType">
 		<!--bulkModulus => Elastic Bulk Modulus Field-->
 		<xsd:attribute name="bulkModulus" type="real64_array" />
-		<!--damage => Material Damage Variable-->
-		<xsd:attribute name="damage" type="real64_array2d" />
+		<!--compressiveStrength => Compressive strength from the uniaxial compression test-->
+		<xsd:attribute name="compressiveStrength" type="real64_array" />
+		<!--criticalFractureEnergy => Critical fracture energy-->
+		<xsd:attribute name="criticalFractureEnergy" type="real64_array" />
+		<!--damageGrad => Material Damage Gradient-->
+		<xsd:attribute name="damageGrad" type="real64_array3d" />
+		<!--deltaCoefficient => Coefficient in the calculation of the external driving force-->
+		<xsd:attribute name="deltaCoefficient" type="real64_array" />
 		<!--density => Material Density-->
 		<xsd:attribute name="density" type="real64_array2d" />
 		<!--extDrivingForce => External Driving Force-->
 		<xsd:attribute name="extDrivingForce" type="real64_array2d" />
+		<!--newDamage => Material New Damage Variable-->
+		<xsd:attribute name="newDamage" type="real64_array2d" />
+		<!--oldDamage => Material Old Damage Variable-->
+		<xsd:attribute name="oldDamage" type="real64_array2d" />
 		<!--oldStress => Previous Material Stress-->
 		<xsd:attribute name="oldStress" type="real64_array3d" />
 		<!--shearModulus => Elastic Shear Modulus Field-->
@@ -2262,18 +2307,32 @@
 		<xsd:attribute name="strainEnergyDensity" type="real64_array2d" />
 		<!--stress => Current Material Stress-->
 		<xsd:attribute name="stress" type="real64_array3d" />
+		<!--tensileStrength => Tensile strength from the uniaxial tension test-->
+		<xsd:attribute name="tensileStrength" type="real64_array" />
 		<!--thermalExpansionCoefficient => Linear Thermal Expansion Coefficient Field-->
 		<xsd:attribute name="thermalExpansionCoefficient" type="real64_array" />
+		<!--volumetricStrain => Volumetric strain-->
+		<xsd:attribute name="volumetricStrain" type="real64_array2d" />
 	</xsd:complexType>
 	<xsd:complexType name="DamageVolDevElasticIsotropicType">
 		<!--bulkModulus => Elastic Bulk Modulus Field-->
 		<xsd:attribute name="bulkModulus" type="real64_array" />
-		<!--damage => Material Damage Variable-->
-		<xsd:attribute name="damage" type="real64_array2d" />
+		<!--compressiveStrength => Compressive strength from the uniaxial compression test-->
+		<xsd:attribute name="compressiveStrength" type="real64_array" />
+		<!--criticalFractureEnergy => Critical fracture energy-->
+		<xsd:attribute name="criticalFractureEnergy" type="real64_array" />
+		<!--damageGrad => Material Damage Gradient-->
+		<xsd:attribute name="damageGrad" type="real64_array3d" />
+		<!--deltaCoefficient => Coefficient in the calculation of the external driving force-->
+		<xsd:attribute name="deltaCoefficient" type="real64_array" />
 		<!--density => Material Density-->
 		<xsd:attribute name="density" type="real64_array2d" />
 		<!--extDrivingForce => External Driving Force-->
 		<xsd:attribute name="extDrivingForce" type="real64_array2d" />
+		<!--newDamage => Material New Damage Variable-->
+		<xsd:attribute name="newDamage" type="real64_array2d" />
+		<!--oldDamage => Material Old Damage Variable-->
+		<xsd:attribute name="oldDamage" type="real64_array2d" />
 		<!--oldStress => Previous Material Stress-->
 		<xsd:attribute name="oldStress" type="real64_array3d" />
 		<!--shearModulus => Elastic Shear Modulus Field-->
@@ -2282,8 +2341,12 @@
 		<xsd:attribute name="strainEnergyDensity" type="real64_array2d" />
 		<!--stress => Current Material Stress-->
 		<xsd:attribute name="stress" type="real64_array3d" />
+		<!--tensileStrength => Tensile strength from the uniaxial tension test-->
+		<xsd:attribute name="tensileStrength" type="real64_array" />
 		<!--thermalExpansionCoefficient => Linear Thermal Expansion Coefficient Field-->
 		<xsd:attribute name="thermalExpansionCoefficient" type="real64_array" />
+		<!--volumetricStrain => Volumetric strain-->
+		<xsd:attribute name="volumetricStrain" type="real64_array2d" />
 	</xsd:complexType>
 	<xsd:complexType name="DeadOilFluidType">
 		<!--dPhaseCompFraction => Derivative of phase component fraction with respect to pressure, temperature, and global component fractions-->

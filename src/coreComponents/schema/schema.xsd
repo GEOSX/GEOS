@@ -411,6 +411,10 @@
 					<xsd:selector xpath="PhaseFieldFracture" />
 					<xsd:field xpath="@name" />
 				</xsd:unique>
+				<xsd:unique name="SolversPhaseFieldPoromechanicsUniqueName">
+					<xsd:selector xpath="PhaseFieldPoromechanics" />
+					<xsd:field xpath="@name" />
+				</xsd:unique>
 				<xsd:unique name="SolversProppantTransportUniqueName">
 					<xsd:selector xpath="ProppantTransport" />
 					<xsd:field xpath="@name" />
@@ -693,6 +697,10 @@
 				</xsd:unique>
 				<xsd:unique name="domainConstitutiveDamageElasticIsotropicUniqueName">
 					<xsd:selector xpath="DamageElasticIsotropic" />
+					<xsd:field xpath="@name" />
+				</xsd:unique>
+				<xsd:unique name="domainConstitutiveDamagePermeabilityUniqueName">
+					<xsd:selector xpath="DamagePermeability" />
 					<xsd:field xpath="@name" />
 				</xsd:unique>
 				<xsd:unique name="domainConstitutiveDamageSpectralElasticIsotropicUniqueName">
@@ -1366,10 +1374,14 @@ This keyword is ignored for single-phase flow simulations-->
 		<xsd:attribute name="inputStress" type="R2SymTensor" default="{0,0,0,0,0,0}" />
 		<!--logLevel => Log level-->
 		<xsd:attribute name="logLevel" type="integer" default="0" />
+		<!--nodalScaleFlag => The flag to indicate whether to apply the nodal scale on the traction magnitude-->
+		<xsd:attribute name="nodalScaleFlag" type="integer" default="0" />
 		<!--objectPath => Path to the target field-->
 		<xsd:attribute name="objectPath" type="groupNameRef" default="" />
 		<!--scale => Scale factor for value of the boundary condition.-->
 		<xsd:attribute name="scale" type="real64" default="0" />
+		<!--scaleSet => (no description available)-->
+		<xsd:attribute name="scaleSet" type="real64_array" default="{0}" />
 		<!--setNames => Name of sets that boundary condition is applied to.-->
 		<xsd:attribute name="setNames" type="groupNameRef_array" use="required" />
 		<!--tractionType => Type of traction boundary condition. Options are:
@@ -2306,6 +2318,7 @@ Level 0 outputs no specific information for this solver. Higher levels require m
 			<xsd:element name="OneWayCoupledFractureFlowContactMechanics" type="OneWayCoupledFractureFlowContactMechanicsType" />
 			<xsd:element name="PhaseFieldDamageFEM" type="PhaseFieldDamageFEMType" />
 			<xsd:element name="PhaseFieldFracture" type="PhaseFieldFractureType" />
+			<xsd:element name="PhaseFieldPoromechanics" type="PhaseFieldPoromechanicsType" />
 			<xsd:element name="ProppantTransport" type="ProppantTransportType" />
 			<xsd:element name="ReactiveCompositionalMultiphaseOBL" type="ReactiveCompositionalMultiphaseOBLType" />
 			<xsd:element name="SeismicityRate" type="SeismicityRateType" />
@@ -3300,6 +3313,8 @@ Level 0 outputs no specific information for this solver. Higher levels require m
 		</xsd:choice>
 		<!--cflFactor => Factor to apply to the `CFL condition <http://en.wikipedia.org/wiki/Courant-Friedrichs-Lewy_condition>`_ when calculating the maximum allowable time step. Values should be in the interval (0,1] -->
 		<xsd:attribute name="cflFactor" type="real64" default="0.5" />
+		<!--damageFlag => The flag to indicate whether a damage solid model is used-->
+		<xsd:attribute name="damageFlag" type="integer" default="0" />
 		<!--flowSolverName => Name of the flow solver used by the coupled solver-->
 		<xsd:attribute name="flowSolverName" type="groupNameRef" use="required" />
 		<!--initialDt => Initial time-step value required by the solver to the event manager.-->
@@ -3597,6 +3612,8 @@ Level 0 outputs no specific information for this solver. Higher levels require m
 		<xsd:attribute name="discretization" type="groupNameRef" use="required" />
 		<!--fieldName => name of field variable-->
 		<xsd:attribute name="fieldName" type="groupNameRef" use="required" />
+		<!--fracturePressureTermFlag => The flag to indicate whether to add the fracture pressure contribution-->
+		<xsd:attribute name="fracturePressureTermFlag" type="integer" default="0" />
 		<!--initialDt => Initial time-step value required by the solver to the event manager.-->
 		<xsd:attribute name="initialDt" type="real64" default="1e+99" />
 		<!--irreversibilityFlag => The flag to indicate whether to apply the irreversibility constraint-->
@@ -3662,6 +3679,40 @@ Level 0 outputs no specific information for this solver. Higher levels require m
 		<xsd:attribute name="logLevel" type="integer" default="0" />
 		<!--solidSolverName => Name of the solid solver used by the coupled solver-->
 		<xsd:attribute name="solidSolverName" type="groupNameRef" use="required" />
+		<!--targetRegions => Allowable regions that the solver may be applied to. Note that this does not indicate that the solver will be applied to these regions, only that allocation will occur such that the solver may be applied to these regions. The decision about what regions this solver will beapplied to rests in the EventManager.-->
+		<xsd:attribute name="targetRegions" type="groupNameRef_array" use="required" />
+		<!--writeLinearSystem => Write matrix, rhs, solution to screen ( = 1) or file ( = 2).-->
+		<xsd:attribute name="writeLinearSystem" type="integer" default="0" />
+		<!--name => A name is required for any non-unique nodes-->
+		<xsd:attribute name="name" type="groupName" use="required" />
+	</xsd:complexType>
+	<xsd:complexType name="PhaseFieldPoromechanicsType">
+		<xsd:choice minOccurs="0" maxOccurs="unbounded">
+			<xsd:element name="LinearSolverParameters" type="LinearSolverParametersType" maxOccurs="1" />
+			<xsd:element name="NonlinearSolverParameters" type="NonlinearSolverParametersType" maxOccurs="1" />
+		</xsd:choice>
+		<!--cflFactor => Factor to apply to the `CFL condition <http://en.wikipedia.org/wiki/Courant-Friedrichs-Lewy_condition>`_ when calculating the maximum allowable time step. Values should be in the interval (0,1] -->
+		<xsd:attribute name="cflFactor" type="real64" default="0.5" />
+		<!--damageSolverName => Name of the damage solver used by the coupled solver-->
+		<xsd:attribute name="damageSolverName" type="groupNameRef" use="required" />
+		<!--initialDt => Initial time-step value required by the solver to the event manager.-->
+		<xsd:attribute name="initialDt" type="real64" default="1e+99" />
+		<!--logLevel => Sets the level of information to write in the standard output (the console typically).
+Level 0 outputs no specific information for this solver. Higher levels require more outputs.
+1
+ - Line search information
+ - Solution information (scaling, maximum changes, quality check)
+ - Convergence information
+ - Time step information
+ - Linear solver information
+ - Nonlinear solver information
+ - Solver timers information
+ - Coupling information
+2
+ - The summary of declared fields and coupling-->
+		<xsd:attribute name="logLevel" type="integer" default="0" />
+		<!--poromechanicsSolverName => Name of the poromechanics solver used by the coupled solver-->
+		<xsd:attribute name="poromechanicsSolverName" type="groupNameRef" use="required" />
 		<!--targetRegions => Allowable regions that the solver may be applied to. Note that this does not indicate that the solver will be applied to these regions, only that allocation will occur such that the solver may be applied to these regions. The decision about what regions this solver will beapplied to rests in the EventManager.-->
 		<xsd:attribute name="targetRegions" type="groupNameRef_array" use="required" />
 		<!--writeLinearSystem => Write matrix, rhs, solution to screen ( = 1) or file ( = 2).-->
@@ -3925,6 +3976,8 @@ Level 0 outputs no specific information for this solver. Higher levels require m
 		</xsd:choice>
 		<!--cflFactor => Factor to apply to the `CFL condition <http://en.wikipedia.org/wiki/Courant-Friedrichs-Lewy_condition>`_ when calculating the maximum allowable time step. Values should be in the interval (0,1] -->
 		<xsd:attribute name="cflFactor" type="real64" default="0.5" />
+		<!--damageFlag => The flag to indicate whether a damage solid model is used-->
+		<xsd:attribute name="damageFlag" type="integer" default="0" />
 		<!--flowSolverName => Name of the flow solver used by the coupled solver-->
 		<xsd:attribute name="flowSolverName" type="groupNameRef" use="required" />
 		<!--initialDt => Initial time-step value required by the solver to the event manager.-->
@@ -3970,6 +4023,8 @@ Local- Add jump stabilization on interior of macro elements-->
 		</xsd:choice>
 		<!--cflFactor => Factor to apply to the `CFL condition <http://en.wikipedia.org/wiki/Courant-Friedrichs-Lewy_condition>`_ when calculating the maximum allowable time step. Values should be in the interval (0,1] -->
 		<xsd:attribute name="cflFactor" type="real64" default="0.5" />
+		<!--damageFlag => The flag to indicate whether a damage solid model is used-->
+		<xsd:attribute name="damageFlag" type="integer" default="0" />
 		<!--flowSolverName => Name of the flow solver used by the coupled solver-->
 		<xsd:attribute name="flowSolverName" type="groupNameRef" use="required" />
 		<!--initialDt => Initial time-step value required by the solver to the event manager.-->
@@ -4049,6 +4104,8 @@ Level 0 outputs no specific information for this solver. Higher levels require m
 		</xsd:choice>
 		<!--cflFactor => Factor to apply to the `CFL condition <http://en.wikipedia.org/wiki/Courant-Friedrichs-Lewy_condition>`_ when calculating the maximum allowable time step. Values should be in the interval (0,1] -->
 		<xsd:attribute name="cflFactor" type="real64" default="0.5" />
+		<!--damageFlag => The flag to indicate whether a damage solid model is used-->
+		<xsd:attribute name="damageFlag" type="integer" default="0" />
 		<!--flowSolverName => Name of the flow solver used by the coupled solver-->
 		<xsd:attribute name="flowSolverName" type="groupNameRef" use="required" />
 		<!--initialDt => Initial time-step value required by the solver to the event manager.-->
@@ -4209,6 +4266,8 @@ Level 0 outputs no specific information for this solver. Higher levels require m
 		</xsd:choice>
 		<!--cflFactor => Factor to apply to the `CFL condition <http://en.wikipedia.org/wiki/Courant-Friedrichs-Lewy_condition>`_ when calculating the maximum allowable time step. Values should be in the interval (0,1] -->
 		<xsd:attribute name="cflFactor" type="real64" default="0.5" />
+		<!--damageFlag => The flag to indicate whether a damage solid model is used-->
+		<xsd:attribute name="damageFlag" type="integer" default="0" />
 		<!--initialDt => Initial time-step value required by the solver to the event manager.-->
 		<xsd:attribute name="initialDt" type="real64" default="1e+99" />
 		<!--isThermal => Flag indicating whether the problem is thermal or not. Set isThermal="1" to enable the thermal coupling-->
@@ -4254,6 +4313,8 @@ Local- Add jump stabilization on interior of macro elements-->
 		</xsd:choice>
 		<!--cflFactor => Factor to apply to the `CFL condition <http://en.wikipedia.org/wiki/Courant-Friedrichs-Lewy_condition>`_ when calculating the maximum allowable time step. Values should be in the interval (0,1] -->
 		<xsd:attribute name="cflFactor" type="real64" default="0.5" />
+		<!--damageFlag => The flag to indicate whether a damage solid model is used-->
+		<xsd:attribute name="damageFlag" type="integer" default="0" />
 		<!--initialDt => Initial time-step value required by the solver to the event manager.-->
 		<xsd:attribute name="initialDt" type="real64" default="1e+99" />
 		<!--isThermal => Flag indicating whether the problem is thermal or not. Set isThermal="1" to enable the thermal coupling-->
@@ -5139,6 +5200,7 @@ Level 0 outputs no specific information for this solver. Higher levels require m
 			<xsd:element name="ConstantPermeability" type="ConstantPermeabilityType" />
 			<xsd:element name="Coulomb" type="CoulombType" />
 			<xsd:element name="DamageElasticIsotropic" type="DamageElasticIsotropicType" />
+			<xsd:element name="DamagePermeability" type="DamagePermeabilityType" />
 			<xsd:element name="DamageSpectralElasticIsotropic" type="DamageSpectralElasticIsotropicType" />
 			<xsd:element name="DamageVolDevElasticIsotropic" type="DamageVolDevElasticIsotropicType" />
 			<xsd:element name="DeadOilFluid" type="DeadOilFluidType" />
@@ -5715,14 +5777,20 @@ The expected format is "{ waterMax, oilMax }", in that order-->
 		<xsd:attribute name="name" type="groupName" use="required" />
 	</xsd:complexType>
 	<xsd:complexType name="DamageElasticIsotropicType">
-		<!--compressiveStrength => Compressive strength from the uniaxial compression test-->
-		<xsd:attribute name="compressiveStrength" type="real64" default="0" />
-		<!--criticalFractureEnergy => Critical fracture energy-->
-		<xsd:attribute name="criticalFractureEnergy" type="real64" use="required" />
+		<!--biotCoefficient => Biot coefficient-->
+		<xsd:attribute name="biotCoefficient" type="real64_array" default="{0}" />
 		<!--criticalStrainEnergy => Critical stress in a 1d tension test-->
 		<xsd:attribute name="criticalStrainEnergy" type="real64" use="required" />
+		<!--damagePressure => A prescribed uniform pressure in the phase-field crack-->
+		<xsd:attribute name="damagePressure" type="real64" default="0" />
 		<!--defaultBulkModulus => Default Bulk Modulus Parameter-->
 		<xsd:attribute name="defaultBulkModulus" type="real64" default="-1" />
+		<!--defaultCompressiveStrength => Default compressive strength from the uniaxial compression test-->
+		<xsd:attribute name="defaultCompressiveStrength" type="real64" default="0" />
+		<!--defaultCriticalFractureEnergy => Default critical fracture energy-->
+		<xsd:attribute name="defaultCriticalFractureEnergy" type="real64" use="required" />
+		<!--defaultDeltaCoefficient => Default coefficient in the calculation of the external driving force-->
+		<xsd:attribute name="defaultDeltaCoefficient" type="real64" default="-1" />
 		<!--defaultDensity => Default Material Density-->
 		<xsd:attribute name="defaultDensity" type="real64" use="required" />
 		<!--defaultDrainedLinearTEC => Default Linear Thermal Expansion Coefficient of the Solid Rock Frame-->
@@ -5731,30 +5799,42 @@ The expected format is "{ waterMax, oilMax }", in that order-->
 		<xsd:attribute name="defaultPoissonRatio" type="real64" default="-1" />
 		<!--defaultShearModulus => Default Shear Modulus Parameter-->
 		<xsd:attribute name="defaultShearModulus" type="real64" default="-1" />
+		<!--defaultTensileStrength => Default tensile strength from the uniaxial tension test-->
+		<xsd:attribute name="defaultTensileStrength" type="real64" default="0" />
 		<!--defaultYoungModulus => Default Young's Modulus-->
 		<xsd:attribute name="defaultYoungModulus" type="real64" default="-1" />
 		<!--degradationLowerLimit => The lower limit of the degradation function-->
 		<xsd:attribute name="degradationLowerLimit" type="real64" default="0" />
-		<!--deltaCoefficient => Coefficient in the calculation of the external driving force-->
-		<xsd:attribute name="deltaCoefficient" type="real64" default="-1" />
 		<!--extDrivingForceFlag => Whether to have external driving force. Can be 0 or 1-->
 		<xsd:attribute name="extDrivingForceFlag" type="integer" default="0" />
 		<!--lengthScale => Length scale l in the phase-field equation-->
 		<xsd:attribute name="lengthScale" type="real64" use="required" />
-		<!--tensileStrength => Tensile strength from the uniaxial tension test-->
-		<xsd:attribute name="tensileStrength" type="real64" default="0" />
+		<!--name => A name is required for any non-unique nodes-->
+		<xsd:attribute name="name" type="groupName" use="required" />
+	</xsd:complexType>
+	<xsd:complexType name="DamagePermeabilityType">
+		<!--bulkPermeability => Permeability of the intact bulk material-->
+		<xsd:attribute name="bulkPermeability" type="real64" use="required" />
+		<!--damageDependenceConstant => Damage dependeny coefficient-->
+		<xsd:attribute name="damageDependenceConstant" type="real64" use="required" />
 		<!--name => A name is required for any non-unique nodes-->
 		<xsd:attribute name="name" type="groupName" use="required" />
 	</xsd:complexType>
 	<xsd:complexType name="DamageSpectralElasticIsotropicType">
-		<!--compressiveStrength => Compressive strength from the uniaxial compression test-->
-		<xsd:attribute name="compressiveStrength" type="real64" default="0" />
-		<!--criticalFractureEnergy => Critical fracture energy-->
-		<xsd:attribute name="criticalFractureEnergy" type="real64" use="required" />
+		<!--biotCoefficient => Biot coefficient-->
+		<xsd:attribute name="biotCoefficient" type="real64_array" default="{0}" />
 		<!--criticalStrainEnergy => Critical stress in a 1d tension test-->
 		<xsd:attribute name="criticalStrainEnergy" type="real64" use="required" />
+		<!--damagePressure => A prescribed uniform pressure in the phase-field crack-->
+		<xsd:attribute name="damagePressure" type="real64" default="0" />
 		<!--defaultBulkModulus => Default Bulk Modulus Parameter-->
 		<xsd:attribute name="defaultBulkModulus" type="real64" default="-1" />
+		<!--defaultCompressiveStrength => Default compressive strength from the uniaxial compression test-->
+		<xsd:attribute name="defaultCompressiveStrength" type="real64" default="0" />
+		<!--defaultCriticalFractureEnergy => Default critical fracture energy-->
+		<xsd:attribute name="defaultCriticalFractureEnergy" type="real64" use="required" />
+		<!--defaultDeltaCoefficient => Default coefficient in the calculation of the external driving force-->
+		<xsd:attribute name="defaultDeltaCoefficient" type="real64" default="-1" />
 		<!--defaultDensity => Default Material Density-->
 		<xsd:attribute name="defaultDensity" type="real64" use="required" />
 		<!--defaultDrainedLinearTEC => Default Linear Thermal Expansion Coefficient of the Solid Rock Frame-->
@@ -5763,30 +5843,34 @@ The expected format is "{ waterMax, oilMax }", in that order-->
 		<xsd:attribute name="defaultPoissonRatio" type="real64" default="-1" />
 		<!--defaultShearModulus => Default Shear Modulus Parameter-->
 		<xsd:attribute name="defaultShearModulus" type="real64" default="-1" />
+		<!--defaultTensileStrength => Default tensile strength from the uniaxial tension test-->
+		<xsd:attribute name="defaultTensileStrength" type="real64" default="0" />
 		<!--defaultYoungModulus => Default Young's Modulus-->
 		<xsd:attribute name="defaultYoungModulus" type="real64" default="-1" />
 		<!--degradationLowerLimit => The lower limit of the degradation function-->
 		<xsd:attribute name="degradationLowerLimit" type="real64" default="0" />
-		<!--deltaCoefficient => Coefficient in the calculation of the external driving force-->
-		<xsd:attribute name="deltaCoefficient" type="real64" default="-1" />
 		<!--extDrivingForceFlag => Whether to have external driving force. Can be 0 or 1-->
 		<xsd:attribute name="extDrivingForceFlag" type="integer" default="0" />
 		<!--lengthScale => Length scale l in the phase-field equation-->
 		<xsd:attribute name="lengthScale" type="real64" use="required" />
-		<!--tensileStrength => Tensile strength from the uniaxial tension test-->
-		<xsd:attribute name="tensileStrength" type="real64" default="0" />
 		<!--name => A name is required for any non-unique nodes-->
 		<xsd:attribute name="name" type="groupName" use="required" />
 	</xsd:complexType>
 	<xsd:complexType name="DamageVolDevElasticIsotropicType">
-		<!--compressiveStrength => Compressive strength from the uniaxial compression test-->
-		<xsd:attribute name="compressiveStrength" type="real64" default="0" />
-		<!--criticalFractureEnergy => Critical fracture energy-->
-		<xsd:attribute name="criticalFractureEnergy" type="real64" use="required" />
+		<!--biotCoefficient => Biot coefficient-->
+		<xsd:attribute name="biotCoefficient" type="real64_array" default="{0}" />
 		<!--criticalStrainEnergy => Critical stress in a 1d tension test-->
 		<xsd:attribute name="criticalStrainEnergy" type="real64" use="required" />
+		<!--damagePressure => A prescribed uniform pressure in the phase-field crack-->
+		<xsd:attribute name="damagePressure" type="real64" default="0" />
 		<!--defaultBulkModulus => Default Bulk Modulus Parameter-->
 		<xsd:attribute name="defaultBulkModulus" type="real64" default="-1" />
+		<!--defaultCompressiveStrength => Default compressive strength from the uniaxial compression test-->
+		<xsd:attribute name="defaultCompressiveStrength" type="real64" default="0" />
+		<!--defaultCriticalFractureEnergy => Default critical fracture energy-->
+		<xsd:attribute name="defaultCriticalFractureEnergy" type="real64" use="required" />
+		<!--defaultDeltaCoefficient => Default coefficient in the calculation of the external driving force-->
+		<xsd:attribute name="defaultDeltaCoefficient" type="real64" default="-1" />
 		<!--defaultDensity => Default Material Density-->
 		<xsd:attribute name="defaultDensity" type="real64" use="required" />
 		<!--defaultDrainedLinearTEC => Default Linear Thermal Expansion Coefficient of the Solid Rock Frame-->
@@ -5795,18 +5879,16 @@ The expected format is "{ waterMax, oilMax }", in that order-->
 		<xsd:attribute name="defaultPoissonRatio" type="real64" default="-1" />
 		<!--defaultShearModulus => Default Shear Modulus Parameter-->
 		<xsd:attribute name="defaultShearModulus" type="real64" default="-1" />
+		<!--defaultTensileStrength => Default tensile strength from the uniaxial tension test-->
+		<xsd:attribute name="defaultTensileStrength" type="real64" default="0" />
 		<!--defaultYoungModulus => Default Young's Modulus-->
 		<xsd:attribute name="defaultYoungModulus" type="real64" default="-1" />
 		<!--degradationLowerLimit => The lower limit of the degradation function-->
 		<xsd:attribute name="degradationLowerLimit" type="real64" default="0" />
-		<!--deltaCoefficient => Coefficient in the calculation of the external driving force-->
-		<xsd:attribute name="deltaCoefficient" type="real64" default="-1" />
 		<!--extDrivingForceFlag => Whether to have external driving force. Can be 0 or 1-->
 		<xsd:attribute name="extDrivingForceFlag" type="integer" default="0" />
 		<!--lengthScale => Length scale l in the phase-field equation-->
 		<xsd:attribute name="lengthScale" type="real64" use="required" />
-		<!--tensileStrength => Tensile strength from the uniaxial tension test-->
-		<xsd:attribute name="tensileStrength" type="real64" default="0" />
 		<!--name => A name is required for any non-unique nodes-->
 		<xsd:attribute name="name" type="groupName" use="required" />
 	</xsd:complexType>

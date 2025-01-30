@@ -114,11 +114,19 @@
       defaultBulkModulus="2.00e5"
       defaultShearModulus="3.00e5"
       lengthScale="0.2"
-      criticalFractureEnergy="2.7"
+      defaultCriticalFractureEnergy="2.7"
       criticalStrainEnergy="0"/>
   </Constitutive>
 
   <FieldSpecifications>
+    <FieldSpecification
+       name="Gc"
+       initialCondition="1"
+       setNames="{ all }"
+       objectPath="ElementRegions/Region1"
+       fieldName="shale_criticalFractureEnergy"
+       scale="2.7"/>
+
     <FieldSpecification
       name="xtraction"
       fieldName="totalDisplacement"

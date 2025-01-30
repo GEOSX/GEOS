@@ -56,15 +56,31 @@
       defaultBulkModulus="1.67e4"
       defaultShearModulus="1.25e4"
       lengthScale="0.4"
-      criticalFractureEnergy="4e-3"
+      defaultCriticalFractureEnergy="4e-3"
       criticalStrainEnergy="0"
       extDrivingForceFlag="1"
-      tensileStrength="5.0"
-      compressiveStrength="40.0"
-      deltaCoefficient="0.0"/>
+      defaultTensileStrength="5.0"
+      defaultCompressiveStrength="40.0"
+      defaultDeltaCoefficient="0.0"/>
   </Constitutive>
 
   <FieldSpecifications>
+    <FieldSpecification
+       name="Gc"
+       initialCondition="1"
+       setNames="{ all }"
+       objectPath="ElementRegions/Region1"
+       fieldName="rock_criticalFractureEnergy"
+       scale="4e-3"/>
+
+    <FieldSpecification
+      name="tensileStrength"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Region1"
+      fieldName="rock_tensileStrength"
+      scale="5.0"/>
+
     <Traction
       name="topTraction"
       objectPath="faceManager"

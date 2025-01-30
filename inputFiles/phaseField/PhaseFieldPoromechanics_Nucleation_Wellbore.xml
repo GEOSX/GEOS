@@ -1,0 +1,276 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Included>
+    <File name="./PhaseFieldPoromechanics_Nucleation_base.xml"/>
+  </Included>
+  
+  <Solvers
+    gravityVector="{ 0.0, 0.0, 0.0 }">
+    <PhaseFieldPoromechanics
+      name="phasefieldPoroSolve"
+      poromechanicsSolverName="poroSolve"
+      damageSolverName="damageSolve"
+      logLevel="1"
+      targetRegions="{ Region1 }">
+      <NonlinearSolverParameters
+        couplingType="Sequential"
+        lineSearchAction="None"  	  
+        newtonMaxIter="100"/>
+    </PhaseFieldPoromechanics>
+
+    <SinglePhasePoromechanics
+      name="poroSolve"
+      solidSolverName="solidMech"
+      flowSolverName="singlePhaseFlow"
+      logLevel="1"
+      targetRegions="{ Region1 }"
+      damageFlag="1">
+      <NonlinearSolverParameters
+        newtonMaxIter="100"
+        newtonTol="1.0e-4"/>
+      <LinearSolverParameters
+        solverType="gmres"
+        preconditionerType="mgr"
+        krylovTol="1e-4"/>
+    </SinglePhasePoromechanics>
+
+    <PhaseFieldDamageFEM
+      name="damageSolve"
+      discretization="FE1"
+      timeIntegrationOption="SteadyState"
+      fieldName="Damage"
+      localDissipation="Linear"
+      irreversibilityFlag="1"
+      damageUpperBound="0.95"
+      fracturePressureTermFlag="1"
+      logLevel="1"
+      targetRegions="{ Region1 }">
+      <NonlinearSolverParameters
+        newtonMaxIter="200"
+        newtonTol="1.0e-4"/>
+      <LinearSolverParameters
+        solverType="gmres"
+        preconditionerType="amg"/>
+    </PhaseFieldDamageFEM>
+
+    <SolidMechanicsLagrangianSSLE
+      name="solidMech"
+      timeIntegrationOption="QuasiStatic"
+      logLevel="1"
+      discretization="FE1"
+      targetRegions="{ Region1 }"/>
+
+    <SinglePhaseHybridFVM
+      name="singlePhaseFlow"
+      logLevel="1"
+      discretization="singlePhaseHybridMimetic"
+      targetRegions="{ Region1 }"/>
+  </Solvers>
+
+  <Mesh>
+    <VTKMesh 
+      name="mesh"
+      regionAttribute="RING-MATRIX"
+      file="wellboreMesh/wellbore2d-r=4.vtu"
+      nodesetNames="{ xneg, xpos, yneg, ypos, zneg, zpos, inner_hole }"/>
+  </Mesh>
+
+
+  <Events
+    maxTime="13.0">
+
+    <PeriodicEvent
+      name="vtkOutput"
+      cycleFrequency="1"
+      target="/Outputs/VTKOutput"/>
+
+    <PeriodicEvent
+      name="solverApplication1"
+      endTime="12.0"
+      forceDt="0.5"
+      target="/Solvers/phasefieldPoroSolve"/>
+
+    <PeriodicEvent
+      name="solverApplication2"
+      beginTime="12.0"
+      endTime="13.0"
+      forceDt="0.02"
+      target="/Solvers/phasefieldPoroSolve"/>
+
+    <PeriodicEvent
+      name="restarts"
+      cycleFrequency="40"
+      target="/Outputs/restartOutput"/>
+
+  </Events>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="Region1"
+      cellBlocks="{ 0_hexahedra, 1_hexahedra }"
+      materialList="{ rock, water }"/>
+  </ElementRegions>
+
+  <FieldSpecifications>    
+    <FieldSpecification
+       name="Gc"
+       initialCondition="1"
+       setNames="{ all }"
+       objectPath="ElementRegions/Region1"
+       fieldName="rockSolid_criticalFractureEnergy"
+       scale="4e-3"/>
+
+    <FieldSpecification
+      name="tensileStrength"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Region1"
+      fieldName="rockSolid_tensileStrength"
+      scale="5.5"/>
+
+    <FieldSpecification
+      name="compressiveStrength"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Region1"
+      fieldName="rockSolid_compressiveStrength"
+      scale="40.0"/>
+
+    <FieldSpecification
+      name="deltaCoefficient"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Region1"
+      fieldName="rockSolid_deltaCoefficient"
+      scale="3.31"/>
+    
+    <FieldSpecification 
+      name="Sh"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Region1"
+      fieldName="rockSolid_stress"
+      component="0"
+      scale="-9.0"/>
+
+    <FieldSpecification 
+      name="SH"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Region1"
+      fieldName="rockSolid_stress"
+      component="1"
+      scale="-15.0"/>
+
+    <FieldSpecification 
+      name="Sv"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Region1"
+      fieldName="rockSolid_stress"
+      component="2"
+      scale="0.0"/>
+
+    <FieldSpecification 
+      name="xconstraint"    
+      objectPath="nodeManager" 
+      fieldName="totalDisplacement" 
+      component="0" 
+      scale="0.0" 
+      setNames="{xneg, xpos}"/>
+
+    <FieldSpecification 
+      name="yconstraint"    
+      objectPath="nodeManager" 
+      fieldName="totalDisplacement" 
+      component="1" 
+      scale="0.0" 
+      setNames="{yneg, ypos}"/>
+
+    <FieldSpecification 
+      name="zconstraint" 
+      objectPath="nodeManager" 
+      fieldName="totalDisplacement" 
+      component="2" 
+      scale="0.0" 
+      setNames="{zneg}"
+    />  
+
+    <FieldSpecification 
+      name="initialPressure"
+      initialCondition="1"
+      setNames="{all}"
+      objectPath="ElementRegions/Region1"
+      fieldName="pressure"
+      scale="0.0"
+    />
+
+     <FieldSpecification 
+      name="pressureConstraint"
+      setNames="{xminus, xplus, yminus, yplus}"
+      objectPath="ElementRegions/Region1"
+      fieldName="pressure"
+      scale="0.0"
+    />
+
+    <FieldSpecification
+      name="sourceTerm"
+      objectPath="ElementRegions/Region1/0_hexahedra"
+      fieldName="pressure"
+      scale="100.0"
+      setNames="{ all }"
+      functionName="timeFunction"
+      />
+
+    <Traction 
+      name="traction"
+      setNames="{ inner_hole }"
+      objectPath="faceManager"
+      scale="-100.0"
+      tractionType="normal"
+      nodalScaleFlag="1"
+      functionName="timeFunction"    
+      />
+  </FieldSpecifications>
+
+  <Functions>
+    <TableFunction
+      name="timeFunction"
+      inputVarNames="{ time }"
+      coordinates="{ 0, 100 }"
+      values="{ 0.0, 1.0 }"/>
+  </Functions>
+
+  <Geometry>
+    <Box
+      name="xplus"
+      xMin="{ 99.3, -100.1, -10.1 }"
+      xMax="{ 100.1, 100.1, 10.1 }"/>
+
+    <Box
+      name="xminus"
+      xMin="{ -100.1, -100.1, -10.1 }"
+      xMax="{ -99.3, 100.1, 10.1 }"/>
+
+    <Box
+      name="yplus"
+      xMin="{-100.1, 99.3, -10.1 }"
+      xMax="{ 100.1, 100.1, 10.1 }"/>
+
+    <Box
+      name="yminus"
+      xMin="{ -100.1, -100.1, -10.1 }"
+      xMax="{ 100.1, -99.3, 10.1 }"/>
+  </Geometry>
+
+  <Outputs>
+    <VTK
+      name="VTKOutput"
+      plotFileRoot="phaseFieldPoro_nucleation_wellbore"/>
+
+    <Restart
+      name="restartOutput"/>
+  </Outputs>
+
+</Problem>

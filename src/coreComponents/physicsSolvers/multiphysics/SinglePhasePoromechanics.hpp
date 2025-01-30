@@ -111,12 +111,15 @@ public:
 
   struct viewKeyStruct : Base::viewKeyStruct
   {
-    // nothing yet here
+    /// Flag to indicate if it is the phase-field formulation
+    constexpr static char const * damageFlagString() { return "damageFlag"; }
   };
 
 protected:
 
   virtual void initializePostInitialConditionsPreSubGroups() override;
+
+  integer m_damageFlag;
 
   virtual void setMGRStrategy()
   {

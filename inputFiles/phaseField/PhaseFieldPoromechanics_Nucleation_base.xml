@@ -1,0 +1,59 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <NumericalMethods>
+    <FiniteElements>
+      <FiniteElementSpace 
+        name="FE1"
+        order="1"/>
+    </FiniteElements>
+    <FiniteVolume>
+      <HybridMimeticDiscretization
+        name="singlePhaseHybridMimetic"
+        innerProductType="quasiTPFA"/>
+    </FiniteVolume>
+  </NumericalMethods>
+
+  <Constitutive>
+    <PorousDamageElasticIsotropic
+      name="rock"
+      solidModelName="rockSolid"
+      porosityModelName="rockPorosity"
+      permeabilityModelName="rockPerm"/>
+
+    <DamageElasticIsotropic
+      name="rockSolid"
+      defaultDensity="2.7e-9"
+      defaultBulkModulus="1.67e4"
+      defaultShearModulus="1.25e4"
+      lengthScale="0.5"
+      defaultCriticalFractureEnergy="4e-3"
+      criticalStrainEnergy="0"
+      extDrivingForceFlag="1"
+      degradationLowerLimit="1e-6"
+      defaultTensileStrength="5.5"
+      defaultCompressiveStrength="40.0"
+      defaultDeltaCoefficient="3.31"/>
+
+    <BiotPorosity
+      name="rockPorosity"
+      defaultGrainBulkModulus="8.35e4"
+      defaultReferencePorosity="0.01"/>
+
+    <DamagePermeability
+      name="rockPerm"
+      bulkPermeability="1.0e-9"
+      damageDependenceConstant="7.0"/>
+
+    <CompressibleSinglePhaseFluid
+      name="water"
+      defaultDensity="1e-9"
+      defaultViscosity="1.0e-9"
+      referencePressure="0.000"
+      referenceDensity="1e-9"
+      compressibility="0.0"
+      referenceViscosity="1.0e-9"
+      viscosibility="0.0"/>
+  </Constitutive>
+
+</Problem>

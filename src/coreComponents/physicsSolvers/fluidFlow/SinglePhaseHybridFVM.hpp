@@ -120,6 +120,11 @@ public:
                      DomainPartition & domain ) override;
 
   virtual void
+  implicitStepComplete( real64 const & time,
+                        real64 const & dt,
+                        DomainPartition & domain ) override;
+
+  virtual void
   assembleFluxTerms( real64 const dt,
                      DomainPartition const & domain,
                      DofManager const & dofManager,
