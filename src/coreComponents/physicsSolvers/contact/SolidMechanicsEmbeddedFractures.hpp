@@ -118,7 +118,8 @@ public:
                         real64 const dt,
                         DomainPartition & domain );
 
-  virtual bool updateConfiguration( DomainPartition & domain ) override final;
+  virtual bool updateConfiguration( DomainPartition & domain,
+                                    integer configurationLoopIter ) override final;
 
   bool useStaticCondensation() const { return m_useStaticCondensation; }
 

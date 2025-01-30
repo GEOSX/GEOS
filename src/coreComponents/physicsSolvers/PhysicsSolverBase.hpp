@@ -568,9 +568,11 @@ public:
   /**
    * @brief updates the configuration (if needed) based on the state after a converged Newton loop.
    * @param domain the domain containing the mesh and fields
+   * @param configurationLoopIter current configuration iteration number
    * @return a bool that states whether the configuration used to solve the nonlinear loop is still valid or not.
    */
-  virtual bool updateConfiguration( DomainPartition & domain );
+  virtual bool updateConfiguration( DomainPartition & domain,
+                                    integer configurationLoopIter );
 
   /**
    * @brief

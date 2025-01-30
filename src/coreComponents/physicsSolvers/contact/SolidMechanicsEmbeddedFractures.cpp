@@ -800,7 +800,8 @@ void SolidMechanicsEmbeddedFractures::updateState( DomainPartition & domain )
   } );
 }
 
-bool SolidMechanicsEmbeddedFractures::updateConfiguration( DomainPartition & domain )
+bool SolidMechanicsEmbeddedFractures::updateConfiguration( DomainPartition & domain,
+                                                           integer const GEOS_UNUSED_PARAM( configurationLoopIter ) )
 {
   int hasConfigurationConverged = true;
 

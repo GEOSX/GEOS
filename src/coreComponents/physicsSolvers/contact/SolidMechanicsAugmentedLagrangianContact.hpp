@@ -88,7 +88,8 @@ public:
 
   void updateState( DomainPartition & domain ) override final;
 
-  virtual bool updateConfiguration( DomainPartition & domain ) override final;
+  virtual bool updateConfiguration( DomainPartition & domain,
+                                    integer configurationLoopIter ) override final;
 
 
   /**

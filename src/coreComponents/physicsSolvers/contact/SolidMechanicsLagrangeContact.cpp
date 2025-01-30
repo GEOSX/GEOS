@@ -72,6 +72,11 @@ SolidMechanicsLagrangeContact::SolidMechanicsLagrangeContact( const string & nam
     setApplyDefaultValue( 1.0 ).
     setDescription( "It be used to increase the scale of the stabilization entries. A value < 1.0 results in larger entries in the stabilization matrix." );
 
+  registerWrapper( viewKeyStruct::useLocalYieldAccelerationString(), &m_useLocalYieldAcceleration ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setApplyDefaultValue( 0 ).
+    setDescription( "Flag to enable local acceleration for yield (to accelerate configuration loop convergence)." );
+
   addLogLevel< logInfo::Configuration >();
 }
 
@@ -188,6 +193,11 @@ void SolidMechanicsLagrangeContact::initializePreSubGroups()
     } );
   }
 
+  if( m_useLocalYieldAcceleration )
+  {
+    GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: local yield acceleration enabled", getName() ) );
+  }
+
 }
 
 void SolidMechanicsLagrangeContact::setupSystem( DomainPartition & domain,
@@ -208,6 +218,11 @@ void SolidMechanicsLagrangeContact::setupSystem( DomainPartition & domain,
   if( !m_precond && m_linearSolverParameters.get().solverType != LinearSolverParameters::SolverType::direct )
   {
     createPreconditioner( domain );
+  }
+
+  if( m_useLocalYieldAcceleration )
+  {
+    initializeAccelerationVariables( domain );
   }
 }
 
@@ -2219,7 +2234,8 @@ bool SolidMechanicsLagrangeContact::resetConfigurationToDefault( DomainPartition
   return false;
 }
 
-bool SolidMechanicsLagrangeContact::updateConfiguration( DomainPartition & domain )
+bool SolidMechanicsLagrangeContact::updateConfiguration( DomainPartition & domain,
+                                                         integer const configurationLoopIter )
 {
   GEOS_MARK_FUNCTION;
 
@@ -2278,6 +2294,7 @@ bool SolidMechanicsLagrangeContact::updateConfiguration( DomainPartition & domai
             else if( traction[kfe][0] > normalTractionTolerance[kfe] )
             {
               fractureState[kfe] = FractureState::Open;
+
               if( getLogLevel() >= 10 )
                 GEOS_LOG( GEOS_FMT( "{}: {} -> {}: traction = {}, normalTractionTolerance = {}",
                                     kfe, originalFractureState, fractureState[kfe],
@@ -2291,6 +2308,9 @@ bool SolidMechanicsLagrangeContact::updateConfiguration( DomainPartition & domai
               real64 const limitTau =
                 frictionWrapper.computeLimitTangentialTractionNorm( traction[kfe][0],
                                                                     dLimitTangentialTractionNorm_dTraction );
+
+              // store to use in acceleration when enabled
+              real64 const currentTau_unscaled = currentTau;
 
               if( originalFractureState == FractureState::Stick && currentTau >= limitTau )
               {
@@ -2314,6 +2334,11 @@ bool SolidMechanicsLagrangeContact::updateConfiguration( DomainPartition & domai
               else
               {
                 fractureState[kfe] = FractureState::Stick;
+
+                if( m_useLocalYieldAcceleration )
+                {
+                  tryLocalYieldAcceleration( configurationLoopIter, kfe, currentTau_unscaled, limitTau, currentTau, fractureState[kfe] );
+                }
               }
               if( getLogLevel() >= 10 && fractureState[kfe] != originalFractureState )
                 GEOS_LOG( GEOS_FMT( "{}: {} -> {}: currentTau = {}, limitTau = {}",
@@ -2344,6 +2369,90 @@ bool SolidMechanicsLagrangeContact::updateConfiguration( DomainPartition & domai
 
   // Assume converged if changed area is below certain fraction of total area
   return changedArea <= m_nonlinearSolverParameters.m_configurationTolerance * totalArea;
+}
+
+void SolidMechanicsLagrangeContact::tryLocalYieldAcceleration( integer const configurationLoopIter,
+                                                               localIndex const kfe,
+                                                               real64 const currentTau_unscaled,
+                                                               real64 const limitTau,
+                                                               real64 const currentTau,
+                                                               integer & fractureState )
+{
+  using namespace fields::contact;
+
+  if( configurationLoopIter == 0 )
+  {
+    m_x0[kfe] = currentTau_unscaled - limitTau;
+  }
+  else if( configurationLoopIter == 1 )
+  {
+    m_x1_tilde[kfe] = currentTau_unscaled - limitTau;
+    m_x1[kfe] = m_x1_tilde[kfe];
+    m_omega0[kfe] = 1.0;
+  }
+  else
+  {
+    // only apply acceleration if within a fraction of the limitTau
+    real64 acceleration_buffer = (limitTau - currentTau) / limitTau;
+
+    if( acceleration_buffer > 0.1 / (configurationLoopIter - 1) )
+    {
+      // do not apply acceleration, just update previous values
+      m_x0[kfe] = m_x1_tilde[kfe];
+      m_x1_tilde[kfe] = currentTau_unscaled - limitTau;
+      m_x1[kfe] = m_x1_tilde[kfe];
+    }
+    else
+    {
+      // apply acceleration
+      m_x2_tilde[kfe] = currentTau_unscaled - limitTau;
+
+      m_omega1[kfe] = -1.0 * m_omega0[kfe] * (m_x1_tilde[kfe] - m_x0[kfe]) / ((m_x1_tilde[kfe] - m_x0[kfe]) - (m_x2_tilde[kfe] - m_x1[kfe]));
+
+      m_x2[kfe] = (1.0 - m_omega1[kfe]) * m_x1[kfe] + m_omega1[kfe] * m_x2_tilde[kfe];
+
+      real64 acc_currentTau_unscaled = m_x2[kfe] + limitTau;
+      real64 acc_currentTau_scaled = acc_currentTau_unscaled * (1.0 - m_slidingCheckTolerance);
+
+      if( acc_currentTau_scaled > limitTau )
+      {
+        fractureState = FractureState::NewSlip;
+      }
+      else
+      {
+        m_x0[kfe] = m_x1[kfe];
+        m_x1[kfe] = m_x2[kfe];
+        m_x1_tilde[kfe] = m_x2_tilde[kfe];
+        m_omega0[kfe] = m_omega1[kfe];
+      }
+    }
+  }
+}
+
+void SolidMechanicsLagrangeContact::initializeAccelerationVariables( DomainPartition & domain )
+{
+  // calculate total number of face elements
+  localIndex total_size = 0;
+  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
+                                                                MeshLevel & mesh,
+                                                                arrayView1d< string const > const & regionNames )
+  {
+    ElementRegionManager & elemManager = mesh.getElemManager();
+    elemManager.forElementSubRegions< FaceElementSubRegion >( regionNames, [&]( localIndex const,
+                                                                                FaceElementSubRegion & subRegion )
+    {
+      total_size += subRegion.size();
+    } );
+  } );
+
+  // allocate arrays
+  m_x0.resize( total_size );
+  m_x1.resize( total_size );
+  m_x1_tilde.resize( total_size );
+  m_x2.resize( total_size );
+  m_x2_tilde.resize( total_size );
+  m_omega0.resize( total_size );
+  m_omega1.resize( total_size );
 }
 
 bool SolidMechanicsLagrangeContact::isFractureAllInStickCondition( DomainPartition const & domain ) const
