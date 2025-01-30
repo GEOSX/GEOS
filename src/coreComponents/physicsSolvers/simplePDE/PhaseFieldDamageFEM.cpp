@@ -213,26 +213,29 @@ void PhaseFieldDamageFEM::assembleSystem( real64 const GEOS_UNUSED_PARAM( time_n
     localMatrix.zero();
     localRhs.zero();
 
-    auto const localDissipation = m_localDissipationOption == LocalDissipation::Linear ?
-                                  PhaseFieldDamageKernelLocalDissipation::Linear :
-                                  PhaseFieldDamageKernelLocalDissipation::Quadratic;
+    auto kernelFactory = getFactory( static_cast< integer >( m_localDissipationOption ),
+                                     dofIndex,
+                                     dofManager.rankOffset(),
+                                     localMatrix,
+                                     localRhs,
+                                     dt,
+                                     m_fieldName );
 
-    PhaseFieldDamageKernelFactory kernelFactory( dofIndex,
-                                                 dofManager.rankOffset(),
-                                                 localMatrix,
-                                                 localRhs,
-                                                 dt,
-                                                 m_fieldName,
-                                                 localDissipation );
 
-    finiteElement::
-      regionBasedKernelApplication< parallelDevicePolicy<>,
-                                    constitutive::DamageBase,
-                                    CellElementSubRegion >( mesh,
-                                                            regionNames,
-                                                            this->getDiscretizationName(),
-                                                            viewKeyStruct::solidModelNamesString(),
-                                                            kernelFactory );
+    std::visit( [&] ( auto & factory )
+    {
+      finiteElement::
+        regionBasedKernelApplication< parallelDevicePolicy<>,
+                                      constitutive::DamageBase,
+                                      CellElementSubRegion >( mesh,
+                                                              regionNames,
+                                                              this->getDiscretizationName(),
+                                                              viewKeyStruct::solidModelNamesString(),
+                                                              factory );
+    }, kernelFactory );
+
+
+
 #else // this has your changes to the old base code
     matrix.zero();
     rhs.zero();

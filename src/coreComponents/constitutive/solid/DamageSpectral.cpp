@@ -32,7 +32,13 @@ namespace constitutive
 template< typename BASE >
 DamageSpectral< BASE >::DamageSpectral( string const & name, Group * const parent ):
   Damage< BASE >( name, parent )
-{}
+{
+  this->registerWrapper( viewKeyStruct::dissipationFuncitonTypeString(), &m_dissipationFuctionType ).
+    setApplyDefaultValue( damageSpectral::LocalDissipation::Linear ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Dissipation function type: "
+                    "``" + EnumStrings< damageSpectral::LocalDissipation >::concat( "|" ) + "``" );
+}
 
 template< typename BASE >
 DamageSpectral< BASE >::~DamageSpectral()

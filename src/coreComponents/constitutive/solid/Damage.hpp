@@ -107,10 +107,10 @@ public:
 
   //Standard quadratic degradation functions
 
-  inline
+  template< typename DISSIPATION_ORDER = std::integral_constant< int, 1 > >
   GEOS_HOST_DEVICE
-  virtual real64 getDegradationValue( localIndex const k,
-                                      localIndex const q ) const
+  real64 getDegradationValue( localIndex const k,
+                              localIndex const q ) const
   {
     real64 pf;
 
@@ -129,18 +129,19 @@ public:
     return ((1 - eps)*(1 - pf)*(1 - pf) + eps);
   }
 
-
+  template< typename DISSIPATION_ORDER = std::integral_constant< int, 1 > >
   inline
   GEOS_HOST_DEVICE
-  virtual real64 getDegradationDerivative( real64 const d ) const
+  real64 getDegradationDerivative( real64 const d ) const
   {
     return -2*(1 - d);
   }
 
 
+  template< typename DISSIPATION_ORDER = std::integral_constant< int, 1 > >
   inline
   GEOS_HOST_DEVICE
-  virtual real64 getDegradationSecondDerivative( real64 const d ) const
+  real64 getDegradationSecondDerivative( real64 const d ) const
   {
     GEOS_UNUSED_VAR( d );
 
@@ -162,7 +163,7 @@ public:
       return;
     }
 
-    real64 factor = getDegradationValue( k, q );
+    real64 const factor = getDegradationValue( k, q );
 
     if( m_extDrivingForceFlag )
     {

@@ -141,10 +141,10 @@ public:
     ExplicitTransient
   };
 
-  enum class LocalDissipation
+  enum class LocalDissipation : integer
   {
-    Linear,
-    Quadratic,
+    Linear = 1,
+    Quadratic = 2,
   };
 
   struct viewKeyStruct : public PhysicsSolverBase::viewKeyStruct
