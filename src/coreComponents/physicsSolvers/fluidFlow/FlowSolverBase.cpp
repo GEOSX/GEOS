@@ -368,6 +368,18 @@ void FlowSolverBase::initializePreSubGroups()
   }
 }
 
+void FlowSolverBase::checkDiscretizationName() const
+{
+  DomainPartition const & domain = this->getGroupByPath< DomainPartition >( "/Problem/domain" );
+  NumericalMethodsManager const & numericalMethodManager = domain.getNumericalMethodManager();
+  FiniteVolumeManager const & fvManager = numericalMethodManager.getFiniteVolumeManager();
+  if( !fvManager.hasGroup< FluxApproximationBase >( m_discretizationName ) )
+  {
+    GEOS_ERROR( GEOS_FMT( "{}: can not find discretization named '{}' (a discretization deriving from FluxApproximationBase must be selected for {} solver '{}' )",
+                          getDataContext(), m_discretizationName, getCatalogName(), getName()));
+  }
+}
+
 void FlowSolverBase::validatePoreVolumes( DomainPartition const & domain ) const
 {
   real64 minPoreVolume = LvArray::NumericLimits< real64 >::max;
@@ -671,15 +683,13 @@ void FlowSolverBase::findMinMaxElevationInEquilibriumTarget( DomainPartition & d
 
   } );
 
-  MpiWrapper::allReduce( localMaxElevation.data(),
-                         maxElevation.data(),
-                         localMaxElevation.size(),
-                         MpiWrapper::getMpiOp( MpiWrapper::Reduction::Max ),
+  MpiWrapper::allReduce( localMaxElevation.toView(),
+                         maxElevation,
+                         MpiWrapper::Reduction::Max,
                          MPI_COMM_GEOS );
-  MpiWrapper::allReduce( localMinElevation.data(),
-                         minElevation.data(),
-                         localMinElevation.size(),
-                         MpiWrapper::getMpiOp( MpiWrapper::Reduction::Min ),
+  MpiWrapper::allReduce( localMinElevation.toView(),
+                         minElevation,
+                         MpiWrapper::Reduction::Min,
                          MPI_COMM_GEOS );
 }
 
@@ -726,10 +736,9 @@ void FlowSolverBase::computeSourceFluxSizeScalingFactor( real64 const & time,
   } );
 
   // synchronize the set size over all the MPI ranks
-  MpiWrapper::allReduce( bcAllSetsSize.data(),
-                         bcAllSetsSize.data(),
-                         bcAllSetsSize.size(),
-                         MpiWrapper::getMpiOp( MpiWrapper::Reduction::Sum ),
+  MpiWrapper::allReduce( bcAllSetsSize,
+                         bcAllSetsSize,
+                         MpiWrapper::Reduction::Sum,
                          MPI_COMM_GEOS );
 }
 
@@ -809,10 +818,9 @@ void FlowSolverBase::saveAquiferConvergedState( real64 const & time,
     localSumFluxes[aquiferIndex] += targetSetSumFluxes;
   } );
 
-  MpiWrapper::allReduce( localSumFluxes.data(),
-                         globalSumFluxes.data(),
-                         localSumFluxes.size(),
-                         MpiWrapper::getMpiOp( MpiWrapper::Reduction::Sum ),
+  MpiWrapper::allReduce( localSumFluxes,
+                         globalSumFluxes,
+                         MpiWrapper::Reduction::Sum,
                          MPI_COMM_GEOS );
 
   // Step 3: we are ready to save the summed fluxes for each individual aquifer
