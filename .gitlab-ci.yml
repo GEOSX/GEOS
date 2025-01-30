@@ -1,3 +1,9 @@
+###
+# LC requirement for Gitlab 17.0
+include:
+  - project: 'lc-templates/id_tokens'
+    file: 'id_tokens.yml'
+
 variables:
   PROJECT_ALLOC_NAME: ${CI_PROJECT_NAME}_ci_${CI_PIPELINE_ID}
   BUILD_ROOT: ${CI_PROJECT_DIR}
@@ -18,7 +24,6 @@ stages:
     - git submodule set-url src/coreComponents/LvArray https://github.com/GEOS-DEV/LvArray.git
     - git submodule set-url src/cmake/blt https://github.com/LLNL/blt.git
     - git submodule set-url src/coreComponents/constitutive/PVTPackage https://github.com/GEOS-DEV/PVTPackage.git
-    - git submodule set-url integratedTests git@github.com:GEOS-DEV/integratedTests.git
     - git submodule set-url src/coreComponents/fileIO/coupling/hdf5_interface https://github.com/GEOS-DEV/hdf5_interface.git
 
     # Clean up directory and submodules when pre-initialized from previous CI run
@@ -29,7 +34,6 @@ stages:
     - git submodule update --init --recursive src/cmake/blt
     - git submodule update --init --recursive src/coreComponents/LvArray
     - git submodule update --init --recursive src/coreComponents/constitutive/PVTPackage
-    - git submodule update --init --recursive integratedTests
     - git submodule update --init --recursive src/coreComponents/fileIO/coupling/hdf5_interface
 
     - mkdir ${SYSTEM_COMPILER}
@@ -140,6 +144,8 @@ stages:
   variables:
     ALLOC_COMMAND: "lalloc 1"
     INTEGRATED_ALLOC_COMMAND: "lalloc 10"
+  before_script:
+    - module load cuda/11.8.0
   tags:
     - shell
     - lassen
