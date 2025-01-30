@@ -84,7 +84,7 @@ jobs:
     steps:
     - name: does_pr_have_necessary_labels
       if: ${{inputs.REQUIRED_LABEL && github.event_name == 'pull_request'}}
-      run: | 
+      run: |
         pr_json=$(curl -H "Accept: application/vnd.github+json" https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.number }})
         LABELS=$(echo ${pr_json} | jq -crM '[.labels[].name]')
         echo " the labels are ${LABELS}"
@@ -197,15 +197,31 @@ jobs:
         script_args+=(--repository ${GITHUB_WORKSPACE_MOUNT_POINT})
         
         # The linear algebra environment variables (ENABLE_HYPRE, ENABLE_HYPRE_DEVICE & ENABLE_TRILINOS)
-        # could be passed as scripts parameters as well, but a specific care must be taken to be sure
+        # are passed as scripts parameters. Specific care must be taken to be sure
         # there's no conflict with the host-config files.
+
+        # Hypre
         ENABLE_HYPRE=${{ inputs.ENABLE_HYPRE }}
-        ENABLE_HYPRE_DEVICE=${{ inputs.ENABLE_HYPRE_DEVICE }}
+        if [ ! -z "${{ inputs.ENABLE_HYPRE }}" ]; then
+          script_args+=(--enable-hypre "${{ inputs.ENABLE_HYPRE }}")
+        fi
+
+        # Trilinos
         ENABLE_TRILINOS=${{ inputs.ENABLE_TRILINOS }}
         docker_args+=(-e ENABLE_HYPRE=${ENABLE_HYPRE:-OFF})
         docker_args+=(-e ENABLE_HYPRE_DEVICE=${ENABLE_HYPRE_DEVICE:-CPU})
         docker_args+=(-e ENABLE_TRILINOS=${ENABLE_TRILINOS:-ON})
         docker_args+=(-e GEOS_BUILD_SHARED_LIBS=${{ inputs.BUILD_SHARED_LIBS }})
+
+        if [ ! -z "${{ inputs.ENABLE_TRILINOS }}" ]; then
+          script_args+=(--enable-trilinos "${{ inputs.ENABLE_TRILINOS }}")
+        fi
+
+        # ENABLE_HYPRE_DEVICE
+        ENABLE_HYPRE_DEVICE=${{ inputs.ENABLE_HYPRE_DEVICE }}
+        if [ ! -z "${{ inputs.ENABLE_HYPRE_DEVICE }}" ]; then
+          script_args+=(--enable-hypre-device "${{ inputs.ENABLE_HYPRE_DEVICE }}")
+        fi
 
         docker_args+=(--cap-add=SYS_PTRACE --rm)
 
