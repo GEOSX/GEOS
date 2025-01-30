@@ -31,7 +31,6 @@
 #include "events/EventManager.hpp"
 #include "physicsSolvers/wavePropagation/shared/PrecomputeSourcesAndReceiversKernel.hpp"
 #include "physicsSolvers/wavePropagation/dg/acoustic/secondOrderEqn/isotropic/AcousticWaveEquationDGKernel.hpp"
-#include "denseLinearAlgebra/interfaces/blaslapack/BlasLapackLA.hpp"
 
 namespace geos
 {
@@ -247,22 +246,30 @@ void AcousticWaveEquationDG::initializePostInitialConditionsPreSubGroups()
 
     /// get array of indicators: 1 if face is on the free surface; 0 otherwise
     arrayView1d< localIndex const > const freeSurfaceFaceIndicator = faceManager.getField< acousticfieldsdg::AcousticFreeSurfaceFaceIndicator >();
- 
+
 
     m_referenceInvMassMatrix.resize( elemManager.numRegions() );
     m_boundaryInvMassPlusDamping.resize( elemManager.numRegions() );
+
+    if( m_timestepStabilityLimit==1 )
+    {
+      real64 dtOut = 0.0;
+      computeTimeStep( dtOut );
+      m_timestepStabilityLimit = 0;
+      m_timeStep=dtOut;
+    }
 
     elemManager.forElementRegions< CellElementRegion >( regionNames, [&] ( localIndex const regionIndex, CellElementRegion & elemRegion )
     {
       m_referenceInvMassMatrix.resizeArray( regionIndex, elemRegion.numSubRegions() );
       m_boundaryInvMassPlusDamping.resizeArray( regionIndex, elemRegion.numSubRegions() );
-      elemRegion.forElementSubRegionsIndex< CellElementSubRegion >( [&]( localIndex const subRegionIndex, CellElementSubRegion & elementSubRegion )
+      elemRegion.forElementSubRegionsIndex< CellElementSubRegion >( [&] ( localIndex const subRegionIndex, CellElementSubRegion & elementSubRegion )
       {
         GEOS_THROW_IF( elementSubRegion.getElementType() != ElementType::Tetrahedron,
                        "Invalid type of element, the acoustic DG solver is designed for tetrahedral meshes only  ",
                        InputError );
 
-        
+
         finiteElement::FiniteElementBase const &
         fe = elementSubRegion.getReference< finiteElement::FiniteElementBase >( getDiscretizationName() );
 
@@ -278,7 +285,7 @@ void AcousticWaveEquationDG::initializePostInitialConditionsPreSubGroups()
         arrayView2d< localIndex > const elemsToOpposite = elementSubRegion.getField< acousticfieldsdg::ElementToOpposite >();
         arrayView2d< integer > const elemsToOppositePermutation = elementSubRegion.getField< acousticfieldsdg::ElementToOppositePermutation >();
 
-        //arrayView2d< real32 > const characteristicSize = elementSubRegion.getField< acousticfieldsdg::CharacteristicSize >();
+        arrayView1d< real32 > const characteristicSize = elementSubRegion.getField< acousticfieldsdg::CharacteristicSize >();
 
         /// Partial gradient if gradient as to be computed
 
@@ -300,10 +307,10 @@ void AcousticWaveEquationDG::initializePostInitialConditionsPreSubGroups()
               freeSurfaceFaceIndicator,
               elemsToOpposite,
               elemsToOppositePermutation );
- 
+
           // Precompute reference mass matrix for non-boundary elements
           m_referenceInvMassMatrix[ regionIndex ][ subRegionIndex ].resizeDimension< 0, 1 >( FE_TYPE::numNodes, FE_TYPE::numNodes );
-          array2d< real64 > massMatrix; 
+          array2d< real64 > massMatrix;
           massMatrix.resize( FE_TYPE::numNodes, FE_TYPE::numNodes );
           massMatrix.zero();
           FE_TYPE::computeReferenceMassMatrix( massMatrix );
@@ -324,7 +331,7 @@ void AcousticWaveEquationDG::initializePostInitialConditionsPreSubGroups()
           //     }
           //   }
           //   RAJA::atomicInc< ATOMIC_POLICY >( &m_indexToBoundaryMatrix[ k ])
-          // } ); 
+          // } );
           // m_boundaryInvMassPlusDamping[ regionIndex ][ subRegionIndex ].resizeDimension< 0, 1, 2 >( nAbsBdryElems, FE_TYPE::numNodes, FE_TYPE::numNodes );
 
           // AcousticMatricesSEM::MassMatrix< FE_TYPE > kernelM( finiteElement );
@@ -450,30 +457,30 @@ real64 AcousticWaveEquationDG::explicitStepBackward( real64 const & time_n,
 }
 
 
-void AcousticWaveEquationDG::prepareNextTimestep( MeshLevel & mesh )           
-{                                                                               
-  NodeManager & nodeManager = mesh.getNodeManager();                            
-                                                                                
+void AcousticWaveEquationDG::prepareNextTimestep( MeshLevel & mesh )
+{
+  NodeManager & nodeManager = mesh.getNodeManager();
+
   arrayView2d< real32 > const p_nm1 = nodeManager.getField< acousticfieldsdg::Pressure_nm1 >();
   arrayView2d< real32 > const p_n   = nodeManager.getField< acousticfieldsdg::Pressure_n >();
   arrayView2d< real32 > const p_np1 = nodeManager.getField< acousticfieldsdg::Pressure_np1 >();
-                                                                                
+
   //arrayView2d< real32 > const stiffnessVector = nodeManager.getField< acousticfieldsdg::StiffnessVector >();
   //arrayView2d< real32 > const rhs = nodeManager.getField< acousticfieldsdgdgdg::ForcingRHS >();
-                                                                                
-  SortedArrayView< localIndex const > const solverTargetNodesSet = m_solverTargetNodesSet.toViewConst();
-                                                                                
-  // forAll< EXEC_POLICY >( solverTargetNodesSet.size(), [=] GEOS_HOST_DEVICE ( localIndex const n )
-  // {                                                                             
-  //   localIndex const a = solverTargetNodesSet[n];                               
-                                                                                
-  //   p_nm1[a] = p_n[a];                                                          
-  //   p_n[a]   = p_np1[a];                                                        
-                                                                                
-  //   stiffnessVector[a] = rhs[a] = 0.0;                                          
-  // } );  
 
-}  
+  SortedArrayView< localIndex const > const solverTargetNodesSet = m_solverTargetNodesSet.toViewConst();
+
+  // forAll< EXEC_POLICY >( solverTargetNodesSet.size(), [=] GEOS_HOST_DEVICE ( localIndex const n )
+  // {
+  //   localIndex const a = solverTargetNodesSet[n];
+
+  //   p_nm1[a] = p_n[a];
+  //   p_n[a]   = p_np1[a];
+
+  //   stiffnessVector[a] = rhs[a] = 0.0;
+  // } );
+
+}
 
 void AcousticWaveEquationDG::computeUnknowns( real64 const & time_n,
                                                real64 const & dt,
@@ -509,11 +516,11 @@ void AcousticWaveEquationDG::computeUnknowns( real64 const & time_n,
         finiteElement::FiniteElementDispatchHandler< DG_FE_TYPES >::dispatch3D( fe, [&] ( auto const finiteElement )
         {
           using FE_TYPE = TYPEOFREF( finiteElement );
-  
-        
+
+
           AcousticWaveEquationDGKernels::
-          PressureComputation< FE_TYPE > kernel( finiteElement );
-          kernel.template launch< EXEC_POLICY, ATOMIC_POLICY >
+          PressureComputationKernel::
+          pressureComputation< FE_TYPE, EXEC_POLICY, ATOMIC_POLICY >
           ( elementSubRegion.size(),
           regionIndex,
           nodeCoords,
@@ -536,7 +543,7 @@ void AcousticWaveEquationDG::computeUnknowns( real64 const & time_n,
           p_np1 );
 
         } );
-    
+
   } );
 
   // /// calculate your time integrators

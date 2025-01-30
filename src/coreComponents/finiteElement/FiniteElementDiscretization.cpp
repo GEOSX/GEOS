@@ -49,6 +49,11 @@ FiniteElementDiscretization::FiniteElementDiscretization( string const & name, G
     setInputFlag( InputFlags::OPTIONAL ).
     setApplyDefaultValue( 0 ).
     setDescription( "Specifier to indicate whether to force the use of VEM" );
+
+  registerWrapper( viewKeyStruct::useHighOrderQuadratureRuleString(), &m_useHighOrderQuadratureRule ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setApplyDefaultValue( 0 ).
+    setDescription( "Specifier to indicate whether to use a high order quadrature rule" );
 }
 
 FiniteElementDiscretization::~FiniteElementDiscretization()
@@ -68,7 +73,15 @@ FiniteElementDiscretization::factory( ElementType const parentElementShape ) con
   {
     switch( parentElementShape )
     {
-      case ElementType::Triangle:      return std::make_unique< H1_TriangleFace_Lagrange1_Gauss1 >();
+      case ElementType::Triangle:
+        if( m_useHighOrderQuadratureRule == 1 )
+        {
+          return std::make_unique< H1_TriangleFace_Lagrange1_Gauss4 >();
+        }
+        else
+        {
+          return std::make_unique< H1_TriangleFace_Lagrange1_Gauss1 >();
+        }
       case ElementType::Quadrilateral: return std::make_unique< H1_QuadrilateralFace_Lagrange1_GaussLegendre2 >();
       // On polyhedra where FEM are available, we use VEM only if useVirtualElements is set to 1 in
       // the input file.
@@ -84,7 +97,14 @@ FiniteElementDiscretization::factory( ElementType const parentElementShape ) con
         }
         else
         {
-          return std::make_unique< H1_Tetrahedron_Lagrange1_Gauss1 >();
+          if( m_useHighOrderQuadratureRule == 1 )
+          {
+            return std::make_unique< H1_Tetrahedron_Lagrange1_Gauss14 >();
+          }
+          else
+          {
+            return std::make_unique< H1_Tetrahedron_Lagrange1_Gauss1 >();
+          }
         }
       }
       case ElementType::Pyramid:

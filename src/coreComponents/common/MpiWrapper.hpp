@@ -22,6 +22,7 @@
 
 #include "common/DataTypes.hpp"
 #include "common/Span.hpp"
+#include "common/TypesHelpers.hpp"
 
 #if defined(GEOS_USE_MPI)
   #include <mpi.h>
@@ -128,6 +129,8 @@ public:
     Min,  //!< Min
     Sum,  //!< Sum
     Prod, //!< Prod
+    LogicalAnd, //!< Logical and
+    LogicalOr, //!< Logical or
   };
 
   MpiWrapper() = delete;
@@ -315,7 +318,7 @@ public:
                         int sendcount,
                         T_RECV * recvbuf,
                         int recvcount,
-                        MPI_Comm comm );
+                        MPI_Comm comm = MPI_COMM_GEOS );
 
   /**
    * @brief Strongly typed wrapper around MPI_Allgatherv.
@@ -335,7 +338,7 @@ public:
                          T_RECV * recvbuf,
                          int * recvcounts,
                          int * displacements,
-                         MPI_Comm comm );
+                         MPI_Comm comm = MPI_COMM_GEOS );
 
   /**
    * @brief Convenience function for MPI_Allgather.
@@ -350,18 +353,6 @@ public:
   static int allGather( arrayView1d< T const > const & sendbuf,
                         array1d< T > & recvbuf,
                         MPI_Comm comm = MPI_COMM_GEOS );
-
-  /**
-   * @brief Strongly typed wrapper around MPI_Allreduce.
-   * @param[in] sendbuf The pointer to the sending buffer.
-   * @param[out] recvbuf The pointer to the receive buffer.
-   * @param[in] count The number of values to send/receive.
-   * @param[in] op The MPI_Op to perform.
-   * @param[in] comm The MPI_Comm over which the gather operates.
-   * @return The return value of the underlying call to MPI_Allreduce().
-   */
-  template< typename T >
-  static int allReduce( T const * sendbuf, T * recvbuf, int count, MPI_Op op, MPI_Comm comm = MPI_COMM_GEOS );
 
   /**
    * @brief Convenience wrapper for the MPI_Allreduce function.
@@ -384,6 +375,29 @@ public:
    */
   template< typename T >
   static void allReduce( Span< T const > src, Span< T > dst, Reduction const op, MPI_Comm comm = MPI_COMM_GEOS );
+
+  /**
+   * @brief Convenience wrapper for the MPI_Allreduce function. Version for arrays.
+   * @tparam T type of data to reduce. Must correspond to a valid MPI_Datatype.
+   * @param src[in] The values to send to the reduction.
+   * @param dst[out] The resulting values.
+   * @param op The Reduction enum to perform.
+   * @param comm The communicator.
+   */
+  template< typename SRC_CONTAINER_TYPE, typename DST_CONTAINER_TYPE >
+  static void allReduce( SRC_CONTAINER_TYPE const & src, DST_CONTAINER_TYPE & dst, Reduction const op, MPI_Comm const comm = MPI_COMM_GEOS );
+
+  /**
+   * @brief Convenience wrapper for the MPI_Allreduce function. Version for arrays.
+   * @tparam T type of data to reduce. Must correspond to a valid MPI_Datatype.
+   * @param src[in] The values to send to the reduction.
+   * @param dst[out] The resulting values.
+   * @param count The number of contiguos elements of the arrays to perform the reduction on (must be leq than the size).
+   * @param op The Reduction enum to perform.
+   * @param comm The communicator.
+   */
+  template< typename SRC_CONTAINER_TYPE, typename DST_CONTAINER_TYPE >
+  static void allReduce( SRC_CONTAINER_TYPE const & src, DST_CONTAINER_TYPE & dst, int const count, Reduction const op, MPI_Comm const comm );
 
 
   /**
@@ -422,10 +436,10 @@ public:
 
 
   template< typename T >
-  static int scan( T const * sendbuf, T * recvbuf, int count, MPI_Op op, MPI_Comm comm );
+  static int scan( T const * sendbuf, T * recvbuf, int count, MPI_Op op, MPI_Comm comm = MPI_COMM_GEOS );
 
   template< typename T >
-  static int exscan( T const * sendbuf, T * recvbuf, int count, MPI_Op op, MPI_Comm comm );
+  static int exscan( T const * sendbuf, T * recvbuf, int count, MPI_Op op, MPI_Comm comm = MPI_COMM_GEOS );
 
   /**
    * @brief Strongly typed wrapper around MPI_Bcast.
@@ -436,7 +450,7 @@ public:
    * @return The return value of the underlying call to MPI_Bcast().
    */
   template< typename T >
-  static int bcast( T * buffer, int count, int root, MPI_Comm comm );
+  static int bcast( T * buffer, int count, int root, MPI_Comm comm = MPI_COMM_GEOS );
 
 
   /**
@@ -466,7 +480,28 @@ public:
                      TR * const recvbuf,
                      int recvcount,
                      int root,
-                     MPI_Comm comm );
+                     MPI_Comm comm = MPI_COMM_GEOS );
+
+  /**
+   * @brief Strongly typed wrapper around MPI_Gather().
+   * @tparam TS The pointer type for \p sendbuf
+   * @tparam TR The pointer type for \p recvbuf
+   * @param[in] sendbuf The pointer to the sending buffer.
+   * @param[out] recvbuf The pointer to the receive buffer.
+   * @param[in] recvcount The number of values to receive.
+   * @param[in] root The rank recieving the data.
+   * @param[in] comm The MPI_Comm over which the gather operates.
+   * @return
+   */
+  template< typename T, typename DST_CONTAINER,
+            typename = std::enable_if_t<
+              std::is_trivially_copyable_v< T > &&
+              std::is_same_v< decltype(std::declval< DST_CONTAINER >().size()), std::size_t > &&
+              std::is_same_v< decltype(std::declval< DST_CONTAINER >().data()), T * > > >
+  static int gather( T const & value,
+                     DST_CONTAINER & destValuesBuffer,
+                     int root,
+                     MPI_Comm comm = MPI_COMM_GEOS );
 
   /**
    * @brief Strongly typed wrapper around MPI_Gatherv.
@@ -489,7 +524,7 @@ public:
                       const int * recvcounts,
                       const int * displs,
                       int root,
-                      MPI_Comm comm );
+                      MPI_Comm comm = MPI_COMM_GEOS );
 
   /**
    * @brief Returns an MPI_Op associated with our strongly typed Reduction enum.
@@ -618,6 +653,19 @@ public:
    */
   template< typename T > static T maxValLoc( T localValueLocation, MPI_Comm comm = MPI_COMM_GEOS );
 
+private:
+
+  /**
+   * @brief Strongly typed wrapper around MPI_Allreduce.
+   * @param[in] sendbuf The pointer to the sending buffer.
+   * @param[out] recvbuf The pointer to the receive buffer.
+   * @param[in] count The number of values to send/receive.
+   * @param[in] op The MPI_Op to perform.
+   * @param[in] comm The MPI_Comm over which the gather operates.
+   * @return The return value of the underlying call to MPI_Allreduce().
+   */
+  template< typename T >
+  static int allReduce( T const * sendbuf, T * recvbuf, int count, MPI_Op op, MPI_Comm comm = MPI_COMM_GEOS );
 };
 
 namespace internal
@@ -679,6 +727,14 @@ inline MPI_Op MpiWrapper::getMpiOp( Reduction const op )
     case Reduction::Prod:
     {
       return MPI_PROD;
+    }
+    case Reduction::LogicalAnd:
+    {
+      return MPI_LAND;
+    }
+    case Reduction::LogicalOr:
+    {
+      return MPI_LOR;
     }
     default:
       GEOS_ERROR( "Unsupported reduction operation" );
@@ -900,6 +956,25 @@ int MpiWrapper::gather( TS const * const sendbuf,
 #endif
 }
 
+template< typename T, typename DST_CONTAINER, typename >
+int MpiWrapper::gather( T const & value,
+                        DST_CONTAINER & destValuesBuffer,
+                        int root,
+                        MPI_Comm MPI_PARAM( comm ) )
+{
+  if( commRank() == 0 )
+    GEOS_ERROR_IF_LT_MSG( destValuesBuffer.size(), size_t( commSize() ),
+                          "Receive buffer is not large enough to contain the values to receive." );
+#ifdef GEOS_USE_MPI
+  return MPI_Gather( &value, sizeof( T ), internal::getMpiType< uint8_t >(),
+                     destValuesBuffer.data(), sizeof( T ), internal::getMpiType< uint8_t >(),
+                     root, comm );
+#else
+  memcpy( destValuesBuffer.data(), &value, sendBufferSize );
+  return 0;
+#endif
+}
+
 template< typename TS, typename TR >
 int MpiWrapper::gatherv( TS const * const sendbuf,
                          int sendcount,
@@ -1069,6 +1144,35 @@ T MpiWrapper::allReduce( T const & value, Reduction const op, MPI_Comm const com
 template< typename T >
 void MpiWrapper::allReduce( Span< T const > const src, Span< T > const dst, Reduction const op, MPI_Comm const comm )
 {
+  GEOS_ASSERT_EQ( src.size(), dst.size() );
+  allReduce( src.data(), dst.data(), LvArray::integerConversion< int >( src.size() ), getMpiOp( op ), comm );
+}
+
+template< typename SRC_CONTAINER_TYPE, typename DST_CONTAINER_TYPE >
+void MpiWrapper::allReduce( SRC_CONTAINER_TYPE const & src, DST_CONTAINER_TYPE & dst, int const count, Reduction const op, MPI_Comm const comm )
+{
+  static_assert( std::is_trivially_copyable< typename get_value_type< SRC_CONTAINER_TYPE >::type >::value,
+                 "The type in the source container must be trivially copyable." );
+  static_assert( std::is_trivially_copyable< typename get_value_type< DST_CONTAINER_TYPE >::type >::value,
+                 "The type in the destination container must be trivially copyable." );
+  static_assert( std::is_same< typename get_value_type< SRC_CONTAINER_TYPE >::type,
+                               typename get_value_type< DST_CONTAINER_TYPE >::type >::value,
+                 "Source and destination containers must have the same value type." );
+  GEOS_ASSERT_GE( src.size(), count );
+  GEOS_ASSERT_GE( dst.size(), count );
+  allReduce( src.data(), dst.data(), count, getMpiOp( op ), comm );
+}
+
+template< typename SRC_CONTAINER_TYPE, typename DST_CONTAINER_TYPE >
+void MpiWrapper::allReduce( SRC_CONTAINER_TYPE const & src, DST_CONTAINER_TYPE & dst, Reduction const op, MPI_Comm const comm )
+{
+  static_assert( std::is_trivially_copyable< typename get_value_type< SRC_CONTAINER_TYPE >::type >::value,
+                 "The type in the source container must be trivially copyable." );
+  static_assert( std::is_trivially_copyable< typename get_value_type< DST_CONTAINER_TYPE >::type >::value,
+                 "The type in the destination container must be trivially copyable." );
+  static_assert( std::is_same< typename get_value_type< SRC_CONTAINER_TYPE >::type,
+                               typename get_value_type< DST_CONTAINER_TYPE >::type >::value,
+                 "Source and destination containers must have the same value type." );
   GEOS_ASSERT_EQ( src.size(), dst.size() );
   allReduce( src.data(), dst.data(), LvArray::integerConversion< int >( src.size() ), getMpiOp( op ), comm );
 }

@@ -137,7 +137,7 @@ DECLARE_FIELD( CharacteristicSize,
                0,
                NOPLOT,
                WRITE_AND_READ,
-               "Characteristic size of every given element, used for penalty term computation. Often this is just the radius of the inscribed sphere.");
+               "Characteristic size of every given element, used for penalty term computation. Often this is just the radius of the inscribed sphere." );
 
 DECLARE_FIELD( MassPlusDampingInvIndex,
                "massPlusDampingInvIndex",

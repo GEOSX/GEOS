@@ -20,6 +20,7 @@
 #define GEOS_PHYSICSSOLVERS_WAVEPROPAGATION_ACOUSTICWAVEEQUATIONDGKERNEL_HPP_
 
 #include "finiteElement/kernelInterface/KernelBase.hpp"
+#include "denseLinearAlgebra/interfaces/blaslapack/BlasLapackLA.hpp"
 
 namespace geos
 {
@@ -268,7 +269,7 @@ struct PrecomputeNeighborhoodKernel
             k1OrderedVertices[ count++ ] = vertex;
           }
         }
-       
+
         GEOS_ERROR_IF( o1 < 0, "Topological error in mesh: a face and its adjacent element share all vertices.");
         if( k2 < 0 )
         {
@@ -332,12 +333,98 @@ struct PrecomputeNeighborhoodKernel
   }
 };
 
-template< typename FE_TYPE >
-struct PressureComputation
+struct PrecomputePenaltyGeomKernel
 {
- PressureComputation( FE_TYPE const & finiteElement )
-   : m_finiteElement( finiteElement )
- {}
+  using EXEC_POLICY = parallelDevicePolicy< >;
+
+  /**
+   * @brief Launches the precomputation of the geometry term of the penalty coefficient
+   * @tparam EXEC_POLICY execution policy
+   * @tparam FE_TYPE finite element type
+   * @param[in] size the number of elements
+   * @param[in] nodeCoords coordinates of the nodes
+   * @param[in] elemsToNodes map from element to nodes
+   * @param[out] characteristicSize the field to contain the characteristic size used for penalty term calculation
+   */
+  template< typename EXEC_POLICY, typename FE_TYPE >
+  static void
+  launch( localIndex const size,
+          arrayView2d< real32 const, nodes::REFERENCE_POSITION_USD > const nodeCoords,
+          arrayView2d< localIndex const, cells::NODE_MAP_USD > const & elemsToNodes,
+          arrayView1d< real32 > const & characteristicSize )
+  {
+    forAll< EXEC_POLICY >( size, [&] ( localIndex const k )
+    {
+      characteristicSize[ k ] = WaveSolverUtils::computeReferenceLengthForPenalty( elemsToNodes[ k ], nodeCoords );
+    } );
+  }
+};
+
+struct PrecomputeMassDampingKernel
+{
+  using EXEC_POLICY = parallelDevicePolicy< >;
+
+  /**
+   * @brief Launches the precomputation of the inverse of the reference mass matrix in the bulk, as well as
+   *   the inverse mass + damping term for the boundary elements.
+   * @tparam EXEC_POLICY execution policy
+   * @tparam FE_TYPE finite element type
+   * @param[in] size the number of elements
+   * @param[in] nodeCoords coordinates of the nodes
+   * @param[in] elemsToNodes map from element to nodes
+   * @param[in] elemToOpposite DG element-to-opposite map
+   * @param[out] referenceInvMassMatrix computed M^{-1} for the reference element
+   * @param[out] boundaryInvMassPlusDamping (M + dt/2 D)^{-1} for boundary elements
+   * @param[in] dt time-step
+   */
+  template< typename EXEC_POLICY, typename ATOMIC_POLICY, typename FE_TYPE >
+  static void
+  launch( localIndex const size,
+          arrayView2d< real32 const, nodes::REFERENCE_POSITION_USD > const nodeCoords,
+          arrayView2d< localIndex const, cells::NODE_MAP_USD > const & elemsToNodes,
+          arrayView2d< localIndex const > const & elemsToOpposite,
+          array2d< real64 > & referenceInvMassMatrix,
+          array3d< real64 > & boundaryInvMassPlusDamping,
+          real64 const dt )
+  {
+    // Precompute reference mass matrix for non-boundary elements
+    referenceInvMassMatrix.resizeDimension< 0, 1 >( FE_TYPE::numNodes, FE_TYPE::numNodes );
+    array2d< real64 > massMatrix;
+    massMatrix.resize( FE_TYPE::numNodes, FE_TYPE::numNodes );
+    massMatrix.zero();
+    FE_TYPE::computeReferenceMassMatrix( massMatrix );
+    BlasLapackLA::matrixInverse( massMatrix, referenceInvMassMatrix );
+    // Precompute local mass + damping matrix on the boundary elements
+    localIndex nAbsBdryElems = 0;
+    forAll< EXEC_POLICY >( size, [&] ( localIndex const k )
+    {
+      bool bdry = false;
+      for( int i = 0; i < 4; i++ )
+      {
+        if( elemsToOpposite[ k ][ i ] == -1 )
+        {
+          bdry = true;
+          break;
+        }
+      }
+      if( bdry )
+      {
+        RAJA::atomicInc< ATOMIC_POLICY >( &nAbsBdryElems );
+      }
+    } );
+
+    boundaryInvMassPlusDamping.resizeDimension< 0, 1, 2 >( nAbsBdryElems, FE_TYPE::numNodes, FE_TYPE::numNodes );
+    forAll< EXEC_POLICY >( size, [&] ( localIndex const k )
+    {
+    } );
+  }
+};
+
+
+
+struct PressureComputationKernel
+{
+  using EXEC_POLICY = parallelDevicePolicy< >;
 
  /**
   * @brief Launches the computation of the pressure for one iteration
@@ -356,28 +443,28 @@ struct PressureComputation
   * @param[out] p_np1 pressure array at time n+1 (updated here)
   */
  //List is not complete, it will need several GEOS maps to add
- template< typename EXEC_POLICY, typename ATOMIC_POLICY >
- void
- launch( localIndex const size,
-         localIndex const regionIndex,
-         arrayView2d< WaveSolverBase::wsCoordType const, nodes::REFERENCE_POSITION_USD > const X,
-         arrayView2d< localIndex const, cells::NODE_MAP_USD > const & elemsToNodes,
-         arrayView2d< real32 const > const p_n,
-         arrayView2d< real32 const > const p_nm1,
-         arrayView2d< localIndex > const & elemsToOpposite,
-         arrayView2d< integer > const & elemsToOppositePermutation,
-         arrayView2d< real64 const > const sourceConstants,
-         arrayView1d< localIndex const > const sourceIsAccessible,
-         arrayView1d< localIndex const > const sourceElem,
-         arrayView1d< localIndex const > const sourceRegion,
-         real64 const dt,
-         real64 const time_n,
-         real32 const timeSourceFrequency,
-         real32 const timeSourceDelay,
-         localIndex const rickerOrder,
-         bool const useSourceWaveletTables,
-         arrayView1d< TableFunction::KernelWrapper const > const sourceWaveletTableWrappers,
-         arrayView2d< real32 > const p_np1 )
+ template< typename FE_TYPE, typename EXEC_POLICY, typename ATOMIC_POLICY >
+ static void
+ pressureComputation( localIndex const size,
+                      localIndex const regionIndex,
+                      arrayView2d< WaveSolverBase::wsCoordType const, nodes::REFERENCE_POSITION_USD > const X,
+                      arrayView2d< localIndex const, cells::NODE_MAP_USD > const & elemsToNodes,
+                      arrayView2d< real32 const > const p_n,
+                      arrayView2d< real32 const > const p_nm1,
+                      arrayView2d< localIndex > const & elemsToOpposite,
+                      arrayView2d< integer > const & elemsToOppositePermutation,
+                      arrayView2d< real64 const > const sourceConstants,
+                      arrayView1d< localIndex const > const sourceIsAccessible,
+                      arrayView1d< localIndex const > const sourceElem,
+                      arrayView1d< localIndex const > const sourceRegion,
+                      real64 const dt,
+                      real64 const time_n,
+                      real32 const timeSourceFrequency,
+                      real32 const timeSourceDelay,
+                      localIndex const rickerOrder,
+                      bool const useSourceWaveletTables,
+                      arrayView1d< TableFunction::KernelWrapper const > const sourceWaveletTableWrappers,
+                      arrayView2d< real32 > const p_np1 )
 
  {
 
@@ -407,7 +494,7 @@ struct PressureComputation
       real32 mass[numNodesPerElem][numNodesPerElem];
 
       //Multiply by p_{n } by 2*Mass
-      m_finiteElement.template computeMassTerm(xLocal, [&] (const int i, const int j, const real64 val)
+      FE_TYPE::computeMassTerm(xLocal, [&] (const int i, const int j, const real64 val)
       {
          flowx[j] = 2.0*val*p_n[k][i];
          flowx[j] -= val*p_nm1[k][i];
@@ -417,7 +504,7 @@ struct PressureComputation
 
 
       //First stiffness part (volume)
-      m_finiteElement.template computeStiffnessTerm(xLocal, [&] (const int i, const int j, real64 val)
+      FE_TYPE::computeStiffnessTerm(xLocal, [&] (const int i, const int j, real64 val)
       {
          flowx[j] -= dt2*val*p_n[k][i];
       } );
@@ -427,6 +514,10 @@ struct PressureComputation
       // {
       //   //We take the neighbour element
       //   const localIndex elemNeigh = elemsToOpposite(k,f1);
+      FE_TYPE::computeSurfaceTerms(xLocal, [&] (const int c1, const int c2, const int f1, const int , const int , const int ,const int i2, const int j2, const int k2, real64 val)
+      {
+        //We take the neighbour element
+        const localIndex elemNeigh = elemsToOpposite(k,f1);
 
       //   // Now we seek the degree of freedom on the neighbour element to use for the computation of the flux (or the penalty)
       //   // First, we compute the four possible values of the permutation of the degrees of freedom depending on the the fixed
@@ -438,6 +529,10 @@ struct PressureComputation
       //   const int p2 = (perm/4)%4-1;
       //   const int p3 = (perm/16)%4-1;
       //   const int p4 = (perm/64)-1;
+        const int p1 = perm%4-1;
+        const int p2 = (perm/4)%4-1;
+        const int p3 = (perm/16)%4-1;
+        // const int p4 = (perm/64)-1;
 
       //   // Then we transform the 3 indices returned by the callback (i2,j2,k2) using the permutations. One of this permutation, will be 0 (depending on which
       //   // degree of freedom is the one at the opposite of the face shared with the neighbour element) and will correspond to the one where p* will be negative
@@ -451,6 +546,7 @@ struct PressureComputation
       //   // Finally, using the dofIndex function, we compute the number of the global degree of freedom on the element
 
       //   const int neighDof = m_finiteElement.dofIndex(ii2,jj2,kk2);
+        const int neighDof = FE_TYPE::dofIndex( ii2, jj2, kk2 );
 
       //   //Flux computation
 
@@ -487,6 +583,7 @@ struct PressureComputation
 
 
       //   const int neighDof = m_finiteElement.dofIndex(ii2,jj2,kk2);
+        const int neighDof = FE_TYPE::dofIndex( ii2, jj2, kk2 );
 
       //   //Flux computation
 
@@ -505,6 +602,7 @@ struct PressureComputation
       //   // Finally, using the dofIndex function, we compute the number of the global degree of freedom on the element
 
       //   const int neighDof2 = m_finiteElement.dofIndex(ii1,jj1,kk1);
+        const int neighDof2 = FE_TYPE::dofIndex( ii1, jj1, kk1 );
 
       //   //Flux computation
 
@@ -628,7 +726,7 @@ struct PressureComputation
  }
 
  /// The finite element space/discretization object for the element type in the subRegion
- FE_TYPE const & m_finiteElement;
+ // FE_TYPE const & m_finiteElement;
 
 
 };
