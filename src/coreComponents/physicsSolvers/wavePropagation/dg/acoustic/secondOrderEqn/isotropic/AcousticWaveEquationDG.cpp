@@ -518,6 +518,8 @@ void AcousticWaveEquationDG::computeUnknowns( real64 const & time_n,
           using FE_TYPE = TYPEOFREF( finiteElement );
 
 
+          printf("before call");
+
           AcousticWaveEquationDGKernels::
           PressureComputationKernel::
           pressureComputation< FE_TYPE, EXEC_POLICY, ATOMIC_POLICY >
@@ -559,27 +561,28 @@ void AcousticWaveEquationDG::synchronizeUnknowns( real64 const & time_n,
                                                    real64 const & dt,
                                                    DomainPartition & domain,
                                                    MeshLevel & mesh,
-                                                   arrayView1d< string const > const & )
+                                                   arrayView1d< string const > const & regionNames)
 {
   NodeManager & nodeManager = mesh.getNodeManager();
 
-  arrayView2d< real32 > const p_n = nodeManager.getField< acousticfieldsdg::Pressure_n >();
-  arrayView2d< real32 > const p_np1 = nodeManager.getField< acousticfieldsdg::Pressure_np1 >();
+  mesh.getElemManager().forElementSubRegions< CellElementSubRegion >( regionNames, [&]( localIndex const regionIndex,
+                                                                                          CellElementSubRegion & elementSubRegion )
+  {
+     
+    FieldIdentifiers fieldsToBeSync;
+    fieldsToBeSync.addElementFields( {acousticfieldsdg::Pressure_nm1::key(), acousticfieldsdg::Pressure_n::key(), acousticfieldsdg::Pressure_np1::key()}, regionNames );
 
-  // arrayView2d< real32 > const stiffnessVector = nodeManager.getField< acousticfieldsdg::StiffnessVector >();
-  //arrayView1d< real32 > const rhs = nodeManager.getField< acousticfieldsdg::ForcingRHS >();
-
-  /// synchronize pressure fields
-  FieldIdentifiers fieldsToBeSync;
-  fieldsToBeSync.addFields( FieldLocation::Node, { acousticfieldsdg::Pressure_np1::key() } );
-
-  CommunicationTools & syncFields = CommunicationTools::getInstance();
-  syncFields.synchronizeFields( fieldsToBeSync,
+    CommunicationTools & syncFields = CommunicationTools::getInstance();
+    syncFields.synchronizeFields( fieldsToBeSync,
                                 mesh,
                                 domain.getNeighbors(),
                                 true );
+
+
+  } );
+
   /// compute the seismic traces since last step.
-  arrayView2d< real32 > const pReceivers = m_pressureNp1AtReceivers.toView();
+  //arrayView2d< real32 > const pReceivers = m_pressureNp1AtReceivers.toView();
 
   //computeAllSeismoTraces( time_n, dt, p_np1, p_n, pReceivers );
   //incrementIndexSeismoTrace( time_n );

@@ -451,15 +451,13 @@ struct PressureComputationKernel
 
  {
 
+
     real64 const rickerValue = useSourceWaveletTables ? 0 : WaveSolverUtils::evaluateRicker( time_n, timeSourceFrequency, timeSourceDelay, rickerOrder );
 
-     printf("herebefore");
 
     //For now lots of comments with ideas  + needed array to add to the method prototype
     forAll< EXEC_POLICY >( 1, [=] GEOS_HOST_DEVICE ( localIndex const k )
     {
-
-      printf("here\n");
 
       real64 const dt2 = pow(dt,2);
 
@@ -483,6 +481,7 @@ struct PressureComputationKernel
       //Multiply by p_{n } by 2*Mass
       FE_TYPE::computeMassTerm(xLocal, [&] (const int i, const int j, const real64 val)
       {
+
          flowx[j] = 2.0*val*p_n[k][i];
          flowx[j] -= val*p_nm1[k][i];
       } );
@@ -493,6 +492,7 @@ struct PressureComputationKernel
       //First stiffness part (volume)
       FE_TYPE::computeStiffnessTerm(xLocal, [&] (const int i, const int j, real64 val)
       {
+
          flowx[j] -= dt2*val*p_n[k][i];
       } );
 
@@ -527,8 +527,8 @@ struct PressureComputationKernel
 
          //Flux computation
 
-         flowx[c1] -= 0.5*dt2*p_n[k][c2];
-         flowx[c1] += 0.5*dt2*p_n[elemNeigh][neighDof];
+         flowx[c1] -= 0.5*dt2*val*p_n[k][c2];
+         flowx[c1] += 0.5*dt2*val*p_n[elemNeigh][neighDof];
 
 
        },
@@ -562,8 +562,8 @@ struct PressureComputationKernel
 
          //Flux computation
 
-         flowx[c1] += 0.5*dt2*p_n[elemNeigh][neighDof];
-         flowx[c1] -= 0.5*dt2*p_n[k][c2];
+         flowx[c1] += 0.5*dt2*val*p_n[elemNeigh][neighDof];
+         flowx[c1] -= 0.5*dt2*val*p_n[k][c2];
 
          //Then we need a second time where we take the transpose of the previous values:
 
@@ -580,8 +580,8 @@ struct PressureComputationKernel
 
          //Flux computation
 
-         flowx[c2] -= 0.5*dt2*p_n[elemNeigh][neighDof2];
-         flowx[c2] += 0.5*dt2*p_n[k][c1];
+         flowx[c2] -= 0.5*dt2*val*p_n[elemNeigh][neighDof2];
+         flowx[c2] += 0.5*dt2*val*p_n[k][c1];
 
 
        } );
