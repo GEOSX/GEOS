@@ -30,7 +30,6 @@
 #include "physicsSolvers/NonlinearSolverParameters.hpp"
 #include "physicsSolvers/LinearSolverParameters.hpp"
 #include "physicsSolvers/SolverStatistics.hpp"
-#include "physicsSolvers/LogLevelsInfo.hpp"
 
 #include <limits>
 

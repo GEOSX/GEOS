@@ -1,6 +1,7 @@
 # Specify solver headers
 set( physicsSolvers_headers
      ${physicsSolvers_headers}
+     fluidFlow/LogLevelsInfo.hpp
      fluidFlow/FlowSolverBase.hpp
      fluidFlow/FlowSolverBaseFields.hpp
      fluidFlow/CompositionalMultiphaseBase.hpp
@@ -20,7 +21,6 @@ set( physicsSolvers_headers
      fluidFlow/SinglePhaseProppantBase.hpp
      fluidFlow/StencilAccessors.hpp
      fluidFlow/StencilDataCollection.hpp
-     fluidFlow/LogLevelsInfo.hpp
      fluidFlow/kernels/MinPoreVolumeMaxPorosityKernel.hpp
      fluidFlow/kernels/StencilWeightsUpdateKernel.hpp
      fluidFlow/kernels/HybridFVMHelperKernels.hpp
@@ -89,13 +89,14 @@ set( physicsSolvers_headers
      fluidFlow/kernels/compositional/ThermalSolutionScalingKernel.hpp
      fluidFlow/wells/CompositionalMultiphaseWell.hpp
      fluidFlow/wells/CompositionalMultiphaseWellFields.hpp
+     fluidFlow/wells/kernels/CompositionalMultiphaseWellKernels.hpp
+     fluidFlow/wells/LogLevelsInfo.hpp
      fluidFlow/wells/SinglePhaseWell.hpp
      fluidFlow/wells/SinglePhaseWellFields.hpp
      fluidFlow/wells/WellConstants.hpp
      fluidFlow/wells/WellControls.hpp
      fluidFlow/wells/WellSolverBase.hpp
      fluidFlow/wells/WellSolverBaseFields.hpp
-     fluidFlow/wells/LogLevelsInfo.hpp
      fluidFlow/wells/kernels/SinglePhaseWellKernels.hpp
      fluidFlow/wells/kernels/CompositionalMultiphaseWellKernels.hpp
      fluidFlow/proppantTransport/ProppantTransport.hpp

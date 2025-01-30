@@ -18,8 +18,8 @@
  * This file contains common log level informations for physics solvers
  */
 
-#ifndef GEOS_PHYSICSSOLVERS_FLUIDFLOW_WELLS_LOGLEVELSINFO_HPP_
-#define GEOS_PHYSICSSOLVERS_FLUIDFLOW_WELLS_LOGLEVELSINFO_HPP_
+#ifndef GEOS_FILEIO_LOGLEVELSINFO_HPP
+#define GEOS_FILEIO_LOGLEVELSINFO_HPP
 
 #include "common/DataTypes.hpp"
 
@@ -36,30 +36,30 @@ namespace logInfo
 
 /// @cond DO_NOT_DOCUMENT
 
-struct SystemSolution
+struct DataCollectorInitialization
 {
-  static constexpr int getMinLogLevel() { return 1; }
-  static constexpr std::string_view getDescription() { return "Log single phase well system solution"; }
+  static constexpr int getMinLogLevel() { return 3; }
+  static constexpr std::string_view getDescription() { return "Information on Time history Initialization"; }
 };
 
-struct WellComponents
+struct ChomboIOInitialization
 {
   static constexpr int getMinLogLevel() { return 1; }
-  static constexpr std::string_view getDescription() { return "Well components information"; }
+  static constexpr std::string_view getDescription() { return "Information on chomboIO coupling Initialization"; }
 };
 
-struct WellControl
+struct OutputEvents
 {
-  static constexpr int getMinLogLevel() { return 1; }
-  static constexpr std::string_view getDescription() { return "Well control information"; }
+  static constexpr int getMinLogLevel() { return 2; }
+  static constexpr std::string_view getDescription() { return "Information on output events (VTK/ChomboIO/HDF5)"; }
 };
 
-struct WellValidity
+
+struct HDF5Writing
 {
-  static constexpr int getMinLogLevel() { return 1; }
-  static constexpr std::string_view getDescription() { return "Well validity information"; }
+  static constexpr int getMinLogLevel() { return 3; }
+  static constexpr std::string_view getDescription() { return "Information on buffered data in an HDF5 file "; }
 };
-
 
 /// @endcond
 ///@}
@@ -68,4 +68,4 @@ struct WellValidity
 
 }
 
-#endif // GEOS_PHYSICSSOLVERS_FLUIDFLOW_WELLS_LOGLEVELSINFO_HPP
+#endif // GEOS_FILEIO_LOGLEVELSINFO_HPP

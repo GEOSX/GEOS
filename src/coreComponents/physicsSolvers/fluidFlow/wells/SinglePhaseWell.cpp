@@ -30,6 +30,7 @@
 #include "mesh/WellElementSubRegion.hpp"
 #include "mesh/PerforationFields.hpp"
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
+#include "physicsSolvers/fluidFlow/wells/LogLevelsInfo.hpp"
 #include "physicsSolvers/fluidFlow/SinglePhaseBase.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/wells/WellSolverBaseFields.hpp"
@@ -38,7 +39,6 @@
 #include "physicsSolvers/fluidFlow/wells/kernels/SinglePhaseWellKernels.hpp"
 #include "physicsSolvers/fluidFlow/kernels/singlePhase/FluidUpdateKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/singlePhase/SolutionCheckKernel.hpp"
-#include "physicsSolvers/fluidFlow/wells/LogLevelsInfo.hpp"
 
 namespace geos
 {
@@ -60,6 +60,8 @@ SinglePhaseWell::SinglePhaseWell( const string & name,
     setApplyDefaultValue( 1 ). // negative pressure is allowed by default
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "Flag indicating if negative pressure is allowed" );
+
+  addLogLevel< logInfo::SystemSolution >();
 }
 
 void SinglePhaseWell::registerDataOnMesh( Group & meshBodies )
@@ -541,12 +543,14 @@ void SinglePhaseWell::assemblePressureRelations( real64 const & time_n,
         if( wellControls.getControl() == WellControls::Control::BHP )
         {
           wellControls.switchToTotalRateControl( wellControls.getTargetTotalRate( timeAtEndOfStep ) );
-          GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::WellControl, GEOS_FMT( "Control switch for well {} from BHP constraint to rate constraint", subRegion.getName()) );
+          GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::WellControl,
+                                      GEOS_FMT( "Control switch for well {} from BHP constraint to rate constraint", subRegion.getName()) );
         }
         else
         {
           wellControls.switchToBHPControl( wellControls.getTargetBHP( timeAtEndOfStep ) );
-          GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::WellControl, GEOS_FMT( "Control switch for well {} from rate constraint to BHP constraint", subRegion.getName()) );
+          GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::WellControl,
+                                      GEOS_FMT( "Control switch for well {} from rate constraint to BHP constraint", subRegion.getName()) );
         }
       }
 
@@ -811,8 +815,11 @@ bool SinglePhaseWell::checkSystemSolution( DomainPartition & domain,
   numNegativePressures = MpiWrapper::sum( numNegativePressures );
 
   if( numNegativePressures > 0 )
-    GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "        {}: Number of negative pressure values: {}, minimum value: {} Pa",
-                                        getName(), numNegativePressures, fmt::format( "{:.{}f}", minPressure, 3 ) ) );
+  {
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::SystemSolution,
+                                GEOS_FMT( "        {}: Number of negative pressure values: {}, minimum value: {} Pa",
+                                          getName(), numNegativePressures, fmt::format( "{:.{}f}", minPressure, 3 ) ) );
+  }
 
   return (m_allowNegativePressure || numNegativePressures == 0) ?  1 : 0;
 }

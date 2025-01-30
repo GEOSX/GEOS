@@ -18,7 +18,6 @@ set( physicsSolvers_headers
      contact/kernels/SolidMechanicsConformingContactKernelsHelper.hpp
      contact/kernels/SolidMechanicsContactFaceBubbleKernels.hpp
      contact/kernels/SolidMechanicsLagrangeContactKernels.hpp 
-     contact/LogLevelsInfo.hpp
      PARENT_SCOPE )
 
 

@@ -27,6 +27,7 @@ set( events_headers
      HaltEvent.hpp
      PeriodicEvent.hpp
      SoloEvent.hpp
+     LogLevelsInfo.hpp
      tasks/TaskBase.hpp
      tasks/TasksManager.hpp
    )

@@ -31,7 +31,7 @@
 #include "physicsSolvers/multiphysics/HydrofractureSolver.hpp"
 #include "physicsSolvers/multiphysics/SinglePhaseReservoirAndWells.hpp"
 #include "physicsSolvers/multiphysics/CompositionalMultiphaseReservoirAndWells.hpp"
-#include "physicsSolvers/multiphysics/LogLevelsInfo.hpp"
+#include "physicsSolvers/LogLevelsInfo.hpp"
 
 namespace geos
 {
@@ -47,7 +47,6 @@ PoromechanicsInitialization( const string & name,
   m_solidMechanicsStatistics(),
   m_solidMechanicsStateResetTask( name, parent )
 {
-  enableLogLevelInput();
 
   registerWrapper( viewKeyStruct::poromechanicsSolverNameString(), &m_poromechanicsSolverName ).
     setRTTypeName( rtTypes::CustomTypes::groupNameRef ).
@@ -60,7 +59,7 @@ PoromechanicsInitialization( const string & name,
     setApplyDefaultValue( "" ).
     setDescription( "Name of the solid mechanics statistics" );
 
-  addLogLevel< logInfo::Initialization >();
+  addLogLevel< logInfo::SolverInitialization >();
 }
 
 template< typename POROMECHANICS_SOLVER >
@@ -111,16 +110,16 @@ execute( real64 const time_n,
          real64 const eventProgress,
          DomainPartition & domain )
 {
-  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Initialization, GEOS_FMT( "Task `{}`: at time {}s, physics solver `{}` is set to perform stress initialization during the next time step(s)",
-                                                                 getName(), time_n, m_poromechanicsSolverName ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::SolverInitialization, GEOS_FMT( "Task `{}`: at time {}s, physics solver `{}` is set to perform stress initialization during the next time step(s)", //1
+                                                                       getName(), time_n, m_poromechanicsSolverName ) );
   m_poromechanicsSolver->setStressInitialization( true );
 
   m_solidMechanicsStateResetTask.execute( time_n, dt, cycleNumber, eventCounter, eventProgress, domain );
 
   m_poromechanicsSolver->execute( time_n, dt, cycleNumber, eventCounter, eventProgress, domain );
 
-  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Initialization, GEOS_FMT( "Task `{}`: at time {}s, physics solver `{}` has completed stress initialization",
-                                                                 getName(), time_n + dt, m_poromechanicsSolverName ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::SolverInitialization, GEOS_FMT( "Task `{}`: at time {}s, physics solver `{}` has completed stress initialization",//1
+                                                                       getName(), time_n + dt, m_poromechanicsSolverName ) );
   m_poromechanicsSolver->setStressInitialization( false );
 
   if( m_solidMechanicsStatistics != nullptr )

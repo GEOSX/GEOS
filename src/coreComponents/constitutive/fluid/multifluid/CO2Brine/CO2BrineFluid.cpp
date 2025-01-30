@@ -86,8 +86,6 @@ CO2BrineFluid< PHASE1, PHASE2, FLASH >::
 CO2BrineFluid( string const & name, Group * const parent ):
   MultiFluidBase( name, parent )
 {
-  enableLogLevelInput();
-
   registerWrapper( viewKeyStruct::phasePVTParaFilesString(), &m_phasePVTParaFiles ).
     setInputFlag( InputFlags::REQUIRED ).
     setRestartFlags( RestartFlags::NO_WRITE ).

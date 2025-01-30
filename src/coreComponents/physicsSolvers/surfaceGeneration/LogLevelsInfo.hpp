@@ -15,11 +15,11 @@
 
 /**
  * @file LogLevelsInfo.hpp
- * This file contains log level informations for surface generators
+ * This file contains common log level informations for physics solvers
  */
 
-#ifndef GEOS_PHYSICSSOLVERS_SURFACEGENERATION_LOGLEVELSINFO_HPP
-#define GEOS_PHYSICSSOLVERS_SURFACEGENERATION_LOGLEVELSINFO_HPP
+#ifndef GEOS_PHYSICSSOLVERS_SURFACEGENERATION_LOGLEVELSINFO_HPP_
+#define GEOS_PHYSICSSOLVERS_SURFACEGENERATION_LOGLEVELSINFO_HPP_
 
 #include "common/DataTypes.hpp"
 
@@ -28,19 +28,6 @@ namespace geos
 
 namespace logInfo
 {
-
-/**
- * @name Wells LogLevels info structures. They must comply with the `is_log_level_info` trait.
- */
-///@{
-
-/// @cond DO_NOT_DOCUMENT
-
-struct SurfaceGenerator
-{
-  static constexpr int getMinLogLevel() { return 1; }
-  static constexpr std::string_view getDescription() { return "Fracture generation information"; }
-};
 
 struct Mapping
 {

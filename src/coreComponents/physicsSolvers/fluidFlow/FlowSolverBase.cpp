@@ -31,6 +31,7 @@
 #include "finiteVolume/FiniteVolumeManager.hpp"
 #include "finiteVolume/FluxApproximationBase.hpp"
 #include "mesh/DomainPartition.hpp"
+#include "physicsSolvers/LogLevelsInfo.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/kernels/MinPoreVolumeMaxPorosityKernel.hpp"
 #include "physicsSolvers/fluidFlow/kernels/StencilWeightsUpdateKernel.hpp"

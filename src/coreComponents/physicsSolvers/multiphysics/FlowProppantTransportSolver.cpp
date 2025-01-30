@@ -102,7 +102,8 @@ real64 FlowProppantTransportSolver::sequentiallyCoupledSolverStep( real64 const 
       resetStateToBeginningOfStep( domain );
     }
 
-    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::NonlinearSolver, GEOS_FMT( "  Iteration: {}, FlowSolver: ", iter+1 ) );
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::NonlinearSolver,
+                                GEOS_FMT( "  Iteration: {}, FlowSolver: ", iter+1 ) );
 
     dtReturnTemporary = flowSolver()->nonlinearImplicitStep( time_n, dtReturn, cycleNumber, domain );
 
@@ -117,11 +118,13 @@ real64 FlowProppantTransportSolver::sequentiallyCoupledSolverStep( real64 const 
     if( fluidNonLinearParams.m_numNewtonIterations <= this->m_nonlinearSolverParameters.m_minIterNewton && iter > 0 )
     {
       m_solverStatistics.logNonlinearIteration();
-      GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Convergence, GEOS_FMT( "***** The iterative coupling has converged in {} iterations *****", iter ) );
+      GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Convergence,
+                                  GEOS_FMT( "***** The iterative coupling has converged in {} iterations *****", iter ) );
       break;
     }
 
-    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::NonlinearSolver, GEOS_FMT( "  Iteration: {}, Proppant Solver: ", iter+1 ) );
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::NonlinearSolver,
+                                GEOS_FMT( "  Iteration: {}, Proppant Solver: ", iter+1 ) );
 
     dtReturnTemporary = proppantTransportSolver()->nonlinearImplicitStep( time_n, dtReturn, cycleNumber, domain );
 

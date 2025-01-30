@@ -23,12 +23,14 @@
 #include "constitutive/fluid/multifluid/MultiFluidBase.hpp"
 #include "constitutive/relativePermeability/RelativePermeabilityBase.hpp"
 #include "constitutive/solid/CoupledSolidBase.hpp"
+#include "physicsSolvers/fluidFlow/LogLevelsInfo.hpp"
 #include "physicsSolvers/fluidFlow/CompositionalMultiphaseBase.hpp"
 #include "physicsSolvers/fluidFlow/CompositionalMultiphaseBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/CompositionalMultiphaseHybridFVM.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
-#include "physicsSolvers/fluidFlow/kernels/compositional/StatisticsKernel.hpp"
+#include "physicsSolvers/LogLevelsInfo.hpp"
 #include "physicsSolvers/fluidFlow/LogLevelsInfo.hpp"
+#include "physicsSolvers/fluidFlow/kernels/compositional/StatisticsKernel.hpp"
 #include "common/format/table/TableData.hpp"
 #include "common/format/table/TableFormatter.hpp"
 #include "common/format/table/TableLayout.hpp"
@@ -541,8 +543,10 @@ void CompositionalMultiphaseStatistics::computeCFLNumbers( real64 const time,
   real64 maxPhaseCFL, maxCompCFL;
   m_solver->computeCFLNumbers( domain, dt, maxPhaseCFL, maxCompCFL );
 
-  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::CFL, GEOS_FMT( "{} (time {} s): Max phase CFL number: {}", getName(), time, maxPhaseCFL ) );
-  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::CFL, GEOS_FMT( "{} (time {} s): Max component CFL number: {}", getName(), time, maxCompCFL ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::CFL,
+                              GEOS_FMT( "{} (time {} s): Max phase CFL number: {}", getName(), time, maxPhaseCFL ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::CFL,
+                              GEOS_FMT( "{} (time {} s): Max component CFL number: {}", getName(), time, maxCompCFL ) );
 }
 
 

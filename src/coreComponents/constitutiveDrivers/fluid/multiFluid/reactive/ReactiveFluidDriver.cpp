@@ -32,8 +32,6 @@ ReactiveFluidDriver::ReactiveFluidDriver( const string & name,
                                           Group * const parent ):
   TaskBase( name, parent )
 {
-  enableLogLevelInput();
-
   registerWrapper( viewKeyStruct::fluidNameString(), &m_fluidName ).
     setRTTypeName( rtTypes::CustomTypes::groupNameRef ).
     setInputFlag( InputFlags::REQUIRED ).

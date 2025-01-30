@@ -39,6 +39,7 @@ set( mesh_headers
      ExternalDataSourceManager.hpp
      EmbeddedSurfaceNodeManager.hpp
      EmbeddedSurfaceSubRegion.hpp
+     LogLevelsInfo.hpp
      MeshFields.hpp
      FaceElementSubRegion.hpp
      FaceManager.hpp

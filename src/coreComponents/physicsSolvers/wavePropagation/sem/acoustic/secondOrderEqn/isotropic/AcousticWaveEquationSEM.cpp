@@ -34,6 +34,7 @@
 #include "events/EventManager.hpp"
 #include "AcousticPMLSEMKernel.hpp"
 #include "physicsSolvers/wavePropagation/shared/PrecomputeSourcesAndReceiversKernel.hpp"
+#include "physicsSolvers/wavePropagation/LogLevelsInfo.hpp"
 
 namespace geos
 {
@@ -52,6 +53,7 @@ AcousticWaveEquationSEM::AcousticWaveEquationSEM( const std::string & name,
     setSizedFromParent( 0 ).
     setDescription( "Pressure value at each receiver for each timestep" );
 
+  addLogLevel< logInfo::PMLParameters >();
 }
 
 AcousticWaveEquationSEM::~AcousticWaveEquationSEM()
@@ -754,15 +756,15 @@ void AcousticWaveEquationSEM::initializePML()
     /// so it can be used by the PML application
     indicatorPML.zero();
 
-    GEOS_LOG_LEVEL_RANK_0( 1,
-                           "PML parameters are: \n"
-                           << "\t inner boundaries xMin = "<<param.xMinPML<<"\n"
-                           << "\t inner boundaries xMax = "<<param.xMaxPML<<"\n"
-                           << "\t left, front, top max PML thicknesses  = "<<param.thicknessMinXYZPML<<"\n"
-                           << "\t right, back, bottom max PML thicknesses  = "<<param.thicknessMaxXYZPML<<"\n"
-                           << "\t left, front, top average wave speed  = "<<param.waveSpeedMinXYZPML<<"\n"
-                           << "\t right, back, bottom average wave speed  = "<<param.waveSpeedMaxXYZPML<<"\n"
-                           << "\t theoretical reflectivity = "<< param.reflectivityPML );
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::PMLParameters,
+                                "PML parameters are: \n"
+                                << "\t inner boundaries xMin = "<<param.xMinPML<<"\n"
+                                << "\t inner boundaries xMax = "<<param.xMaxPML<<"\n"
+                                << "\t left, front, top max PML thicknesses  = "<<param.thicknessMinXYZPML<<"\n"
+                                << "\t right, back, bottom max PML thicknesses  = "<<param.thicknessMaxXYZPML<<"\n"
+                                << "\t left, front, top average wave speed  = "<<param.waveSpeedMinXYZPML<<"\n"
+                                << "\t right, back, bottom average wave speed  = "<<param.waveSpeedMaxXYZPML<<"\n"
+                                << "\t theoretical reflectivity = "<< param.reflectivityPML );
 
   } );
 }

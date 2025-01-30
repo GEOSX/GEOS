@@ -30,7 +30,6 @@ LinearSolverParametersInput::LinearSolverParametersInput( string const & name,
   Group( name, parent )
 {
   setInputFlags( InputFlags::OPTIONAL );
-  enableLogLevelInput();
 
   registerWrapper( viewKeyStruct::solverTypeString(), &m_parameters.solverType ).
     setApplyDefaultValue( m_parameters.solverType ).

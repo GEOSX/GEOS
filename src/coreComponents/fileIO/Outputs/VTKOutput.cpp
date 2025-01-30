@@ -18,6 +18,7 @@
  */
 
 #include "VTKOutput.hpp"
+#include "fileIO/LogLevelsInfo.hpp"
 #include "common/MpiWrapper.hpp"
 
 #if defined(GEOS_USE_PYGEOSX)
@@ -54,8 +55,6 @@ VTKOutput::VTKOutput( string const & name,
   m_levelNames(),
   m_writer( getOutputDirectory() + '/' + m_plotFileRoot )
 {
-  enableLogLevelInput();
-
   registerWrapper( viewKeysStruct::plotFileRoot, &m_plotFileRoot ).
     setDefaultValue( m_plotFileRoot ).
     setInputFlag( InputFlags::OPTIONAL ).
@@ -109,6 +108,8 @@ VTKOutput::VTKOutput( string const & name,
     setApplyDefaultValue( m_outputRegionType ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "Output region types.  Valid options: ``" + EnumStrings< vtk::VTKRegionTypes >::concat( "``, ``" ) + "``" );
+
+  addLogLevel< logInfo::OutputEvents >();
 }
 
 VTKOutput::~VTKOutput()
@@ -173,11 +174,10 @@ bool VTKOutput::execute( real64 const time_n,
                          real64 const GEOS_UNUSED_PARAM ( eventProgress ),
                          DomainPartition & domain )
 {
-  GEOS_MARK_FUNCTION;
-
-  GEOS_LOG_LEVEL_RANK_0( 2, GEOS_FMT( "{}: writing {} at time {} s (cycle number {})", getName(), m_fieldNames, time_n + dt, cycleNumber ));
-
   {
+    GEOS_LOG_LEVEL_INFO( logInfo::OutputEvents,
+                         GEOS_FMT( "{}: writing {} at time {} s (cycle number {})",
+                                   getName(), m_fieldNames, time_n + dt, cycleNumber ));
     Timer timer( m_outputTimer );
 
     m_writer.setWriteGhostCells( m_writeGhostCells );

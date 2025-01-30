@@ -1,6 +1,7 @@
 # Specify solver headers
 set( physicsSolvers_headers
      ${physicsSolvers_headers}
+     wavePropagation/LogLevelsInfo.hpp
      wavePropagation/shared/WaveSolverBase.hpp
      wavePropagation/shared/WaveSolverUtils.hpp
      wavePropagation/shared/PrecomputeSourcesAndReceiversKernel.hpp

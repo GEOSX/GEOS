@@ -27,8 +27,7 @@
 #include "physicsSolvers/multiphysics/SinglePhasePoromechanics.hpp"
 #include "physicsSolvers/multiphysics/MultiphasePoromechanics.hpp"
 #include "physicsSolvers/fluidFlow/SinglePhaseBase.hpp"
-#include "physicsSolvers/surfaceGeneration/LogLevelsInfo.hpp"
-#include "dataRepository/LogLevelsInfo.hpp"
+#include "physicsSolvers/LogLevelsInfo.hpp"
 #include "mesh/MeshFields.hpp"
 #include "finiteVolume/FluxApproximationBase.hpp"
 
@@ -96,8 +95,9 @@ void HydrofractureSolver< POROMECHANICS_SOLVER >::setMGRStrategy()
 
   // This may need to be different depending on whether poroelasticity is on or not.
   linearSolverParameters.mgr.strategy = LinearSolverParameters::MGR::StrategyType::hydrofracture;
-  GEOS_LOG_LEVEL_RANK_0( 1, GEOS_FMT( "{}: MGR strategy set to {}", this->getName(),
-                                      EnumStrings< LinearSolverParameters::MGR::StrategyType >::toString( linearSolverParameters.mgr.strategy )));
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::LinearSolverConfiguration
+                              , GEOS_FMT( "{}: MGR strategy set to {}", this->getName(),
+                                          EnumStrings< LinearSolverParameters::MGR::StrategyType >::toString( linearSolverParameters.mgr.strategy )));
 }
 
 template< typename POROMECHANICS_SOLVER >
@@ -374,12 +374,21 @@ void HydrofractureSolver< POROMECHANICS_SOLVER >::updateHydraulicApertureAndFrac
   minHydraulicAperture  = MpiWrapper::min( minHydraulicAperture );
   maxHydraulicAperture  = MpiWrapper::max( maxHydraulicAperture );
 
-  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution, GEOS_FMT( "        {}: Max aperture change: {} m, max hydraulic aperture change: {} m",
-                                                           this->getName(), fmt::format( "{:.{}e}", maxApertureChange, 6 ), fmt::format( "{:.{}e}", maxHydraulicApertureChange, 6 ) ) );
-  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution, GEOS_FMT( "        {}: Min aperture: {} m, max aperture: {} m",
-                                                           this->getName(), fmt::format( "{:.{}e}", minAperture, 6 ), fmt::format( "{:.{}e}", maxAperture, 6 ) ) );
-  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution, GEOS_FMT( "        {}: Min hydraulic aperture: {} m, max hydraulic aperture: {} m",
-                                                           this->getName(), fmt::format( "{:.{}e}", minHydraulicAperture, 6 ), fmt::format( "{:.{}e}", maxHydraulicAperture, 6 ) ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution,
+                              GEOS_FMT( "        {}: Max aperture change: {} m, max hydraulic aperture change: {} m",
+                                        this->getName(),
+                                        fmt::format( "{:.{}e}", maxApertureChange, 6 ),
+                                        fmt::format( "{:.{}e}", maxHydraulicApertureChange, 6 ) ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution,
+                              GEOS_FMT( "        {}: Min aperture: {} m, max aperture: {} m",
+                                        this->getName(),
+                                        fmt::format( "{:.{}e}", minAperture, 6 ),
+                                        fmt::format( "{:.{}e}", maxAperture, 6 ) ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Solution,
+                              GEOS_FMT( "        {}: Min hydraulic aperture: {} m, max hydraulic aperture: {} m",
+                                        this->getName(),
+                                        fmt::format( "{:.{}e}", minHydraulicAperture, 6 ),
+                                        fmt::format( "{:.{}e}", maxHydraulicAperture, 6 ) ) );
 }
 template< typename POROMECHANICS_SOLVER >
 void HydrofractureSolver< POROMECHANICS_SOLVER >::setupCoupling( DomainPartition const & domain,

@@ -36,7 +36,7 @@
 #include "mesh/simpleGeometricObjects/GeometricObjectManager.hpp"
 #include "mesh/simpleGeometricObjects/Rectangle.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
-#include "physicsSolvers/surfaceGeneration/LogLevelsInfo.hpp"
+#include "physicsSolvers/LogLevelsInfo.hpp"
 
 
 namespace geos

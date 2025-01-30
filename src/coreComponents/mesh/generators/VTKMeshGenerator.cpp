@@ -20,6 +20,7 @@
 #include "VTKMeshGenerator.hpp"
 
 #include "mesh/ExternalDataSourceManager.hpp"
+#include "mesh/LogLevelsInfo.hpp"
 #include "mesh/generators/VTKFaceBlockUtilities.hpp"
 #include "mesh/generators/VTKMeshGeneratorTools.hpp"
 #include "mesh/generators/CellBlockManager.hpp"
@@ -84,6 +85,8 @@ VTKMeshGenerator::VTKMeshGenerator( string const & name,
                     " If set to a negative value, the GlobalId arrays in the input mesh are not used, and generated global Ids are automatically generated."
                     " If set to a positive value, the GlobalId arrays in the input mesh are used and required, and the simulation aborts if they are not available" );
 
+  addLogLevel< logInfo::VTKSteps >();
+
   registerWrapper( viewKeyStruct::dataSourceString(), &m_dataSourceName ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "Name of the VTK data source" );
@@ -122,10 +125,11 @@ void VTKMeshGenerator::fillCellBlockManager( CellBlockManager & cellBlockManager
   vtkSmartPointer< vtkMultiProcessController > controller = vtk::getController();
   vtkMultiProcessController::SetGlobalController( controller );
 
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::VTKSteps, "  redistributing mesh..." );
   {
     vtk::AllMeshes allMeshes;
 
-    GEOS_LOG_LEVEL_RANK_0( 2, GEOS_FMT( "{} '{}': reading the dataset...", catalogName(), getName() ) );
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::VTKSteps, GEOS_FMT( "{} '{}': reading the dataset...", catalogName(), getName() ) );
 
     if( !m_filePath.empty())
     {
@@ -183,33 +187,34 @@ void VTKMeshGenerator::fillCellBlockManager( CellBlockManager & cellBlockManager
       }
     }
 
-    GEOS_LOG_LEVEL_RANK_0( 2, GEOS_FMT( "{} '{}': redistributing mesh...", catalogName(), getName() ) );
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::VTKSteps,
+                                GEOS_FMT( "{} '{}': redistributing mesh...", catalogName(), getName() ) );
     vtk::AllMeshes redistributedMeshes =
       vtk::redistributeMeshes( getLogLevel(), allMeshes.getMainMesh(), allMeshes.getFaceBlocks(), comm, m_partitionMethod, m_partitionRefinement, m_useGlobalIds );
     m_vtkMesh = redistributedMeshes.getMainMesh();
     m_faceBlockMeshes = redistributedMeshes.getFaceBlocks();
-    GEOS_LOG_LEVEL_RANK_0( 2, GEOS_FMT( "{} '{}': finding neighbor ranks...", catalogName(), getName() ) );
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::VTKSteps, GEOS_FMT( "{} '{}': finding neighbor ranks...", catalogName(), getName() ) );
     std::vector< vtkBoundingBox > boxes = vtk::exchangeBoundingBoxes( *m_vtkMesh, comm );
     std::vector< int > const neighbors = vtk::findNeighborRanks( std::move( boxes ) );
     partition.setMetisNeighborList( std::move( neighbors ) );
-    GEOS_LOG_LEVEL_RANK_0( 2, GEOS_FMT( "{} '{}': done!", catalogName(), getName() ) );
+    GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::VTKSteps, GEOS_FMT( "{} '{}': done!", catalogName(), getName() ) );
   }
   GEOS_LOG_RANK_0( GEOS_FMT( "{} '{}': generating GEOS mesh data structure", catalogName(), getName() ) );
 
 
-  GEOS_LOG_LEVEL_RANK_0( 2, GEOS_FMT( "{} '{}': preprocessing...", catalogName(), getName() ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::VTKSteps, GEOS_FMT( "{} '{}': preprocessing...", catalogName(), getName() ) );
   m_cellMap = vtk::buildCellMap( *m_vtkMesh, m_attributeName );
 
-  GEOS_LOG_LEVEL_RANK_0( 2, GEOS_FMT( "{} '{}': writing nodes...", catalogName(), getName() ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::VTKSteps, GEOS_FMT( "{} '{}': writing nodes...", catalogName(), getName() ) );
   cellBlockManager.setGlobalLength( writeNodes( getLogLevel(), *m_vtkMesh, m_nodesetNames, cellBlockManager, this->m_translate, this->m_scale ) );
 
-  GEOS_LOG_LEVEL_RANK_0( 2, GEOS_FMT( "{} '{}': writing cells...", catalogName(), getName() ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::VTKSteps, GEOS_FMT( "{} '{}': writing cells...", catalogName(), getName() ) );
   writeCells( getLogLevel(), *m_vtkMesh, m_cellMap, cellBlockManager );
 
-  GEOS_LOG_LEVEL_RANK_0( 2, GEOS_FMT( "{} '{}': writing surfaces...", catalogName(), getName() ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::VTKSteps, GEOS_FMT( "{} '{}': writing surfaces...", catalogName(), getName() ) );
   writeSurfaces( getLogLevel(), *m_vtkMesh, m_cellMap, cellBlockManager );
 
-  GEOS_LOG_LEVEL_RANK_0( 2, GEOS_FMT( "{} '{}': building connectivity maps...", catalogName(), getName() ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::VTKSteps, GEOS_FMT( "{} '{}': building connectivity maps...", catalogName(), getName() ) );
   cellBlockManager.buildMaps();
 
   for( auto const & [name, mesh]: m_faceBlockMeshes )
@@ -217,7 +222,7 @@ void VTKMeshGenerator::fillCellBlockManager( CellBlockManager & cellBlockManager
     vtk::importFractureNetwork( name, mesh, m_vtkMesh, cellBlockManager );
   }
 
-  GEOS_LOG_LEVEL_RANK_0( 2, GEOS_FMT( "{} '{}': done!", catalogName(), getName() ) );
+  GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::VTKSteps, GEOS_FMT( "{} '{}': done!", catalogName(), getName() ) );
   vtk::printMeshStatistics( *m_vtkMesh, m_cellMap, comm );
 }
 

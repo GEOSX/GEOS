@@ -15,11 +15,11 @@
 
 /**
  * @file LogLevelsInfo.hpp
- * This file contains log level informations for contact solvers
+ * This file contains common log level informations for physics solvers
  */
 
-#ifndef GEOS_PHYSICSSOLVERS_CONTACT_LOGLEVELSINFO_HPP
-#define GEOS_PHYSICSSOLVERS_CONTACT_LOGLEVELSINFO_HPP
+#ifndef GEOS_PHYSICSSOLVERS_WAVEPROPAGATION_LOGLEVELSINFO_HPP_
+#define GEOS_PHYSICSSOLVERS_WAVEPROPAGATION_LOGLEVELSINFO_HPP_
 
 #include "common/DataTypes.hpp"
 
@@ -29,17 +29,16 @@ namespace geos
 namespace logInfo
 {
 
-/**
- * @name Wells LogLevels info structures. They must comply with the `is_log_level_info` trait.
- */
-///@{
-
-/// @cond DO_NOT_DOCUMENT
-
-struct Configuration
+struct DASType
 {
-  static constexpr int getMinLogLevel() { return 2; }
-  static constexpr std::string_view getDescription() { return "Configuration information"; }
+  static constexpr int getMinLogLevel() { return 1; }
+  static constexpr std::string_view getDescription() { return "DAS type information"; }
+};
+
+struct PMLParameters
+{
+  static constexpr int getMinLogLevel() { return 1; }
+  static constexpr std::string_view getDescription() { return "Information on Perfectly match layers parameters"; }
 };
 
 /// @endcond
@@ -49,4 +48,4 @@ struct Configuration
 
 }
 
-#endif // GEOS_PHYSICSSOLVERS_CONTACT_LOGLEVELSINFO_HPP
+#endif // GEOS_PHYSICSSOLVERS_WAVEPROPAGATION_LOGLEVELSINFO_HPP

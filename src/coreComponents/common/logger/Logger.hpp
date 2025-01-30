@@ -454,44 +454,6 @@
  */
 #define GEOS_ASSERT_GE( lhs, rhs ) GEOS_ASSERT_GE_MSG( lhs, rhs, "" )
 
-/**
- * @brief Macro used to turn on/off a function based on the log level.
- * @param[in] minLevel Minimum log level
- * @param[in] fn Function to filter
- */
-#define GEOS_LOG_LEVEL_FN( minLevel, fn )                                      \
-  do {                                                                         \
-    if( this->getLogLevel() >= minLevel )                                      \
-    {                                                                          \
-      fn;                                                                      \
-    }                                                                          \
-  } while( false )
-
-/**
- * @brief Output messages based on current Group's log level.
- * @param[in] minLevel minimum log level
- * @param[in] msg a message to log (any expression that can be stream inserted)
- * @deprecated Will be replaced by GEOS_LOG_LEVEL_INFO
- */
-#define GEOS_LOG_LEVEL( minLevel, msg ) GEOS_LOG_IF( this->getLogLevel() >= minLevel, msg );
-
-/**
- * @brief Output messages (only on rank 0) based on current Group's log level.
- * @param[in] minLevel minimum log level
- * @param[in] msg a message to log (any expression that can be stream inserted)
- * @deprecated Will be replaced by GEOS_LOG_LEVEL_INFO_RANK_0
- */
-#define GEOS_LOG_LEVEL_RANK_0( minLevel, msg ) GEOS_LOG_RANK_0_IF( this->getLogLevel() >= minLevel, msg )
-
-/**
- * @brief Output messages (with one line per rank) based on current Group's log level.
- * @param[in] minLevel minimum log level
- * @param[in] msg a message to log (any expression that can be stream inserted)
- * @deprecated Will be replaced by GEOS_LOG_LEVEL_INFO_BY_RANK
- */
-#define GEOS_LOG_LEVEL_BY_RANK( minLevel, msg ) GEOS_LOG_RANK_IF( this->getLogLevel() >= minLevel, msg )
-
-
 namespace geos
 {
 

@@ -26,7 +26,7 @@
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/SinglePhaseBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/kernels/singlePhase/StatisticsKernel.hpp"
-#include "physicsSolvers/fluidFlow/LogLevelsInfo.hpp"
+#include "physicsSolvers/LogLevelsInfo.hpp"
 #include "common/format/table/TableData.hpp"
 #include "common/format/table/TableFormatter.hpp"
 #include "common/format/table/TableLayout.hpp"
