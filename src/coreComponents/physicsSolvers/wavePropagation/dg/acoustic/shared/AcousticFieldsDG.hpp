@@ -131,13 +131,13 @@ DECLARE_FIELD( ElementToOppositePermutation,
                WRITE_AND_READ,
                "Map from elements to the permutation of the neighboring element, opposite to each vertex." );
 
-DECLARE_FIELD( CharacteristicSize
+DECLARE_FIELD( CharacteristicSize,
                "charactersticSize",
                array1d< real32 >,
                0,
                NOPLOT,
                WRITE_AND_READ,
-               "Characteristic size of every given element, used for penalty term computation. Often this is just the radius of the inscribed sphere.");
+               "Characteristic size of every given element, used for penalty term computation. Often this is just the radius of the inscribed sphere." );
 
 DECLARE_FIELD( MassPlusDampingInvIndex,
                "massPlusDampingInvIndex",

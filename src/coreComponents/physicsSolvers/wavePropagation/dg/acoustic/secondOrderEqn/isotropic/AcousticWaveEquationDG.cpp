@@ -31,7 +31,6 @@
 #include "events/EventManager.hpp"
 #include "physicsSolvers/wavePropagation/shared/PrecomputeSourcesAndReceiversKernel.hpp"
 #include "physicsSolvers/wavePropagation/dg/acoustic/secondOrderEqn/isotropic/AcousticWaveEquationDGKernel.hpp"
-#include "denseLinearAlgebra/interfaces/blaslapack/BlasLapackLA.hpp"
 
 namespace geos
 {
@@ -252,11 +251,19 @@ void AcousticWaveEquationDG::initializePostInitialConditionsPreSubGroups()
     m_referenceInvMassMatrix.resize( elemManager.numRegions() );
     m_boundaryInvMassPlusDamping.resize( elemManager.numRegions() );
 
+    if( m_timestepStabilityLimit==1 )
+    {
+      real64 dtOut = 0.0;
+      computeTimeStep( dtOut );
+      m_timestepStabilityLimit = 0;
+      m_timeStep=dtOut;
+    }
+
     elemManager.forElementRegions< CellElementRegion >( regionNames, [&] ( localIndex const regionIndex, CellElementRegion & elemRegion )
     {
       m_referenceInvMassMatrix.resizeArray( regionIndex, elemRegion.numSubRegions() );
       m_boundaryInvMassPlusDamping.resizeArray( regionIndex, elemRegion.numSubRegions() );
-      elemRegion.forElementSubRegionsIndex< CellElementSubRegion >( [&]( localIndex const subRegionIndex, CellElementSubRegion & elementSubRegion )
+      elemRegion.forElementSubRegionsIndex< CellElementSubRegion >( [&] ( localIndex const subRegionIndex, CellElementSubRegion & elementSubRegion )
       {
         GEOS_THROW_IF( elementSubRegion.getElementType() != ElementType::Tetrahedron,
                        "Invalid type of element, the acoustic DG solver is designed for tetrahedral meshes only  ",
@@ -278,7 +285,7 @@ void AcousticWaveEquationDG::initializePostInitialConditionsPreSubGroups()
         arrayView2d< localIndex > const elemsToOpposite = elementSubRegion.getField< acousticfieldsdg::ElementToOpposite >();
         arrayView2d< integer > const elemsToOppositePermutation = elementSubRegion.getField< acousticfieldsdg::ElementToOppositePermutation >();
 
-        //arrayView2d< real32 > const characteristicSize = elementSubRegion.getField< acousticfieldsdg::CharacteristicSize >();
+        arrayView1d< real32 > const characteristicSize = elementSubRegion.getField< acousticfieldsdg::CharacteristicSize >();
 
         /// Partial gradient if gradient as to be computed
 
@@ -300,32 +307,25 @@ void AcousticWaveEquationDG::initializePostInitialConditionsPreSubGroups()
               elemsToOpposite,
               elemsToOppositePermutation );
  
+          AcousticWaveEquationDGKernels::
+            PrecomputePenaltyGeomKernel::
+            launch< EXEC_POLICY, FE_TYPE >
+            ( elementSubRegion.size(),
+              nodeCoords,
+              elemsToNodes,
+              characteristicSize );
 
-          // Precompute reference mass matrix for non-boundary elements
-          m_referenceInvMassMatrix[ regionIndex ][ subRegionIndex ].resizeDimension< 0, 1 >( FE_TYPE::numNodes, FE_TYPE::numNodes );
-          array2d< real64 > massMatrix; 
-          massMatrix.resize( FE_TYPE::numNodes, FE_TYPE::numNodes );
-          massMatrix.zero();
-          FE_TYPE::computeReferenceMassMatrix( massMatrix );
-          BlasLapackLA::matrixInverse( massMatrix, m_referenceInvMassMatrix[ regionIndex ][ subRegionIndex ] );
-
-          // Pre-compute inverse of mass + damping matrix for each boundary element
-          // localIndex nAbsBdryElems = 0;
-          // forAll< EXEC_POLICY >( elementSubRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
-          // {
-          //   characteristicSize[ k ] = WaveSolverUtils::computeReferenceLengthForPenalty( elemsToNodes, nodeCoords, k );
-          //   bool bdry = false;
-          //   for( int i = 0; i < 4; i++ )
-          //   {
-          //     if( elemsToOpposite( k, i ) == -1 )
-          //     {
-          //       bdry = true;
-          //       break;
-          //     }
-          //   }
-          //   RAJA::atomicInc< ATOMIC_POLICY >( &m_indexToBoundaryMatrix[ k ])
-          // } ); 
-          // m_boundaryInvMassPlusDamping[ regionIndex ][ subRegionIndex ].resizeDimension< 0, 1, 2 >( nAbsBdryElems, FE_TYPE::numNodes, FE_TYPE::numNodes );
+          // Pre-compute inverse of mass + damping matrix for each boundary element and penalty coefficient parameter
+          AcousticWaveEquationDGKernels::
+            PrecomputeMassDampingKernel::
+            launch< EXEC_POLICY, ATOMIC_POLICY, FE_TYPE >
+            ( elementSubRegion.size(),
+              nodeCoords,
+              elemsToNodes,
+              elemsToOpposite,
+              m_referenceInvMassMatrix[ regionIndex ][ subRegionIndex ],
+              m_boundaryInvMassPlusDamping[ regionIndex ][ subRegionIndex ],
+              m_timeStep );
 
           // AcousticMatricesSEM::MassMatrix< FE_TYPE > kernelM( finiteElement );
           // kernelM.template computeMassMatrix< EXEC_POLICY, ATOMIC_POLICY >( elementSubRegion.size(),
@@ -512,8 +512,8 @@ void AcousticWaveEquationDG::computeUnknowns( real64 const & time_n,
   
         
           AcousticWaveEquationDGKernels::
-          PressureComputation< FE_TYPE > kernel( finiteElement );
-          kernel.template launch< EXEC_POLICY, ATOMIC_POLICY >
+          PressureComputationKernel::
+          pressureComputation< FE_TYPE, EXEC_POLICY, ATOMIC_POLICY >
           ( elementSubRegion.size(),
           regionIndex,
           nodeCoords,

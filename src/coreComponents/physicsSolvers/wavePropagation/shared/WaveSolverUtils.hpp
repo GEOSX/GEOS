@@ -449,17 +449,17 @@ struct WaveSolverUtils
    * @param[in] nodeCoords array of base mesh nodes coordinates
    * @return the radius of the inscribed sphere
    */
+  template< typename REAL >
   GEOS_HOST_DEVICE
-  static real32
+  static REAL
   computeReferenceLengthForPenalty( arraySlice1d< localIndex const, cells::NODE_MAP_USD - 1 > const elemsToNodes,
-                                    arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const nodeCoords )
+                                    arrayView2d< REAL const, nodes::REFERENCE_POSITION_USD > const nodeCoords )
   {
     //Loop over the element faces
-    real64 inradius = 0;
-    real64 hs = 0;
-    real64 spxf[ 3 ][ 2 ] {};
-    real64 spx[ 3 ][ 3 ] {};
-    real64 m[ 6 ] {};
+    REAL hs = 0;
+    REAL spxf[ 3 ][ 2 ] {};
+    REAL spx[ 3 ][ 3 ] {};
+    REAL m[ 6 ] {};
     for( int i = 0; i < 4; i++ )
     {
       int cf = 0;

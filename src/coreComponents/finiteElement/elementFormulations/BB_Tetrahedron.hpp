@@ -750,10 +750,10 @@ public:
    * @tparam FUNC the callback function
    * @tparam Is the setindices
    */
-  template < typename FUNC, int... Is >
+  template < int... Is, typename FUNC >
   GEOS_HOST_DEVICE
   GEOS_FORCE_INLINE
-  static constexpr void conditionalBasisLoop(FUNC && func) {
+  static constexpr void conditionalBasisLoop( FUNC && func ) {
     loop( [&func] ( auto const i )
     {
       constexpr int i1 = ORDER - i;
@@ -770,28 +770,32 @@ public:
               constexpr int l1 = ORDER - i1 - j1 - k1;
               constexpr int c1 = dofIndex< i1, j1, k1 >();
               ( ( (i1 == Is) &&
-               ( void( func( 0,
+               ( void( func( 
+                       std::integral_constant<int, 0>{},
                        std::integral_constant<int, i1>{},
                        std::integral_constant<int, c1>{},
                        std::integral_constant<int, j1>{},
                        std::integral_constant<int, k1>{},
                        std::integral_constant<int, l1>{} ) ), 1 ) ) || ... );
               ( ( (j1 == Is) &&
-               ( void( func( 1,
+               ( void( func( 
+                      std::integral_constant<int, 1>{},
                       std::integral_constant<int, j1>{},
                       std::integral_constant<int, c1>{},
                       std::integral_constant<int, k1>{},
                       std::integral_constant<int, l1>{},
                       std::integral_constant<int, i1>{} ) ), 1 ) ) || ... );
               ( ( (k1 == Is) &&
-               ( void( func( 2,
+               ( void( func( 
+                      std::integral_constant<int, 2>{},
                       std::integral_constant<int, k1>{},
                       std::integral_constant<int, c1>{},
                       std::integral_constant<int, l1>{},
                       std::integral_constant<int, i1>{},
                       std::integral_constant<int, j1>{} ) ), 1 ) ) || ... );
               ( ( (l1 == Is) &&
-               ( void( func( 3,
+               ( void( func( 
+                      std::integral_constant<int, 3>{},
                       std::integral_constant<int, l1>{},
                       std::integral_constant<int, c1>{},
                       std::integral_constant<int, i1>{},
@@ -893,9 +897,14 @@ public:
                    FUNC && func )
   {
     real64 detJ = jacobianDeterminant( X );
-    basisLoop( [&] ( auto const c1, auto const i1, auto const j1, auto const k1, auto const l1 )
+    basisLoop( [&func, &detJ] ( auto const cc1, auto const ii1, auto const jj1, auto const kk1, auto const ll1 )
     {
-      basisLoop( [&] ( auto const c2, auto const i2, auto const j2, auto const k2, auto const l2 )
+      constexpr int c1 = cc1;
+      constexpr int i1 = ii1;
+      constexpr int j1 = jj1;
+      constexpr int k1 = kk1;
+      constexpr int l1 = ll1;
+      basisLoop( [&func, &detJ] ( auto const c2, auto const i2, auto const j2, auto const k2, auto const l2 )
       {
         constexpr real64 val = computeSuperpositionIntegral( i1, j1, k1, l1, i2, j2, k2, l2 );
         func( c1, c2, val * detJ );
@@ -927,13 +936,24 @@ public:
       dLambdadX[3][j] = ( ( X[ 1 ][ (j+1)%3 ] - X[ 0 ][ (j+1)%3 ]) * ( X[ 2 ][ (j+2)%3 ] - X[ 0 ][ (j+2)%3 ] ) - ( X[ 2 ][ (j+1)%3 ] - X[ 0 ][ (j+1)%3 ]) * ( X[ 1 ][ (j+2)%3 ] - X[ 0 ][ (j+2)%3 ] ) ) / detJ;
       dLambdadX[0][j] = -dLambdadX[1][j] - dLambdadX[2][j] - dLambdadX[3][j];
     }
-    basisLoop( [&] ( auto const c1, auto const i1, auto const j1, auto const k1, auto const l1 )
+    basisLoop( [&func, &dLambdadX] ( auto const cc1, auto const ci1, auto const cj1, auto const ck1, auto const cl1 )
     {
-      basisLoop( [&] ( auto const c2, auto const i2, auto const j2, auto const k2, auto const l2 )
+      constexpr int c1 = cc1;
+      constexpr int i1 = ci1;
+      constexpr int j1 = cj1;
+      constexpr int k1 = ck1;
+      constexpr int l1 = cl1;
+      basisLoop( [&func, &dLambdadX] ( auto const cc2, auto const ci2, auto const cj2, auto const ck2, auto const cl2 )
       {
-        barycentricCoordinateLoop( [&] ( auto const d1 )
+        constexpr int c2 = cc2;
+        constexpr int i2 = ci2;
+        constexpr int j2 = cj2;
+        constexpr int k2 = ck2;
+        constexpr int l2 = cl2;
+        barycentricCoordinateLoop( [&func, &dLambdadX] ( auto const cd1 )
         {
-          barycentricCoordinateLoop( [&] ( auto const d2 )
+          constexpr int d1 = cd1;
+          barycentricCoordinateLoop( [&func, &dLambdadX] ( auto const d2 )
           {
             constexpr real64 factor1 = ( i1 + j1 + k1 + l1 + 3 ) / ( i1 +j1 + k1 + l1 + 2);
             constexpr real64 factor2 = ( i2 + j2 + k2 + l2 + 3 ) / ( i2 +j2 + k2 + l2 + 2);
@@ -984,9 +1004,15 @@ public:
     real64 detJf[4] = { faceJacobianDeterminant( 0, X ), faceJacobianDeterminant( 1, X ),
                         faceJacobianDeterminant( 2, X ), faceJacobianDeterminant( 3, X ) };
 
-    conditionalBasisLoop< 0, 1 >( [&] ( auto const f1, auto const d, auto const c1, auto const i1, auto const j1, auto const k1 )
+    conditionalBasisLoop< 0, 1 >( [&funcP, &funcF, &detJf] ( auto const cf1, auto const cd, auto const cc1, auto const ci1, auto const cj1, auto const ck1 )
     {
-      conditionalBasisLoop< 0 >( [&] ( auto const f2, auto const, auto const c2, auto const i2, auto const j2, auto const k2 )
+      constexpr int f1 = cf1; 
+      constexpr int d = cd; 
+      constexpr int c1 = cc1; 
+      constexpr int i1 = ci1; 
+      constexpr int j1 = cj1; 
+      constexpr int k1 = ck1; 
+      conditionalBasisLoop< 0 >( [&funcP, &funcF, &detJf ] ( auto const f2, auto const, auto const c2, auto const i2, auto const j2, auto const k2 )
       {
         if constexpr ( f1 == f2 )
         {
