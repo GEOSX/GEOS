@@ -801,19 +801,19 @@ MPI_Datatype getMpiCustomPairType()
   return mpiType;
 }
 
+/* no default get() implementation, please add a template specialization and add it in the "testMpiWrapper" unit test. */
 template< typename FIRST, typename SECOND >
-struct mpiPairType
-{ /* no default get() implementation, please add a template specialization and add it in the "testMpiWrapper" unit test. */ };
+MPI_Datatype const mpiPairType;
 
-template<> struct mpiPairType< float, int > {    static MPI_Datatype get() { return MPI_FLOAT_INT; } };
-template<> struct mpiPairType< double, int > {   static MPI_Datatype get() { return MPI_DOUBLE_INT; } };
-template<> struct mpiPairType< int, int > {      static MPI_Datatype get() { return MPI_2INT; } };
-template<> struct mpiPairType< long int, int > { static MPI_Datatype get() { return MPI_LONG_INT; } };
-template<> struct mpiPairType< long int, long int > {           static MPI_Datatype get() { return getMpiCustomPairType< long int, long int >(); } };
-template<> struct mpiPairType< long long int, long long int > { static MPI_Datatype get() { return getMpiCustomPairType< long long int, long long int >(); } };
-template<> struct mpiPairType< double, long int > {             static MPI_Datatype get() { return getMpiCustomPairType< double, long int >(); } };
-template<> struct mpiPairType< double, long long int > {        static MPI_Datatype get() { return getMpiCustomPairType< double, long long int >(); } };
-template<> struct mpiPairType< double, double > {               static MPI_Datatype get() { return getMpiCustomPairType< double, double >(); } };
+template<> MPI_Datatype const mpiPairType< float, int > = MPI_FLOAT_INT;
+template<> MPI_Datatype const mpiPairType< double, int > = MPI_DOUBLE_INT;
+template<> MPI_Datatype const mpiPairType< int, int > = MPI_2INT;
+template<> MPI_Datatype const mpiPairType< long int, int > = MPI_LONG_INT;
+template<> MPI_Datatype const mpiPairType< long int, long int > = getMpiCustomPairType< long int, long int >();
+template<> MPI_Datatype const mpiPairType< long long int, long long int > = getMpiCustomPairType< long long int, long long int >();
+template<> MPI_Datatype const mpiPairType< double, long int > = getMpiCustomPairType< double, long int >();
+template<> MPI_Datatype const mpiPairType< double, long long int > = getMpiCustomPairType< double, long long int >();
+template<> MPI_Datatype const mpiPairType< double, double > = getMpiCustomPairType< double, double >();
 
 // It is advised to always use this custom operator for pairs as MPI_MAXLOC is not a true lexicographical comparator.
 template< typename FIRST, typename SECOND, MpiWrapper::PairReduction OP >
@@ -1379,7 +1379,7 @@ MpiWrapper::PairType< FIRST, SECOND >
 MpiWrapper::allReduce( PairType< FIRST, SECOND > const & localPair, MPI_Comm comm )
 {
 #ifdef GEOS_USE_MPI
-  auto const type = internal::mpiPairType< FIRST, SECOND >::get();
+  auto const type = internal::mpiPairType< FIRST, SECOND >;
   auto const mpiOp = internal::getMpiPairReductionOp< FIRST, SECOND, OP >();
   PairType< FIRST, SECOND > pair{ localPair.first, localPair.second };
   MPI_Allreduce( MPI_IN_PLACE, &pair, 1, type, mpiOp, comm );
