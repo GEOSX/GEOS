@@ -10,7 +10,7 @@
 /.github/ @rrsettgast
 
 /BASELINE_NOTES.md
-/.integrated_tests.yaml                               @rrsettgast @CusiniM @cssherman @wrtobin @castelletto1 @jhuang2601 @paveltomin
+/.integrated_tests.yaml
 /inputFiles                                           @rrsettgast @CusiniM  @cssherman @paveltomin @jhuang2601
 /inputFiles/compositionalMultiphaseFlow               @paveltomin @dkachuma
 /inputFiles/compositionalMultiphaseWell               @CusiniM @paveltomin @tjb-ltk @dkachuma
