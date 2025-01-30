@@ -1007,8 +1007,8 @@ protected:
    * @param subRegion the element subregion on which the constitutive model is registered.
    * @return the constitutive model of type @p CONSTITUTIVE_TYPE registered on the @p subRegion.
    */
-  template< typename CONSTITUTIVE_TYPE>
-  static BASETYPE const & getConstitutiveModel( ElementSubRegionBase const & subRegion )
+  template< typename CONSTITUTIVE_TYPE >
+  static CONSTITUTIVE_TYPE const & getConstitutiveModel( ElementSubRegionBase const & subRegion )
   {
     return getConstitutiveModel< CONSTITUTIVE_TYPE >( subRegion, getConstitutiveName< BASETYPE >( subRegion ) );
   }
@@ -1020,7 +1020,7 @@ protected:
    * @return the constitutive model of type @p CONSTITUTIVE_TYPE registered on the @p subRegion.
    */
   template< typename CONSTITUTIVE_TYPE >
-  static BASETYPE & getConstitutiveModel( ElementSubRegionBase & subRegion )
+  static CONSTITUTIVE_TYPE & getConstitutiveModel( ElementSubRegionBase & subRegion )
   {
     return getConstitutiveModel< CONSTITUTIVE_TYPE >( subRegion, getConstitutiveName< CONSTITUTIVE_TYPE >( subRegion ) );
   }
