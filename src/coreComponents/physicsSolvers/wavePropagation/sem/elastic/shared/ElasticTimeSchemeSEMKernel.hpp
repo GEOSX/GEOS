@@ -128,6 +128,8 @@ struct ElasticTimeSchemeSEM
    * @param[in] rhsy the right-hand-side for displacement in y-direction
    * @param[in] rhsz the right-hand-side for displacement in z-direction
    * @param[in] solverTargetNodesSet the targetted nodeset (useful in particular when we do elasto-acoustic simulation )
+   * @param[in] referenceFrequencies the reference frequencies for each SLS
+   * @param[in] anelasticityCoefficients the coefficients of anelasticity for each SLS
    */
   static void AttenuationLeapFrog( real64 const dt,
                                    arrayView1d< real32 > const ux_np1,

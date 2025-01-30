@@ -376,12 +376,13 @@ struct DampingMatrixKernel
 
 template< typename SUBREGION_TYPE,
           typename CONSTITUTIVE_TYPE,
-          typename FE_TYPE >
-class ExplicitAcousticVTISEM : public finiteElement::KernelBase< SUBREGION_TYPE,
-                                                                 CONSTITUTIVE_TYPE,
-                                                                 FE_TYPE,
-                                                                 1,
-                                                                 1 >
+          typename FE_TYPE,
+          typename Sp = fields::acousticvtifields::StiffnessVector_p, typename Sq = fields::acousticvtifields::StiffnessVector_q >
+class ExplicitAcousticVTISEMBase : public finiteElement::KernelBase< SUBREGION_TYPE,
+                                                                     CONSTITUTIVE_TYPE,
+                                                                     FE_TYPE,
+                                                                     1,
+                                                                     1 >
 {
 public:
 
@@ -415,22 +416,22 @@ public:
    * @param dt The time interval for the step.
    *   elements to be processed during this kernel launch.
    */
-  ExplicitAcousticVTISEM( NodeManager & nodeManager,
-                          EdgeManager const & edgeManager,
-                          FaceManager const & faceManager,
-                          localIndex const targetRegionIndex,
-                          SUBREGION_TYPE const & elementSubRegion,
-                          FE_TYPE const & finiteElementSpace,
-                          CONSTITUTIVE_TYPE & inputConstitutiveType,
-                          real64 const dt ):
+  ExplicitAcousticVTISEMBase( NodeManager & nodeManager,
+                              EdgeManager const & edgeManager,
+                              FaceManager const & faceManager,
+                              localIndex const targetRegionIndex,
+                              SUBREGION_TYPE const & elementSubRegion,
+                              FE_TYPE const & finiteElementSpace,
+                              CONSTITUTIVE_TYPE & inputConstitutiveType,
+                              real64 const dt ):
     Base( elementSubRegion,
           finiteElementSpace,
           inputConstitutiveType ),
     m_nodeCoords( nodeManager.getField< fields::referencePosition32 >() ),
     m_p_n( nodeManager.getField< fields::acousticvtifields::Pressure_p_n >() ),
     m_q_n( nodeManager.getField< fields::acousticvtifields::Pressure_q_n >() ),
-    m_stiffnessVector_p( nodeManager.getField< fields::acousticvtifields::StiffnessVector_p >() ),
-    m_stiffnessVector_q( nodeManager.getField< fields::acousticvtifields::StiffnessVector_q >() ),
+    m_stiffnessVector_p( nodeManager.getField< Sp >() ),
+    m_stiffnessVector_q( nodeManager.getField< Sq >() ),
     m_epsilon( elementSubRegion.template getField< fields::acousticvtifields::Epsilon >() ),
     m_delta( elementSubRegion.template getField< fields::acousticvtifields::Delta >() ),
     m_vti_f( elementSubRegion.template getField< fields::acousticvtifields::F >() ),
@@ -445,7 +446,7 @@ public:
   /**
    * @copydoc geos::finiteElement::KernelBase::StackVariables
    *
-   * ### ExplicitAcousticVTISEM Description
+   * ### ExplicitAcousticVTISEMBase Description
    * Adds a stack arrays for the nodal force, primary displacement variable, etc.
    */
   struct StackVariables : Base::StackVariables
@@ -461,6 +462,7 @@ public:
     /// C-array stack storage for element local the nodal positions.
     /// only the eight corners of the mesh cell are needed to compute the Jacobian
     real64 xLocal[ 8 ][ 3 ];
+    real32 factor;
     /// local (to this element) stiffness vectors
     real32 stiffnessVectorLocal_p[ numNodesPerElem ]{};
     real32 stiffnessVectorLocal_q[ numNodesPerElem ]{};
@@ -487,6 +489,7 @@ public:
         stack.xLocal[ a ][ i ] = m_nodeCoords[ nodeIndex ][ i ];
       }
     }
+    stack.factor = 1.0;
   }
 
   GEOS_HOST_DEVICE
@@ -504,7 +507,7 @@ public:
   /**
    * @copydoc geos::finiteElement::KernelBase::quadraturePointKernel
    *
-   * ### ExplicitAcousticVTISEM Description
+   * ### ExplicitAcousticVTISEMBase Description
    * Calculates stiffness vector
    *
    */
@@ -518,9 +521,10 @@ public:
     m_finiteElementSpace.template computeStiffnessxyTerm( q, stack.xLocal, [&] ( int i, int j, real64 val )
     {
       real32 const localIncrement_p = val*(-1-2*m_epsilon[k])*m_p_n[m_elemsToNodes[k][j]];
-      stack.stiffnessVectorLocal_p[ i ] += localIncrement_p;
+      stack.stiffnessVectorLocal_p[ i ] += localIncrement_p * stack.factor;
+
       real32 const localIncrement_q = val*((-2*m_delta[k]-m_vti_f[k])*m_p_n[m_elemsToNodes[k][j]] +(m_vti_f[k]-1)*m_q_n[m_elemsToNodes[k][j]]);
-      stack.stiffnessVectorLocal_q[ i ] += localIncrement_q;
+      stack.stiffnessVectorLocal_q[ i ] += localIncrement_q * stack.factor;
     } );
 
     // Pseudo-Stiffness z
@@ -528,10 +532,10 @@ public:
     m_finiteElementSpace.template computeStiffnesszTerm( q, stack.xLocal, [&] ( int i, int j, real64 val )
     {
       real32 const localIncrement_p = val*((m_vti_f[k]-1)*m_p_n[m_elemsToNodes[k][j]] - m_vti_f[k]*m_q_n[m_elemsToNodes[k][j]]);
-      stack.stiffnessVectorLocal_p[ i ] += localIncrement_p;
+      stack.stiffnessVectorLocal_p[ i ] += localIncrement_p * stack.factor;
 
       real32 const localIncrement_q = -val*m_q_n[m_elemsToNodes[k][j]];
-      stack.stiffnessVectorLocal_q[ i ] += localIncrement_q;
+      stack.stiffnessVectorLocal_q[ i ] += localIncrement_q * stack.factor;
     } );
   }
 
@@ -567,10 +571,84 @@ protected:
 };
 
 
-
-/// The factory used to construct a ExplicitAcousticWaveEquation kernel.
+/// Specialization for standard iso elastic kernel
+template< typename SUBREGION_TYPE,
+          typename CONSTITUTIVE_TYPE,
+          typename FE_TYPE >
+using ExplicitAcousticVTISEM = ExplicitAcousticVTISEMBase< SUBREGION_TYPE, CONSTITUTIVE_TYPE, FE_TYPE >;
 using ExplicitAcousticVTISEMFactory = finiteElement::KernelFactory< ExplicitAcousticVTISEM,
                                                                     real64 >;
+/// Specialization for attenuation kernel
+template< typename SUBREGION_TYPE,
+          typename CONSTITUTIVE_TYPE,
+          typename FE_TYPE >
+class ExplicitAcousticVTIAttenuativeSEM : public ExplicitAcousticVTISEMBase< SUBREGION_TYPE,
+                                                                             CONSTITUTIVE_TYPE,
+                                                                             FE_TYPE,
+                                                                             fields::acousticvtifields::StiffnessVectorA_p,
+                                                                             fields::acousticvtifields::StiffnessVectorA_q >
+{
+public:
+
+  /// Alias for the base class;
+  using Base = ExplicitAcousticVTISEMBase< SUBREGION_TYPE,
+                                           CONSTITUTIVE_TYPE,
+                                           FE_TYPE,
+                                           fields::acousticvtifields::StiffnessVectorA_p,
+                                           fields::acousticvtifields::StiffnessVectorA_q >;
+
+//*****************************************************************************
+  /**
+   * @brief Constructor
+   * @copydoc geos::finiteElement::KernelBase::KernelBase
+   * @param nodeManager Reference to the NodeManager object.
+   * @param edgeManager Reference to the EdgeManager object.
+   * @param faceManager Reference to the FaceManager object.
+   * @param targetRegionIndex Index of the region the subregion belongs to.
+   * @param dt The time interval for the step.
+   */
+  ExplicitAcousticVTIAttenuativeSEM( NodeManager & nodeManager,
+                                     EdgeManager const & edgeManager,
+                                     FaceManager const & faceManager,
+                                     localIndex const targetRegionIndex,
+                                     SUBREGION_TYPE const & elementSubRegion,
+                                     FE_TYPE const & finiteElementSpace,
+                                     CONSTITUTIVE_TYPE & inputConstitutiveType,
+                                     real64 const dt ):
+    Base( nodeManager,
+          edgeManager,
+          faceManager,
+          targetRegionIndex,
+          elementSubRegion,
+          finiteElementSpace,
+          inputConstitutiveType,
+          dt ),
+    m_qualityFactor( elementSubRegion.template getField< fields::acousticfields::AcousticQualityFactor >() )
+  {}
+
+  /**
+   * @copydoc geos::finiteElement::KernelBase::setup
+   *
+   * Copies the primary variable, and position into the local stack array.
+   */
+  GEOS_HOST_DEVICE
+  inline
+  void setup( localIndex const k,
+              typename Base::StackVariables & stack ) const
+  {
+    Base::setup( k, stack );
+    stack.factor = stack.factor / m_qualityFactor[ k ];
+  }
+
+protected:
+
+  /// The array containing the acoustic attenuation quality factor
+  arrayView1d< real32 const > const m_qualityFactor;
+
+};
+
+using ExplicitAcousticVTIAttenuativeSEMFactory = finiteElement::KernelFactory< ExplicitAcousticVTIAttenuativeSEM,
+                                                                               real64 >;
 
 } // namespace acousticVTIWaveEquationSEMKernels
 

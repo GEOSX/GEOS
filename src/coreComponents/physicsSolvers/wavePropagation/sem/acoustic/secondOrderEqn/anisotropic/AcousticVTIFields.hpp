@@ -74,6 +74,22 @@ DECLARE_FIELD( StiffnessVector_q,
                WRITE_AND_READ,
                "Stiffness vector contains R_h*Pressure_n." );
 
+DECLARE_FIELD( StiffnessVectorA_p,
+               "stiffnessVectorA_p",
+               array1d< real32 >,
+               0,
+               NOPLOT,
+               WRITE_AND_READ,
+               "P-type acoustic attenuation stiffness vector." );
+
+DECLARE_FIELD( StiffnessVectorA_q,
+               "stiffnessVectorA_q",
+               array1d< real32 >,
+               0,
+               NOPLOT,
+               WRITE_AND_READ,
+               "Q-type acoustic attenuation stiffness vector." );
+
 DECLARE_FIELD( Pressure_p_nm1,
                "pressure_p_nm1",
                array1d< real32 >,
@@ -121,6 +137,22 @@ DECLARE_FIELD( Pressure_q_np1,
                LEVEL_0,
                WRITE_AND_READ,
                "Scalar auxiliary pressure q at time n+1." );
+
+DECLARE_FIELD( DivPsi_p,
+               "divpsi_p",
+               array2d< real32 >,
+               0,
+               NOPLOT,
+               WRITE_AND_READ,
+               "p-type memory variable for acoustic VTI attenuation." );
+
+DECLARE_FIELD( DivPsi_q,
+               "divpsi_q",
+               array2d< real32 >,
+               0,
+               NOPLOT,
+               WRITE_AND_READ,
+               "q-type memory variable for acoustic VTI attenuation." );
 
 DECLARE_FIELD( DampingVector_p,
                "dampingVector_p",

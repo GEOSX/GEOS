@@ -27,8 +27,6 @@
 #include "fieldSpecification/PerfectlyMatchedLayer.hpp"
 #include "mainInterface/ProblemManager.hpp"
 #include "mesh/mpiCommunications/CommunicationTools.hpp"
-#include "mesh/DomainPartition.hpp"
-#include "WaveSolverUtils.hpp"
 #include "events/EventManager.hpp"
 
 #include <limits>
@@ -564,6 +562,5 @@ bool WaveSolverBase::directoryExists( std::string const & directoryName )
   struct stat buffer;
   return stat( directoryName.c_str(), &buffer ) == 0;
 }
-
 
 } /* namespace geos */

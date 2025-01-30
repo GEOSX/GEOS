@@ -1,4 +1,4 @@
-/*
+   /*
  * ------------------------------------------------------------------------------------------------------------
  * SPDX-License-Identifier: LGPL-2.1-only
  *
@@ -439,26 +439,13 @@ void ElasticWaveEquationSEM::initializePostInitialConditionsPreSubGroups()
                                                                              dampingz );
       } );
     } );
-
-    // check anelasticity coefficient and/or compute it if needed
-    if( m_attenuationType == WaveSolverUtils::AttenuationType::sls )
-    {
-      real32 minQVal = computeGlobalMinQFactor();
-      if( m_slsAnelasticityCoefficients.size( 0 ) == 1 && m_slsAnelasticityCoefficients[ 0 ] < 0 )
-      {
-        m_slsAnelasticityCoefficients[ 0 ] = 2.0 * minQVal / ( minQVal - 1.0 );
-      }
-      // test if anelasticity is too high and artifacts could appear
-      real32 ySum = 0.0;
-      for( integer l = 0; l < m_slsAnelasticityCoefficients.size( 0 ); l++ )
-      {
-        ySum += m_slsAnelasticityCoefficients[ l ];
-      }
-      GEOS_WARNING_IF( ySum > minQVal, "The anelasticity parameters are too high for the given quality factor. This could lead to solution artifacts such as zero-velocity waves." );
-    }
-
   } );
 
+  // check anelasticity coefficient and/or compute it if needed
+  if( m_attenuationType == WaveSolverUtils::AttenuationType::sls )
+  {
+    initializeAnelasticityCoefficients< elasticfields::ElasticQualityFactorP, elasticfields::ElasticQualityFactorS >( domain );
+  }
   if( m_timestepStabilityLimit==1 )
   {
     real64 dtOut = 0.0;
@@ -629,30 +616,6 @@ real64 ElasticWaveEquationSEM::computeTimeStep( real64 & dtOut )
     uz_n.zero();
   } );
   return m_timeStep * m_cflFactor;
-}
-
-real32 ElasticWaveEquationSEM::computeGlobalMinQFactor()
-{
-  RAJA::ReduceMin< ReducePolicy< EXEC_POLICY >, real32 > minQ( LvArray::NumericLimits< real32 >::max );
-  DomainPartition & domain = getGroupByPath< DomainPartition >( "/Problem/domain" );
-
-  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
-                                                                MeshLevel & mesh,
-                                                                arrayView1d< string const > const & regionNames )
-  {
-    mesh.getElemManager().forElementSubRegions< CellElementSubRegion >( regionNames, [&]( localIndex const,
-                                                                                          CellElementSubRegion & elementSubRegion )
-    {
-      arrayView1d< real32 const > const qp = elementSubRegion.getField< elasticfields::ElasticQualityFactorP >();
-      arrayView1d< real32 const > const qs = elementSubRegion.getField< elasticfields::ElasticQualityFactorS >();
-      forAll< EXEC_POLICY >( elementSubRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const e ) {
-        minQ.min( qp[e] );
-        minQ.min( qs[e] );
-      } );
-    } );
-  } );
-  real32 minQVal = minQ.get();
-  return MpiWrapper::min< real32 >( minQVal );
 }
 
 void ElasticWaveEquationSEM::applyFreeSurfaceBC( real64 const time, DomainPartition & domain )

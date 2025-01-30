@@ -84,6 +84,14 @@ void AcousticWaveEquationSEM::registerDataOnMesh( Group & meshBodies )
                                acousticfields::StiffnessVector,
                                acousticfields::AcousticFreeSurfaceNodeIndicator >( getName() );
 
+    if( m_attenuationType == WaveSolverUtils::AttenuationType::sls )
+    {
+      integer l = m_slsReferenceAngularFrequencies.size( 0 );
+      nodeManager.registerField< acousticfields::DivPsi,
+                                 acousticfields::StiffnessVectorA >( getName() );
+      nodeManager.getField< acousticfields::DivPsi >().resizeDimension< 1 >( l );
+    }
+
     /// register  PML auxiliary variables only when a PML is specified in the xml
     if( m_usePML )
     {
@@ -106,6 +114,10 @@ void AcousticWaveEquationSEM::registerDataOnMesh( Group & meshBodies )
       subRegion.registerField< acousticfields::AcousticVelocity >( getName() );
       subRegion.registerField< acousticfields::AcousticDensity >( getName() );
       subRegion.registerField< acousticfields::PartialGradient >( getName() );
+      if( m_attenuationType == WaveSolverUtils::AttenuationType::sls )
+      {
+        subRegion.registerField< acousticfields::AcousticQualityFactor >( getName() );
+      }
       subRegion.registerField< acousticfields::PartialGradient2 >( getName() );
     } );
 
@@ -324,11 +336,15 @@ void AcousticWaveEquationSEM::initializePostInitialConditionsPreSubGroups()
                                                                              velocity,
                                                                              density,
                                                                              damping );
-
-
       } );
     } );
   } );
+
+  // check anelasticity coefficient and/or compute it if needed
+  if( m_attenuationType == WaveSolverUtils::AttenuationType::sls )
+  {
+    initializeAnelasticityCoefficients< acousticfields::AcousticQualityFactor >( domain );
+  }
 
   if( m_timestepStabilityLimit==1 )
   {
@@ -1072,6 +1088,15 @@ void AcousticWaveEquationSEM::prepareNextTimestep( MeshLevel & mesh )
 
     stiffnessVector[a] = rhs[a] = 0.0;
   } );
+  if( m_attenuationType == WaveSolverUtils::AttenuationType::sls )
+  {
+    arrayView1d< real32 > const stiffnessVectorA = nodeManager.getField< acousticfields::StiffnessVectorA >();
+    forAll< EXEC_POLICY >( solverTargetNodesSet.size(), [=] GEOS_HOST_DEVICE ( localIndex const n )
+    {
+      localIndex const a = solverTargetNodesSet[n];
+      stiffnessVectorA[a] = 0.0;
+    } );
+  }
 }
 
 void AcousticWaveEquationSEM::computeUnknowns( real64 const & time_n,
@@ -1103,6 +1128,18 @@ void AcousticWaveEquationSEM::computeUnknowns( real64 const & time_n,
                                                           getDiscretizationName(),
                                                           "",
                                                           kernelFactory );
+  if( m_attenuationType == WaveSolverUtils::AttenuationType::sls )
+  {
+    auto kernelFactory = acousticWaveEquationSEMKernels::ExplicitAcousticAttenuativeSEMFactory( dt );
+    finiteElement::
+      regionBasedKernelApplication< EXEC_POLICY,
+                                    constitutive::NullModel,
+                                    CellElementSubRegion >( mesh,
+                                                            regionNames,
+                                                            getDiscretizationName(),
+                                                            "",
+                                                            kernelFactory );
+  }
   //Modification of cycleNember useful when minTime < 0
   addSourceToRightHandSide( time_n, rhs );
 
@@ -1110,11 +1147,28 @@ void AcousticWaveEquationSEM::computeUnknowns( real64 const & time_n,
   real64 const dt2 = pow( dt, 2 );
 
   SortedArrayView< localIndex const > const solverTargetNodesSet = m_solverTargetNodesSet.toViewConst();
+  if( m_usePML && m_attenuationType != WaveSolverUtils::AttenuationType::none  )
+  {
+      GEOS_ERROR( "Attenuation is not supported with PML boindary conditions.");
+  }
   if( !m_usePML )
   {
     GEOS_MARK_SCOPE ( updateP );
-    AcousticTimeSchemeSEM::LeapFrogWithoutPML( dt, p_np1, p_n, p_nm1, mass, stiffnessVector, damping,
-                                               rhs, freeSurfaceNodeIndicator, solverTargetNodesSet );
+    if( m_attenuationType == WaveSolverUtils::AttenuationType::sls )
+    {
+      arrayView1d< real32 > const stiffnessVectorA = nodeManager.getField< acousticfields::StiffnessVectorA >();
+      arrayView2d< real32 > const divpsi = nodeManager.getField< acousticfields::DivPsi >();
+      arrayView1d< real32 > const referenceFrequencies = m_slsReferenceAngularFrequencies.toView();
+      arrayView1d< real32 > const anelasticityCoefficients = m_slsAnelasticityCoefficients.toView();
+      AcousticTimeSchemeSEM::AttenuationLeapFrogWithoutPML( dt, p_np1, p_n, p_nm1, divpsi, mass, stiffnessVector, stiffnessVectorA, 
+                                                            damping, rhs, freeSurfaceNodeIndicator, solverTargetNodesSet, referenceFrequencies,
+                                                            anelasticityCoefficients );
+    }
+    else
+    {
+      AcousticTimeSchemeSEM::LeapFrogWithoutPML( dt, p_np1, p_n, p_nm1, mass, stiffnessVector, damping,
+                                                 rhs, freeSurfaceNodeIndicator, solverTargetNodesSet );
+    }
   }
   else
   {
@@ -1197,6 +1251,11 @@ void AcousticWaveEquationSEM::synchronizeUnknowns( real64 const & time_n,
   /// synchronize pressure fields
   FieldIdentifiers fieldsToBeSync;
   fieldsToBeSync.addFields( FieldLocation::Node, { acousticfields::Pressure_np1::key() } );
+
+  if( m_slsReferenceAngularFrequencies.size( 0 ) > 0 )
+  {
+    fieldsToBeSync.addFields( FieldLocation::Node, { acousticfields::DivPsi::key() } );
+  }
 
   if( m_usePML )
   {
