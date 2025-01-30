@@ -1004,26 +1004,25 @@ protected:
   /**
    * @brief Get the Constitutive Model object
    * @tparam BASETYPE the base type of the constitutive model.
-   * @param @param subRegion the element subregion on which the constitutive model is registered.
-   * @return the constitutive model of type @p BASETYPE registered on the @p subRegion.
+   * @param subRegion the element subregion on which the constitutive model is registered.
+   * @return the constitutive model of type @p CONSTITUTIVE_TYPE registered on the @p subRegion.
    */
-  template< typename BASETYPE = constitutive::ConstitutiveBase >
+  template< typename CONSTITUTIVE_TYPE>
   static BASETYPE const & getConstitutiveModel( ElementSubRegionBase const & subRegion )
   {
-    return getConstitutiveModel< BASETYPE >( subRegion, getConstitutiveName< BASETYPE >( subRegion ) );
+    return getConstitutiveModel< CONSTITUTIVE_TYPE >( subRegion, getConstitutiveName< BASETYPE >( subRegion ) );
   }
 
   /**
    * @brief Get the Constitutive Model object
-   * @tparam BASETYPE the base type of the constitutive model.
-   * @param @param subRegion the element subregion on which the constitutive model is registered.
-   * @return the constitutive model of type @p BASETYPE registered on the @p subRegion.
+   * @tparam CONSTITUTIVE_TYPE the base type of the constitutive model.
+   * @param subRegion the element subregion on which the constitutive model is registered.
+   * @return the constitutive model of type @p CONSTITUTIVE_TYPE registered on the @p subRegion.
    */
-  template< typename BASETYPE = constitutive::ConstitutiveBase >
+  template< typename CONSTITUTIVE_TYPE >
   static BASETYPE & getConstitutiveModel( ElementSubRegionBase & subRegion )
   {
-    string const name = getConstitutiveName< BASETYPE >( subRegion );
-    return getConstitutiveModel< BASETYPE >( subRegion, name );
+    return getConstitutiveModel< CONSTITUTIVE_TYPE >( subRegion, getConstitutiveName< CONSTITUTIVE_TYPE >( subRegion ) );
   }
 
 
