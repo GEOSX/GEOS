@@ -277,8 +277,6 @@ private:
    */
   void precomputeData( DomainPartition & domain );
 
-  virtual void setConstitutiveNamesCallSuper( ElementSubRegionBase & subRegion ) const override;
-
 
 protected:
 

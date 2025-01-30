@@ -222,7 +222,7 @@ void ReactiveFluidDriver::runTest( FLUID_TYPE & fluid, arrayView2d< real64 > con
   }
 
   TableFunction const * waterDensityTable =
-    constitutive::PVTProps::PureWaterProperties::makeSaturationDensityTable( "helpTable", FunctionManager::getInstance() );
+    PVTProps::PureWaterProperties::makeSaturationDensityTable( "helpTable", FunctionManager::getInstance() );
 
   TableFunction::KernelWrapper waterDensityTableWrapper  = waterDensityTable->createKernelWrapper();
 
@@ -242,7 +242,7 @@ void ReactiveFluidDriver::runTest( FLUID_TYPE & fluid, arrayView2d< real64 > con
       // convert molarity to molefraction
       real64 const input[2] = {  table( n, PRES ), table( n, TEMP ) };
       real64 const conversionFactor =
-        constitutive::PVTProps::PureWaterProperties::MOLECULAR_WEIGHT / waterDensityTableWrapper.compute( input ) * 1e3;
+        PVTProps::PureWaterProperties::MOLECULAR_WEIGHT / waterDensityTableWrapper.compute( input ) * 1e3;
       for( int i = 0; i < numPrimarySpecies; ++i )
       {
         composition[0][i] = primarySpeciesTotalConcentration[0][i] * conversionFactor;

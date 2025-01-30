@@ -35,7 +35,7 @@ namespace geos
 {
 
 using namespace dataRepository;
-using namespace constitutive;
+using namespace fields;
 
 template< typename RESERVOIR_SOLVER >
 SinglePhaseReservoirAndWells< RESERVOIR_SOLVER >::
@@ -167,15 +167,15 @@ addCouplingSparsityPattern( DomainPartition const & domain,
 
         // get the well element indices corresponding to each perforation
         arrayView1d< localIndex const > const & perfWellElemIndex =
-          perforationData->getField< fields::perforation::wellElementIndex >();
+          perforationData->getField< perforation::wellElementIndex >();
 
         // get the element region, subregion, index
         arrayView1d< localIndex const > const & resElementRegion =
-          perforationData->getField< fields::perforation::reservoirElementRegion >();
+          perforationData->getField< perforation::reservoirElementRegion >();
         arrayView1d< localIndex const > const & resElementSubRegion =
-          perforationData->getField< fields::perforation::reservoirElementSubRegion >();
+          perforationData->getField< perforation::reservoirElementSubRegion >();
         arrayView1d< localIndex const > const & resElementIndex =
-          perforationData->getField< fields::perforation::reservoirElementIndex >();
+          perforationData->getField< perforation::reservoirElementIndex >();
 
         // Insert the entries corresponding to reservoir-well perforations
         // This will fill J_WR, and J_RW
@@ -276,20 +276,20 @@ assembleCouplingTerms( real64 const time_n,
 
       // get well variables on perforations
       arrayView1d< real64 const > const perfRate =
-        perforationData->getField< fields::well::perforationRate >();
+        perforationData->getField< well::perforationRate >();
       arrayView2d< real64 const > const dPerfRate_dPres =
-        perforationData->getField< fields::well::dPerforationRate_dPres >();
+        perforationData->getField< well::dPerforationRate_dPres >();
 
       arrayView1d< localIndex const > const perfWellElemIndex =
-        perforationData->getField< fields::perforation::wellElementIndex >();
+        perforationData->getField< perforation::wellElementIndex >();
 
       // get the element region, subregion, index
       arrayView1d< localIndex const > const resElementRegion =
-        perforationData->getField< fields::perforation::reservoirElementRegion >();
+        perforationData->getField< perforation::reservoirElementRegion >();
       arrayView1d< localIndex const > const resElementSubRegion =
-        perforationData->getField< fields::perforation::reservoirElementSubRegion >();
+        perforationData->getField< perforation::reservoirElementSubRegion >();
       arrayView1d< localIndex const > const resElementIndex =
-        perforationData->getField< fields::perforation::reservoirElementIndex >();
+        perforationData->getField< perforation::reservoirElementIndex >();
 
       // loop over the perforations and add the rates to the residual and jacobian
       forAll< parallelDevicePolicy<> >( perforationData->size(), [=] GEOS_HOST_DEVICE ( localIndex const iperf )

@@ -27,20 +27,6 @@
 namespace geos
 {
 
-namespace fields
-{
-namespace multifluid
-{
-DECLARE_FIELD( kValues,
-               "kValues",
-               array4dLayoutPhaseComp,
-               0,
-               NOPLOT,
-               WRITE_AND_READ,
-               "Phase equilibrium ratios" );
-}
-}
-
 namespace constitutive
 {
 

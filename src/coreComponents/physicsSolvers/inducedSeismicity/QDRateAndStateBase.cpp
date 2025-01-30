@@ -104,9 +104,9 @@ void QDRateAndStateBase::enforceRateAndVelocityConsistency( SurfaceElementSubReg
   real64 const shearImpedance = m_shearImpedance;
 
   string const & frictionaLawName = subRegion.getReference< string >( viewKeyStruct::frictionLawNameString() );
-  constitutive::RateAndStateFriction const & frictionLaw = subRegion.getConstitutiveModel< constitutive::RateAndStateFriction >( frictionaLawName );
+  RateAndStateFriction const & frictionLaw = subRegion.getConstitutiveModel< RateAndStateFriction >( frictionaLawName );
 
-  constitutive::RateAndStateFriction::KernelWrapper frictionLawKernelWrapper = frictionLaw.createKernelUpdates();
+  RateAndStateFriction::KernelWrapper frictionLawKernelWrapper = frictionLaw.createKernelUpdates();
 
   RAJA::ReduceMax< parallelDeviceReduce, int > negativeSlipRate( 0 );
   RAJA::ReduceMax< parallelDeviceReduce, int > bothNonZero( 0 );

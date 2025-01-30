@@ -33,7 +33,6 @@ namespace geos
 
 using namespace dataRepository;
 using namespace fields;
-using namespace constitutive;
 using namespace rateAndStateKernels;
 
 template< typename RSSOLVER_TYPE >

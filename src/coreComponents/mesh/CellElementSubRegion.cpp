@@ -23,7 +23,6 @@
 namespace geos
 {
 using namespace dataRepository;
-using namespace constitutive;
 
 CellElementSubRegion::CellElementSubRegion( string const & name, Group * const parent ):
   ElementSubRegionBase( name, parent )

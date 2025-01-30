@@ -24,7 +24,7 @@ namespace geos
 FieldSpecificationManager * FieldSpecificationManager::m_instance = nullptr;
 
 using namespace dataRepository;
-using namespace constitutive;
+
 FieldSpecificationManager::FieldSpecificationManager( string const & name, Group * const parent ):
   Group( name, parent )
 {
@@ -97,14 +97,14 @@ void FieldSpecificationManager::validateBoundaryConditions( MeshLevel & mesh ) c
 
     // Step 2: apply the boundary condition
 
-    fs.apply< dataRepository::Group >( mesh,
-                                       [&]( FieldSpecificationBase const &,
-                                            string const & setName,
-                                            SortedArrayView< localIndex const > const & targetSet,
-                                            Group & targetGroup,
-                                            string const fieldName )
+    fs.apply< Group >( mesh,
+                       [&]( FieldSpecificationBase const &,
+                            string const & setName,
+                            SortedArrayView< localIndex const > const & targetSet,
+                            Group & targetGroup,
+                            string const fieldName )
     {
-      dataRepository::InputFlags const flag = fs.getWrapper< string >( FieldSpecificationBase::viewKeyStruct::fieldNameString() ).getInputFlag();
+      InputFlags const flag = fs.getWrapper< string >( FieldSpecificationBase::viewKeyStruct::fieldNameString() ).getInputFlag();
 
       // 2.a) If we enter this loop, we know that the set has been created
       //      Fracture/fault sets are created later and the "apply" call silently ignores them
@@ -219,12 +219,12 @@ void FieldSpecificationManager::applyInitialConditions( MeshLevel & mesh ) const
   {
     if( fs.initialCondition() )
     {
-      fs.apply< dataRepository::Group >( mesh,
-                                         [&]( FieldSpecificationBase const & bc,
-                                              string const &,
-                                              SortedArrayView< localIndex const > const & targetSet,
-                                              Group & targetGroup,
-                                              string const fieldName )
+      fs.apply< Group >( mesh,
+                         [&]( FieldSpecificationBase const & bc,
+                              string const &,
+                              SortedArrayView< localIndex const > const & targetSet,
+                              Group & targetGroup,
+                              string const fieldName )
       {
         bc.applyFieldValue< FieldSpecificationEqual >( targetSet, 0.0, targetGroup, fieldName );
       } );

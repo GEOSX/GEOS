@@ -23,6 +23,7 @@
 #include "codingUtilities/traits.hpp"
 #include "common/DataTypes.hpp"
 #include "dataRepository/ExecutableGroup.hpp"
+#include "dataRepository/RestartFlags.hpp"
 #include "linearAlgebra/interfaces/InterfaceTypes.hpp"
 #include "linearAlgebra/utilities/LinearSolverResult.hpp"
 #include "linearAlgebra/DofManager.hpp"
@@ -952,6 +953,16 @@ protected:
   static string getConstitutiveName( ParticleSubRegionBase const & subRegion ); // particle overload
 
   /**
+   * @brief Register wrapper with given name and store constitutive model name on the subregion
+   *
+   * @tparam CONSTITUTIVE_BASE_TYPE the base type of the constitutive model.
+   * @param subRegion the subregion on which the constitutive model is registered
+   * @param name the name of the constitutive model of type CONSTITUTIVE_BASE_TYPE registered on the subregion.
+   */
+  template< typename CONSTITUTIVE_BASE_TYPE >
+  void setConstitutiveName( ElementSubRegionBase & subRegion, string const & name ) const;
+
+  /**
    * @brief This function sets constitutive name fields on an
    *  ElementSubRegionBase, and calls the base function it overrides.
    * @param subRegion The ElementSubRegionBase that will have constitutive
@@ -990,6 +1001,29 @@ protected:
     return constitutiveModels.getGroup< BASETYPE >( key );
   }
 
+  /**
+   * @brief Get the Constitutive Model object
+   * @tparam BASETYPE the base type of the constitutive model.
+   * @param subRegion the element subregion on which the constitutive model is registered.
+   * @return the constitutive model of type @p CONSTITUTIVE_TYPE registered on the @p subRegion.
+   */
+  template< typename CONSTITUTIVE_TYPE >
+  static CONSTITUTIVE_TYPE const & getConstitutiveModel( ElementSubRegionBase const & subRegion )
+  {
+    return getConstitutiveModel< CONSTITUTIVE_TYPE >( subRegion, getConstitutiveName< CONSTITUTIVE_TYPE >( subRegion ) );
+  }
+
+  /**
+   * @brief Get the Constitutive Model object
+   * @tparam CONSTITUTIVE_TYPE the base type of the constitutive model.
+   * @param subRegion the element subregion on which the constitutive model is registered.
+   * @return the constitutive model of type @p CONSTITUTIVE_TYPE registered on the @p subRegion.
+   */
+  template< typename CONSTITUTIVE_TYPE >
+  static CONSTITUTIVE_TYPE & getConstitutiveModel( ElementSubRegionBase & subRegion )
+  {
+    return getConstitutiveModel< CONSTITUTIVE_TYPE >( subRegion, getConstitutiveName< CONSTITUTIVE_TYPE >( subRegion ) );
+  }
 
 
   /// Courant–Friedrichs–Lewy factor for the timestep
@@ -1100,6 +1134,7 @@ string PhysicsSolverBase::getConstitutiveName( ElementSubRegionBase const & subR
     GEOS_ERROR_IF( !validName.empty(), "A valid constitutive model was already found." );
     validName = model.getName();
   } );
+
   return validName;
 }
 
@@ -1117,6 +1152,18 @@ string PhysicsSolverBase::getConstitutiveName( ParticleSubRegionBase const & sub
   return validName;
 }
 
+template< typename CONSTITUTIVE_BASE_TYPE >
+void PhysicsSolverBase::setConstitutiveName( ElementSubRegionBase & subRegion, string const & name ) const
+{
+  string & constitutiveName = subRegion.registerWrapper< string >( name ).
+                                setPlotLevel( dataRepository::PlotLevel::NOPLOT ).
+                                setRestartFlags( dataRepository::RestartFlags::NO_WRITE ).
+                                setSizedFromParent( 0 ).
+                                reference();
+  constitutiveName = getConstitutiveName< CONSTITUTIVE_BASE_TYPE >( subRegion );
+  GEOS_ERROR_IF( constitutiveName.empty(), GEOS_FMT( "{}: {} not found on subregion {}",
+                                                     getDataContext(), typeid(CONSTITUTIVE_BASE_TYPE).name(), subRegion.getDataContext() ) );
+}
 
 } // namespace geos
 

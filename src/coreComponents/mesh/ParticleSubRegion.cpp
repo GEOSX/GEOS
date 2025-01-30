@@ -22,7 +22,6 @@
 namespace geos
 {
 using namespace dataRepository;
-using namespace constitutive;
 
 ParticleSubRegion::ParticleSubRegion( string const & name, Group * const parent ):
   ParticleSubRegionBase( name, parent )

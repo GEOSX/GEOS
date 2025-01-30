@@ -220,8 +220,7 @@ void testNumericalDerivatives( FLASH_WRAPPER const & flashModelWrapper,
                                real64 const relTol,
                                real64 const absTol = std::numeric_limits< real64 >::epsilon() )
 {
-  using namespace multifluid;
-  using Deriv = multifluid::DerivativeOffset;
+  using Deriv = DerivativeOffset;
 
   integer constexpr numPhase = 2;
   integer constexpr numComp  = 2;

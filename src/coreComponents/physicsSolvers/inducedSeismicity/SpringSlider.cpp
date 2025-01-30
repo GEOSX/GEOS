@@ -113,11 +113,11 @@ real64 SpringSlider< RSSOLVER_TYPE >::updateStresses( real64 const & time_n,
                                                                                 SurfaceElementSubRegion & subRegion )
     {
 
-      arrayView2d< real64 const > const deltaSlip = subRegion.getField< fields::contact::deltaSlip >();
-      arrayView2d< real64 > const shearTraction   = subRegion.getField< fields::rateAndState::shearTraction >();
-      arrayView2d< real64 > const shearTraction_n      = subRegion.getField< fields::rateAndState::shearTraction_n >();
+      arrayView2d< real64 const > const deltaSlip = subRegion.getField< contact::deltaSlip >();
+      arrayView2d< real64 > const shearTraction   = subRegion.getField< rateAndState::shearTraction >();
+      arrayView2d< real64 > const shearTraction_n      = subRegion.getField< rateAndState::shearTraction_n >();
 
-      arrayView1d< real64 > const normalTraction   = subRegion.getField< fields::rateAndState::normalTraction >();
+      arrayView1d< real64 > const normalTraction   = subRegion.getField< rateAndState::normalTraction >();
 
 
       string const & fricitonLawName = subRegion.template getReference< string >( viewKeyStruct::frictionLawNameString() );

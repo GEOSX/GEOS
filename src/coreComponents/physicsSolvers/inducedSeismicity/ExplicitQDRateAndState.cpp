@@ -138,8 +138,8 @@ void ExplicitQDRateAndState::stepRateStateODEInitialSubstage( real64 const dt, D
                                                                                 SurfaceElementSubRegion & subRegion )
     {
 
-      string const & fricitonLawName = subRegion.template getReference< string >( viewKeyStruct::frictionLawNameString() );
-      RateAndStateFriction const & frictionLaw = getConstitutiveModel< RateAndStateFriction >( subRegion, fricitonLawName );
+      string const & frictionLawName = subRegion.template getReference< string >( viewKeyStruct::frictionLawNameString() );
+      RateAndStateFriction const & frictionLaw = getConstitutiveModel< RateAndStateFriction >( subRegion, frictionLawName );
       rateAndStateKernels::EmbeddedRungeKuttaKernel rkKernel( subRegion, frictionLaw, m_butcherTable );
       arrayView3d< real64 > const rkStageRates      = subRegion.getField< rateAndState::rungeKuttaStageRates >();
 
@@ -179,8 +179,8 @@ void ExplicitQDRateAndState::stepRateStateODESubstage( integer const stageIndex,
                                                                                 SurfaceElementSubRegion & subRegion )
     {
 
-      string const & fricitonLawName = subRegion.template getReference< string >( viewKeyStruct::frictionLawNameString() );
-      RateAndStateFriction const & frictionLaw = getConstitutiveModel< RateAndStateFriction >( subRegion, fricitonLawName );
+      string const & frictionLawName = subRegion.template getReference< string >( viewKeyStruct::frictionLawNameString() );
+      RateAndStateFriction const & frictionLaw = getConstitutiveModel< RateAndStateFriction >( subRegion, frictionLawName );
       rateAndStateKernels::EmbeddedRungeKuttaKernel rkKernel( subRegion, frictionLaw, m_butcherTable );
       arrayView3d< real64 > const rkStageRates      = subRegion.getField< rateAndState::rungeKuttaStageRates >();
 
@@ -205,8 +205,8 @@ void ExplicitQDRateAndState::stepRateStateODEAndComputeError( real64 const dt, D
                                                                                 SurfaceElementSubRegion & subRegion )
     {
 
-      string const & fricitonLawName = subRegion.template getReference< string >( viewKeyStruct::frictionLawNameString() );
-      RateAndStateFriction const & frictionLaw = getConstitutiveModel< RateAndStateFriction >( subRegion, fricitonLawName );
+      string const & frictionLawName = subRegion.template getReference< string >( viewKeyStruct::frictionLawNameString() );
+      RateAndStateFriction const & frictionLaw = getConstitutiveModel< RateAndStateFriction >( subRegion, frictionLawName );
       rateAndStateKernels::EmbeddedRungeKuttaKernel rkKernel( subRegion, frictionLaw, m_butcherTable );
       arrayView3d< real64 > const rkStageRates      = subRegion.getField< rateAndState::rungeKuttaStageRates >();
       if( m_butcherTable.FSAL )

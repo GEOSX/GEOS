@@ -111,16 +111,8 @@ void PhaseFieldDamageFEM::registerDataOnMesh( Group & meshBodies )
         setDescription( "field variable representing the diffusion coefficient" );
 
 
-      subRegion.registerWrapper< string >( viewKeyStruct::solidModelNamesString() ).
-        setPlotLevel( PlotLevel::NOPLOT ).
-        setRestartFlags( RestartFlags::NO_WRITE ).
-        setSizedFromParent( 0 );
-
-      string & solidMaterialName = subRegion.getReference< string >( viewKeyStruct::solidModelNamesString() );
-      solidMaterialName = PhysicsSolverBase::getConstitutiveName< SolidBase >( subRegion );
-      GEOS_ERROR_IF( solidMaterialName.empty(), GEOS_FMT( "{}: SolidBase model not found on subregion {}",
-                                                          getDataContext(), subRegion.getName() ) );
-
+      // TODO this should be in setConstitutiveNames
+      setConstitutiveName< SolidBase >( subRegion, viewKeyStruct::solidModelNamesString() );
     } );
   } );
 }

@@ -23,10 +23,11 @@
 
 namespace geos
 {
-using namespace constitutive;
 
 namespace isothermalCompositionalMultiphaseFVMKernels
 {
+
+using namespace constitutive;
 
 /******************************** AquiferBCKernel ********************************/
 

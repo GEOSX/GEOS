@@ -26,9 +26,10 @@
 namespace geos
 {
 
-using namespace constitutive;
 namespace compositionalMultiphaseWellKernels
 {
+
+using namespace constitutive;
 
 /******************************** ControlEquationHelper ********************************/
 

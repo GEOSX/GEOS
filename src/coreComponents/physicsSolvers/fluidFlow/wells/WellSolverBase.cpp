@@ -28,14 +28,13 @@
 #include "physicsSolvers/fluidFlow/wells/WellControls.hpp"
 #include "physicsSolvers/fluidFlow/wells/WellSolverBaseFields.hpp"
 #include "physicsSolvers/fluidFlow/wells/LogLevelsInfo.hpp"
-#include "physicsSolvers/fluidFlow/wells/kernels/ThermalCompositionalMultiphaseWellKernels.hpp"
 #include "fileIO/Outputs/OutputBase.hpp"
 
 namespace geos
 {
 
 using namespace dataRepository;
-using namespace constitutive;
+using namespace fields;
 
 WellSolverBase::WellSolverBase( string const & name,
                                 Group * const parent )
@@ -69,7 +68,7 @@ Group *WellSolverBase::createChild( string const & childKey, string const & chil
 {
   const auto childTypes = { keys::wellControls };
   GEOS_ERROR_IF( childKey != keys::wellControls,
-                 PhysicsSolverBase::CatalogInterface::unknownTypeError( childKey, getDataContext(), childTypes ) );
+                 CatalogInterface::unknownTypeError( childKey, getDataContext(), childTypes ) );
   return &registerGroup< WellControls >( childName );
 }
 
@@ -116,24 +115,19 @@ void WellSolverBase::registerDataOnMesh( Group & meshBodies )
                                                                        [&]( localIndex const,
                                                                             WellElementSubRegion & subRegion )
     {
-      subRegion.registerField< fields::well::pressure >( getName() );
-      subRegion.registerField< fields::well::pressure_n >( getName() );
+      subRegion.registerField< well::pressure >( getName() );
+      subRegion.registerField< well::pressure_n >( getName() );
 
-      subRegion.registerField< fields::well::temperature >( getName() );
+      subRegion.registerField< well::temperature >( getName() );
       if( isThermal() )
       {
-        subRegion.registerField< fields::well::temperature_n >( getName() );
+        subRegion.registerField< well::temperature_n >( getName() );
       }
 
-      subRegion.registerField< fields::well::gravityCoefficient >( getName() );
-
-      subRegion.registerWrapper< string >( viewKeyStruct::fluidNamesString() ).
-        setPlotLevel( PlotLevel::NOPLOT ).
-        setRestartFlags( RestartFlags::NO_WRITE ).
-        setSizedFromParent( 0 );
+      subRegion.registerField< well::gravityCoefficient >( getName() );
 
       PerforationData * const perforationData = subRegion.getPerforationData();
-      perforationData->registerField< fields::well::gravityCoefficient >( getName() );
+      perforationData->registerField< well::gravityCoefficient >( getName() );
     } );
   } );
 }
@@ -153,15 +147,6 @@ void WellSolverBase::initializePostSubGroups()
       validateWellConstraints( 0, 0, subRegion );
     } );
   } );
-}
-
-void WellSolverBase::setConstitutiveNamesCallSuper( ElementSubRegionBase & subRegion ) const
-{
-  PhysicsSolverBase::setConstitutiveNamesCallSuper( subRegion );
-  subRegion.registerWrapper< string >( viewKeyStruct::fluidNamesString() ).
-    setPlotLevel( PlotLevel::NOPLOT ).
-    setRestartFlags( RestartFlags::NO_WRITE ).
-    setSizedFromParent( 0 );
 }
 
 void WellSolverBase::setupDofs( DomainPartition const & domain,
@@ -275,10 +260,10 @@ void WellSolverBase::precomputeData( DomainPartition & domain )
       real64 const refElev = wellControls.getReferenceElevation();
 
       arrayView2d< real64 const > const wellElemLocation = subRegion.getElementCenter();
-      arrayView1d< real64 > const wellElemGravCoef = subRegion.getField< fields::well::gravityCoefficient >();
+      arrayView1d< real64 > const wellElemGravCoef = subRegion.getField< well::gravityCoefficient >();
 
-      arrayView2d< real64 const > const perfLocation = perforationData.getField< fields::perforation::location >();
-      arrayView1d< real64 > const perfGravCoef = perforationData.getField< fields::well::gravityCoefficient >();
+      arrayView2d< real64 const > const perfLocation = perforationData.getField< perforation::location >();
+      arrayView1d< real64 > const perfGravCoef = perforationData.getField< well::gravityCoefficient >();
 
       forAll< serialPolicy >( perforationData.size(), [=]( localIndex const iperf )
       {
