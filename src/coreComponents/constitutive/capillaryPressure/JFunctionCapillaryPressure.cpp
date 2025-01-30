@@ -22,6 +22,7 @@
 #include "constitutive/capillaryPressure/CapillaryPressureFields.hpp"
 #include "constitutive/capillaryPressure/TableCapillaryPressureHelpers.hpp"
 #include "functions/FunctionManager.hpp"
+#include "common/Units.hpp"
 
 namespace geos
 {
@@ -250,7 +251,8 @@ void JFunctionCapillaryPressure::saveConvergedRockState( arrayView2d< real64 con
     {
       permeability = convergedPermeability[ei][0][2];
     }
-    GEOS_ERROR_IF( permeability < LvArray::NumericLimits< real64 >::epsilon, "Zero permeability in J-function capillary pressure" );
+    // multiply epsilon by Darcy to sq m factor
+    GEOS_ERROR_IF( permeability < LvArray::NumericLimits< real64 >::epsilon * units::DarcyToSqM, "Zero permeability in J-function capillary pressure" );
 
     // here we compute an average of the porosity over quadrature points
     // this average is exact for tets, regular pyramids/wedges/hexes, or for VEM
