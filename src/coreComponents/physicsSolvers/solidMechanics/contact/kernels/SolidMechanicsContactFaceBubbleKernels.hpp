@@ -102,7 +102,7 @@ public:
           inputRhs,
           inputDt,
           inputGravityVector ),
-    m_bubbleDisp( faceManager.getField< fields::solidMechanics::totalBubbleDisplacement >().toViewConst() ),
+    m_bubbleDisp( faceManager.getField< fields::contact::totalBubbleDisplacement >().toViewConst() ),
     m_bDofNumber( bDofNumber ),
     m_bubbleElems( elementSubRegion.bubbleElementsList() ),
     m_elemsToFaces( elementSubRegion.faceElementsList() )

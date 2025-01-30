@@ -104,7 +104,7 @@ public:
     m_traction( elementSubRegion.getField< fields::contact::traction >().toViewConst() ),
     m_tDofNumber( elementSubRegion.getReference< globalIndex_array >( tractionDofKey ).toViewConst() ),
     m_incrDisp( nodeManager.getField< fields::solidMechanics::incrementalDisplacement >() ),
-    m_incrBubbleDisp( faceManager.getField< fields::solidMechanics::incrementalBubbleDisplacement >() ),
+    m_incrBubbleDisp( faceManager.getField< fields::contact::incrementalBubbleDisplacement >() ),
     m_targetIncrementalJump( elementSubRegion.getField< fields::contact::targetIncrementalJump >().toViewConst() )
   {}
 

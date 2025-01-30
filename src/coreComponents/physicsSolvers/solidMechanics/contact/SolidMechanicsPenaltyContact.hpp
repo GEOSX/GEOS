@@ -21,9 +21,9 @@
 #ifndef GEOS_PHYSICSSOLVERS_CONTACT_SOLIDMECHANICSPENALTYCONTACT_HPP_
 #define GEOS_PHYSICSSOLVERS_CONTACT_SOLIDMECHANICSPENALTYCONTACT_HPP_
 
-#include "physicsSolvers/contact/ContactSolverBase.hpp"
-#include "../../linearAlgebra/DofManager.hpp"
-#include "../../common/DataTypes.hpp"
+#include "physicsSolvers/solidMechanics/contact/ContactSolverBase.hpp"
+#include "linearAlgebra/DofManager.hpp"
+#include "common/DataTypes.hpp"
 
 namespace geos
 {

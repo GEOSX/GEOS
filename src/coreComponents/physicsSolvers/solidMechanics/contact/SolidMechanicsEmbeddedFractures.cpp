@@ -32,9 +32,10 @@
 #include "mesh/SurfaceElementRegion.hpp"
 #include "physicsSolvers/solidMechanics/SolidMechanicsFields.hpp"
 #include "physicsSolvers/solidMechanics/SolidMechanicsLagrangianFEM.hpp"
-#include "physicsSolvers/contact/kernels/SolidMechanicsEFEMKernels.hpp"
-#include "physicsSolvers/contact/kernels/SolidMechanicsEFEMStaticCondensationKernels.hpp"
-#include "physicsSolvers/contact/kernels/SolidMechanicsEFEMJumpUpdateKernels.hpp"
+#include "physicsSolvers/solidMechanics/contact/kernels/SolidMechanicsEFEMKernels.hpp"
+#include "physicsSolvers/solidMechanics/contact/kernels/SolidMechanicsEFEMStaticCondensationKernels.hpp"
+#include "physicsSolvers/solidMechanics/contact/kernels/SolidMechanicsEFEMJumpUpdateKernels.hpp"
+#include "physicsSolvers/solidMechanics/contact/ContactFields.hpp"
 
 namespace geos
 {
@@ -99,13 +100,11 @@ void SolidMechanicsEmbeddedFractures::registerDataOnMesh( dataRepository::Group 
 {
   ContactSolverBase::registerDataOnMesh( meshBodies );
 
-  using namespace fields::contact;
-
   forFractureRegionOnMeshTargets( meshBodies, [&] ( SurfaceElementRegion & fractureRegion )
   {
     fractureRegion.forElementSubRegions< SurfaceElementSubRegion >( [&]( SurfaceElementSubRegion & subRegion )
     {
-      subRegion.registerField< dTraction_dJump >( getName() ).
+      subRegion.registerField< contact::dTraction_dJump >( getName() ).
         reference().resizeDimension< 1, 2 >( 3, 3 );
     } );
   } );
@@ -171,8 +170,8 @@ void SolidMechanicsEmbeddedFractures::implicitStepComplete( real64 const & time_
     // update elastic slip before copying dispJump to oldDispJump
     string const & frictionLawName = subRegion.template getReference< string >( viewKeyStruct::frictionLawNameString() );
     FrictionBase const & frictionLaw = getConstitutiveModel< FrictionBase >( subRegion, frictionLawName );
-    arrayView2d< real64 const > const & traction = subRegion.getField< fields::contact::traction >();
-    arrayView1d< integer > const & fractureState = subRegion.getField< fields::contact::fractureState >();
+    arrayView2d< real64 const > const & traction = subRegion.getField< contact::traction >();
+    arrayView1d< integer > const & fractureState = subRegion.getField< contact::fractureState >();
     constitutiveUpdatePassThru( frictionLaw, [&] ( auto & castedFrictionLaw )
     {
       using FrictionType = TYPEOFREF( castedFrictionLaw );
@@ -778,7 +777,7 @@ void SolidMechanicsEmbeddedFractures::updateState( DomainPartition & domain )
 
       arrayView1d< integer const > const & fractureState = subRegion.getField< contact::fractureState >();
 
-      arrayView1d< real64 > const & slip = subRegion.getField< fields::contact::slip >();
+      arrayView1d< real64 > const & slip = subRegion.getField< contact::slip >();
 
       constitutiveUpdatePassThru( frictionLaw, [&] ( auto & castedFrictionLaw )
       {
@@ -809,9 +808,9 @@ bool SolidMechanicsEmbeddedFractures::updateConfiguration( DomainPartition & dom
     fractureRegion.forElementSubRegions< SurfaceElementSubRegion >( [&]( SurfaceElementSubRegion & subRegion )
     {
       arrayView1d< integer const > const & ghostRank = subRegion.ghostRank();
-      arrayView2d< real64 const > const & dispJump = subRegion.getField< fields::contact::dispJump >();
-      arrayView2d< real64 const > const & traction = subRegion.getField< fields::contact::traction >();
-      arrayView1d< integer > const & fractureState = subRegion.getField< fields::contact::fractureState >();
+      arrayView2d< real64 const > const & dispJump = subRegion.getField< contact::dispJump >();
+      arrayView2d< real64 const > const & traction = subRegion.getField< contact::traction >();
+      arrayView1d< integer > const & fractureState = subRegion.getField< contact::fractureState >();
 
       string const & frictionLawName = subRegion.template getReference< string >( viewKeyStruct::frictionLawNameString() );
       FrictionBase const & frictionLaw = getConstitutiveModel< FrictionBase >( subRegion, frictionLawName );

@@ -18,7 +18,7 @@
  */
 
 #include "OneWayCoupledFractureFlowContactMechanics.hpp"
-#include "physicsSolvers/contact/ContactFields.hpp"
+#include "physicsSolvers/solidMechanics/contact/ContactFields.hpp"
 #include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
 #include "mesh/DomainPartition.hpp"
 

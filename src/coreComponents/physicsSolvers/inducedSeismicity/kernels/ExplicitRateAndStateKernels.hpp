@@ -18,6 +18,7 @@
 
 #include "RateAndStateKernelsBase.hpp"
 #include "denseLinearAlgebra/denseLASolvers.hpp"
+#include "physicsSolvers/solidMechanics/contact/ContactFields.hpp"
 
 namespace geos
 {

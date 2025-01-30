@@ -98,9 +98,9 @@ public:
           inputDt,
           faceElementList ),
     m_displacement( nodeManager.getField< fields::solidMechanics::totalDisplacement >()),
-    m_bubbleDisp( faceManager.getField< fields::solidMechanics::totalBubbleDisplacement >() ),
+    m_bubbleDisp( faceManager.getField< fields::contact::totalBubbleDisplacement >() ),
     m_incrDisp( nodeManager.getField< fields::solidMechanics::incrementalDisplacement >() ),
-    m_incrBubbleDisp( faceManager.getField< fields::solidMechanics::incrementalBubbleDisplacement >() ),
+    m_incrBubbleDisp( faceManager.getField< fields::contact::incrementalBubbleDisplacement >() ),
     m_deltaDispJump( elementSubRegion.getField< fields::contact::deltaDispJump >().toView() ),
     m_elementArea( elementSubRegion.getField< fields::elementArea >().toView() ),
     m_slip( elementSubRegion.getField< fields::contact::slip >().toView() )

@@ -63,14 +63,6 @@ DECLARE_FIELD( totalDisplacement,
                WRITE_AND_READ,
                "Total displacements at the nodes" );
 
-DECLARE_FIELD( totalBubbleDisplacement,
-               "totalBubbleDisplacement",
-               array2d< real64 >,
-               0,
-               LEVEL_0,
-               WRITE_AND_READ,
-               "Total bubble displacements at the faces" );
-
 DECLARE_FIELD( incrementalDisplacement,
                "incrementalDisplacement",
                array2dLayoutIncrDisplacement,
@@ -94,14 +86,6 @@ DECLARE_FIELD( plasticStrain,
                LEVEL_0,
                WRITE_AND_READ,
                "Average plastic strain in cell" );
-
-DECLARE_FIELD( incrementalBubbleDisplacement,
-               "incrementalBubbleDisplacement",
-               array2d< real64 >,
-               0,
-               LEVEL_3,
-               WRITE_AND_READ,
-               "Incremental bubble displacements for the current time step on the nodes" );
 
 DECLARE_FIELD( velocity,
                "velocity",

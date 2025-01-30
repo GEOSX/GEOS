@@ -21,7 +21,7 @@
 #define GEOS_PHYSICSSOLVERS_CONTACT_CONTACTFIELDS_HPP_
 
 #include "mesh/MeshFields.hpp"
-#include "common/format/EnumStrings.hpp"
+#include "physicsSolvers/solidMechanics/contact/FractureState.hpp"
 
 namespace geos
 {
@@ -34,21 +34,21 @@ namespace fields
 namespace contact
 {
 
-/**
- * @struct FractureState
- *
- * A struct for the fracture states
- */
-struct FractureState
-{
-  enum State : integer
-  {
-    Stick = 0,   ///< element is closed: no jump across the discontinuity.
-    NewSlip = 1, ///< element just starts sliding: no normal jump across the discontinuity, but sliding is allowed.
-    Slip = 2,    ///< element is sliding: no normal jump across the discontinuity, but sliding is allowed.
-    Open = 3     ///< element is open: no constraints are imposed.
-  };
-};
+DECLARE_FIELD( totalBubbleDisplacement,
+               "totalBubbleDisplacement",
+               array2d< real64 >,
+               0,
+               LEVEL_0,
+               WRITE_AND_READ,
+               "Total bubble displacements at the faces" );
+
+DECLARE_FIELD( incrementalBubbleDisplacement,
+               "incrementalBubbleDisplacement",
+               array2d< real64 >,
+               0,
+               LEVEL_3,
+               WRITE_AND_READ,
+               "Incremental bubble displacements for the current time step on the nodes" );
 
 DECLARE_FIELD( iterativePenalty,
                "iterativePenalty",
@@ -193,9 +193,6 @@ DECLARE_FIELD( targetIncrementalJump,
                NOPLOT,
                WRITE_AND_READ,
                "It's the target incremental jump in a timestep (e.g., slip coming from RS)." );
-
-
-ENUM_STRINGS( FractureState::State, "stick", "new_slip", "slip", "open" );
 
 }
 
