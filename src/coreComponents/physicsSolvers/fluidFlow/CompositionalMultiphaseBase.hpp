@@ -44,7 +44,7 @@ enum class CompositionalMultiphaseFormulationType : integer
  */
 ENUM_STRINGS( CompositionalMultiphaseFormulationType,
               "ComponentDensities",
-              "CverallComposition" );
+              "OverallComposition" );
 
 //START_SPHINX_INCLUDE_00
 /**
