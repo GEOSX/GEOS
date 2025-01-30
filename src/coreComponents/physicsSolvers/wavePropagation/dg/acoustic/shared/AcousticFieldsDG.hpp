@@ -131,7 +131,7 @@ DECLARE_FIELD( ElementToOppositePermutation,
                WRITE_AND_READ,
                "Map from elements to the permutation of the neighboring element, opposite to each vertex." );
 
-DECLARE_FIELD( CharacteristicSize
+DECLARE_FIELD( CharacteristicSize,
                "charactersticSize",
                array1d< real32 >,
                0,

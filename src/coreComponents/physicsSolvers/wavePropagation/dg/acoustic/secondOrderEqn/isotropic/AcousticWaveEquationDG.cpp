@@ -80,7 +80,7 @@ void AcousticWaveEquationDG::initializePreSubGroups()
 
 void AcousticWaveEquationDG::registerDataOnMesh( Group & meshBodies )
 {
-
+  WaveSolverBase::registerDataOnMesh( meshBodies );
   forDiscretizationOnMeshTargets( meshBodies, [&] ( string const &,
                                                     MeshLevel & mesh,
                                                     arrayView1d< string const > const & )
@@ -222,7 +222,7 @@ void AcousticWaveEquationDG::initializePostInitialConditionsPreSubGroups()
 
   DomainPartition & domain = getGroupByPath< DomainPartition >( "/Problem/domain" );
 
-  applyFreeSurfaceBC( 0.0, domain );
+  //applyFreeSurfaceBC( 0.0, domain );
 
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const & meshBodyName,
                                                                 MeshLevel & mesh,
@@ -282,6 +282,7 @@ void AcousticWaveEquationDG::initializePostInitialConditionsPreSubGroups()
 
         /// Partial gradient if gradient as to be computed
 
+
         finiteElement::FiniteElementDispatchHandler< DG_FE_TYPES >::dispatch3D( fe, [&] ( auto const finiteElement )
         {
           using FE_TYPE = TYPEOFREF( finiteElement );
@@ -300,7 +301,6 @@ void AcousticWaveEquationDG::initializePostInitialConditionsPreSubGroups()
               elemsToOpposite,
               elemsToOppositePermutation );
  
-
           // Precompute reference mass matrix for non-boundary elements
           m_referenceInvMassMatrix[ regionIndex ][ subRegionIndex ].resizeDimension< 0, 1 >( FE_TYPE::numNodes, FE_TYPE::numNodes );
           array2d< real64 > massMatrix; 
@@ -378,7 +378,7 @@ void AcousticWaveEquationDG::applyFreeSurfaceBC( real64 const time, DomainPartit
   FaceManager & faceManager = domain.getMeshBody( 0 ).getMeshLevel( m_discretizationName ).getFaceManager();
   NodeManager & nodeManager = domain.getMeshBody( 0 ).getMeshLevel( m_discretizationName ).getNodeManager();
 
-  arrayView2d< real32 > const p_np1 = nodeManager.getField< acousticfieldsdg::Pressure_np1 >();
+ // arrayView2d< real32 > const p_np1 = nodeManager.getField< acousticfieldsdg::Pressure_np1 >();
 
   ArrayOfArraysView< localIndex const > const faceToNodeMap = faceManager.nodeList().toViewConst();
 
@@ -500,9 +500,9 @@ void AcousticWaveEquationDG::computeUnknowns( real64 const & time_n,
         arrayView2d< localIndex > const elemsToOpposite = elementSubRegion.getField< acousticfieldsdg::ElementToOpposite >();
         arrayView2d< integer > const elemsToOppositePermutation = elementSubRegion.getField< acousticfieldsdg::ElementToOppositePermutation >();
 
-        arrayView2d< real32 const > const p_nm1 = nodeManager.getField< acousticfieldsdg::Pressure_nm1 >();
-        arrayView2d< real32 const > const p_n = nodeManager.getField< acousticfieldsdg::Pressure_n >();
-        arrayView2d< real32 > const p_np1 = nodeManager.getField< acousticfieldsdg::Pressure_np1 >();
+        arrayView2d< real32 const > const p_nm1 = elementSubRegion.getField< acousticfieldsdg::Pressure_nm1 >();
+        arrayView2d< real32 const > const p_n = elementSubRegion.getField< acousticfieldsdg::Pressure_n >();
+        arrayView2d< real32 > const p_np1 = elementSubRegion.getField< acousticfieldsdg::Pressure_np1 >();
 
         finiteElement::FiniteElementBase const &
         fe = elementSubRegion.getReference< finiteElement::FiniteElementBase >( getDiscretizationName() );
