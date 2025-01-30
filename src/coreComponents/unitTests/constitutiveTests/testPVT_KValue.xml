@@ -1,0 +1,134 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Tasks>
+    <PVTDriver
+      name="testkValue2Phase"
+      fluid="kValue2Phase"
+      feedComposition="{ 0.00900, 0.00300, 0.53470, 0.11460, 0.08790, 0.04560, 0.02090, 0.01510, 0.16920 }"
+      pressureControl="pressureFunction"
+      temperatureControl="temperatureFunction"
+      steps="100"
+      outputMassDensity="1"
+      outputCompressibility="1"
+      outputPhaseComposition="1"
+      baseline="testPVT_KValue_kValue2Phase.txt"
+      logLevel="1"/>
+  </Tasks>
+
+  <Events
+    maxTime="1">
+    <SoloEvent
+      name="eventkValue2Phase"
+      target="/Tasks/testkValue2Phase"/>
+  </Events>
+
+  <Constitutive>
+    <CompositionalKValueFluidLohrenzBrayClark
+      name="kValue2Phase"
+      phaseNames="{ oil, gas }"
+      equationsOfState="{ pr, pr }"
+      componentNames="{ CO2, N2, C1, C2, C3, C4, C5, C6, C7+ }"
+      componentCriticalPressure="{ 73.8659e5, 33.9439e5, 46.0421e5, 48.8387e5, 42.4552e5, 37.47e5, 33.5892e5, 30.1037e5, 20.549e5 }"
+      componentCriticalTemperature="{ 304.7, 126.2, 190.6, 305.43, 369.8, 419.5, 465.9, 507.5, 678.8 }"
+      componentAcentricFactor="{ 0.225, 0.04, 0.013, 0.0986, 0.1524, 0.1956, 0.2413, 0.299, 0.5618 }"
+      componentMolarWeight="{ 44.01e-3, 28.01e-3, 16.04e-3, 30.07e-3, 44.1e-3, 58.12e-3, 72.15e-3, 84e-3, 173e-3 }"
+      componentVolumeShift="{ -0.04958, -0.136012, -0.1486264, -0.10863408, -0.08349872, -0.06331568, -0.04196464, -0.0150072, 0.0000 }"
+      kValueTables="{ KV1, KV2, KV3, KV4, KV5, KV6, KV7, KV8, KV9 }" />
+  </Constitutive>
+  <Functions>
+    <TableFunction
+      name="pressureFunction"
+      inputVarNames="{ time }"
+      coordinates="{ 0.0, 0.5, 1.0, 1.5, 2.0 }"
+      values="{ 3.5e+07, 1.0e+07, 1.0e+05, 1.0e+07, 3.5e+07 }"/>
+
+    <TableFunction
+      name="temperatureFunction"
+      inputVarNames="{ time }"
+      interpolation="lower"
+      coordinates="{ 0.0, 1.0, 2.0 }"
+      values="{ 553.15, 583.15, 583.15 }"/>
+
+    <TableFunction
+      name="KV9"
+      voxelFile="testPVT_data/testPVT_KValue_kvalue9.csv"
+      coordinateFiles="{ testPVT_data/testPVT_KValue_pressure.csv, testPVT_data/testPVT_KValue_temperature.csv  }"
+      interpolation="linear"
+      inputVarNames="{ pressure, temperature }" />
+
+    <SymbolicFunction
+      name="KV1"
+      expression="(3.0620e+00+8.9414e+02/p+1.1912e-02*p)*exp(-5.3659e+02/(t-1.1951e+02))"
+      variableNames="{ p, t }" 
+      inputVarNames="{ pressure, temperature }" />  
+    <SymbolicFunction
+      name="KV3"
+      expression="(-3.5742e-01+4.8660e+02/p+5.7887e-03*p)*exp(-9.1910e+01/(t-1.8027e+02))"
+      variableNames="{ p, t }" 
+      inputVarNames="{ pressure, temperature }" />  
+    <SymbolicFunction
+      name="KV4"
+      expression="(3.6577e+00+7.1889e+02/p+1.4154e-02*p)*exp(-5.7323e+02/(t-1.1088e+02))"
+      variableNames="{ p, t }" 
+      inputVarNames="{ pressure, temperature }" />  
+    <SymbolicFunction
+      name="KV5"
+      expression="(8.2845e+00+1.0144e+03/p+5.2968e-02*p)*exp(-9.5800e+02/(t-9.3548e+01))"
+      variableNames="{ p, t }" 
+      inputVarNames="{ pressure, temperature }" />  
+    <SymbolicFunction
+      name="KV6"
+      expression="(1.5732e+01+1.4968e+03/p+1.7407e-01*p)*exp(-1.3707e+03/(t-8.1261e+01))"
+      variableNames="{ p, t }" 
+      inputVarNames="{ pressure, temperature }" />  
+    <SymbolicFunction
+      name="KV7"
+      expression="(2.5068e+01+2.2625e+03/p+5.3888e-01*p)*exp(-1.7981e+03/(t-7.1948e+01))"
+      variableNames="{ p, t }" 
+      inputVarNames="{ pressure, temperature }" />  
+    <SymbolicFunction
+      name="KV8"
+      expression="(3.6243e+01+4.1985e+03/p+1.9055e+00*p)*exp(-2.3575e+03/(t-5.8025e+01))"
+      variableNames="{ p, t }" 
+      inputVarNames="{ pressure, temperature }" />  
+
+    <SymbolicFunction
+      name="KV2_PRESSURE"
+      expression="-1.8141e+00+6.2655e+02/p+6.7489e-03*p"
+      variableNames="{ p, t }" 
+      inputVarNames="{ pressure, temperature }" />  
+    <SymbolicFunction
+      name="KV2_TEMPERATURE"
+      expression="exp(-5.0732e+00/(t-2.5249e+02))"
+      variableNames="{ p, t }" 
+      inputVarNames="{ pressure, temperature }" />  
+    <CompositeFunction
+      name="KV2"
+      functionNames="{ KV2_PRESSURE, KV2_TEMPERATURE }"
+      variableNames="{ P, T }"
+      expression="P*T"
+      inputVarNames="{ pressure, temperature }" />
+  </Functions>
+
+  <!-- Mesh is not used, but GEOSX throws an error without one.  Will resolve soon-->
+  <Mesh>
+    <InternalMesh
+      name="mesh1"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0, 1 }"
+      yCoords="{ 0, 1 }"
+      zCoords="{ 0, 1 }"
+      nx="{ 1 }"
+      ny="{ 1 }"
+      nz="{ 1 }"
+      cellBlockNames="{ cellBlock01 }"/>
+  </Mesh>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="dummy"
+      cellBlocks="{ cellBlock01 }"
+      materialList="{ dummy }"/>
+  </ElementRegions>
+</Problem>

@@ -21,6 +21,7 @@
 #define GEOS_CONSTITUTIVE_UNITTESTS_TESTFLUID_HPP_
 
 #include "common/DataTypes.hpp"
+#include "common/format/Format.hpp"
 #include "constitutive/fluid/multifluid/compositional/models/ComponentProperties.hpp"
 
 namespace geos
@@ -158,7 +159,7 @@ public:
   template< typename ARRAY, typename LIST >
   static void createArray( ARRAY & array, LIST const & data )
   {
-    for( auto const value : data )
+    for( auto const & value : data )
     {
       array.emplace_back( value );
     }

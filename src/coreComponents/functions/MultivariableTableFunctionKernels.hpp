@@ -80,7 +80,7 @@ public:
     m_axisStepInvs ( axisStepInvs ),
     m_axisHypercubeMults ( axisHypercubeMults ),
     m_hypercubeData ( hypercubeData )
-  {};
+  {}
 
 /**
  * @brief interpolate all operators at a given point
@@ -377,14 +377,6 @@ protected:
 
   /// Coordinates in numDims-dimensional space where interpolation is requested
   arrayView1d< real64 const > m_coordinates;
-
-  // outputs
-
-  /// Interpolated values
-  arrayView1d< real64 > m_values;
-
-  /// /// Interpolated derivatives
-  arrayView1d< real64 > m_derivatives;
 };
 
 } /* namespace geos */

@@ -248,6 +248,8 @@ set( constitutive_sources
      fluid/multifluid/compositional/models/ImmiscibleWaterFlashModel.cpp
      fluid/multifluid/compositional/models/ImmiscibleWaterParameters.cpp
      fluid/multifluid/compositional/models/ImmiscibleWaterViscosity.cpp
+     fluid/multifluid/compositional/models/KValueFlashModel.cpp
+     fluid/multifluid/compositional/models/KValueFlashParameters.cpp
      fluid/multifluid/compositional/models/LohrenzBrayClarkViscosity.cpp
      fluid/multifluid/compositional/models/NegativeTwoPhaseFlashModel.cpp
      fluid/multifluid/compositional/CompositionalMultiphaseFluid.cpp
