@@ -81,8 +81,7 @@ public:
      * Default constructor
      */
     GEOS_HOST_DEVICE
-    StackVariables()
-    {}
+    StackVariables() = default;
 
     /// The number of support points.
     localIndex numSupportPoints;

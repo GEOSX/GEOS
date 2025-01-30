@@ -189,9 +189,6 @@ dataRepository::Group const * HistoryCollectionBase::getTargetObject( DomainPart
           }
           else
           {
-            string const targetTokensStr = stringutilities::join( targetTokens.begin(),
-                                                                  targetTokens.begin()+pathLevel,
-                                                                  '/' );
             GEOS_THROW( targetTokens[pathLevel] << " not found in path " <<
                         objectPath << std::endl << targetGroup->dumpSubGroupsNames(),
                         std::domain_error );

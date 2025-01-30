@@ -143,7 +143,7 @@ void PhillipsBrineViscosityUpdate::compute( real64 const & pressure,
   using Deriv = constitutive::multifluid::DerivativeOffset;
 
   // compute the viscosity of pure water as a function of temperature
-  real64 dPureWaterVisc_dTemperature;
+  real64 dPureWaterVisc_dTemperature = 0.0;
   real64 const pureWaterVisc = m_waterViscosityTable.compute( &temperature, &dPureWaterVisc_dTemperature );
 
   // then compute the brine viscosity, accounting for the presence of salt

@@ -16,6 +16,10 @@
 #ifndef GEOS_MESH_UTILITIES_STRUCTUREDGRIDUTILITIES_HPP
 #define GEOS_MESH_UTILITIES_STRUCTUREDGRIDUTILITIES_HPP
 
+#include "common/logger/Logger.hpp"
+#include "common/GeosxMacros.hpp"
+#include <vector>
+
 /**
  * @file StructuredGridUtilities.hpp
  */

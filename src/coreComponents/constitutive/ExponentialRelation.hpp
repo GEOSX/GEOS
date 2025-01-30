@@ -421,19 +421,19 @@ public:
 private:
 
   /// variable shift
-  T m_x0;
+  T m_x0{};
 
   /// variable shift
-  T m_w0;
+  T m_w0{};
 
   /// scaling coefficient
-  T m_y0;
+  T m_y0{};
 
   /// exponential coefficient
-  T m_alpha;
+  T m_alpha{};
 
   /// exponential coefficient
-  T m_beta;
+  T m_beta{};
 
 };
 

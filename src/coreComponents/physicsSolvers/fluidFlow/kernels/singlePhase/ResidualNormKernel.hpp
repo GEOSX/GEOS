@@ -21,6 +21,8 @@
 #define GEOS_PHYSICSSOLVERS_FLUIDFLOW_SINGLEPHASE_RESIDUALNORMKERNEL_HPP
 
 #include "physicsSolvers/PhysicsSolverBaseKernels.hpp"
+#include "physicsSolvers/fluidFlow/FlowSolverBaseFields.hpp"
+#include "mesh/ElementSubRegionBase.hpp"
 
 namespace geos
 {
