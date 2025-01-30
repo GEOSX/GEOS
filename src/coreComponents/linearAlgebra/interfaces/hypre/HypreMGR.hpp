@@ -178,9 +178,9 @@ protected:
     GEOS_LAI_CHECK_ERROR( HYPRE_BoomerAMGSetTol( solver.ptr, 0.0 ) );
     GEOS_LAI_CHECK_ERROR( HYPRE_BoomerAMGSetMaxIter( solver.ptr, 1 ) );
     GEOS_LAI_CHECK_ERROR( HYPRE_BoomerAMGSetMaxRowSum( solver.ptr, 1.0 ) );
-    GEOS_LAI_CHECK_ERROR( HYPRE_BoomerAMGSetStrongThreshold( solver.ptr, 0.6 ) );
+    GEOS_LAI_CHECK_ERROR( HYPRE_BoomerAMGSetStrongThreshold( solver.ptr, 0.8 ) );
     GEOS_LAI_CHECK_ERROR( HYPRE_BoomerAMGSetPrintLevel( solver.ptr, 0 ) );
-    GEOS_LAI_CHECK_ERROR( HYPRE_BoomerAMGSetInterpType( solver.ptr, hypre::getAMGInterpolationType( LinearSolverParameters::AMG::InterpType::modifiedExtendedE )) );
+    GEOS_LAI_CHECK_ERROR( HYPRE_BoomerAMGSetInterpType( solver.ptr, hypre::getAMGInterpolationType( LinearSolverParameters::AMG::InterpType::extendedI )) );
 #if GEOS_USE_HYPRE_DEVICE == GEOS_USE_HYPRE_CUDA || GEOS_USE_HYPRE_DEVICE == GEOS_USE_HYPRE_HIP
     GEOS_LAI_CHECK_ERROR( HYPRE_BoomerAMGSetCoarsenType( solver.ptr, hypre::getAMGCoarseningType( LinearSolverParameters::AMG::CoarseningType::PMIS ) ) );
     GEOS_LAI_CHECK_ERROR( HYPRE_BoomerAMGSetRelaxType( solver.ptr, hypre::getAMGRelaxationType( LinearSolverParameters::AMG::SmootherType::chebyshev ) ) );
@@ -191,6 +191,9 @@ protected:
 
     GEOS_LAI_CHECK_ERROR( HYPRE_BoomerAMGSetNumFunctions( solver.ptr, 3 ) );
     GEOS_LAI_CHECK_ERROR( HYPRE_BoomerAMGSetFilterFunctions( solver.ptr, separateComponents ) );
+
+    GEOS_LAI_CHECK_ERROR( HYPRE_BoomerAMGSetAggNumLevels( solver.ptr, 1 ) );
+    GEOS_LAI_CHECK_ERROR( HYPRE_BoomerAMGSetAggInterpType( solver.ptr, hypre::getAMGAggressiveInterpolationType( LinearSolverParameters::AMG::AggInterpType::multipass ) ) );    
 
     solver.setup = HYPRE_BoomerAMGSetup;
     solver.solve = HYPRE_BoomerAMGSolve;
