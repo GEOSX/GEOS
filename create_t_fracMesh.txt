@@ -1,0 +1,15 @@
+# create mesh
+python3 -m mesh_doctor -i dummy generate_cube --x=-1000:-100:100:1000 --y=-1000:-100:100:1000 --z=0:1 --nx 50:200:50 --ny 50:200:50 --nz 1 --output test.vtu --data-mode ascii --no-cells --no-points --fields attribute:CELLS:1
+
+# define attributes for regions
+cd checks
+python3 define_attribute.py
+cd ..
+
+# generate the fracture (split the mesh)
+python3 -m mesh_doctor -i test_attribute.vtu generate_fractures --policy field --name attribute --values 1,2,3 --output test_split_main.vtu --fracture-output test_split_fracture.vtu
+
+# create global ids
+python3 -m mesh_doctor -i test_split_fracture.vtu generate_global_ids --output tshapedFrac_fracture.vtu
+python3 -m mesh_doctor -i test_split_main.vtu generate_global_ids --output tshapedFrac_domain.vtu 
+

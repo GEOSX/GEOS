@@ -1001,7 +1001,6 @@ map< std::tuple< string, string, string, string >, localIndex > ProblemManager::
                                                                                             subRegion.getName() ) ];
 
                 localIndex const numQuadraturePoints = 1;
-
                 numQuadraturePointsInList = std::max( numQuadraturePointsInList, numQuadraturePoints );
               } );
             }

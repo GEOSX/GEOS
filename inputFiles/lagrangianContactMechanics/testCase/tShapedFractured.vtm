@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<VTKFile type="vtkMultiBlockDataSet" version="1.0">
+    <vtkMultiBlockDataSet>
+        <DataSet name="main" file="tshapedFrac_domain.vtu"/>
+        <DataSet name="fracture" file="tshapedFrac_fracture.vtu"/>
+    </vtkMultiBlockDataSet>
+</VTKFile>
