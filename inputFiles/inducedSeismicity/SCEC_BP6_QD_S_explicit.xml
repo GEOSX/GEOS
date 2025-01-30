@@ -1,0 +1,139 @@
+<?xml version="1.0" ?>
+<Problem>
+  <Included>
+    <File
+      name="./SCEC_BP6_QD_S_base.xml"/>
+  </Included>
+
+  <Solvers
+    gravityVector="{0.0, 0.0, 0.0}">
+    <ExplicitQuasiDynamicEQ
+      name="QDSolver"
+      targetRegions="{ Domain, Fault }"
+      shearImpedance="4.6247113164e6"
+      initialDt="1"
+      logLevel="1"
+      discretization="FE1"
+      stressSolverName="stressSolver">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-8"
+        logLevel="2"
+        newtonMaxIter="20"
+        maxNumConfigurationAttempts="1"
+        lineSearchMaxCuts="2"
+        maxTimeStepCuts="1"/>
+     </ExplicitQuasiDynamicEQ>
+
+    <OneWayCoupledFractureFlowContactMechanics
+      name="stressSolver"
+      logLevel="1"
+      solidSolverName="contactSolver"
+      flowSolverName="singlePhaseFlowSolver"
+      targetRegions="{ Domain, Fault }">
+       <NonlinearSolverParameters
+        newtonMaxIter="2"
+        newtonTol="1.0e-2"
+	      couplingType="Sequential"  
+        lineSearchAction="None"
+	      subcycling="0"
+        maxTimeStepCuts="1"
+        lineSearchMaxCuts="0"/>
+    </OneWayCoupledFractureFlowContactMechanics> 
+
+    <SolidMechanicsLagrangeContactBubbleStab
+      name="contactSolver"
+      timeIntegrationOption="QuasiStatic"
+      logLevel="2"
+      writeLinearSystem="0"
+      discretization="FE1"
+      targetRegions="{ Domain, Fault }">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-8"
+        logLevel="2"
+        newtonMaxIter="10"
+        maxNumConfigurationAttempts="1"
+        lineSearchAction="Require"
+        lineSearchMaxCuts="2"
+        maxTimeStepCuts="1"/>
+      <LinearSolverParameters
+        solverType="direct"
+        directParallel="0"
+        logLevel="0"/>
+    </SolidMechanicsLagrangeContactBubbleStab>
+    
+    <SurfaceGenerator
+      name="SurfaceGen"
+      targetRegions="{ Domain }"
+      initialRockToughness="1.0"
+      mpiCommOrder="1"
+      fractureRegion="Fault"/>  
+
+    <SinglePhaseFVM 
+      name="singlePhaseFlowSolver"
+      logLevel="1"
+      discretization="singlePhaseTPFA"
+      targetRegions="{ Fault }"> 
+      <NonlinearSolverParameters
+        newtonTol = "1.0e-6"
+        newtonMaxIter ="8"/>
+      <LinearSolverParameters
+        solverType="direct"
+        directParallel="0"/>   
+    </SinglePhaseFVM>
+  </Solvers>
+
+
+  <Events
+    maxTime="6.312e7">
+
+   <!-- fault generation  -->
+   <SoloEvent 
+     name="generateFault"
+     target="/Solvers/SurfaceGen"/>
+
+  <!-- vtk output -->
+   <PeriodicEvent
+     name="vtkOutput"
+     cycleFrequency="20"
+     targetExactTimestep="0"
+     target="/Outputs/vtkOutput"/>
+
+  <!-- solver application  -->
+   <PeriodicEvent
+     name="solverApplications1"
+     maxEventDt="1e4"
+     endTime="8.64e6"
+     target="/Solvers/QDSolver"/> 
+   <PeriodicEvent
+     name="solverApplications2"
+     maxEventDt="10"
+     beginTime="8.64e6"
+     endTime="8.6499e6"
+     target="/Solvers/QDSolver"/>
+   <PeriodicEvent
+     name="solverApplications3"
+     maxEventDt="1e3"
+     beginTime="8.6499e6"
+     target="/Solvers/QDSolver"/>
+
+  <!-- Time history collection -->
+    <PeriodicEvent
+      name="slipRateCollection"
+      cycleFrequency="1"
+      targetExactTimestep="0"
+      target="/Tasks/slipRateCollection" />
+
+    <PeriodicEvent
+      name="pressureCollection"
+      cycleFrequency="1"
+      targetExactTimestep="0"
+      target="/Tasks/pressureCollection" />  
+
+  <!-- Time history output -->
+   <PeriodicEvent
+      name="timeHistoryOutput"
+      cycleFrequency="10"
+      targetExactTimestep="0"
+      target="/Outputs/timeHistoryOutput"/>
+  </Events>
+</Problem>

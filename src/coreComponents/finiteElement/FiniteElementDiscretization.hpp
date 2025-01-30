@@ -98,6 +98,7 @@ private:
     static constexpr char const * orderString() { return "order"; }
     static constexpr char const * formulationString() { return "formulation"; }
     static constexpr char const * useVemString() { return "useVirtualElements"; }
+    static constexpr char const * useHighOrderQuadratureRuleString() { return "useHighOrderQuadratureRule"; }
   };
 
   /// The order of the finite element basis
@@ -108,6 +109,9 @@ private:
 
   /// Optional parameter indicating if the class should use Virtual Elements.
   int m_useVem;
+
+  /// Optional parameter indicating if the class should use a high order quadrature rule.
+  int m_useHighOrderQuadratureRule;
 
   void postInputInitialization() override final;
 
