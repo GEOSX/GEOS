@@ -553,7 +553,6 @@ real64 CompositionalMultiphaseFVM::scalingForSystemSolution( DomainPartition & d
   std::vector< MpiWrapper::PairType< real64, globalIndex > > regionDeltaPresMaxLoc;
   std::vector< MpiWrapper::PairType< real64, globalIndex > > regionDeltaCompDensMaxLoc;
   std::vector< MpiWrapper::PairType< real64, globalIndex > > regionDeltaTempMaxLoc;
-  int64_t pushCount=0;
 
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
                                                                MeshLevel & mesh,
@@ -614,7 +613,6 @@ real64 CompositionalMultiphaseFVM::scalingForSystemSolution( DomainPartition & d
         {
           scalingFactor = std::min( scalingFactor, subRegionData.localMinVal );
         }
-        ++pushCount;
         regionDeltaPresMaxLoc.push_back( { subRegionData.localMaxDeltaPres,
                                            localToGlobalMap[subRegionData.localMaxDeltaPresLoc] } );
         minPresScalingFactor = std::min( minPresScalingFactor, subRegionData.localMinPresScalingFactor );
