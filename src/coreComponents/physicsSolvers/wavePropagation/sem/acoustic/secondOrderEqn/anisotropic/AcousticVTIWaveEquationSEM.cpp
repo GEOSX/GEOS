@@ -102,7 +102,6 @@ void AcousticVTIWaveEquationSEM::registerDataOnMesh( Group & meshBodies )
   } );
 }
 
-
 void AcousticVTIWaveEquationSEM::postInputInitialization()
 {
 
@@ -111,6 +110,28 @@ void AcousticVTIWaveEquationSEM::postInputInitialization()
   localIndex const numReceiversGlobal = m_receiverCoordinates.size( 0 );
 
   m_pressureNp1AtReceivers.resize( m_nsamplesSeismoTrace, numReceiversGlobal + 1 );
+}
+
+real32 AcousticVTIWaveEquationSEM::getGlobalMinWavespeed( MeshLevel & mesh, arrayView1d< string const > const & regionNames )
+{
+
+  real32 localMinWavespeed = 1e8;
+
+  mesh.getElemManager().forElementSubRegions< CellElementSubRegion >( regionNames, [&]( localIndex const,
+                                                                                        CellElementSubRegion & elementSubRegion )
+  {
+    arrayView1d< real32 const > const velocity = elementSubRegion.getField< acousticfields::AcousticVelocity >();
+    real32 subRegionMinWavespeed = *std::min_element( velocity.begin(), velocity.end());
+    if( localMinWavespeed > subRegionMinWavespeed )
+    {
+      localMinWavespeed = subRegionMinWavespeed;
+    }
+  } );
+
+  real32 const globalMinWavespeed = MpiWrapper::min( localMinWavespeed );
+
+  return globalMinWavespeed;
+
 }
 
 void AcousticVTIWaveEquationSEM::precomputeSourceAndReceiverTerm( MeshLevel & baseMesh, MeshLevel & mesh,

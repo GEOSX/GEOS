@@ -80,6 +80,11 @@ public:
                                        DomainPartition & domain,
                                        bool const computeGradient ) override;
 
+  /**
+   * @brief Get the minimum wavespeed on a mesh
+   */
+  virtual real32 getGlobalMinWavespeed( MeshLevel & mesh, arrayView1d< string const > const & regionNames ) override;
+
   /**@}*/
 
   /**

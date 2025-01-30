@@ -32,6 +32,7 @@
 #include "physicsSolvers/wavePropagation/shared/PrecomputeSourcesAndReceiversKernel.hpp"
 #include "physicsSolvers/wavePropagation/sem/elastic/shared/ElasticTimeSchemeSEMKernel.hpp"
 #include "physicsSolvers/wavePropagation/sem/elastic/shared/ElasticMatricesSEMKernel.hpp"
+#include "physicsSolvers/wavePropagation/shared/TaperKernel.hpp"
 #include "events/EventManager.hpp"
 
 namespace geos
@@ -223,6 +224,27 @@ void ElasticWaveEquationSEM::postInputInitialization()
   }
 }
 
+real32 ElasticWaveEquationSEM::getGlobalMinWavespeed( MeshLevel & mesh, arrayView1d< string const > const & regionNames )
+{
+
+  real32 localMinWavespeed = 1e8;
+
+  mesh.getElemManager().forElementSubRegions< CellElementSubRegion >( regionNames, [&]( localIndex const,
+                                                                                        CellElementSubRegion & elementSubRegion )
+  {
+    arrayView1d< real32 const > const velocity = elementSubRegion.getField< elasticfields::ElasticVelocityVs >();
+    real32 subRegionMinWavespeed = *std::min_element( velocity.begin(), velocity.end());
+    if( localMinWavespeed > subRegionMinWavespeed )
+    {
+      localMinWavespeed = subRegionMinWavespeed;
+    }
+  } );
+
+  real32 const globalMinWavespeed = MpiWrapper::min( localMinWavespeed );
+
+  return globalMinWavespeed;
+
+}
 
 void ElasticWaveEquationSEM::precomputeSourceAndReceiverTerm( MeshLevel & baseMesh, MeshLevel & mesh, arrayView1d< string const > const & regionNames )
 {
@@ -457,15 +479,50 @@ void ElasticWaveEquationSEM::initializePostInitialConditionsPreSubGroups()
       GEOS_WARNING_IF( ySum > minQVal, "The anelasticity parameters are too high for the given quality factor. This could lead to solution artifacts such as zero-velocity waves." );
     }
 
+    // Here we compute the timeStep only one time (beginning of the simulation).
+    if( m_timestepStabilityLimit==1 )
+    {
+      real64 dtOut = 0.0;
+      computeTimeStep( dtOut );
+      m_timestepStabilityLimit = -1;
+      m_timeStep=dtOut*m_cflFactor;
+    }
+    //We use the timeStep defined inside the xml
+    else if( m_timestepStabilityLimit==0 )
+    {
+      EventManager const & event = getGroupByPath< EventManager >( "/Problem/Events" );
+      for( localIndex numSubEvent = 0; numSubEvent < event.numSubGroups(); ++numSubEvent )
+      {
+        EventBase const * subEvent = static_cast< EventBase const * >( event.getSubGroups()[numSubEvent] );
+        if( subEvent->getEventName() == "/Solvers/" + getName() )
+        {
+          m_timeStep = subEvent->getReference< real64 >( EventBase::viewKeyStruct::forceDtString() );
+        }
+      }
+
+    }
+    //We compute the timeStep even several times if needed (used mainly with PyGeos)
+    else if( m_timestepStabilityLimit==2 )
+    {
+      real64 dtOut = 0.0;
+      computeTimeStep( dtOut );
+      m_timeStep=dtOut*m_cflFactor;
+    }
+
+
+    if( m_useTaper==1 )
+    {
+      real32 vMin;
+      vMin = getGlobalMinWavespeed( mesh, regionNames );
+
+      arrayView1d< real32 > const taperCoeff = nodeManager.getField< fields::taperCoeff >();
+      TaperKernel::computeTaperCoeff< EXEC_POLICY >( nodeManager.size(), nodeCoords, m_thicknessTaper, m_timeStep, vMin, m_reflectivityCoeff,
+                                                     taperCoeff );
+    }
+
   } );
 
-  if( m_timestepStabilityLimit==1 )
-  {
-    real64 dtOut = 0.0;
-    computeTimeStep( dtOut );
-    m_timestepStabilityLimit = 0;
-    m_timeStep=dtOut;
-  }
+
 
   WaveSolverUtils::initTrace( "seismoTraceReceiver", getName(), m_outputSeismoTrace, m_receiverConstants.size( 0 ), m_receiverIsLocal );
   WaveSolverUtils::initTrace( "dasTraceReceiver", getName(), m_outputSeismoTrace, m_linearDASGeometry.size( 0 ), m_receiverIsLocal );
@@ -627,8 +684,11 @@ real64 ElasticWaveEquationSEM::computeTimeStep( real64 & dtOut )
     ux_n.zero();
     uy_n.zero();
     uz_n.zero();
+    //Lien to ensure that the using array stays on GPU (useful when we cal this routine several times)
+    forAll< parallelHostPolicy >( sizeNode, [ux_n, uy_n, uz_n] ( localIndex const ){} );
+
   } );
-  return m_timeStep * m_cflFactor;
+  return 0;
 }
 
 real32 ElasticWaveEquationSEM::computeGlobalMinQFactor()
@@ -778,6 +838,8 @@ void ElasticWaveEquationSEM::computeUnknowns( real64 const & time_n,
   arrayView1d< real32 > const uy_np1 = nodeManager.getField< elasticfields::Displacementy_np1 >();
   arrayView1d< real32 > const uz_np1 = nodeManager.getField< elasticfields::Displacementz_np1 >();
 
+  arrayView1d< real32 > const taperCoeff = nodeManager.getField< fields::taperCoeff >();
+
   arrayView1d< real32 > const rhsx = nodeManager.getField< elasticfields::ForcingRHSx >();
   arrayView1d< real32 > const rhsy = nodeManager.getField< elasticfields::ForcingRHSy >();
   arrayView1d< real32 > const rhsz = nodeManager.getField< elasticfields::ForcingRHSz >();
@@ -846,6 +908,18 @@ void ElasticWaveEquationSEM::computeUnknowns( real64 const & time_n,
                                     mass, dampingx, dampingy, dampingz, stiffnessVectorx, stiffnessVectory,
                                     stiffnessVectorz, rhsx, rhsy, rhsz, solverTargetNodesSet );
   }
+
+  if( m_useTaper==1 )
+  {
+    TaperKernel::multiplyByTaperCoeff< EXEC_POLICY >( nodeManager.size(), taperCoeff, ux_np1 );
+    TaperKernel::multiplyByTaperCoeff< EXEC_POLICY >( nodeManager.size(), taperCoeff, ux_n );
+    TaperKernel::multiplyByTaperCoeff< EXEC_POLICY >( nodeManager.size(), taperCoeff, uy_np1 );
+    TaperKernel::multiplyByTaperCoeff< EXEC_POLICY >( nodeManager.size(), taperCoeff, uy_n );
+    TaperKernel::multiplyByTaperCoeff< EXEC_POLICY >( nodeManager.size(), taperCoeff, uz_np1 );
+    TaperKernel::multiplyByTaperCoeff< EXEC_POLICY >( nodeManager.size(), taperCoeff, uz_n );
+  }
+
+
 }
 
 void ElasticWaveEquationSEM::synchronizeUnknowns( real64 const & time_n,

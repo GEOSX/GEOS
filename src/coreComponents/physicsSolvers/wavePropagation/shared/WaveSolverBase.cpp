@@ -188,7 +188,8 @@ WaveSolverBase::WaveSolverBase( const std::string & name,
   registerWrapper( viewKeyStruct::timestepStabilityLimitString(), &m_timestepStabilityLimit ).
     setInputFlag( InputFlags::OPTIONAL ).
     setApplyDefaultValue( 0 ).
-    setDescription( "Set to 1 to apply a stability limit to the simulation timestep. The timestep used is that given by the CFL condition times the cflFactor parameter." );
+    setDescription(
+    "Flag that indicateshow to deal with timeStep: if it is set to 0 (default value) we do not compute the timeStep and use the one defines inside the xml, 1 means that we use a routine to compute the timeStep but only one time (even with Pygeos) 2 if to say that we compute the timeStep each time" );
 
   registerWrapper( viewKeyStruct::timeStepString(), &m_timeStep ).
     setInputFlag( InputFlags::FALSE ).
@@ -206,6 +207,21 @@ WaveSolverBase::WaveSolverBase( const std::string & name,
     setInputFlag( InputFlags::FALSE ).
     setSizedFromParent( 0 ).
     setDescription( "Element containing the receivers" );
+
+  registerWrapper( viewKeyStruct::useTaperString(), &m_useTaper ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setApplyDefaultValue( 0 ).
+    setDescription( "Flag to apply taper" );
+
+  registerWrapper( viewKeyStruct::reflectivityCoeffString(), &m_reflectivityCoeff ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setApplyDefaultValue( 0.001 ).
+    setDescription( "Reflectivity coeff for taper" );
+
+  registerWrapper( viewKeyStruct::thicknessTaperString(), &m_thicknessTaper ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setApplyDefaultValue( 0.0 ).
+    setDescription( "Size for the taper layer " );
 
   registerWrapper( viewKeyStruct::slsReferenceAngularFrequenciesString(), &m_slsReferenceAngularFrequencies ).
     setInputFlag( InputFlags::OPTIONAL ).
@@ -265,6 +281,10 @@ void WaveSolverBase::registerDataOnMesh( Group & meshBodies )
         nodeCoords32[i][j] = X[i][j];
       }
     }
+
+
+    nodeManager.registerField< fields::taperCoeff >( this->getName());
+
   } );
 }
 

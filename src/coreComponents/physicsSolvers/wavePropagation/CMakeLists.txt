@@ -4,6 +4,7 @@ set( physicsSolvers_headers
      wavePropagation/shared/WaveSolverBase.hpp
      wavePropagation/shared/WaveSolverUtils.hpp
      wavePropagation/shared/PrecomputeSourcesAndReceiversKernel.hpp
+     wavePropagation/shared/TaperKernel.hpp
      wavePropagation/sem/acoustic/shared/AcousticFields.hpp
      wavePropagation/sem/acoustic/secondOrderEqn/isotropic/AcousticWaveEquationSEM.hpp
      wavePropagation/sem/acoustic/secondOrderEqn/isotropic/AcousticWaveEquationSEMKernel.hpp
@@ -27,7 +28,7 @@ set( physicsSolvers_headers
      wavePropagation/sem/acoustoelastic/secondOrderEqn/isotropic/AcoustoElasticFields.hpp
      wavePropagation/sem/acoustoelastic/secondOrderEqn/isotropic/AcoustoElasticTimeSchemeSEMKernel.hpp
      wavePropagation/sem/acoustoelastic/secondOrderEqn/isotropic/AcousticElasticWaveEquationSEM.hpp
-     wavePropagation/sem/acoustoelastic/secondOrderEqn/isotropic/AcousticElasticWaveEquationSEMKernel.hpp 
+     wavePropagation/sem/acoustoelastic/secondOrderEqn/isotropic/AcousticElasticWaveEquationSEMKernel.hpp
      PARENT_SCOPE )
 
 # Specify solver sources
@@ -39,5 +40,5 @@ set( physicsSolvers_sources
      wavePropagation/sem/elastic/firstOrderEqn/isotropic/ElasticFirstOrderWaveEquationSEM.cpp
      wavePropagation/sem/acoustic/firstOrderEqn/isotropic/AcousticFirstOrderWaveEquationSEM.cpp
      wavePropagation/sem/acoustic/secondOrderEqn/anisotropic/AcousticVTIWaveEquationSEM.cpp
-     wavePropagation/sem/acoustoelastic/secondOrderEqn/isotropic/AcousticElasticWaveEquationSEM.cpp 
+     wavePropagation/sem/acoustoelastic/secondOrderEqn/isotropic/AcousticElasticWaveEquationSEM.cpp
      PARENT_SCOPE)
