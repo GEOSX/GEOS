@@ -357,7 +357,7 @@ private:
    * @brief Initialize all the primary and secondary variables in all the wells
    * @param domain the domain containing the well manager to access individual wells
    */
-  void initializeWells( DomainPartition & domain, real64 const & time_n, real64 const & dt ) override;
+  void initializeWells( DomainPartition & domain, real64 const & time_n ) override;
 
   virtual void setConstitutiveNames( ElementSubRegionBase & subRegion ) const override;
 

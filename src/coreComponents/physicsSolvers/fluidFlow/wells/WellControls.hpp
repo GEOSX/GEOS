@@ -199,11 +199,6 @@ public:
   {
     return m_rateSign * m_targetPhaseRateTable->evaluate( &currentTime );
   }
-  /**
-   * @brief Get the target phase name
-   * @return the target phase name
-   */
-  const string & getTargetPhaseName() const { return m_targetPhaseName; }
 
   /**
    * @brief Get the target mass rate
@@ -214,6 +209,11 @@ public:
     return m_rateSign * m_targetMassRateTable->evaluate( &currentTime );
   }
 
+  /**
+   * @brief Get the target phase name
+   * @return the target phase name
+   */
+  const string & getTargetPhaseName() const { return m_targetPhaseName; }
 
   /**
    * @brief Const accessor for the composition of the injection stream
@@ -276,6 +276,13 @@ public:
    */
   real64 getInitialPressureCoefficient() const { return m_initialPressureCoefficient; }
 
+  /**
+   * @brief set next time step based on tables intervals
+   * @param[in] currentTime the current time
+   * @param[inout] nextDt the time step
+   */
+  void setNextDtFromTables( real64 const currentTime, real64 & nextDt );
+
   ///@}
 
   /**
@@ -334,6 +341,8 @@ public:
 protected:
 
   virtual void postInputInitialization() override;
+
+  void setNextDtFromTable( TableFunction const * table, real64 const currentTime, real64 & nextDt );
 
 private:
 

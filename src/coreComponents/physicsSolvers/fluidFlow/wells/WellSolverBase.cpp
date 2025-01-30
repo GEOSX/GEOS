@@ -61,6 +61,11 @@ WellSolverBase::WellSolverBase( string const & name,
     setInputFlag( dataRepository::InputFlags::OPTIONAL ).
     setDescription( "Write rates into a CSV file" );
 
+  this->registerWrapper( viewKeyStruct::timeStepFromTablesFlagString(), &m_timeStepFromTables ).
+    setApplyDefaultValue( 0 ).
+    setInputFlag( dataRepository::InputFlags::OPTIONAL ).
+    setDescription( "Choose time step to honor rates/bhp tables time intervals" );
+
   addLogLevel< logInfo::WellControl >();
   addLogLevel< logInfo::Crossflow >();
 }
@@ -195,12 +200,12 @@ void WellSolverBase::setupDofs( DomainPartition const & domain,
 }
 
 void WellSolverBase::implicitStepSetup( real64 const & time_n,
-                                        real64 const & dt,
+                                        real64 const & GEOS_UNUSED_PARAM( dt ),
                                         DomainPartition & domain )
 {
   // Initialize the primary and secondary variables for the first time step
 
-  initializeWells( domain, time_n, dt );
+  initializeWells( domain, time_n );
 }
 
 void WellSolverBase::updateState( DomainPartition & domain )
@@ -306,6 +311,31 @@ WellControls & WellSolverBase::getWellControls( WellElementSubRegion const & sub
 WellControls const & WellSolverBase::getWellControls( WellElementSubRegion const & subRegion ) const
 {
   return this->getGroup< WellControls >( subRegion.getWellControlsName());
+}
+
+real64 WellSolverBase::setNextDt( real64 const & currentTime, const real64 & currentDt, geos::DomainPartition & domain )
+{
+  real64 nextDt = PhysicsSolverBase::setNextDt( currentTime, currentDt, domain );
+
+  if( m_timeStepFromTables )
+  {
+    forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
+                                                                 MeshLevel & mesh,
+                                                                 arrayView1d< string const > const & regionNames )
+    {
+      mesh.getElemManager().forElementSubRegions< WellElementSubRegion >( regionNames, [&]( localIndex const,
+                                                                                            WellElementSubRegion & subRegion )
+      {
+        WellControls & wellControls = getWellControls( subRegion );
+        real64 const nextDt_orig = nextDt;
+        wellControls.setNextDtFromTables( currentTime, nextDt );
+        if( m_nonlinearSolverParameters.getLogLevel() > 0 && nextDt < nextDt_orig )
+          GEOS_LOG_RANK_0( GEOS_FMT( "{}: next time step based on tables coordinates = {}", getName(), nextDt ));
+      } );
+    } );
+  }
+
+  return nextDt;
 }
 
 } // namespace geos

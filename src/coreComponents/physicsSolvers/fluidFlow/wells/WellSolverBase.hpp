@@ -255,6 +255,17 @@ public:
                                         DomainPartition & domain ) = 0;
 
   /**
+   * @brief function to set the next time step size
+   * @param[in] currentTime the current time
+   * @param[in] currentDt the current time step size
+   * @param[in] domain the domain object
+   * @return the prescribed time step size
+   */
+  virtual real64 setNextDt( real64 const & currentTime,
+                            real64 const & currentDt,
+                            DomainPartition & domain ) override;
+
+  /**
    * @brief Utility function to keep the well variables during a time step (used in poromechanics simulations)
    * @param[in] keepVariablesConstantDuringInitStep flag to tell the solver to freeze its primary variables during a time step
    * @detail This function is meant to be called by a specific task before/after the initialization step
@@ -267,6 +278,7 @@ public:
     static constexpr char const * fluidNamesString() { return "fluidNames"; }
     static constexpr char const * isThermalString() { return "isThermal"; }
     static constexpr char const * writeCSVFlagString() { return "writeCSV"; }
+    static constexpr char const * timeStepFromTablesFlagString() { return "timeStepFromTables"; }
   };
 
 private:
@@ -292,7 +304,7 @@ protected:
    * @brief Initialize all the primary and secondary variables in all the wells
    * @param domain the domain containing the well manager to access individual wells
    */
-  virtual void initializeWells( DomainPartition & domain, real64 const & time_n, real64 const & dt ) = 0;
+  virtual void initializeWells( DomainPartition & domain, real64 const & time_n ) = 0;
 
   /**
    * @brief Make sure that the well constraints are compatible
@@ -329,6 +341,9 @@ protected:
   /// rates output
   integer m_writeCSV;
   string const m_ratesOutputDir;
+
+  // flag to enable time step selection base on rates/bhp tables coordinates
+  integer m_timeStepFromTables;
 
   /// flag to freeze the initial state during initialization in coupled problems
   integer m_keepVariablesConstantDuringInitStep;

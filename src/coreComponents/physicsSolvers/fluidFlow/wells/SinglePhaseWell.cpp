@@ -121,13 +121,13 @@ string SinglePhaseWell::resElementDofName() const
 }
 
 void SinglePhaseWell::validateWellConstraints( real64 const & time_n,
-                                               real64 const & dt,
+                                               real64 const & GEOS_UNUSED_PARAM( dt ),
                                                WellElementSubRegion const & subRegion )
 {
   WellControls const & wellControls = getWellControls( subRegion );
   WellControls::Control const currentControl = wellControls.getControl();
-  real64 const targetTotalRate = wellControls.getTargetTotalRate( time_n + dt );
-  real64 const targetPhaseRate = wellControls.getTargetPhaseRate( time_n + dt );
+  real64 const targetTotalRate = wellControls.getTargetTotalRate( time_n );
+  real64 const targetPhaseRate = wellControls.getTargetPhaseRate( time_n );
   GEOS_THROW_IF( currentControl == WellControls::Control::PHASEVOLRATE,
                  "WellControls " << wellControls.getDataContext() <<
                  ": Phase rate control is not available for SinglePhaseWell",
@@ -334,18 +334,11 @@ real64 SinglePhaseWell::updateSubRegionState( WellElementSubRegion & subRegion )
   return 0.0;  // change in phasevolume fraction doesnt apply
 }
 
-void SinglePhaseWell::initializeWells( DomainPartition & domain, real64 const & time_n, real64 const & dt )
+void SinglePhaseWell::initializeWells( DomainPartition & domain, real64 const & time_n )
 {
   GEOS_MARK_FUNCTION;
   GEOS_UNUSED_VAR( time_n );
-  GEOS_UNUSED_VAR( dt );
-  // different functionality than for compositional
-  // compositional has better treatment of well initialization in cases where well starts later in sim
-  // logic will be incorporated into single phase in different push
-  if( time_n > 0 )
-  {
-    return;
-  }
+
   // loop over the wells
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
                                                                 MeshLevel & meshLevel,
@@ -381,48 +374,152 @@ void SinglePhaseWell::initializeWells( DomainPartition & domain, real64 const & 
       arrayView1d< real64 const > const & perfGravCoef =
         perforationData.getField< fields::well::gravityCoefficient >();
 
-      // TODO: change the way we access the flowSolver here
-      SinglePhaseBase const & flowSolver = getParent().getGroup< SinglePhaseBase >( getFlowSolverName() );
-      PresInitializationKernel::SinglePhaseFlowAccessors resSinglePhaseFlowAccessors( meshLevel.getElemManager(), flowSolver.getName() );
-      PresInitializationKernel::SingleFluidAccessors resSingleFluidAccessors( meshLevel.getElemManager(), flowSolver.getName() );
 
-      // 1) Loop over all perforations to compute an average density
-      // 2) Initialize the reference pressure
-      // 3) Estimate the pressures in the well elements using the average density
-      PresInitializationKernel::
-        launch( perforationData.size(),
-                subRegion.size(),
-                perforationData.getNumPerforationsGlobal(),
-                wellControls,
-                0.0,   // initialization done at t = 0
-                resSinglePhaseFlowAccessors.get( fields::flow::pressure{} ),
-                resSingleFluidAccessors.get( fields::singlefluid::density{} ),
-                resElementRegion,
-                resElementSubRegion,
-                resElementIndex,
-                perfGravCoef,
-                wellElemGravCoef,
-                wellElemPressure );
+      if( time_n <= 0.0  || (wellControls.isWellOpen( time_n ) && !hasNonZero( connRate ) ) )
+      {
+        // TODO: change the way we access the flowSolver here
+        SinglePhaseBase const & flowSolver = getParent().getGroup< SinglePhaseBase >( getFlowSolverName() );
+        PresInitializationKernel::SinglePhaseFlowAccessors resSinglePhaseFlowAccessors( meshLevel.getElemManager(), flowSolver.getName() );
+        PresInitializationKernel::SingleFluidAccessors resSingleFluidAccessors( meshLevel.getElemManager(), flowSolver.getName() );
 
-      // 4) Recompute the pressure-dependent properties
-      // Note: I am leaving that here because I would like to use the perforationRates (computed in UpdateState)
-      //       to better initialize the rates
-      updateSubRegionState( subRegion );
+        // 1) Loop over all perforations to compute an average density
+        // 2) Initialize the reference pressure
+        // 3) Estimate the pressures in the well elements using the average density
+        PresInitializationKernel::
+          launch( perforationData.size(),
+                  subRegion.size(),
+                  perforationData.getNumPerforationsGlobal(),
+                  wellControls,
+                  0.0, // initialization done at t = 0
+                  resSinglePhaseFlowAccessors.get( fields::flow::pressure{} ),
+                  resSingleFluidAccessors.get( fields::singlefluid::density{} ),
+                  resElementRegion,
+                  resElementSubRegion,
+                  resElementIndex,
+                  perfGravCoef,
+                  wellElemGravCoef,
+                  wellElemPressure );
 
-      string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
-      SingleFluidBase & fluid = subRegion.getConstitutiveModel< SingleFluidBase >( fluidName );
-      arrayView2d< real64 const > const & wellElemDens = fluid.density();
+        // 4) Recompute the pressure-dependent properties
+        // Note: I am leaving that here because I would like to use the perforationRates (computed in UpdateState)
+        //       to better initialize the rates
+        updateSubRegionState( subRegion );
 
-      // 5) Estimate the well rates
-      RateInitializationKernel::launch( subRegion.size(),
-                                        wellControls,
-                                        0.0,   // initialization done at t = 0
-                                        wellElemDens,
-                                        connRate );
+        string const & fluidName = subRegion.getReference< string >( viewKeyStruct::fluidNamesString() );
+        SingleFluidBase & fluid = subRegion.getConstitutiveModel< SingleFluidBase >( fluidName );
+        arrayView2d< real64 const > const & wellElemDens = fluid.density();
+
+        // 5) Estimate the well rates
+        RateInitializationKernel::launch( subRegion.size(),
+                                          wellControls,
+                                          0.0, // initialization done at t = 0
+                                          wellElemDens,
+                                          connRate );
+      }
 
     } );
 
   } );
+}
+void SinglePhaseWell::shutDownWell( real64 const time_n,
+                                    DomainPartition const & domain,
+                                    DofManager const & dofManager,
+                                    CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                                    arrayView1d< real64 > const & localRhs )
+{
+  GEOS_MARK_FUNCTION;
+
+  string const wellDofKey = dofManager.getKey( wellElementDofName() );
+
+  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
+                                                                MeshLevel const & mesh,
+                                                                arrayView1d< string const > const & regionNames )
+  {
+
+    ElementRegionManager const & elemManager = mesh.getElemManager();
+
+    elemManager.forElementSubRegions< WellElementSubRegion >( regionNames,
+                                                              [&]( localIndex const,
+                                                                   WellElementSubRegion const & subRegion )
+    {
+
+      // if the well is open, we don't have to do anything, so we just return
+      WellControls const & wellControls = getWellControls( subRegion );
+      if( wellControls.isWellOpen( time_n ) )
+      {
+        return;
+      }
+
+      globalIndex const rankOffset = dofManager.rankOffset();
+
+      arrayView1d< integer const > const ghostRank =
+        subRegion.getReference< array1d< integer > >( ObjectManagerBase::viewKeyStruct::ghostRankString() );
+      arrayView1d< globalIndex const > const dofNumber =
+        subRegion.getReference< array1d< globalIndex > >( wellDofKey );
+
+      arrayView1d< real64 const > const pres =
+        subRegion.getField< fields::well::pressure >();
+      arrayView1d< real64 const > const connRate =
+        subRegion.getField< fields::well::connectionRate >();
+
+      forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const ei )
+      {
+        if( ghostRank[ei] >= 0 )
+        {
+          return;
+        }
+
+        globalIndex const dofIndex = dofNumber[ei];
+        localIndex const localRow = dofIndex - rankOffset;
+        real64 rhsValue;
+
+        // 4.1. Apply pressure value to the matrix/rhs
+        FieldSpecificationEqual::SpecifyFieldValue( dofIndex,
+                                                    rankOffset,
+                                                    localMatrix,
+                                                    rhsValue,
+                                                    pres[ei],   // freeze the current pressure value
+                                                    pres[ei] );
+        localRhs[localRow] = rhsValue;
+
+        // 4.2. Apply rate value to the matrix/rhs
+        FieldSpecificationEqual::SpecifyFieldValue( dofIndex + 1,
+                                                    rankOffset,
+                                                    localMatrix,
+                                                    rhsValue,
+                                                    connRate[ei],   // freeze the current pressure value
+                                                    connRate[ei] );
+        localRhs[localRow + 1] = rhsValue;
+
+      } );
+    } );
+  } );
+}
+
+void SinglePhaseWell::assembleSystem( real64 const time,
+                                      real64 const dt,
+                                      DomainPartition & domain,
+                                      DofManager const & dofManager,
+                                      CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                                      arrayView1d< real64 > const & localRhs )
+{
+  string const wellDofKey = dofManager.getKey( wellElementDofName());
+
+  // assemble the accumulation term in the mass balance equations
+  assembleAccumulationTerms( time, dt, domain, dofManager, localMatrix, localRhs );
+
+  // then assemble the pressure relations between well elements
+  assemblePressureRelations( time, dt, domain, dofManager, localMatrix, localRhs );
+  // then compute the perforation rates (later assembled by the coupled solver)
+  computePerforationRates( time, dt, domain );
+
+  // then assemble the flux terms in the mass balance equations
+  // get a reference to the degree-of-freedom numbers
+  // then assemble the flux terms in the mass balance equations
+  assembleFluxTerms( time, dt, domain, dofManager, localMatrix, localRhs );
+
+  // then apply a special treatment to the wells that are shut
+  shutDownWell( time, domain, dofManager, localMatrix, localRhs );
 }
 
 void SinglePhaseWell::assembleFluxTerms( real64 const & time_n,
@@ -473,7 +570,7 @@ void SinglePhaseWell::assembleFluxTerms( real64 const & time_n,
 }
 
 void SinglePhaseWell::assemblePressureRelations( real64 const & time_n,
-                                                 real64 const & dt,
+                                                 real64 const & GEOS_UNUSED_PARAM( dt ),
                                                  DomainPartition const & domain,
                                                  DofManager const & dofManager,
                                                  CRSMatrixView< real64, globalIndex const > const & localMatrix,
@@ -521,7 +618,7 @@ void SinglePhaseWell::assemblePressureRelations( real64 const & time_n,
                                         subRegion.isLocallyOwned(),
                                         subRegion.getTopWellElementIndex(),
                                         wellControls,
-                                        time_n + dt,   // controls evaluated with BHP/rate of the end of the time interval
+                                        time_n,   // controls evaluated with BHP/rate of the beginning of the time interval
                                         wellElemDofNumber,
                                         wellElemGravCoef,
                                         nextWellElemIndex,
@@ -536,16 +633,14 @@ void SinglePhaseWell::assemblePressureRelations( real64 const & time_n,
         // Note: if BHP control is not viable, we switch to TOTALVOLRATE
         //       if TOTALVOLRATE is not viable, we switch to BHP
 
-        real64 const timeAtEndOfStep = time_n + dt;
-
         if( wellControls.getControl() == WellControls::Control::BHP )
         {
-          wellControls.switchToTotalRateControl( wellControls.getTargetTotalRate( timeAtEndOfStep ) );
+          wellControls.switchToTotalRateControl( wellControls.getTargetTotalRate( time_n ) );
           GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::WellControl, GEOS_FMT( "Control switch for well {} from BHP constraint to rate constraint", subRegion.getName()) );
         }
         else
         {
-          wellControls.switchToBHPControl( wellControls.getTargetBHP( timeAtEndOfStep ) );
+          wellControls.switchToBHPControl( wellControls.getTargetBHP( time_n ) );
           GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::WellControl, GEOS_FMT( "Control switch for well {} from rate constraint to BHP constraint", subRegion.getName()) );
         }
       }
@@ -739,7 +834,7 @@ SinglePhaseWell::calculateResidualNorm( real64 const & time_n,
                                                    subRegion,
                                                    fluid,
                                                    wellControls,
-                                                   time_n + dt,
+                                                   time_n,
                                                    dt,
                                                    m_nonlinearSolverParameters.m_minNormalizer,
                                                    subRegionResidualNorm );
@@ -936,7 +1031,7 @@ void SinglePhaseWell::implicitStepComplete( real64 const & time_n,
 }
 
 void SinglePhaseWell::printRates( real64 const & time_n,
-                                  real64 const & dt,
+                                  real64 const & GEOS_UNUSED_PARAM( dt ),
                                   DomainPartition & domain )
 {
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
@@ -974,10 +1069,10 @@ void SinglePhaseWell::printRates( real64 const & time_n,
       if( m_writeCSV > 0 )
       {
         outputFile.open( m_ratesOutputDir + "/" + wellControlsName + ".csv", std::ios_base::app );
-        outputFile << time_n + dt;
+        outputFile << time_n;
       }
 
-      if( !wellControls.isWellOpen( time_n + dt ) )
+      if( !wellControls.isWellOpen( time_n ) )
       {
         GEOS_LOG( GEOS_FMT( "{}: well is shut", wellControlsName ) );
         if( outputFile.is_open())

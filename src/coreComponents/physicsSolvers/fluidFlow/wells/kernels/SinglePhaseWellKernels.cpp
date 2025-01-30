@@ -243,7 +243,7 @@ PressureRelationKernel::
           bool const isLocallyOwned,
           localIndex const iwelemControl,
           WellControls const & wellControls,
-          real64 const & timeAtEndOfStep,
+          real64 const & time,
           arrayView1d< globalIndex const > const & wellElemDofNumber,
           arrayView1d< real64 const > const & wellElemGravCoef,
           arrayView1d< localIndex const > const & nextWellElemIndex,
@@ -256,8 +256,8 @@ PressureRelationKernel::
   // static well control data
   bool const isProducer = wellControls.isProducer();
   WellControls::Control const currentControl = wellControls.getControl();
-  real64 const targetBHP = wellControls.getTargetBHP( timeAtEndOfStep );
-  real64 const targetRate = wellControls.getTargetTotalRate( timeAtEndOfStep );
+  real64 const targetBHP = wellControls.getTargetBHP( time );
+  real64 const targetRate = wellControls.getTargetTotalRate( time );
 
   // dynamic well control data
   real64 const & currentBHP =
