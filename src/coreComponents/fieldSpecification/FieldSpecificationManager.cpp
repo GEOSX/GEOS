@@ -217,7 +217,7 @@ void FieldSpecificationManager::applyInitialConditions( MeshLevel & mesh ) const
 {
   this->forSubGroups< FieldSpecificationBase >( [&] ( FieldSpecificationBase const & fs )
   {
-    if( fs.initialCondition() )
+    if( fs.initialCondition() && !fs.isScaling() )
     {
       fs.apply< dataRepository::Group >( mesh,
                                          [&]( FieldSpecificationBase const & bc,
@@ -226,10 +226,28 @@ void FieldSpecificationManager::applyInitialConditions( MeshLevel & mesh ) const
                                               Group & targetGroup,
                                               string const fieldName )
       {
-        bc.applyFieldValue< FieldSpecificationEqual >( targetSet, 0.0, targetGroup, fieldName );
+          bc.applyFieldValue< FieldSpecificationEqual >( targetSet, 0.0, targetGroup, fieldName );
       } );
     }
   } );
 }
 
+void FieldSpecificationManager::applyScalingInitialConditions( MeshLevel & mesh ) const
+{
+  this->forSubGroups< FieldSpecificationBase >( [&] ( FieldSpecificationBase const & fs )
+  {
+    if( fs.initialCondition() && fs.isScaling() )
+    {
+      fs.apply< dataRepository::Group >( mesh,
+                                         [&]( FieldSpecificationBase const & bc,
+                                              string const &,
+                                              SortedArrayView< localIndex const > const & targetSet,
+                                              Group & targetGroup,
+                                              string const fieldName )
+      {
+          bc.applyFieldValue< FieldSpecificationMultiply >( targetSet, 0.0, targetGroup, fieldName );
+      } );
+    }
+  } );
+}
 } /* namespace geos */

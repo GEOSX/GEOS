@@ -1154,6 +1154,7 @@ void ProblemManager::applyInitialConditions()
       if( !meshLevel.isShallowCopy() ) // to avoid messages printed three times
       {
         m_fieldSpecificationManager->validateBoundaryConditions( meshLevel );
+        m_fieldSpecificationManager->applyScalingInitialConditions( meshLevel );// with current implementation, scaling only works with shallow copy mesh levels
       }
       m_fieldSpecificationManager->applyInitialConditions( meshLevel );
     } );

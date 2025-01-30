@@ -392,6 +392,8 @@ public:
     constexpr static char const * beginTimeString() { return "beginTime"; }
     /// @return The key for endTime
     constexpr static char const * endTimeString() { return "endTime"; }
+    /// @return The key for isScaling
+    constexpr static char const * isScalingString() { return "isScaling"; }
   };
 
   /**
@@ -474,6 +476,15 @@ public:
   int initialCondition() const
   {
     return m_initialCondition;
+  }
+
+  /**
+   * Accessor
+   * @return const m_isScaling
+   */
+  int isScaling() const
+  {
+    return m_isScaling;
   }
 
   /**
@@ -590,6 +601,9 @@ private:
 
   /// The name of a function used to turn on and off the boundary condition.
   string m_bcApplicationFunctionName;
+
+  /// Whether or not the boundary condition is a multiplicative scaling of what is already present (from mesh)
+  int m_isScaling;
 
 };
 

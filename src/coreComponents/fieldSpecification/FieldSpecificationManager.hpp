@@ -179,6 +179,12 @@ public:
   void applyInitialConditions( MeshLevel & mesh ) const;
 
   /**
+   * @brief function to apply initial conditions which involve scaling a mesh field
+   * @param mesh the MeshLevel object
+   */
+  void applyScalingInitialConditions( MeshLevel & mesh ) const;
+
+  /**
    * @brief function to validate the application of boundary conditions
    * @param mesh the MeshLevel object
    */
@@ -251,6 +257,7 @@ FieldSpecificationManager::
               Group & targetGroup,
               string const & targetField )
   {
+
     fs.applyFieldValue< FieldSpecificationEqual, POLICY >( targetSet, time, targetGroup, targetField );
     lambda( fs, targetSet );
   } );
