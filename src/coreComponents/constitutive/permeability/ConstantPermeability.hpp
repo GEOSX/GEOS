@@ -74,7 +74,9 @@ public:
 
   struct viewKeyStruct : public PermeabilityBase::viewKeyStruct
   {
-    static constexpr char const * permeabilityComponentsString() { return "permeabilityComponents"; }
+    static constexpr char const * diagonalPermeabilityTensorString() { return "diagonalPermeabilityTensor"; }
+    static constexpr char const * symmetricFullPermeabilityTensorString() { return "symmetricFullPermeabilityTensor"; }
+
   } viewKeys;
 
   virtual void initializeState() const override final;
@@ -85,7 +87,9 @@ protected:
 
 private:
 
-  R1Tensor m_permeabilityComponents;
+  R1Tensor m_diagonalPermeabilityTensor;
+
+  R2SymTensor m_symmetricFullPermeabilityTensor;
 
 };
 

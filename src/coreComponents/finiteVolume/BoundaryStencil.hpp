@@ -205,8 +205,9 @@ BoundaryStencilWrapper::
   auto const compute = [&]
   {
     real64 faceConormal[3];
-    LvArray::tensorOps::hadamardProduct< 3 >( faceConormal, coef, faceNormal );
+    LvArray::tensorOps::Ri_eq_symAijBj< 3 >( faceConormal, coef, faceNormal );
     weight = LvArray::tensorOps::AiBi< 3 >( cellToFace, faceConormal );
+    // Matteo: this one also has to change! 
     LvArray::tensorOps::hadamardProduct< 3 >( dWeight_dCoef, cellToFace, faceNormal );
   };
 

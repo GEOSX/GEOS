@@ -1,0 +1,55 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Solvers
+    gravityVector="{ 0.0, 0.0, 0.0 }">
+    <SinglePhaseFVM
+      name="SinglePhaseFlow"
+      logLevel="1"
+      discretization="singlePhaseTPFA"
+      targetRegions="{ Domain }">
+      <LinearSolverParameters
+        directParallel="0"/>
+    </SinglePhaseFVM>
+  </Solvers>
+
+  <NumericalMethods>
+    <FiniteVolume>
+      <TwoPointFluxApproximation
+        name="singlePhaseTPFA"/>
+    </FiniteVolume>
+  </NumericalMethods>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="Domain"
+      cellBlocks="{ 0_hexahedra, 1_hexahedra, 2_hexahedra }"
+      materialList="{ water, rock }"/>
+  </ElementRegions>
+
+  <FieldSpecifications>
+
+    <FieldSpecification
+      name="initialPressure"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions/Domain"
+      fieldName="pressure"
+      scale="0.0"/>
+
+   <FieldSpecification
+      name="sourceTerm"
+      objectPath="ElementRegions/Domain/0_hexahedra"
+      fieldName="pressure"
+      scale="5e6"
+      setNames="{ all }"/>
+
+   <FieldSpecification
+      name="sinkTerm"
+      objectPath="ElementRegions/Domain/2_hexahedra"
+      fieldName="pressure"
+      scale="-5e6"
+      setNames="{ all }"/>
+  </FieldSpecifications>
+
+</Problem>

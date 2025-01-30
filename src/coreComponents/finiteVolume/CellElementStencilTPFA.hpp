@@ -220,8 +220,9 @@ CellElementStencilTPFAWrapper::
                   real64 (& weight)[1][2],
                   real64 (& dWeight_dVar )[1][2] ) const
 {
+  GEOS_UNUSED_VAR( dCoeff_dVar );
+
   real64 halfWeight[2];
-  real64 dHalfWeight_dVar[2];
 
   // real64 const tolerance = 1e-30 * lengthTolerance; // TODO: choice of constant based on physics?
 
@@ -232,7 +233,6 @@ CellElementStencilTPFAWrapper::
     localIndex const ei  = m_elementIndices[iconn][i];
 
     halfWeight[i] = m_weights[iconn][i];
-    dHalfWeight_dVar[i] = m_weights[iconn][i];
 
     // Proper computation
     real64 faceNormal[3];
@@ -244,42 +244,26 @@ CellElementStencilTPFAWrapper::
 
     real64 faceConormal[3];
     real64 dFaceConormal_dVar[3];
-    LvArray::tensorOps::hadamardProduct< 3 >( faceConormal, coefficient[er][esr][ei][0], faceNormal );
-    LvArray::tensorOps::hadamardProduct< 3 >( dFaceConormal_dVar, dCoeff_dVar[er][esr][ei][0], faceNormal );
+    LvArray::tensorOps::Ri_eq_symAijBj< 3 >( faceConormal, coefficient[er][esr][ei][0], faceNormal );
+    LvArray::tensorOps::Ri_eq_symAijBj< 3 >( dFaceConormal_dVar, dCoeff_dVar[er][esr][ei][0], faceNormal );
     halfWeight[i] *= LvArray::tensorOps::AiBi< 3 >( m_cellToFaceVec[iconn][i], faceConormal );
-    dHalfWeight_dVar[i] *= LvArray::tensorOps::AiBi< 3 >( m_cellToFaceVec[iconn][i], dFaceConormal_dVar );
 
     // correct negative weight issue arising from non-K-orthogonal grids
     if( halfWeight[i] < 0.0 )
     {
-      LvArray::tensorOps::hadamardProduct< 3 >( faceConormal,
-                                                coefficient[er][esr][ei][0],
-                                                m_cellToFaceVec[iconn][i] );
-      LvArray::tensorOps::hadamardProduct< 3 >( dFaceConormal_dVar,
-                                                dCoeff_dVar[er][esr][ei][0],
-                                                m_cellToFaceVec[iconn][i] );
+      LvArray::tensorOps::Ri_eq_symAijBj< 3 >( faceConormal, coefficient[er][esr][ei][0], m_cellToFaceVec[iconn][i] );
+      LvArray::tensorOps::Ri_eq_symAijBj< 3 >( dFaceConormal_dVar, dCoeff_dVar[er][esr][ei][0], m_cellToFaceVec[iconn][i] );
       halfWeight[i] = m_weights[iconn][i];
-      dHalfWeight_dVar[i] = m_weights[iconn][i];
       halfWeight[i] *= LvArray::tensorOps::AiBi< 3 >( m_cellToFaceVec[iconn][i], faceConormal );
-      dHalfWeight_dVar[i] *= LvArray::tensorOps::AiBi< 3 >( m_cellToFaceVec[iconn][i], dFaceConormal_dVar );
     }
   }
 
   // Do harmonic and arithmetic averaging
   real64 const product = halfWeight[0]*halfWeight[1];
-  real64 const sum = halfWeight[0]+halfWeight[1];
+  real64 const sum     = halfWeight[0]+halfWeight[1];
 
   real64 const harmonicWeight   = sum > 0 ? product / sum : 0.0;
   real64 const arithmeticWeight = sum / 2;
-
-  real64 dHarmonicWeight_dVar[2];
-  real64 dArithmeticWeight_dVar[2];
-
-  dHarmonicWeight_dVar[0] = sum > 0 ? (dHalfWeight_dVar[0]*sum*halfWeight[1] - dHalfWeight_dVar[0]*halfWeight[0]*halfWeight[1]) / ( sum*sum ) : 0.0;
-  dHarmonicWeight_dVar[1] = sum > 0 ? (dHalfWeight_dVar[1]*sum*halfWeight[0] - dHalfWeight_dVar[1]*halfWeight[1]*halfWeight[0]) / ( sum*sum ) : 0.0;
-
-  dArithmeticWeight_dVar[0] = dHalfWeight_dVar[0] / 2;
-  dArithmeticWeight_dVar[1] = dHalfWeight_dVar[1] / 2;
 
   real64 const meanPermCoeff = 1.0; //TODO make it a member if it is really necessary
 
@@ -287,10 +271,10 @@ CellElementStencilTPFAWrapper::
   for( localIndex ke = 0; ke < 2; ++ke )
   {
     weight[0][ke] = m_transMultiplier[iconn] * value * (ke == 0 ? 1 : -1);
-
-    real64 const dValue_dVar = meanPermCoeff * dHarmonicWeight_dVar[ke] + (1 - meanPermCoeff) * dArithmeticWeight_dVar[ke];
-    dWeight_dVar[0][ke] = m_transMultiplier[iconn] * dValue_dVar;
   }
+
+  dWeight_dVar[0][0] = 0.0;
+  dWeight_dVar[0][1] = 0.0;
 }
 
 GEOS_HOST_DEVICE

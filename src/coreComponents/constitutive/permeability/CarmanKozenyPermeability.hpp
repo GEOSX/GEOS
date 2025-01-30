@@ -149,7 +149,7 @@ void CarmanKozenyPermeabilityUpdate::compute( real64 const & porosity,
 
   real64 const dPerm_dPorValue = -constant * ( (porosity - 3) *  pow( porosity, 2 ) / pow( (1-porosity), 3 )  );
 
-  for( localIndex i = 0; i < permeability.size(); ++i )
+  for( localIndex i = 0; i < m_anisotropy.size(0); ++i )
   {
     permeability[i] = permValue * m_anisotropy[i];
     dPerm_dPorosity[i] = dPerm_dPorValue * m_anisotropy[i];

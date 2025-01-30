@@ -1,0 +1,63 @@
+<?xml version="1.0" ?>
+
+<Problem>
+
+  <Included>
+    <File name="./incompressible_quarterFiveSpot_base.xml"/>
+  </Included>
+
+  <Mesh>
+    <VTKMesh
+      name="mesh"
+      partitionRefinement="0"
+      file="rotated_domain.vtk"/>
+  </Mesh>
+
+  <Events
+    maxTime="1.0">
+    <PeriodicEvent
+      name="outputs"
+      timeFrequency="1.0"
+      target="/Outputs/vtkRotated"/>
+
+    <PeriodicEvent
+      name="solverApplications"
+      forceDt="1.0"
+      target="/Solvers/SinglePhaseFlow"/>
+
+  </Events>
+
+  <Constitutive>
+    <CompressibleSinglePhaseFluid
+      name="water"
+      defaultDensity="1000"
+      defaultViscosity="0.001"
+      referencePressure="0.0"
+      compressibility="0.0"
+      viscosibility="0.0"/>
+
+    <CompressibleSolidConstantPermeability
+      name="rock"
+      solidModelName="nullSolid"
+      porosityModelName="rockPorosity"
+      permeabilityModelName="rockPerm"/>
+
+    <NullModel
+      name="nullSolid"/>
+
+    <PressurePorosity
+      name="rockPorosity"
+      defaultReferencePorosity="0.05"
+      referencePressure="0.0"
+      compressibility="0.0"/>
+
+    <ConstantPermeability
+      name="rockPerm"
+      symmetricFullPermeabilityTensor="{ 3.424066665E-15, 1.024333977E-15, 1.651599358E-15, -5.759305564E-16, 2.184196809E-15, -3.898099066E-16 }"/>
+  </Constitutive>
+
+  <Outputs>
+    <VTK
+      name="vtkRotated"/>
+  </Outputs>
+</Problem>

@@ -1,0 +1,31 @@
+# vtk DataFile Version 5.0
+vtk domain
+ASCII
+DATASET STRUCTURED_POINTS
+
+FIELD FieldData 1
+CellLabels 2 3 string
+0
+injector
+1
+domain
+2 
+producer
+
+DIMENSIONS 11 11 2
+ORIGIN 0 0 0
+SPACING 1 1 1
+
+CELL_DATA 100
+SCALARS attribute int 1
+LOOKUP_TABLE default
+0 1 1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1 1 1
+1 1 1 1 1 1 1 1 1 2
