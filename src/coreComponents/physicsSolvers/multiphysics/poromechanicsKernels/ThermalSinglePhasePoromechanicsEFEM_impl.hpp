@@ -68,15 +68,14 @@ ThermalSinglePhasePoromechanicsEFEM( NodeManager const & nodeManager,
         fluidModelKey ),
   m_dFluidDensity_dTemperature( embeddedSurfSubRegion.template getConstitutiveModel< constitutive::SingleFluidBase >( elementSubRegion.template getReference< string >(
                                                                                                                         fluidModelKey ) ).dDensity_dTemperature() ),
-  m_fluidInternalEnergy_n( embeddedSurfSubRegion.template getConstitutiveModel< constitutive::SingleFluidBase >( elementSubRegion.template getReference< string >( fluidModelKey ) ).internalEnergy_n() ),
   m_fluidInternalEnergy( embeddedSurfSubRegion.template getConstitutiveModel< constitutive::SingleFluidBase >( elementSubRegion.template getReference< string >( fluidModelKey ) ).internalEnergy() ),
   m_dFluidInternalEnergy_dPressure( embeddedSurfSubRegion.template getConstitutiveModel< constitutive::SingleFluidBase >( elementSubRegion.template getReference< string >(
                                                                                                                             fluidModelKey ) ).dInternalEnergy_dPressure() ),
   m_dFluidInternalEnergy_dTemperature( embeddedSurfSubRegion.template getConstitutiveModel< constitutive::SingleFluidBase >( elementSubRegion.template getReference< string >(
                                                                                                                                fluidModelKey ) ).dInternalEnergy_dTemperature() ),
-  m_temperature_n( embeddedSurfSubRegion.template getField< fields::flow::temperature_n >() ),
   m_temperature( embeddedSurfSubRegion.template getField< fields::flow::temperature >() ),
-  m_matrixTemperature( elementSubRegion.template getField< fields::flow::temperature >() )
+  m_matrixTemperature( elementSubRegion.template getField< fields::flow::temperature >() ),
+  m_energy_n( embeddedSurfSubRegion.template getField< fields::flow::energy_n >() )
 
 {}
 
@@ -176,9 +175,8 @@ complete( localIndex const k,
   localIndex const embSurfIndex = m_cellsToEmbeddedSurfaces[k][0];
   // Energy balance accumulation
   real64 const volume        =  m_elementVolumeFrac( embSurfIndex ) + m_deltaVolume( embSurfIndex );
-  real64 const volume_n      =  m_elementVolumeFrac( embSurfIndex );
   real64 const fluidEnergy   =  m_fluidDensity( embSurfIndex, 0 ) * m_fluidInternalEnergy( embSurfIndex, 0 ) * volume;
-  real64 const fluidEnergy_n =  m_fluidDensity_n( embSurfIndex, 0 ) * m_fluidInternalEnergy_n( embSurfIndex, 0 ) * volume_n;
+  real64 const fluidEnergy_n =  m_energy_n[embSurfIndex];
 
   stack.dFluidMassIncrement_dTemperature =  m_dFluidDensity_dTemperature( embSurfIndex, 0 ) * volume;
 

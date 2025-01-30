@@ -635,8 +635,7 @@ void SinglePhaseBase::implicitStepSetup( real64 const & GEOS_UNUSED_PARAM( time_
     {
       saveConvergedState( subRegion );
 
-      arrayView1d< real64 > const & dVol = subRegion.template getField< fields::flow::deltaVolume >();
-      dVol.zero();
+      applyDeltaVolume( subRegion );
 
       // This should fix NaN density in newly created fracture elements
       updatePorosityAndPermeability( subRegion );
@@ -700,14 +699,7 @@ void SinglePhaseBase::implicitStepComplete( real64 const & time,
       singlePhaseBaseKernels::StatisticsKernel::
         saveDeltaPressure( subRegion.size(), pres, initPres, deltaPres );
 
-      arrayView1d< real64 > const dVol = subRegion.getField< fields::flow::deltaVolume >();
-      arrayView1d< real64 > const vol = subRegion.getReference< array1d< real64 > >( CellElementSubRegion::viewKeyStruct::elementVolumeString() );
-
-      forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const ei )
-      {
-        vol[ei] += dVol[ei];
-        dVol[ei] = 0.0;
-      } );
+      applyDeltaVolume( subRegion );
 
       SingleFluidBase const & fluid =
         getConstitutiveModel< SingleFluidBase >( subRegion, subRegion.template getReference< string >( viewKeyStruct::fluidNamesString() ) );
@@ -1345,6 +1337,17 @@ void SinglePhaseBase::saveConvergedState( ElementSubRegionBase & subRegion ) con
   arrayView1d< real64 const > const mass = subRegion.template getField< fields::flow::mass >();
   arrayView1d< real64 > const mass_n = subRegion.template getField< fields::flow::mass_n >();
   mass_n.setValues< parallelDevicePolicy<> >( mass );
+}
+
+void SinglePhaseBase::applyDeltaVolume( ElementSubRegionBase & subRegion )
+{
+  arrayView1d< real64 > const dVol = subRegion.template getField< fields::flow::deltaVolume >();
+  arrayView1d< real64 > const vol = subRegion.template getReference< array1d< real64 > >( CellElementSubRegion::viewKeyStruct::elementVolumeString());
+  forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const ei )
+  {
+    vol[ei] += dVol[ei];
+    dVol[ei] = 0.0;
+  } );
 }
 
 } /* namespace geos */

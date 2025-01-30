@@ -372,6 +372,8 @@ protected:
    */
   virtual void saveConvergedState( ElementSubRegionBase & subRegion ) const override;
 
+  void applyDeltaVolume( ElementSubRegionBase & subRegion );
+
   /**
    * @brief Structure holding views into fluid properties used by the base solver.
    */
