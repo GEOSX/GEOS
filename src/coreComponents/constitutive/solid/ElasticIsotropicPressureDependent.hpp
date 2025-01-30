@@ -48,7 +48,9 @@ public:
    * @param[in] refStrainVol        The value of the volumetric strain data for each element.
    * @param[in] recompressionIndex  The ArrayView holding the recompression index data for each element.
    * @param[in] shearModulus        The ArrayView holding the shear modulus data for each element.
-   * @param[in] thermalExpansionCoefficient The ArrayView holding the thermal expansion coefficient data for each element.
+   * @param[in] thermalExpansionCoefficient The ArrayView holding the thermal expansion coefficient (TEC) data for each element.
+   * @param[in] dThermalExpansionCoefficient_dTemperature The derivative of TEC w.r.t. temperature.
+   * @param[in] referenceTemperature The reference temperature at which the default TEC is defined.
    * @param[in] newStress           The ArrayView holding the new stress data for each quadrature point.
    * @param[in] oldStress           The ArrayView holding the old stress data from the previous converged step for each quadrature point.
    * @param[in] disableInelasticity Flag to disable plastic response for inelastic models
@@ -58,10 +60,17 @@ public:
                                             arrayView1d< real64 const > const & recompressionIndex,
                                             arrayView1d< real64 const > const & shearModulus,
                                             arrayView1d< real64 const > const & thermalExpansionCoefficient,
+                                            real64 const & dThermalExpansionCoefficient_dTemperature,
+                                            real64 const & referenceTemperature,
                                             arrayView3d< real64, solid::STRESS_USD > const & newStress,
                                             arrayView3d< real64, solid::STRESS_USD > const & oldStress,
                                             bool const & disableInelasticity ):
-    SolidBaseUpdates( newStress, oldStress, thermalExpansionCoefficient, disableInelasticity ),
+    SolidBaseUpdates( newStress,
+                      oldStress,
+                      thermalExpansionCoefficient,
+                      dThermalExpansionCoefficient_dTemperature,
+                      referenceTemperature,
+                      disableInelasticity ),
     m_refPressure( refPressure ),
     m_refStrainVol( refStrainVol ),
     m_recompressionIndex( recompressionIndex ),
@@ -582,6 +591,8 @@ public:
                                                        m_recompressionIndex,
                                                        m_shearModulus,
                                                        m_thermalExpansionCoefficient,
+                                                       m_dThermalExpansionCoefficient_dTemperature,
+                                                       m_referenceTemperature,
                                                        m_newStress,
                                                        m_oldStress,
                                                        m_disableInelasticity );
@@ -593,6 +604,8 @@ public:
                                                        m_recompressionIndex,
                                                        m_shearModulus,
                                                        m_thermalExpansionCoefficient,
+                                                       m_dThermalExpansionCoefficient_dTemperature,
+                                                       m_referenceTemperature,
                                                        arrayView3d< real64, solid::STRESS_USD >(),
                                                        arrayView3d< real64, solid::STRESS_USD >(),
                                                        m_disableInelasticity );
@@ -616,6 +629,8 @@ public:
                           m_recompressionIndex,
                           m_shearModulus,
                           m_thermalExpansionCoefficient,
+                          m_dThermalExpansionCoefficient_dTemperature,
+                          m_referenceTemperature,
                           m_newStress,
                           m_oldStress,
                           m_disableInelasticity );

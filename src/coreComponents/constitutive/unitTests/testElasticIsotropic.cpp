@@ -215,3 +215,17 @@ TEST( ElasticIsotropicTests, testStateUpdatePoint )
     EXPECT_DOUBLE_EQ( stress( 0, 0, 5 ), 0 );
   }
 }
+
+TEST( ElasticIsotropicTests, testThermalExpansionAndTemperature )
+{
+  conduit::Node node;
+  dataRepository::Group rootGroup( "root", node );
+  ElasticIsotropic constitutiveModel( "model", &rootGroup );
+
+  // Create kernel updates
+  ElasticIsotropicUpdates updates = constitutiveModel.createKernelUpdates();
+
+  // Test that the default TEC derivative w.r.t. temperature and the default reference temperature are nil.
+  EXPECT_DOUBLE_EQ( updates.m_dThermalExpansionCoefficient_dTemperature, 0 );
+  EXPECT_DOUBLE_EQ( updates.m_referenceTemperature, 0 );
+}

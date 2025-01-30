@@ -45,8 +45,11 @@ public:
    * @brief Constructor
    * @param[in] bulkModulus The ArrayView holding the bulk modulus data for each element.
    * @param[in] shearModulus The ArrayView holding the shear modulus data for each element.
-   * @param[in] thermalExpansionCoefficient The ArrayView holding the thermal expansion coefficient data for each element.
-   * @param[in] stress The ArrayView holding the stress data for each quadrature point.
+   * @param[in] thermalExpansionCoefficient The ArrayView holding the thermal expansion coefficient (TEC) data for each element.
+   * @param[in] dThermalExpansionCoefficient_dTemperature The derivative of TEC w.r.t. temperature.
+   * @param[in] referenceTemperature The reference temperature at which the default TEC is defined.
+   * @param[in] newStress The ArrayView holding the new stress data for each quadrature point.
+   * @param[in] oldStress The ArrayView holding the old stress data for each quadrature point.
    */
   DruckerPragerExtendedUpdates( arrayView1d< real64 const > const & initialFriction,
                                 arrayView1d< real64 const > const & residualFriction,
@@ -58,10 +61,19 @@ public:
                                 arrayView1d< real64 const > const & bulkModulus,
                                 arrayView1d< real64 const > const & shearModulus,
                                 arrayView1d< real64 const > const & thermalExpansionCoefficient,
+                                real64 const & dThermalExpansionCoefficient_dTemperature,
+                                real64 const & referenceTemperature,
                                 arrayView3d< real64, solid::STRESS_USD > const & newStress,
                                 arrayView3d< real64, solid::STRESS_USD > const & oldStress,
                                 bool const & disableInelasticity ):
-    ElasticIsotropicUpdates( bulkModulus, shearModulus, thermalExpansionCoefficient, newStress, oldStress, disableInelasticity ),
+    ElasticIsotropicUpdates( bulkModulus,
+                             shearModulus,
+                             thermalExpansionCoefficient,
+                             dThermalExpansionCoefficient_dTemperature,
+                             referenceTemperature,
+                             newStress,
+                             oldStress,
+                             disableInelasticity ),
     m_initialFriction( initialFriction ),
     m_residualFriction( residualFriction ),
     m_dilationRatio( dilationRatio ),
@@ -472,6 +484,8 @@ public:
                                          m_bulkModulus,
                                          m_shearModulus,
                                          m_thermalExpansionCoefficient,
+                                         m_dThermalExpansionCoefficient_dTemperature,
+                                         m_referenceTemperature,
                                          m_newStress,
                                          m_oldStress,
                                          m_disableInelasticity );
@@ -498,6 +512,8 @@ public:
                           m_bulkModulus,
                           m_shearModulus,
                           m_thermalExpansionCoefficient,
+                          m_dThermalExpansionCoefficient_dTemperature,
+                          m_referenceTemperature,
                           m_newStress,
                           m_oldStress,
                           m_disableInelasticity );

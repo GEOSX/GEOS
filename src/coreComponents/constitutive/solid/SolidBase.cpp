@@ -60,6 +60,20 @@ SolidBase::SolidBase( string const & name, Group * const parent ):
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "Default Linear Thermal Expansion Coefficient of the Solid Rock Frame" );
 
+  registerWrapper( viewKeyStruct::dThermalExpansionCoefficient_dTemperatureString(), &m_dThermalExpansionCoefficient_dTemperature ).
+    setApplyDefaultValue( 0.0 ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Derivative of the Thermal Expansion Coefficient of the Solid Rock Frame w.r.t. temperature" );
+
+  registerWrapper( viewKeyStruct::referenceTemperatureString(), &m_referenceTemperature ).
+    setApplyDefaultValue( 0.0 ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Reference temperature at which the default Thermal Expansion Coefficient is defined" );
+
+  registerWrapper( viewKeyStruct::drainedTECTableNameString(), &m_drainedTECTableName ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Name of the Thermal Expansion Coefficient table" );
+
   registerWrapper( viewKeyStruct::thermalExpansionCoefficientString(), &m_thermalExpansionCoefficient ).
     setApplyDefaultValue( -1.0 ). // will be overwritten
     setDescription( "Linear Thermal Expansion Coefficient Field" );

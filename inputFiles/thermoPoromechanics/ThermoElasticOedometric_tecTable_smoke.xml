@@ -1,0 +1,47 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Included>
+    <File name="./ThermoElasticOedometric_tecTable_base.xml" />
+  </Included>
+
+  <Mesh>
+    <InternalMesh
+      name="mesh1"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0, 0.1 }"
+      yCoords="{ 0, 0.1 }"
+      zCoords="{ 0, 0.1 }"
+      nx="{ 2 }"
+      ny="{ 2 }"
+      nz="{ 2 }"
+      cellBlockNames="{ rock }"/>
+  </Mesh>
+
+  <ElementRegions>
+    <CellElementRegion
+      name="rock"
+      cellBlocks="{ rock }"
+      materialList="{ fluid, rock_tecTable, rockThermalCond }"/>
+  </ElementRegions>
+
+  <Events
+    maxTime="1e4">
+
+    <PeriodicEvent
+      name="outputs"
+      timeFrequency="1e4"
+      target="/Outputs/vtkOutput"/>
+
+    <PeriodicEvent
+      name="solverApplications"
+      maxEventDt="1e3"
+      target="/Solvers/thermoElasticSolver"/>
+
+    <PeriodicEvent
+      name="restarts"
+      timeFrequency="5e3"
+      target="/Outputs/restartOutput"/>
+  </Events>
+
+</Problem>

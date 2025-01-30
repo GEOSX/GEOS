@@ -53,16 +53,22 @@ protected:
    * @brief constructor
    * @param[in] newStress The new stress data from the constitutive model class.
    * @param[in] oldStress The old stress data from the constitutive model class.
-   * @param[in] thermalExpansionCoefficient The ArrayView holding the thermal expansion coefficient data for each element.
-   * @param[in] disableInelasticity Flag to disable inelastic response
+   * @param[in] thermalExpansionCoefficient The ArrayView holding the thermal expansion coefficient (TEC) data for each element.
+   * @param[in] dThermalExpansionCoefficient_dTemperature The derivative of TEC w.r.t. temperature.
+   * @param[in] referenceTemperature The reference temperature at which the default TEC is defined.
+   * @param[in] disableInelasticity Flag to disable inelastic response.
    */
   SolidBaseUpdates( arrayView3d< real64, solid::STRESS_USD > const & newStress,
                     arrayView3d< real64, solid::STRESS_USD > const & oldStress,
                     arrayView1d< real64 const > const & thermalExpansionCoefficient,
+                    real64 const & dThermalExpansionCoefficient_dTemperature,
+                    real64 const & referenceTemperature,
                     const bool & disableInelasticity ):
     m_newStress( newStress ),
     m_oldStress( oldStress ),
     m_thermalExpansionCoefficient( thermalExpansionCoefficient ),
+    m_dThermalExpansionCoefficient_dTemperature( dThermalExpansionCoefficient_dTemperature ),
+    m_referenceTemperature( referenceTemperature ),
     m_disableInelasticity ( disableInelasticity )
   {}
 
@@ -98,6 +104,12 @@ public:
   /// A reference to the ArrayView holding the thermal expansion coefficient for each element.
   arrayView1d< real64 const > const m_thermalExpansionCoefficient;
 
+  /// The derivative of the thermal expansion coefficient w.r.t. temperature.
+  real64 m_dThermalExpansionCoefficient_dTemperature = 0;
+
+  /// The reference temperature at which default thermal expansion coefficient is defined.
+  real64 m_referenceTemperature = 0;
+
   /// Flag to disable inelasticity
   const bool m_disableInelasticity;
 
@@ -121,9 +133,29 @@ public:
    * @return the thermalExpansionCoefficient of element k
    */
   GEOS_HOST_DEVICE
-  real64 getThermalExpansionCoefficient( localIndex const k ) const
+  virtual real64 getThermalExpansionCoefficient( localIndex const k ) const
   {
     return m_thermalExpansionCoefficient[k];
+  }
+
+  /**
+   * @brief Get derivative of Thermal Expansion Coefficient w.r.t. temperature
+   * @return the derivative of Thermal Expansion Coefficient w.r.t. temperature
+   */
+  GEOS_HOST_DEVICE
+  virtual real64 getDThermalExpansionCoefficient_dTemperature() const
+  {
+    return m_dThermalExpansionCoefficient_dTemperature;
+  }
+
+  /**
+   * @brief Get reference temperature
+   * @return the reference temperature
+   */
+  GEOS_HOST_DEVICE
+  virtual real64 getReferenceTemperature() const
+  {
+    return m_referenceTemperature;
   }
 
   /**
@@ -576,13 +608,17 @@ public:
     static constexpr char const * defaultDensityString() { return "defaultDensity"; }  ///< Default density key
     static constexpr char const * thermalExpansionCoefficientString() { return "thermalExpansionCoefficient"; } // Thermal expansion
                                                                                                                 // coefficient key
-    static constexpr char const * defaultThermalExpansionCoefficientString() { return "defaultDrainedLinearTEC"; } // Default
-                                                                                                                   // drained
-                                                                                                                   // linear
-                                                                                                                   // thermal
-                                                                                                                   // expansion
-                                                                                                                   // coefficient
-                                                                                                                   // key
+    static constexpr char const * defaultThermalExpansionCoefficientString() { return "defaultDrainedTEC"; } // Default
+                                                                                                             // drained
+                                                                                                             // thermal
+                                                                                                             // expansion
+                                                                                                             // coefficient
+                                                                                                             // key
+
+    static constexpr char const * dThermalExpansionCoefficient_dTemperatureString() { return "dDrainedTEC_dT"; }
+    static constexpr char const * referenceTemperatureString() { return "referenceTemperature"; }
+
+    static constexpr char const * drainedTECTableNameString() { return "drainedTECTableName"; }
   };
 
   /**
@@ -693,6 +729,15 @@ public:
     return out.toViewConst();
   }
 
+  /**
+   * @brief Get Thermal Expansion Coefficient table name
+   * @return the Thermal Expansion Coefficient table name
+   */
+  virtual char const * getDrainedTECTableName() const
+  {
+    return m_drainedTECTableName.c_str();
+  }
+
 protected:
 
   /// Post-process XML input
@@ -715,6 +760,15 @@ protected:
 
   /// The default value of the thermal expansion coefficient for any new allocations.
   real64 m_defaultThermalExpansionCoefficient = 0;
+
+  /// The derivative of the thermal expansion coefficient w.r.t. temperature.
+  real64 m_dThermalExpansionCoefficient_dTemperature = 0;
+
+  /// The reference temperature at which default thermal expansion coefficient is defined.
+  real64 m_referenceTemperature = 0;
+
+  /// The drained thermal expansion coefficient (TEC) table name.
+  string m_drainedTECTableName;
 
   /// Flag to disable inelasticity (plasticity, damage, etc.)
   bool m_disableInelasticity = false;

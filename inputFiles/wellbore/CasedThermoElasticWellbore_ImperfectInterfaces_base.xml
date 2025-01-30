@@ -240,21 +240,21 @@
       defaultDensity="7500"
       defaultBulkModulus="159.4202899e9"
       defaultShearModulus="86.61417323e9"
-      defaultDrainedLinearTEC="1.2e-5"/>
+      defaultDrainedTEC="1.2e-5"/>
 
     <ElasticIsotropic
       name="cementSolid"
       defaultDensity="2700"
       defaultBulkModulus="2.298850575e9"
       defaultShearModulus="1.652892562e9"
-      defaultDrainedLinearTEC="2.0e-5"/>
+      defaultDrainedTEC="2.0e-5"/>
 
     <ElasticIsotropic
       name="rockSolid"
       defaultDensity="2700"
       defaultBulkModulus="5.535714286e9"
       defaultShearModulus="3.81147541e9"
-      defaultDrainedLinearTEC="2.0e-5"/>
+      defaultDrainedTEC="2.0e-5"/>
     <!-- SPHINX_ThermoElasticPropertiesEnd -->
     
   </Constitutive>

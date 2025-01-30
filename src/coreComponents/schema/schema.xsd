@@ -5412,20 +5412,26 @@ The expected format is "{ waterMax, oilMax }", in that order-->
 		<xsd:attribute name="compressiveStrength" type="real64" use="required" />
 		<!--crackSpeed => Crack speed-->
 		<xsd:attribute name="crackSpeed" type="real64" use="required" />
+		<!--dDrainedTEC_dT => Derivative of the Thermal Expansion Coefficient of the Solid Rock Frame w.r.t. temperature [1/K^2]-->
+		<xsd:attribute name="dDrainedTEC_dT" type="real64" default="0" />
 		<!--defaultBulkModulus => Default Bulk Modulus Parameter-->
 		<xsd:attribute name="defaultBulkModulus" type="real64" default="-1" />
-		<!--defaultDensity => Default Material Density-->
+		<!--defaultDensity => Default Material Density [Kg/cm^3]-->
 		<xsd:attribute name="defaultDensity" type="real64" use="required" />
-		<!--defaultDrainedLinearTEC => Default Linear Thermal Expansion Coefficient of the Solid Rock Frame-->
-		<xsd:attribute name="defaultDrainedLinearTEC" type="real64" default="0" />
+		<!--defaultDrainedTEC => Default Linear Thermal Expansion Coefficient of the Solid Rock Frame [1/K]-->
+		<xsd:attribute name="defaultDrainedTEC" type="real64" default="0" />
 		<!--defaultPoissonRatio => Default Poisson's Ratio-->
 		<xsd:attribute name="defaultPoissonRatio" type="real64" default="-1" />
 		<!--defaultShearModulus => Default Shear Modulus Parameter-->
 		<xsd:attribute name="defaultShearModulus" type="real64" default="-1" />
 		<!--defaultYoungModulus => Default Young's Modulus-->
 		<xsd:attribute name="defaultYoungModulus" type="real64" default="-1" />
+		<!--drainedTECTableName => Name of the Thermal Expansion Coefficient table-->
+		<xsd:attribute name="drainedTECTableName" type="string" default="" />
 		<!--maximumStrength => Maximum theoretical strength-->
 		<xsd:attribute name="maximumStrength" type="real64" use="required" />
+		<!--referenceTemperature => Reference temperature at which the default Thermal Expansion Coefficient is defined [K]-->
+		<xsd:attribute name="referenceTemperature" type="real64" default="0" />
 		<!--tensileStrength => Tensile strength-->
 		<xsd:attribute name="tensileStrength" type="real64" use="required" />
 		<!--name => A name is required for any non-unique nodes-->
@@ -5721,12 +5727,14 @@ The expected format is "{ waterMax, oilMax }", in that order-->
 		<xsd:attribute name="criticalFractureEnergy" type="real64" use="required" />
 		<!--criticalStrainEnergy => Critical stress in a 1d tension test-->
 		<xsd:attribute name="criticalStrainEnergy" type="real64" use="required" />
+		<!--dDrainedTEC_dT => Derivative of the Thermal Expansion Coefficient of the Solid Rock Frame w.r.t. temperature [1/K^2]-->
+		<xsd:attribute name="dDrainedTEC_dT" type="real64" default="0" />
 		<!--defaultBulkModulus => Default Bulk Modulus Parameter-->
 		<xsd:attribute name="defaultBulkModulus" type="real64" default="-1" />
-		<!--defaultDensity => Default Material Density-->
+		<!--defaultDensity => Default Material Density [Kg/cm^3]-->
 		<xsd:attribute name="defaultDensity" type="real64" use="required" />
-		<!--defaultDrainedLinearTEC => Default Linear Thermal Expansion Coefficient of the Solid Rock Frame-->
-		<xsd:attribute name="defaultDrainedLinearTEC" type="real64" default="0" />
+		<!--defaultDrainedTEC => Default Linear Thermal Expansion Coefficient of the Solid Rock Frame [1/K]-->
+		<xsd:attribute name="defaultDrainedTEC" type="real64" default="0" />
 		<!--defaultPoissonRatio => Default Poisson's Ratio-->
 		<xsd:attribute name="defaultPoissonRatio" type="real64" default="-1" />
 		<!--defaultShearModulus => Default Shear Modulus Parameter-->
@@ -5737,10 +5745,14 @@ The expected format is "{ waterMax, oilMax }", in that order-->
 		<xsd:attribute name="degradationLowerLimit" type="real64" default="0" />
 		<!--deltaCoefficient => Coefficient in the calculation of the external driving force-->
 		<xsd:attribute name="deltaCoefficient" type="real64" default="-1" />
+		<!--drainedTECTableName => Name of the Thermal Expansion Coefficient table-->
+		<xsd:attribute name="drainedTECTableName" type="string" default="" />
 		<!--extDrivingForceFlag => Whether to have external driving force. Can be 0 or 1-->
 		<xsd:attribute name="extDrivingForceFlag" type="integer" default="0" />
 		<!--lengthScale => Length scale l in the phase-field equation-->
 		<xsd:attribute name="lengthScale" type="real64" use="required" />
+		<!--referenceTemperature => Reference temperature at which the default Thermal Expansion Coefficient is defined [K]-->
+		<xsd:attribute name="referenceTemperature" type="real64" default="0" />
 		<!--tensileStrength => Tensile strength from the uniaxial tension test-->
 		<xsd:attribute name="tensileStrength" type="real64" default="0" />
 		<!--name => A name is required for any non-unique nodes-->
@@ -5753,12 +5765,14 @@ The expected format is "{ waterMax, oilMax }", in that order-->
 		<xsd:attribute name="criticalFractureEnergy" type="real64" use="required" />
 		<!--criticalStrainEnergy => Critical stress in a 1d tension test-->
 		<xsd:attribute name="criticalStrainEnergy" type="real64" use="required" />
+		<!--dDrainedTEC_dT => Derivative of the Thermal Expansion Coefficient of the Solid Rock Frame w.r.t. temperature [1/K^2]-->
+		<xsd:attribute name="dDrainedTEC_dT" type="real64" default="0" />
 		<!--defaultBulkModulus => Default Bulk Modulus Parameter-->
 		<xsd:attribute name="defaultBulkModulus" type="real64" default="-1" />
-		<!--defaultDensity => Default Material Density-->
+		<!--defaultDensity => Default Material Density [Kg/cm^3]-->
 		<xsd:attribute name="defaultDensity" type="real64" use="required" />
-		<!--defaultDrainedLinearTEC => Default Linear Thermal Expansion Coefficient of the Solid Rock Frame-->
-		<xsd:attribute name="defaultDrainedLinearTEC" type="real64" default="0" />
+		<!--defaultDrainedTEC => Default Linear Thermal Expansion Coefficient of the Solid Rock Frame [1/K]-->
+		<xsd:attribute name="defaultDrainedTEC" type="real64" default="0" />
 		<!--defaultPoissonRatio => Default Poisson's Ratio-->
 		<xsd:attribute name="defaultPoissonRatio" type="real64" default="-1" />
 		<!--defaultShearModulus => Default Shear Modulus Parameter-->
@@ -5769,10 +5783,14 @@ The expected format is "{ waterMax, oilMax }", in that order-->
 		<xsd:attribute name="degradationLowerLimit" type="real64" default="0" />
 		<!--deltaCoefficient => Coefficient in the calculation of the external driving force-->
 		<xsd:attribute name="deltaCoefficient" type="real64" default="-1" />
+		<!--drainedTECTableName => Name of the Thermal Expansion Coefficient table-->
+		<xsd:attribute name="drainedTECTableName" type="string" default="" />
 		<!--extDrivingForceFlag => Whether to have external driving force. Can be 0 or 1-->
 		<xsd:attribute name="extDrivingForceFlag" type="integer" default="0" />
 		<!--lengthScale => Length scale l in the phase-field equation-->
 		<xsd:attribute name="lengthScale" type="real64" use="required" />
+		<!--referenceTemperature => Reference temperature at which the default Thermal Expansion Coefficient is defined [K]-->
+		<xsd:attribute name="referenceTemperature" type="real64" default="0" />
 		<!--tensileStrength => Tensile strength from the uniaxial tension test-->
 		<xsd:attribute name="tensileStrength" type="real64" default="0" />
 		<!--name => A name is required for any non-unique nodes-->
@@ -5785,12 +5803,14 @@ The expected format is "{ waterMax, oilMax }", in that order-->
 		<xsd:attribute name="criticalFractureEnergy" type="real64" use="required" />
 		<!--criticalStrainEnergy => Critical stress in a 1d tension test-->
 		<xsd:attribute name="criticalStrainEnergy" type="real64" use="required" />
+		<!--dDrainedTEC_dT => Derivative of the Thermal Expansion Coefficient of the Solid Rock Frame w.r.t. temperature [1/K^2]-->
+		<xsd:attribute name="dDrainedTEC_dT" type="real64" default="0" />
 		<!--defaultBulkModulus => Default Bulk Modulus Parameter-->
 		<xsd:attribute name="defaultBulkModulus" type="real64" default="-1" />
-		<!--defaultDensity => Default Material Density-->
+		<!--defaultDensity => Default Material Density [Kg/cm^3]-->
 		<xsd:attribute name="defaultDensity" type="real64" use="required" />
-		<!--defaultDrainedLinearTEC => Default Linear Thermal Expansion Coefficient of the Solid Rock Frame-->
-		<xsd:attribute name="defaultDrainedLinearTEC" type="real64" default="0" />
+		<!--defaultDrainedTEC => Default Linear Thermal Expansion Coefficient of the Solid Rock Frame [1/K]-->
+		<xsd:attribute name="defaultDrainedTEC" type="real64" default="0" />
 		<!--defaultPoissonRatio => Default Poisson's Ratio-->
 		<xsd:attribute name="defaultPoissonRatio" type="real64" default="-1" />
 		<!--defaultShearModulus => Default Shear Modulus Parameter-->
@@ -5801,10 +5821,14 @@ The expected format is "{ waterMax, oilMax }", in that order-->
 		<xsd:attribute name="degradationLowerLimit" type="real64" default="0" />
 		<!--deltaCoefficient => Coefficient in the calculation of the external driving force-->
 		<xsd:attribute name="deltaCoefficient" type="real64" default="-1" />
+		<!--drainedTECTableName => Name of the Thermal Expansion Coefficient table-->
+		<xsd:attribute name="drainedTECTableName" type="string" default="" />
 		<!--extDrivingForceFlag => Whether to have external driving force. Can be 0 or 1-->
 		<xsd:attribute name="extDrivingForceFlag" type="integer" default="0" />
 		<!--lengthScale => Length scale l in the phase-field equation-->
 		<xsd:attribute name="lengthScale" type="real64" use="required" />
+		<!--referenceTemperature => Reference temperature at which the default Thermal Expansion Coefficient is defined [K]-->
+		<xsd:attribute name="referenceTemperature" type="real64" default="0" />
 		<!--tensileStrength => Tensile strength from the uniaxial tension test-->
 		<xsd:attribute name="tensileStrength" type="real64" default="0" />
 		<!--name => A name is required for any non-unique nodes-->
@@ -5843,14 +5867,16 @@ For instance, if "oil" is before "gas" in "phaseNames", the table order should b
 		<xsd:attribute name="name" type="groupName" use="required" />
 	</xsd:complexType>
 	<xsd:complexType name="DelftEggType">
+		<!--dDrainedTEC_dT => Derivative of the Thermal Expansion Coefficient of the Solid Rock Frame w.r.t. temperature [1/K^2]-->
+		<xsd:attribute name="dDrainedTEC_dT" type="real64" default="0" />
 		<!--defaultBulkModulus => Default Bulk Modulus Parameter-->
 		<xsd:attribute name="defaultBulkModulus" type="real64" default="-1" />
 		<!--defaultCslSlope => Slope of the critical state line-->
 		<xsd:attribute name="defaultCslSlope" type="real64" default="1" />
-		<!--defaultDensity => Default Material Density-->
+		<!--defaultDensity => Default Material Density [Kg/cm^3]-->
 		<xsd:attribute name="defaultDensity" type="real64" use="required" />
-		<!--defaultDrainedLinearTEC => Default Linear Thermal Expansion Coefficient of the Solid Rock Frame-->
-		<xsd:attribute name="defaultDrainedLinearTEC" type="real64" default="0" />
+		<!--defaultDrainedTEC => Default Linear Thermal Expansion Coefficient of the Solid Rock Frame [1/K]-->
+		<xsd:attribute name="defaultDrainedTEC" type="real64" default="0" />
 		<!--defaultPoissonRatio => Default Poisson's Ratio-->
 		<xsd:attribute name="defaultPoissonRatio" type="real64" default="-1" />
 		<!--defaultPreConsolidationPressure => Initial preconsolidation pressure-->
@@ -5865,20 +5891,26 @@ For instance, if "oil" is before "gas" in "phaseNames", the table order should b
 		<xsd:attribute name="defaultVirginCompressionIndex" type="real64" default="0.005" />
 		<!--defaultYoungModulus => Default Young's Modulus-->
 		<xsd:attribute name="defaultYoungModulus" type="real64" default="-1" />
+		<!--drainedTECTableName => Name of the Thermal Expansion Coefficient table-->
+		<xsd:attribute name="drainedTECTableName" type="string" default="" />
+		<!--referenceTemperature => Reference temperature at which the default Thermal Expansion Coefficient is defined [K]-->
+		<xsd:attribute name="referenceTemperature" type="real64" default="0" />
 		<!--name => A name is required for any non-unique nodes-->
 		<xsd:attribute name="name" type="groupName" use="required" />
 	</xsd:complexType>
 	<xsd:complexType name="DruckerPragerType">
+		<!--dDrainedTEC_dT => Derivative of the Thermal Expansion Coefficient of the Solid Rock Frame w.r.t. temperature [1/K^2]-->
+		<xsd:attribute name="dDrainedTEC_dT" type="real64" default="0" />
 		<!--defaultBulkModulus => Default Bulk Modulus Parameter-->
 		<xsd:attribute name="defaultBulkModulus" type="real64" default="-1" />
 		<!--defaultCohesion => Initial cohesion-->
 		<xsd:attribute name="defaultCohesion" type="real64" default="0" />
-		<!--defaultDensity => Default Material Density-->
+		<!--defaultDensity => Default Material Density [Kg/cm^3]-->
 		<xsd:attribute name="defaultDensity" type="real64" use="required" />
 		<!--defaultDilationAngle => Dilation angle (degrees)-->
 		<xsd:attribute name="defaultDilationAngle" type="real64" default="30" />
-		<!--defaultDrainedLinearTEC => Default Linear Thermal Expansion Coefficient of the Solid Rock Frame-->
-		<xsd:attribute name="defaultDrainedLinearTEC" type="real64" default="0" />
+		<!--defaultDrainedTEC => Default Linear Thermal Expansion Coefficient of the Solid Rock Frame [1/K]-->
+		<xsd:attribute name="defaultDrainedTEC" type="real64" default="0" />
 		<!--defaultFrictionAngle => Friction angle (degrees)-->
 		<xsd:attribute name="defaultFrictionAngle" type="real64" default="30" />
 		<!--defaultHardeningRate => Cohesion hardening/softening rate-->
@@ -5889,30 +5921,42 @@ For instance, if "oil" is before "gas" in "phaseNames", the table order should b
 		<xsd:attribute name="defaultShearModulus" type="real64" default="-1" />
 		<!--defaultYoungModulus => Default Young's Modulus-->
 		<xsd:attribute name="defaultYoungModulus" type="real64" default="-1" />
+		<!--drainedTECTableName => Name of the Thermal Expansion Coefficient table-->
+		<xsd:attribute name="drainedTECTableName" type="string" default="" />
+		<!--referenceTemperature => Reference temperature at which the default Thermal Expansion Coefficient is defined [K]-->
+		<xsd:attribute name="referenceTemperature" type="real64" default="0" />
 		<!--name => A name is required for any non-unique nodes-->
 		<xsd:attribute name="name" type="groupName" use="required" />
 	</xsd:complexType>
 	<xsd:complexType name="ElasticIsotropicType">
+		<!--dDrainedTEC_dT => Derivative of the Thermal Expansion Coefficient of the Solid Rock Frame w.r.t. temperature [1/K^2]-->
+		<xsd:attribute name="dDrainedTEC_dT" type="real64" default="0" />
 		<!--defaultBulkModulus => Default Bulk Modulus Parameter-->
 		<xsd:attribute name="defaultBulkModulus" type="real64" default="-1" />
-		<!--defaultDensity => Default Material Density-->
+		<!--defaultDensity => Default Material Density [Kg/cm^3]-->
 		<xsd:attribute name="defaultDensity" type="real64" use="required" />
-		<!--defaultDrainedLinearTEC => Default Linear Thermal Expansion Coefficient of the Solid Rock Frame-->
-		<xsd:attribute name="defaultDrainedLinearTEC" type="real64" default="0" />
+		<!--defaultDrainedTEC => Default Linear Thermal Expansion Coefficient of the Solid Rock Frame [1/K]-->
+		<xsd:attribute name="defaultDrainedTEC" type="real64" default="0" />
 		<!--defaultPoissonRatio => Default Poisson's Ratio-->
 		<xsd:attribute name="defaultPoissonRatio" type="real64" default="-1" />
 		<!--defaultShearModulus => Default Shear Modulus Parameter-->
 		<xsd:attribute name="defaultShearModulus" type="real64" default="-1" />
 		<!--defaultYoungModulus => Default Young's Modulus-->
 		<xsd:attribute name="defaultYoungModulus" type="real64" default="-1" />
+		<!--drainedTECTableName => Name of the Thermal Expansion Coefficient table-->
+		<xsd:attribute name="drainedTECTableName" type="string" default="" />
+		<!--referenceTemperature => Reference temperature at which the default Thermal Expansion Coefficient is defined [K]-->
+		<xsd:attribute name="referenceTemperature" type="real64" default="0" />
 		<!--name => A name is required for any non-unique nodes-->
 		<xsd:attribute name="name" type="groupName" use="required" />
 	</xsd:complexType>
 	<xsd:complexType name="ElasticIsotropicPressureDependentType">
-		<!--defaultDensity => Default Material Density-->
+		<!--dDrainedTEC_dT => Derivative of the Thermal Expansion Coefficient of the Solid Rock Frame w.r.t. temperature [1/K^2]-->
+		<xsd:attribute name="dDrainedTEC_dT" type="real64" default="0" />
+		<!--defaultDensity => Default Material Density [Kg/cm^3]-->
 		<xsd:attribute name="defaultDensity" type="real64" use="required" />
-		<!--defaultDrainedLinearTEC => Default Linear Thermal Expansion Coefficient of the Solid Rock Frame-->
-		<xsd:attribute name="defaultDrainedLinearTEC" type="real64" default="0" />
+		<!--defaultDrainedTEC => Default Linear Thermal Expansion Coefficient of the Solid Rock Frame [1/K]-->
+		<xsd:attribute name="defaultDrainedTEC" type="real64" default="0" />
 		<!--defaultRecompressionIndex => Recompresion Index-->
 		<xsd:attribute name="defaultRecompressionIndex" type="real64" default="0.002" />
 		<!--defaultRefPressure => Reference Pressure-->
@@ -5921,10 +5965,16 @@ For instance, if "oil" is before "gas" in "phaseNames", the table order should b
 		<xsd:attribute name="defaultRefStrainVol" type="real64" default="0" />
 		<!--defaultShearModulus => Elastic Shear Modulus Parameter-->
 		<xsd:attribute name="defaultShearModulus" type="real64" default="-1" />
+		<!--drainedTECTableName => Name of the Thermal Expansion Coefficient table-->
+		<xsd:attribute name="drainedTECTableName" type="string" default="" />
+		<!--referenceTemperature => Reference temperature at which the default Thermal Expansion Coefficient is defined [K]-->
+		<xsd:attribute name="referenceTemperature" type="real64" default="0" />
 		<!--name => A name is required for any non-unique nodes-->
 		<xsd:attribute name="name" type="groupName" use="required" />
 	</xsd:complexType>
 	<xsd:complexType name="ElasticOrthotropicType">
+		<!--dDrainedTEC_dT => Derivative of the Thermal Expansion Coefficient of the Solid Rock Frame w.r.t. temperature [1/K^2]-->
+		<xsd:attribute name="dDrainedTEC_dT" type="real64" default="0" />
 		<!--defaultC11 => Default C11 Component of Voigt Stiffness Tensor-->
 		<xsd:attribute name="defaultC11" type="real64" default="-1" />
 		<!--defaultC12 => Default C12 Component of Voigt Stiffness Tensor-->
@@ -5943,10 +5993,10 @@ For instance, if "oil" is before "gas" in "phaseNames", the table order should b
 		<xsd:attribute name="defaultC55" type="real64" default="-1" />
 		<!--defaultC66 => Default C66 Component of Voigt Stiffness Tensor-->
 		<xsd:attribute name="defaultC66" type="real64" default="-1" />
-		<!--defaultDensity => Default Material Density-->
+		<!--defaultDensity => Default Material Density [Kg/cm^3]-->
 		<xsd:attribute name="defaultDensity" type="real64" use="required" />
-		<!--defaultDrainedLinearTEC => Default Linear Thermal Expansion Coefficient of the Solid Rock Frame-->
-		<xsd:attribute name="defaultDrainedLinearTEC" type="real64" default="0" />
+		<!--defaultDrainedTEC => Default Linear Thermal Expansion Coefficient of the Solid Rock Frame [1/K]-->
+		<xsd:attribute name="defaultDrainedTEC" type="real64" default="0" />
 		<!--defaultE1 => Default Young's Modulus E1-->
 		<xsd:attribute name="defaultE1" type="real64" default="-1" />
 		<!--defaultE2 => Default Young's Modulus E2-->
@@ -5965,10 +6015,16 @@ For instance, if "oil" is before "gas" in "phaseNames", the table order should b
 		<xsd:attribute name="defaultNu13" type="real64" default="-1" />
 		<!--defaultNu23 => Default Poission's Ratio Nu23-->
 		<xsd:attribute name="defaultNu23" type="real64" default="-1" />
+		<!--drainedTECTableName => Name of the Thermal Expansion Coefficient table-->
+		<xsd:attribute name="drainedTECTableName" type="string" default="" />
+		<!--referenceTemperature => Reference temperature at which the default Thermal Expansion Coefficient is defined [K]-->
+		<xsd:attribute name="referenceTemperature" type="real64" default="0" />
 		<!--name => A name is required for any non-unique nodes-->
 		<xsd:attribute name="name" type="groupName" use="required" />
 	</xsd:complexType>
 	<xsd:complexType name="ElasticTransverseIsotropicType">
+		<!--dDrainedTEC_dT => Derivative of the Thermal Expansion Coefficient of the Solid Rock Frame w.r.t. temperature [1/K^2]-->
+		<xsd:attribute name="dDrainedTEC_dT" type="real64" default="0" />
 		<!--defaultC11 => Default Stiffness Parameter C11-->
 		<xsd:attribute name="defaultC11" type="real64" default="-1" />
 		<!--defaultC13 => Default Stiffness Parameter C13-->
@@ -5979,10 +6035,10 @@ For instance, if "oil" is before "gas" in "phaseNames", the table order should b
 		<xsd:attribute name="defaultC44" type="real64" default="-1" />
 		<!--defaultC66 => Default Stiffness Parameter C66-->
 		<xsd:attribute name="defaultC66" type="real64" default="-1" />
-		<!--defaultDensity => Default Material Density-->
+		<!--defaultDensity => Default Material Density [Kg/cm^3]-->
 		<xsd:attribute name="defaultDensity" type="real64" use="required" />
-		<!--defaultDrainedLinearTEC => Default Linear Thermal Expansion Coefficient of the Solid Rock Frame-->
-		<xsd:attribute name="defaultDrainedLinearTEC" type="real64" default="0" />
+		<!--defaultDrainedTEC => Default Linear Thermal Expansion Coefficient of the Solid Rock Frame [1/K]-->
+		<xsd:attribute name="defaultDrainedTEC" type="real64" default="0" />
 		<!--defaultPoissonRatioAxialTransverse => Default Axial-Transverse Poisson's Ratio-->
 		<xsd:attribute name="defaultPoissonRatioAxialTransverse" type="real64" default="-1" />
 		<!--defaultPoissonRatioTransverse => Default Transverse Poisson's Ratio-->
@@ -5993,6 +6049,10 @@ For instance, if "oil" is before "gas" in "phaseNames", the table order should b
 		<xsd:attribute name="defaultYoungModulusAxial" type="real64" default="-1" />
 		<!--defaultYoungModulusTransverse => Default Transverse Young's Modulus-->
 		<xsd:attribute name="defaultYoungModulusTransverse" type="real64" default="-1" />
+		<!--drainedTECTableName => Name of the Thermal Expansion Coefficient table-->
+		<xsd:attribute name="drainedTECTableName" type="string" default="" />
+		<!--referenceTemperature => Reference temperature at which the default Thermal Expansion Coefficient is defined [K]-->
+		<xsd:attribute name="referenceTemperature" type="real64" default="0" />
 		<!--name => A name is required for any non-unique nodes-->
 		<xsd:attribute name="name" type="groupName" use="required" />
 	</xsd:complexType>
@@ -6005,16 +6065,18 @@ For instance, if "oil" is before "gas" in "phaseNames", the table order should b
 		<xsd:attribute name="name" type="groupName" use="required" />
 	</xsd:complexType>
 	<xsd:complexType name="ExtendedDruckerPragerType">
+		<!--dDrainedTEC_dT => Derivative of the Thermal Expansion Coefficient of the Solid Rock Frame w.r.t. temperature [1/K^2]-->
+		<xsd:attribute name="dDrainedTEC_dT" type="real64" default="0" />
 		<!--defaultBulkModulus => Default Bulk Modulus Parameter-->
 		<xsd:attribute name="defaultBulkModulus" type="real64" default="-1" />
 		<!--defaultCohesion => Initial cohesion-->
 		<xsd:attribute name="defaultCohesion" type="real64" default="0" />
-		<!--defaultDensity => Default Material Density-->
+		<!--defaultDensity => Default Material Density [Kg/cm^3]-->
 		<xsd:attribute name="defaultDensity" type="real64" use="required" />
 		<!--defaultDilationRatio => Dilation ratio [0,1] (ratio = tan dilationAngle / tan frictionAngle)-->
 		<xsd:attribute name="defaultDilationRatio" type="real64" default="1" />
-		<!--defaultDrainedLinearTEC => Default Linear Thermal Expansion Coefficient of the Solid Rock Frame-->
-		<xsd:attribute name="defaultDrainedLinearTEC" type="real64" default="0" />
+		<!--defaultDrainedTEC => Default Linear Thermal Expansion Coefficient of the Solid Rock Frame [1/K]-->
+		<xsd:attribute name="defaultDrainedTEC" type="real64" default="0" />
 		<!--defaultHardening => Hardening parameter (hardening rate is faster for smaller values)-->
 		<xsd:attribute name="defaultHardening" type="real64" default="0" />
 		<!--defaultInitialFrictionAngle => Initial friction angle (degrees)-->
@@ -6027,6 +6089,10 @@ For instance, if "oil" is before "gas" in "phaseNames", the table order should b
 		<xsd:attribute name="defaultShearModulus" type="real64" default="-1" />
 		<!--defaultYoungModulus => Default Young's Modulus-->
 		<xsd:attribute name="defaultYoungModulus" type="real64" default="-1" />
+		<!--drainedTECTableName => Name of the Thermal Expansion Coefficient table-->
+		<xsd:attribute name="drainedTECTableName" type="string" default="" />
+		<!--referenceTemperature => Reference temperature at which the default Thermal Expansion Coefficient is defined [K]-->
+		<xsd:attribute name="referenceTemperature" type="real64" default="0" />
 		<!--name => A name is required for any non-unique nodes-->
 		<xsd:attribute name="name" type="groupName" use="required" />
 	</xsd:complexType>
@@ -6101,12 +6167,14 @@ If you want to do a three-phase simulation, please use instead wettingIntermedia
 		<xsd:attribute name="name" type="groupName" use="required" />
 	</xsd:complexType>
 	<xsd:complexType name="ModifiedCamClayType">
+		<!--dDrainedTEC_dT => Derivative of the Thermal Expansion Coefficient of the Solid Rock Frame w.r.t. temperature [1/K^2]-->
+		<xsd:attribute name="dDrainedTEC_dT" type="real64" default="0" />
 		<!--defaultCslSlope => Slope of the critical state line-->
 		<xsd:attribute name="defaultCslSlope" type="real64" default="1" />
-		<!--defaultDensity => Default Material Density-->
+		<!--defaultDensity => Default Material Density [Kg/cm^3]-->
 		<xsd:attribute name="defaultDensity" type="real64" use="required" />
-		<!--defaultDrainedLinearTEC => Default Linear Thermal Expansion Coefficient of the Solid Rock Frame-->
-		<xsd:attribute name="defaultDrainedLinearTEC" type="real64" default="0" />
+		<!--defaultDrainedTEC => Default Linear Thermal Expansion Coefficient of the Solid Rock Frame [1/K]-->
+		<xsd:attribute name="defaultDrainedTEC" type="real64" default="0" />
 		<!--defaultPreConsolidationPressure => Initial preconsolidation pressure-->
 		<xsd:attribute name="defaultPreConsolidationPressure" type="real64" default="-1.5" />
 		<!--defaultRecompressionIndex => Recompresion Index-->
@@ -6119,6 +6187,10 @@ If you want to do a three-phase simulation, please use instead wettingIntermedia
 		<xsd:attribute name="defaultShearModulus" type="real64" default="-1" />
 		<!--defaultVirginCompressionIndex => Virgin compression index-->
 		<xsd:attribute name="defaultVirginCompressionIndex" type="real64" default="0.005" />
+		<!--drainedTECTableName => Name of the Thermal Expansion Coefficient table-->
+		<xsd:attribute name="drainedTECTableName" type="string" default="" />
+		<!--referenceTemperature => Reference temperature at which the default Thermal Expansion Coefficient is defined [K]-->
+		<xsd:attribute name="referenceTemperature" type="real64" default="0" />
 		<!--name => A name is required for any non-unique nodes-->
 		<xsd:attribute name="name" type="groupName" use="required" />
 	</xsd:complexType>
@@ -6185,12 +6257,14 @@ If you want to do a three-phase simulation, please use instead wettingIntermedia
 		</xsd:restriction>
 	</xsd:simpleType>
 	<xsd:complexType name="PerfectlyPlasticType">
+		<!--dDrainedTEC_dT => Derivative of the Thermal Expansion Coefficient of the Solid Rock Frame w.r.t. temperature [1/K^2]-->
+		<xsd:attribute name="dDrainedTEC_dT" type="real64" default="0" />
 		<!--defaultBulkModulus => Default Bulk Modulus Parameter-->
 		<xsd:attribute name="defaultBulkModulus" type="real64" default="-1" />
-		<!--defaultDensity => Default Material Density-->
+		<!--defaultDensity => Default Material Density [Kg/cm^3]-->
 		<xsd:attribute name="defaultDensity" type="real64" use="required" />
-		<!--defaultDrainedLinearTEC => Default Linear Thermal Expansion Coefficient of the Solid Rock Frame-->
-		<xsd:attribute name="defaultDrainedLinearTEC" type="real64" default="0" />
+		<!--defaultDrainedTEC => Default Linear Thermal Expansion Coefficient of the Solid Rock Frame [1/K]-->
+		<xsd:attribute name="defaultDrainedTEC" type="real64" default="0" />
 		<!--defaultPoissonRatio => Default Poisson's Ratio-->
 		<xsd:attribute name="defaultPoissonRatio" type="real64" default="-1" />
 		<!--defaultShearModulus => Default Shear Modulus Parameter-->
@@ -6199,6 +6273,10 @@ If you want to do a three-phase simulation, please use instead wettingIntermedia
 		<xsd:attribute name="defaultYieldStress" type="real64" default="1.79769e+308" />
 		<!--defaultYoungModulus => Default Young's Modulus-->
 		<xsd:attribute name="defaultYoungModulus" type="real64" default="-1" />
+		<!--drainedTECTableName => Name of the Thermal Expansion Coefficient table-->
+		<xsd:attribute name="drainedTECTableName" type="string" default="" />
+		<!--referenceTemperature => Reference temperature at which the default Thermal Expansion Coefficient is defined [K]-->
+		<xsd:attribute name="referenceTemperature" type="real64" default="0" />
 		<!--name => A name is required for any non-unique nodes-->
 		<xsd:attribute name="name" type="groupName" use="required" />
 	</xsd:complexType>
@@ -6704,16 +6782,18 @@ The expected format is "{ waterMax, oilMax }", in that order-->
 		<xsd:attribute name="name" type="groupName" use="required" />
 	</xsd:complexType>
 	<xsd:complexType name="ViscoDruckerPragerType">
+		<!--dDrainedTEC_dT => Derivative of the Thermal Expansion Coefficient of the Solid Rock Frame w.r.t. temperature [1/K^2]-->
+		<xsd:attribute name="dDrainedTEC_dT" type="real64" default="0" />
 		<!--defaultBulkModulus => Default Bulk Modulus Parameter-->
 		<xsd:attribute name="defaultBulkModulus" type="real64" default="-1" />
 		<!--defaultCohesion => Initial cohesion-->
 		<xsd:attribute name="defaultCohesion" type="real64" default="0" />
-		<!--defaultDensity => Default Material Density-->
+		<!--defaultDensity => Default Material Density [Kg/cm^3]-->
 		<xsd:attribute name="defaultDensity" type="real64" use="required" />
 		<!--defaultDilationAngle => Dilation angle (degrees)-->
 		<xsd:attribute name="defaultDilationAngle" type="real64" default="30" />
-		<!--defaultDrainedLinearTEC => Default Linear Thermal Expansion Coefficient of the Solid Rock Frame-->
-		<xsd:attribute name="defaultDrainedLinearTEC" type="real64" default="0" />
+		<!--defaultDrainedTEC => Default Linear Thermal Expansion Coefficient of the Solid Rock Frame [1/K]-->
+		<xsd:attribute name="defaultDrainedTEC" type="real64" default="0" />
 		<!--defaultFrictionAngle => Friction angle (degrees)-->
 		<xsd:attribute name="defaultFrictionAngle" type="real64" default="30" />
 		<!--defaultHardeningRate => Cohesion hardening/softening rate-->
@@ -6724,22 +6804,28 @@ The expected format is "{ waterMax, oilMax }", in that order-->
 		<xsd:attribute name="defaultShearModulus" type="real64" default="-1" />
 		<!--defaultYoungModulus => Default Young's Modulus-->
 		<xsd:attribute name="defaultYoungModulus" type="real64" default="-1" />
+		<!--drainedTECTableName => Name of the Thermal Expansion Coefficient table-->
+		<xsd:attribute name="drainedTECTableName" type="string" default="" />
+		<!--referenceTemperature => Reference temperature at which the default Thermal Expansion Coefficient is defined [K]-->
+		<xsd:attribute name="referenceTemperature" type="real64" default="0" />
 		<!--relaxationTime => Relaxation time-->
 		<xsd:attribute name="relaxationTime" type="real64" use="required" />
 		<!--name => A name is required for any non-unique nodes-->
 		<xsd:attribute name="name" type="groupName" use="required" />
 	</xsd:complexType>
 	<xsd:complexType name="ViscoExtendedDruckerPragerType">
+		<!--dDrainedTEC_dT => Derivative of the Thermal Expansion Coefficient of the Solid Rock Frame w.r.t. temperature [1/K^2]-->
+		<xsd:attribute name="dDrainedTEC_dT" type="real64" default="0" />
 		<!--defaultBulkModulus => Default Bulk Modulus Parameter-->
 		<xsd:attribute name="defaultBulkModulus" type="real64" default="-1" />
 		<!--defaultCohesion => Initial cohesion-->
 		<xsd:attribute name="defaultCohesion" type="real64" default="0" />
-		<!--defaultDensity => Default Material Density-->
+		<!--defaultDensity => Default Material Density [Kg/cm^3]-->
 		<xsd:attribute name="defaultDensity" type="real64" use="required" />
 		<!--defaultDilationRatio => Dilation ratio [0,1] (ratio = tan dilationAngle / tan frictionAngle)-->
 		<xsd:attribute name="defaultDilationRatio" type="real64" default="1" />
-		<!--defaultDrainedLinearTEC => Default Linear Thermal Expansion Coefficient of the Solid Rock Frame-->
-		<xsd:attribute name="defaultDrainedLinearTEC" type="real64" default="0" />
+		<!--defaultDrainedTEC => Default Linear Thermal Expansion Coefficient of the Solid Rock Frame [1/K]-->
+		<xsd:attribute name="defaultDrainedTEC" type="real64" default="0" />
 		<!--defaultHardening => Hardening parameter (hardening rate is faster for smaller values)-->
 		<xsd:attribute name="defaultHardening" type="real64" default="0" />
 		<!--defaultInitialFrictionAngle => Initial friction angle (degrees)-->
@@ -6752,18 +6838,24 @@ The expected format is "{ waterMax, oilMax }", in that order-->
 		<xsd:attribute name="defaultShearModulus" type="real64" default="-1" />
 		<!--defaultYoungModulus => Default Young's Modulus-->
 		<xsd:attribute name="defaultYoungModulus" type="real64" default="-1" />
+		<!--drainedTECTableName => Name of the Thermal Expansion Coefficient table-->
+		<xsd:attribute name="drainedTECTableName" type="string" default="" />
+		<!--referenceTemperature => Reference temperature at which the default Thermal Expansion Coefficient is defined [K]-->
+		<xsd:attribute name="referenceTemperature" type="real64" default="0" />
 		<!--relaxationTime => Relaxation time-->
 		<xsd:attribute name="relaxationTime" type="real64" use="required" />
 		<!--name => A name is required for any non-unique nodes-->
 		<xsd:attribute name="name" type="groupName" use="required" />
 	</xsd:complexType>
 	<xsd:complexType name="ViscoModifiedCamClayType">
+		<!--dDrainedTEC_dT => Derivative of the Thermal Expansion Coefficient of the Solid Rock Frame w.r.t. temperature [1/K^2]-->
+		<xsd:attribute name="dDrainedTEC_dT" type="real64" default="0" />
 		<!--defaultCslSlope => Slope of the critical state line-->
 		<xsd:attribute name="defaultCslSlope" type="real64" default="1" />
-		<!--defaultDensity => Default Material Density-->
+		<!--defaultDensity => Default Material Density [Kg/cm^3]-->
 		<xsd:attribute name="defaultDensity" type="real64" use="required" />
-		<!--defaultDrainedLinearTEC => Default Linear Thermal Expansion Coefficient of the Solid Rock Frame-->
-		<xsd:attribute name="defaultDrainedLinearTEC" type="real64" default="0" />
+		<!--defaultDrainedTEC => Default Linear Thermal Expansion Coefficient of the Solid Rock Frame [1/K]-->
+		<xsd:attribute name="defaultDrainedTEC" type="real64" default="0" />
 		<!--defaultPreConsolidationPressure => Initial preconsolidation pressure-->
 		<xsd:attribute name="defaultPreConsolidationPressure" type="real64" default="-1.5" />
 		<!--defaultRecompressionIndex => Recompresion Index-->
@@ -6776,6 +6868,10 @@ The expected format is "{ waterMax, oilMax }", in that order-->
 		<xsd:attribute name="defaultShearModulus" type="real64" default="-1" />
 		<!--defaultVirginCompressionIndex => Virgin compression index-->
 		<xsd:attribute name="defaultVirginCompressionIndex" type="real64" default="0.005" />
+		<!--drainedTECTableName => Name of the Thermal Expansion Coefficient table-->
+		<xsd:attribute name="drainedTECTableName" type="string" default="" />
+		<!--referenceTemperature => Reference temperature at which the default Thermal Expansion Coefficient is defined [K]-->
+		<xsd:attribute name="referenceTemperature" type="real64" default="0" />
 		<!--relaxationTime => Relaxation time-->
 		<xsd:attribute name="relaxationTime" type="real64" use="required" />
 		<!--name => A name is required for any non-unique nodes-->

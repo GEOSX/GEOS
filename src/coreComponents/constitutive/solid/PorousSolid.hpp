@@ -25,6 +25,11 @@
 #include "constitutive/solid/porosity/BiotPorosity.hpp"
 #include "constitutive/solid/SolidBase.hpp"
 #include "constitutive/permeability/ConstantPermeability.hpp"
+#include "dataRepository/ObjectCatalog.hpp"
+#include "common/DataTypes.hpp"
+#include "dataRepository/Group.hpp"
+#include "functions/TableFunction.hpp"
+#include "functions/FunctionManager.hpp"
 
 namespace geos
 {
@@ -50,7 +55,12 @@ public:
   PorousSolidUpdates( SOLID_TYPE const & solidModel,
                       BiotPorosity const & porosityModel,
                       ConstantPermeability const & permModel ):
-    CoupledSolidUpdates< SOLID_TYPE, BiotPorosity, ConstantPermeability >( solidModel, porosityModel, permModel )
+    CoupledSolidUpdates< SOLID_TYPE, BiotPorosity, ConstantPermeability >( solidModel, porosityModel, permModel ),
+    m_drainedTECTableName( solidModel.getDrainedTECTableName() ),
+    m_TECWrapper(
+      solidModel.getDrainedTECTableName() == nullptr || solidModel.getDrainedTECTableName()[0] == '\0' ?
+      TableFunction::KernelWrapper():
+      FunctionManager::getInstance().getGroup< TableFunction >( solidModel.getDrainedTECTableName()).createKernelWrapper() )
   {}
 
   GEOS_HOST_DEVICE
@@ -97,6 +107,7 @@ public:
                         timeIncrement,
                         pressure,
                         temperature,
+                        deltaTemperatureFromLastStep,
                         strainIncrement,
                         totalStress,
                         dTotalStress_dPressure,
@@ -146,25 +157,47 @@ public:
     real64 dTotalStress_dPressure[6]{};
     real64 dTotalStress_dTemperature[6]{};
 
+    real64 const deltaTemperatureFromLastStep = temperature - temperature_n;
     // Compute total stress increment and its derivative
     computeTotalStress( k,
                         q,
                         timeIncrement,
                         pressure,
                         temperature,
+                        deltaTemperatureFromLastStep,
                         strainIncrement,
                         totalStress,
                         dTotalStress_dPressure, // To pass something here
                         dTotalStress_dTemperature, // To pass something here
                         stiffness );
 
+    // Update the Thermal Expnasion Coefficient w.r.t. temperature change (TEC)
+    real64 thermalExpansionCoefficient;
+
+    if( m_drainedTECTableName == nullptr || m_drainedTECTableName[0] == '\0' )
+    {
+      real64 const defaultThermalExpansionCoefficient = m_solidUpdate.getThermalExpansionCoefficient( k );
+      real64 const referenceTemperature = m_solidUpdate.getReferenceTemperature();
+
+      real64 dThermalExpansionCoefficient_dTemperature = m_solidUpdate.getDThermalExpansionCoefficient_dTemperature();
+      thermalExpansionCoefficient  = defaultThermalExpansionCoefficient + dThermalExpansionCoefficient_dTemperature * (temperature - referenceTemperature);
+    }
+    else
+    {
+      real64 const tmpTemperatureArray[1] = {temperature};
+      real64 dTEC_dT[1] = {0};
+      thermalExpansionCoefficient = m_TECWrapper.compute( tmpTemperatureArray, dTEC_dT );
+    }
+
     // Compute total stress increment for the porosity update
     real64 const bulkModulus = m_solidUpdate.getBulkModulus( k );
     real64 const meanEffectiveStressIncrement = bulkModulus * ( strainIncrement[0] + strainIncrement[1] + strainIncrement[2] );
     real64 const biotCoefficient = m_porosityUpdate.getBiotCoefficient( k );
-    real64 const thermalExpansionCoefficient = m_solidUpdate.getThermalExpansionCoefficient( k );
+
     real64 const meanTotalStressIncrement = meanEffectiveStressIncrement - biotCoefficient * ( pressure - pressure_n )
                                             - 3 * thermalExpansionCoefficient * bulkModulus * ( temperature - temperature_n );
+
+    // Porosity update
     m_porosityUpdate.updateMeanTotalStressIncrement( k, q, meanTotalStressIncrement );
   }
 
@@ -213,6 +246,9 @@ public:
   }
 
 private:
+
+  char const * m_drainedTECTableName;
+  TableFunction::KernelWrapper m_TECWrapper;
 
   using CoupledSolidUpdates< SOLID_TYPE, BiotPorosity, ConstantPermeability >::m_solidUpdate;
   using CoupledSolidUpdates< SOLID_TYPE, BiotPorosity, ConstantPermeability >::m_porosityUpdate;
@@ -272,6 +308,7 @@ private:
                            real64 const & timeIncrement,
                            real64 const & pressure,
                            real64 const & temperature,
+                           real64 const & deltaTemperatureFromLastStep,
                            real64 const ( &strainIncrement )[6],
                            real64 ( & totalStress )[6],
                            real64 ( & dTotalStress_dPressure )[6],
@@ -285,18 +322,46 @@ private:
                                      q,
                                      timeIncrement,
                                      strainIncrement,
-                                     totalStress, // first effective stress increment accumulated
+                                     totalStress, // Rock stress updated with small strain
                                      stiffness );
 
-    // Add the contributions of pressure and temperature to the total stress
-    real64 const biotCoefficient = m_porosityUpdate.getBiotCoefficient( k );
-    real64 const thermalExpansionCoefficient = m_solidUpdate.getThermalExpansionCoefficient( k );
-    real64 const bulkModulus = m_solidUpdate.getBulkModulus( k );
-    real64 const thermalExpansionCoefficientTimesBulkModulus = thermalExpansionCoefficient * bulkModulus;
+    // Add the contributions of temperature increment to the rock stress (effective stress).
+    real64 dThermalExpansionCoefficient_dTemperature;
+    real64 thermalExpansionCoefficient;
 
-    LvArray::tensorOps::symAddIdentity< 3 >( totalStress, -biotCoefficient * pressure - 3 * thermalExpansionCoefficientTimesBulkModulus * temperature );
+    if( m_drainedTECTableName == nullptr || m_drainedTECTableName[0] == '\0' )
+    {
+      real64 const defaultThermalExpansionCoefficient = m_solidUpdate.getThermalExpansionCoefficient( k );
+      real64 const referenceTemperature = m_solidUpdate.getReferenceTemperature();
+
+      dThermalExpansionCoefficient_dTemperature = m_solidUpdate.getDThermalExpansionCoefficient_dTemperature();
+      thermalExpansionCoefficient  = defaultThermalExpansionCoefficient + dThermalExpansionCoefficient_dTemperature * (temperature - referenceTemperature);
+    }
+    else
+    {
+      real64 const tmpTemperatureArray[1] = {temperature};
+      real64 dTEC_dT[1] = {0};
+      thermalExpansionCoefficient = m_TECWrapper.compute( tmpTemperatureArray, dTEC_dT );
+      dThermalExpansionCoefficient_dTemperature = dTEC_dT[0];
+    }
+
+    // Thermal stress increment
+    real64 const bulkModulus = m_solidUpdate.getBulkModulus( k );
+    real64 const thermalStressIncrement = -3 * thermalExpansionCoefficient * bulkModulus * deltaTemperatureFromLastStep;
+
+    // Update rock stress with tempeature change.
+    LvArray::tensorOps::symAddIdentity< 3 >( totalStress, thermalStressIncrement );
+
+    // Save rock stress including the contribution of temperature change.
+    m_solidUpdate.saveStress( k, q, totalStress );
+
+    // Compute total stress: add pore pressure contribution to rock stress.
+    real64 const biotCoefficient = m_porosityUpdate.getBiotCoefficient( k );
+    LvArray::tensorOps::symAddIdentity< 3 >( totalStress, -biotCoefficient * pressure );
 
     // Compute derivatives of total stress
+    real64 const dDiagonalStressComponent_dTemperature = -3 * thermalExpansionCoefficient * bulkModulus;
+
     dTotalStress_dPressure[0] = -biotCoefficient;
     dTotalStress_dPressure[1] = -biotCoefficient;
     dTotalStress_dPressure[2] = -biotCoefficient;
@@ -304,14 +369,15 @@ private:
     dTotalStress_dPressure[4] = 0;
     dTotalStress_dPressure[5] = 0;
 
-    dTotalStress_dTemperature[0] = -3 * thermalExpansionCoefficientTimesBulkModulus;
-    dTotalStress_dTemperature[1] = -3 * thermalExpansionCoefficientTimesBulkModulus;
-    dTotalStress_dTemperature[2] = -3 * thermalExpansionCoefficientTimesBulkModulus;
+    dTotalStress_dTemperature[0] = dDiagonalStressComponent_dTemperature;
+    dTotalStress_dTemperature[1] = dDiagonalStressComponent_dTemperature;
+    dTotalStress_dTemperature[2] = dDiagonalStressComponent_dTemperature;
     dTotalStress_dTemperature[3] = 0;
     dTotalStress_dTemperature[4] = 0;
     dTotalStress_dTemperature[5] = 0;
 
   }
+
 };
 
 /**

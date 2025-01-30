@@ -14,6 +14,7 @@
  */
 
 #include "gtest/gtest.h"
+#include <conduit.hpp>
 
 #include "constitutive/ConstitutiveManager.hpp"
 #include "constitutive/solid/DruckerPrager.hpp"
@@ -277,4 +278,34 @@ TEST( DruckerPragerTests, testDruckerPragerExtendedDevice )
 TEST( DruckerPragerTests, testDruckerPragerExtendedHost )
 {
   testDruckerPragerExtendedDriver< serialPolicy >();
+}
+
+TEST( DruckerPragerTests, testThermalExpansionAndTemperature )
+{
+  conduit::Node node;
+  dataRepository::Group rootGroup( "root", node );
+
+  DruckerPrager constitutiveModel( "model", &rootGroup );
+
+  // Create kernel updates
+  DruckerPragerUpdates updates = constitutiveModel.createKernelUpdates();
+
+  // Test that the default TEC derivative w.r.t. temperature and the default reference temperature are nil.
+  EXPECT_DOUBLE_EQ( updates.m_dThermalExpansionCoefficient_dTemperature, 0 );
+  EXPECT_DOUBLE_EQ( updates.m_referenceTemperature, 0 );
+}
+
+TEST( DruckerPragerTests, testThermalExpansionAndTemperature_2 )
+{
+  conduit::Node node;
+  dataRepository::Group rootGroup( "root", node );
+
+  DruckerPragerExtended constitutiveModel( "model", &rootGroup );
+
+  // Create kernel updates
+  DruckerPragerExtendedUpdates updates = constitutiveModel.createKernelUpdates();
+
+  // Test that the default TEC derivative w.r.t. temperature and the default reference temperature are nil.
+  EXPECT_DOUBLE_EQ( updates.m_dThermalExpansionCoefficient_dTemperature, 0 );
+  EXPECT_DOUBLE_EQ( updates.m_referenceTemperature, 0 );
 }

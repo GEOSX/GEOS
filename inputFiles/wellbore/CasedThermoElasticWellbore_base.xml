@@ -175,21 +175,21 @@
       defaultDensity="7500"
       defaultBulkModulus="159.4202899e9"
       defaultShearModulus="86.61417323e9"
-      defaultDrainedLinearTEC="1.2e-5"/>
+      defaultDrainedTEC="1.2e-5"/>
 
     <ElasticIsotropic
       name="cementSolid"
       defaultDensity="2700"
       defaultBulkModulus="2.298850575e9"
       defaultShearModulus="1.652892562e9"
-      defaultDrainedLinearTEC="2.0e-5"/>
+      defaultDrainedTEC="2.0e-5"/>
 
     <ElasticIsotropic
       name="rockSolid"
       defaultDensity="2700"
       defaultBulkModulus="5.535714286e9"
       defaultShearModulus="3.81147541e9"
-      defaultDrainedLinearTEC="2.0e-5"/>
+      defaultDrainedTEC="2.0e-5"/>
     <!-- SPHINX_ThermoElasticPropertiesEnd -->
     
   </Constitutive>
@@ -248,7 +248,7 @@
       objectPath="ElementRegions/casing/casing"
       fieldName="casingSolid_stress"
       component="0"
-      scale="573913043.5"/>
+      scale="0"/>
     <FieldSpecification
       name="initialSigma_y_casing"
       initialCondition="1"
@@ -256,7 +256,7 @@
       objectPath="ElementRegions/casing/casing"
       fieldName="casingSolid_stress"
       component="1"
-      scale="573913043.5"/>
+      scale="0"/>
     <FieldSpecification
       name="initialSigma_z_casing"
       initialCondition="1"
@@ -264,7 +264,7 @@
       objectPath="ElementRegions/casing/casing"
       fieldName="casingSolid_stress"
       component="2"
-      scale="573913043.5"/>
+      scale="0"/>
     <!-- SPHINX_StressCasingInitEnd -->
 
     <FieldSpecification
@@ -274,7 +274,7 @@
       objectPath="ElementRegions/cement/cement"
       fieldName="cementSolid_stress"
       component="0"
-      scale="13793103.45"/>
+      scale="0"/>
     <FieldSpecification
       name="initialSigma_y_cement"
       initialCondition="1"
@@ -282,7 +282,7 @@
       objectPath="ElementRegions/cement/cement"
       fieldName="cementSolid_stress"
       component="1"
-      scale="13793103.45"/>
+      scale="0"/>
     <FieldSpecification
       name="initialSigma_z_cement"
       initialCondition="1"
@@ -290,7 +290,7 @@
       objectPath="ElementRegions/cement/cement"
       fieldName="cementSolid_stress"
       component="2"
-      scale="13793103.45"/>
+      scale="0"/>
 
     <FieldSpecification
       name="initialSigma_x_rock"
@@ -299,7 +299,7 @@
       objectPath="ElementRegions/rock/rock"
       fieldName="rockSolid_stress"
       component="0"
-      scale="33214285.71"/>
+      scale="0"/>
     <FieldSpecification
       name="initialSigma_y_rock"
       initialCondition="1"
@@ -307,7 +307,7 @@
       objectPath="ElementRegions/rock/rock"
       fieldName="rockSolid_stress"
       component="1"
-      scale="33214285.71"/>
+      scale="0"/>
     <FieldSpecification
       name="initialSigma_z_rock"
       initialCondition="1"
@@ -315,7 +315,7 @@
       objectPath="ElementRegions/rock/rock"
       fieldName="rockSolid_stress"
       component="2"
-      scale="33214285.71"/>
+      scale="0"/>
 
     <!-- SPHINX_ZeroPorePressureBC -->
     <FieldSpecification

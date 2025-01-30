@@ -24,7 +24,7 @@
       defaultCslSlope="1.2"
       defaultRecompressionIndex="0.0001"
       defaultVirginCompressionIndex="0.003"
-      defaultDrainedLinearTEC="3e-9"
+      defaultDrainedTEC="3e-9"
     />
 
     <BiotPorosity

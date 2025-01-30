@@ -155,7 +155,7 @@
       defaultDensity="2650"
       defaultBulkModulus="5.e9"
       defaultPoissonRatio="0.25"
-      defaultDrainedLinearTEC="1e-5"/>
+      defaultDrainedTEC="1e-5"/>
     <ConstantPermeability
       name="rockPermChannel"
       permeabilityComponents="{ 9.8e-13, 9.8e-13, 9.8e-13 }"/>
@@ -176,7 +176,7 @@
       defaultDensity="2650"
       defaultBulkModulus="5.e9"
       defaultPoissonRatio="0.25"
-      defaultDrainedLinearTEC="1e-5"/>
+      defaultDrainedTEC="1e-5"/>
     <ConstantPermeability
       name="rockPermBarrier"
       permeabilityComponents="{ 9.8e-16, 9.8e-16, 9.8e-16 }"/>

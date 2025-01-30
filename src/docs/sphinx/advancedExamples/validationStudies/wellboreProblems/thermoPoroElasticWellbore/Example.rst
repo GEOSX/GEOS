@@ -140,13 +140,6 @@ The initial temperature (that is also the far-field boundary temperature) and th
   :start-after: <!-- SPHINX_TemperatureBC -->
   :end-before: <!-- SPHINX_TemperatureBCEnd -->
 
-It is important to remark that the initial effective stress of rock must be set with accordance to the initial temperature change: :math:`\sigma_{0} = 3K\alpha \delta T_{0}` where :math:`\sigma_{0}` is the initial effective principal stress, :math:`\delta T_{0}` is the initial temperature change, :math:`K` is the drained bulk modulus and :math:`\alpha` is the drained linear thermal expansion coefficient of the materials. In this example, the initial effective stresses are set to zero because the initial temperature change is set to zero.
-
-.. literalinclude:: ../../../../../../../inputFiles/wellbore/ThermoPoroElasticWellbore_base.xml
-  :language: xml
-  :start-after: <!-- SPHINX_StressInit -->
-  :end-before: <!-- SPHINX_StressInitEnd -->
-
 The initial and boundary conditions for pore pressure are defined in the block below:
 
 .. literalinclude:: ../../../../../../../inputFiles/wellbore/ThermoPoroElasticWellbore_base.xml

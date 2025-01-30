@@ -144,13 +144,6 @@ The initial reservoir temperature (that is also the far-field boundary temperatu
   :start-after: <!-- SPHINX_TemperatureBC -->
   :end-before: <!-- SPHINX_TemperatureBCEnd -->
 
-It is important to remark that the initial effective stress of each layers must be set with accordance to the initial temperature: :math:`\sigma_{0} = 3K\alpha \delta T_{0}` where :math:`\sigma_{0}` is the initial effective principal stress, :math:`\delta T_{0}` is the initial temperature change, :math:`K` is the drained bulk modulus and :math:`\alpha` is the drained linear thermal expansion coefficient of the materials.
-
-.. literalinclude:: ../../../../../../../inputFiles/wellbore/CasedThermoElasticWellbore_base.xml
-  :language: xml
-  :start-after: <!-- SPHINX_StressCasingInit -->
-  :end-before: <!-- SPHINX_StressCasingInitEnd -->
-
 Zero pore pressure is set everywhere to simulate a thermoelastic problem in which fluid flow is ignored:
 
 .. literalinclude:: ../../../../../../../inputFiles/wellbore/CasedThermoElasticWellbore_base.xml

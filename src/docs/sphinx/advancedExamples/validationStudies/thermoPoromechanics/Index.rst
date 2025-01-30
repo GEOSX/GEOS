@@ -9,4 +9,6 @@ Thermoporomechanics
 
    thermalConsolidation/Example
 
+   nonLinearThermalOedometric/Example
+
 
