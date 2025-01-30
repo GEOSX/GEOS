@@ -2245,8 +2245,11 @@ Level 0 outputs no specific information for this solver. Higher levels require m
 Level 0 outputs no specific information for this solver. Higher levels require more outputs.
 1
  - Output timing information
+2
+ - Information on output events (VTK/ChomboIO/HDF5)
 3
- - Information on Time history Initialization-->
+ - Information on Time history Initialization
+ - Information on buffered data in an HDF5 file -->
 		<xsd:attribute name="logLevel" type="integer" default="0" />
 		<!--parallelThreads => Number of plot files.-->
 		<xsd:attribute name="parallelThreads" type="integer" default="1" />
@@ -2269,7 +2272,7 @@ Level 0 outputs no specific information for this solver. Higher levels require m
 1
  - Output timing information
 2
- - Information on output events, VTK/ChomboIO-->
+ - Information on output events (VTK/ChomboIO/HDF5)-->
 		<xsd:attribute name="logLevel" type="integer" default="0" />
 		<!--numberOfTargetProcesses => Number of output aggregate files to be written.-->
 		<xsd:attribute name="numberOfTargetProcesses" type="integer" default="1" />
@@ -3263,6 +3266,8 @@ Level 0 outputs no specific information for this solver. Higher levels require m
  - Linear solver information
  - Nonlinear solver information
  - Solver timers information
+ - Print linear solver configuration
+ - Solver step Information
 2
  - The summary of declared fields and coupling-->
 		<xsd:attribute name="logLevel" type="integer" default="0" />
@@ -3298,6 +3303,8 @@ Level 0 outputs no specific information for this solver. Higher levels require m
  - Linear solver information
  - Nonlinear solver information
  - Solver timers information
+ - Print linear solver configuration
+ - Solver step Information
 2
  - The summary of declared fields and coupling-->
 		<xsd:attribute name="logLevel" type="integer" default="0" />
@@ -3430,6 +3437,8 @@ Level 0 outputs no specific information for this solver. Higher levels require m
  - Linear solver information
  - Nonlinear solver information
  - Solver timers information
+ - Print linear solver configuration
+ - Solver step Information
 2
  - The summary of declared fields and coupling-->
 		<xsd:attribute name="logLevel" type="integer" default="0" />
@@ -3467,6 +3476,8 @@ Level 0 outputs no specific information for this solver. Higher levels require m
  - Linear solver information
  - Nonlinear solver information
  - Solver timers information
+ - Print linear solver configuration
+ - Solver step Information
 2
  - The summary of declared fields and coupling-->
 		<xsd:attribute name="logLevel" type="integer" default="0" />
@@ -3673,6 +3684,7 @@ Level 0 outputs no specific information for this solver. Higher levels require m
  - Linear solver information
  - Nonlinear solver information
  - Solver timers information
+ - Print linear solver configuration
  - Coupling information
 2
  - The summary of declared fields and coupling-->
@@ -4475,7 +4487,7 @@ Level 0 outputs no specific information for this solver. Higher levels require m
  - Print linear solver configuration
 2
  - The summary of declared fields and coupling
- - Configuration information-->
+ - Solver runtime settings-->
 		<xsd:attribute name="logLevel" type="integer" default="0" />
 		<!--massDamping => Value of mass based damping coefficient. -->
 		<xsd:attribute name="massDamping" type="real64" default="0" />
@@ -4589,7 +4601,7 @@ Level 0 outputs no specific information for this solver. Higher levels require m
  - Print linear solver configuration
 2
  - The summary of declared fields and coupling
- - Configuration information-->
+ - Solver runtime settings-->
 		<xsd:attribute name="logLevel" type="integer" default="0" />
 		<!--massDamping => Value of mass based damping coefficient. -->
 		<xsd:attribute name="massDamping" type="real64" default="0" />
