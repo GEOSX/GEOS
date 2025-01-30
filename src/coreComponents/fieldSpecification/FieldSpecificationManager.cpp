@@ -194,20 +194,62 @@ void FieldSpecificationManager::validateBoundaryConditions( MeshLevel & mesh ) c
 
     if( isFieldNameFound == 0 )
     {
-      char const fieldNameNotFoundMessage[] =
-        "\n{}: there is no {} named `{}` under the {} `{}`.\n";
-      string const errorMsg =
-        GEOS_FMT( fieldNameNotFoundMessage,
+      std::ostringstream fieldNameNotFoundMessage;
+      std::string fieldNamePath =
+        GEOS_FMT( "\n{}: there is no {} named `{}` under the {} `{}`.\n",
                   fs.getWrapperDataContext( FieldSpecificationBase::viewKeyStruct::fieldNameString() ),
                   FieldSpecificationBase::viewKeyStruct::fieldNameString(),
-                  fs.getFieldName(), FieldSpecificationBase::viewKeyStruct::objectPathString(), fs.getObjectPath() );
+                  fs.getFieldName(), FieldSpecificationBase::viewKeyStruct::objectPathString(), fs.getObjectPath());
+
+      fieldNameNotFoundMessage << fieldNamePath;
       if( areAllSetsEmpty )
       {
-        GEOS_LOG_RANK_0( errorMsg );
+        GEOS_LOG_RANK_0( fieldNameNotFoundMessage.str() );
       }
       else
       {
-        GEOS_THROW( errorMsg, InputError );
+        fieldNameNotFoundMessage << GEOS_FMT( "Available fields in {} are:\n", fs.getObjectPath());
+        std::set< string > fieldNameAvail;
+        this->forSubGroups< FieldSpecificationBase >( [&] ( FieldSpecificationBase const & fs2 )
+        {
+          fs2.apply< dataRepository::Group >( mesh,
+                                              [&]( FieldSpecificationBase const &,
+                                                   string const & setName,
+                                                   SortedArrayView< localIndex const > const & targetSet,
+                                                   Group & targetGroup,
+                                                   string const fieldName )
+          {
+            GEOS_UNUSED_VAR( setName );
+            GEOS_UNUSED_VAR( isTargetSetCreated );
+            GEOS_UNUSED_VAR( targetSet );
+
+            if( targetGroup.hasWrapper( fieldName ) )
+            {
+              WrapperBase & targetField = targetGroup.getWrapperBase( fieldName );
+              string const solverName = *(targetField.getRegisteringObjects().begin());
+
+              for( auto & view : targetGroup.wrappers() )
+              {
+                if( *(view.second->getRegisteringObjects().begin()) == solverName )
+                {
+                  fieldNameAvail.insert( view.second->getName()  );
+                }
+              }
+            }
+
+          } );
+        } );
+
+        for( auto it=fieldNameAvail.begin(); it!=fieldNameAvail.end(); ++it )
+        {
+          fieldNameNotFoundMessage << *it;
+          if( it != std::prev( fieldNameAvail.end()))
+          {
+            fieldNameNotFoundMessage << ", ";
+          }
+        }
+
+        GEOS_THROW( fieldNameNotFoundMessage.str(), InputError );
       }
     }
   } );
