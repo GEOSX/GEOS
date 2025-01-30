@@ -10,7 +10,6 @@ geos_decorate_link_dependencies( LIST decoratedDependencies
                                  DEPENDENCIES ${dependencyList} )
 # Add gtest C++ based tests
 foreach( test ${testSources} )
-
   get_filename_component( test_name ${test} NAME_WE )
   blt_add_executable( NAME ${test_name}
                       SOURCES ${test}
