@@ -952,6 +952,13 @@ protected:
   template< typename CONSTITUTIVE_BASE_TYPE >
   static string getConstitutiveName( ParticleSubRegionBase const & subRegion ); // particle overload
 
+  /**
+   * @brief Register wrapper with given name and store constitutive model name on the subregion
+   *
+   * @tparam CONSTITUTIVE_BASE_TYPE the base type of the constitutive model.
+   * @param subRegion the subregion on which the constitutive model is registered
+   * @param the name name of the constitutive model of type CONSTITUTIVE_BASE_TYPE registered on the subregion.
+   */
   template< typename CONSTITUTIVE_BASE_TYPE >
   void setConstitutiveName( ElementSubRegionBase & subRegion, string const & name ) const;
 
