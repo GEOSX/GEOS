@@ -91,8 +91,6 @@ private:
 
   void postInputInitialization() override;
 
-//  void registerDataOnMesh( Group & meshBodies ) override;
-
   /// Name of the poromechanics solver
   string m_poromechanicsSolverName;
 

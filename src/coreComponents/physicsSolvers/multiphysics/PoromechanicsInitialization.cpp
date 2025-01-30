@@ -21,7 +21,6 @@
 
 #include "events/tasks/TasksManager.hpp"
 #include "physicsSolvers/PhysicsSolverManager.hpp"
-#include "physicsSolvers/fluidFlow/SinglePhaseBase.hpp"
 #include "physicsSolvers/solidMechanics/SolidMechanicsStatistics.hpp"
 #include "physicsSolvers/multiphysics/MultiphasePoromechanics.hpp"
 #include "physicsSolvers/multiphysics/MultiphasePoromechanicsConformingFractures.hpp"
@@ -88,8 +87,9 @@ postInputInitialization()
     TasksManager & tasksManager = problemManager.getGroup< TasksManager >( "Tasks" );
 
     GEOS_THROW_IF( !tasksManager.hasGroup( m_solidMechanicsStatisticsName ),
-                   GEOS_FMT( "{}: statistics task named {} not found",
+                   GEOS_FMT( "{}: {} task named {} not found",
                              getWrapperDataContext( viewKeyStruct::solidMechanicsStatisticsNameString() ),
+                             SolidMechanicsStatistics::catalogName(),
                              m_solidMechanicsStatisticsName ),
                    InputError );
 
@@ -117,7 +117,16 @@ execute( real64 const time_n,
 
   m_solidMechanicsStateResetTask.execute( time_n, dt, cycleNumber, eventCounter, eventProgress, domain );
 
-  m_poromechanicsSolver->execute( time_n, dt, cycleNumber, eventCounter, eventProgress, domain );
+  if constexpr ( std::is_same_v< POROMECHANICS_SOLVER, HydrofractureSolver<> > )     // special case
+  {
+    m_poromechanicsSolver->execute( time_n, dt, cycleNumber, eventCounter, eventProgress, domain );
+  }
+  else     // default
+  {
+    m_poromechanicsSolver->flowSolver()->initializeState( domain );
+    m_poromechanicsSolver->updateBulkDensity( domain );
+    m_poromechanicsSolver->solidMechanicsSolver()->execute( time_n, dt, cycleNumber, eventCounter, eventProgress, domain );
+  }
 
   GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Initialization, GEOS_FMT( "Task `{}`: at time {}s, physics solver `{}` has completed stress initialization",
                                                                  getName(), time_n + dt, m_poromechanicsSolverName ) );

@@ -80,17 +80,13 @@ public:
   PoromechanicsSolver( const string & name,
                        dataRepository::Group * const parent )
     : Base( name, parent ),
-    m_isThermal( 0 )
+    m_isThermal( 0 ),
+    m_performStressInitialization( false )
   {
     this->registerWrapper( viewKeyStruct::isThermalString(), &m_isThermal ).
       setApplyDefaultValue( 0 ).
       setInputFlag( dataRepository::InputFlags::OPTIONAL ).
       setDescription( "Flag indicating whether the problem is thermal or not. Set isThermal=\"1\" to enable the thermal coupling" );
-
-    this->registerWrapper( viewKeyStruct::performStressInitializationString(), &m_performStressInitialization ).
-      setApplyDefaultValue( false ).
-      setInputFlag( dataRepository::InputFlags::FALSE ).
-      setDescription( "Flag to indicate that the solver is going to perform stress initialization" );
 
     this->registerWrapper( viewKeyStruct::stabilizationTypeString(), &m_stabilizationType ).
       setInputFlag( dataRepository::InputFlags::OPTIONAL ).
@@ -219,12 +215,9 @@ public:
           setRestartFlags( dataRepository::RestartFlags::NO_WRITE ).
           setSizedFromParent( 0 );
 
-        if( this->getNonlinearSolverParameters().m_couplingType == NonlinearSolverParameters::CouplingType::Sequential )
-        {
-          // register the bulk density for use in the solid mechanics solver
-          // ideally we would resize it here as well, but the solid model name is not available yet (see below)
-          subRegion.registerField< fields::poromechanics::bulkDensity >( this->getName() );
-        }
+        // register the bulk density for use in the solid mechanics solver
+        // ideally we would resize it here as well, but the solid model name is not available yet (see below)
+        subRegion.registerField< fields::poromechanics::bulkDensity >( this->getName() );
 
         if( m_stabilizationType == stabilization::StabilizationType::Global || m_stabilizationType == stabilization::StabilizationType::Local )
         {
@@ -301,9 +294,10 @@ public:
    * @brief Utility function to set the stress initialization flag
    * @param[in] performStressInitialization true if the solver has to initialize stress, false otherwise
    */
-  void setStressInitialization( integer const performStressInitialization )
+  void setStressInitialization( bool const performStressInitialization )
   {
     m_performStressInitialization = performStressInitialization;
+    solidMechanicsSolver()->setStressInitialization( performStressInitialization );
   }
 
   struct viewKeyStruct : Base::viewKeyStruct
@@ -313,9 +307,6 @@ public:
 
     /// Flag to indicate that the simulation is thermal
     constexpr static char const * isThermalString() { return "isThermal"; }
-
-    /// Flag to indicate that the solver is going to perform stress initialization
-    constexpr static char const * performStressInitializationString() { return "performStressInitialization"; }
 
     /// Type of pressure stabilization
     constexpr static char const * stabilizationTypeString() {return "stabilizationType"; }
@@ -391,6 +382,23 @@ public:
       } );
     } );
 
+  }
+
+  void updateBulkDensity( DomainPartition & domain )
+  {
+    this->template forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
+                                                                                MeshLevel & mesh,
+                                                                                arrayView1d< string const > const & regionNames )
+    {
+      mesh.getElemManager().forElementSubRegions< CellElementSubRegion >( regionNames, [&]( localIndex const,
+                                                                                            auto & subRegion )
+      {
+        // update the bulk density
+        // TODO: ideally, we would not recompute the bulk density, but a more general "rhs" containing the body force and the
+        // pressure/temperature terms
+        updateBulkDensity( subRegion );
+      } );
+    } );
   }
 
 protected:
@@ -560,20 +568,7 @@ protected:
     /// After the flow solver
     if( solverType == static_cast< integer >( SolverType::Flow ) )
     {
-      this->template forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
-                                                                                  MeshLevel & mesh,
-                                                                                  arrayView1d< string const > const & regionNames )
-      {
-
-        mesh.getElemManager().forElementSubRegions< CellElementSubRegion >( regionNames, [&]( localIndex const,
-                                                                                              auto & subRegion )
-        {
-          // update the bulk density
-          // TODO: ideally, we would not recompute the bulk density, but a more general "rhs" containing the body force and the
-          // pressure/temperature terms
-          updateBulkDensity( subRegion );
-        } );
-      } );
+      updateBulkDensity( domain );
     }
 
     /// After the solid mechanics solver
@@ -667,7 +662,7 @@ protected:
   integer m_isThermal;
 
   /// Flag to indicate that the solver is going to perform stress initialization
-  integer m_performStressInitialization;
+  bool m_performStressInitialization;
 
   /// Type of stabilization used
   stabilization::StabilizationType m_stabilizationType;

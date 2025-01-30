@@ -639,7 +639,7 @@ void SolidMechanicsLagrangeContact::assembleSystem( real64 const time,
   assembleContact( domain, dofManager, localMatrix, localRhs );
 
   // for sequential: add (fixed) pressure force contribution into residual (no derivatives)
-  if( m_isFixedStressPoromechanicsUpdate )
+  if( m_isFixedStressPoromechanicsUpdate || m_performStressInitialization )
   {
     forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
                                                                  MeshLevel const & mesh,

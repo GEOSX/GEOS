@@ -168,6 +168,8 @@ public:
     GEOS_ERROR( "Poroelastic fluxes with conforming fractures not yet implemented." );
   }
 
+  void initializeState( DomainPartition & domain );
+
   virtual void initializeFluidState( MeshLevel & mesh, const arrayView1d< const string > & regionNames ) { GEOS_UNUSED_VAR( mesh, regionNames ); }
 
   virtual void initializeThermalState( MeshLevel & mesh, const arrayView1d< const string > & regionNames ) { GEOS_UNUSED_VAR( mesh, regionNames ); }
@@ -233,8 +235,6 @@ protected:
   void checkDiscretizationName() const;
 
   virtual void initializePostInitialConditionsPreSubGroups() override;
-
-  void initializeState( DomainPartition & domain );
 
   virtual void computeHydrostaticEquilibrium( DomainPartition & domain ) { GEOS_UNUSED_VAR( domain ); }
 
