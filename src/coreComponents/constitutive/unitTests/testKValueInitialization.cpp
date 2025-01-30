@@ -86,6 +86,7 @@ private:
       criticalTemperature,
       acentricFactor,
       discarded,
+      discardedInteger,
       discarded2d );
   }
 
@@ -95,6 +96,7 @@ protected:
   array1d< real64 > criticalTemperature;
   array1d< real64 > acentricFactor;
   array1d< real64 > discarded;
+  array1d< integer > discardedInteger;
   array2d< real64 > discarded2d;
 };
 

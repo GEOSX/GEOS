@@ -23,6 +23,7 @@
 #include "constitutive/fluid/multifluid/compositional/models/ComponentProperties.hpp"
 #include "constitutive/fluid/multifluid/compositional/models/EquationOfState.hpp"
 #include "constitutive/fluid/multifluid/compositional/functions/CubicEOSPhaseModel.hpp"
+#include "constitutive/fluid/multifluid/compositional/functions/SoreideWhitsonEOSModel.hpp"
 
 namespace geos
 {
@@ -108,6 +109,17 @@ void FugacityCalculator::computeLogFugacity( integer const numComps,
                                     componentProperties,
                                     logFugacity );
   }
+  else if( equationOfState == EquationOfStateType::SoreideWhitson )
+  {
+    SoreideWhitsonEOSModel< SoreideWhitsonPhaseType::Aqueous, PengRobinsonEOS >::
+    computeLogFugacityCoefficients( numComps,
+                                    pressure,
+                                    temperature,
+                                    composition,
+                                    componentProperties,
+                                    2.,
+                                    logFugacity );
+  }
 }
 
 template< int USD1, int USD2 >
@@ -143,6 +155,18 @@ void FugacityCalculator::computeLogFugacityDerivatives( integer const numComps,
                                     logFugacity,
                                     logFugacityDerivs );
   }
+  else if( equationOfState == EquationOfStateType::SoreideWhitson )
+  {
+    SoreideWhitsonEOSModel< SoreideWhitsonPhaseType::Aqueous, PengRobinsonEOS >::
+    computeLogFugacityCoefficients( numComps,
+                                    pressure,
+                                    temperature,
+                                    composition,
+                                    componentProperties,
+                                    0.0,
+                                                                        logFugacity,
+                                    logFugacityDerivs );
+  }  
 }
 
 } // namespace compositional

@@ -37,11 +37,23 @@ namespace compositional
 class ComponentProperties final
 {
 public:
+  enum class ComponentType : integer
+  {
+    HydroCarbon,
+    Water,
+    HydrogenSulphide,
+    CarbonDioxide,
+    Nitrogen
+  };
+
+public:
   ComponentProperties( string_array const & componentNames,
                        array1d< real64 > const & componentMolarWeight ):
     m_componentNames ( componentNames ),
     m_componentMolarWeight ( componentMolarWeight )
-  {}
+  {
+    classifyComponents( m_componentNames, m_componentType );
+  }
 
   ~ComponentProperties() = default;
   ComponentProperties( const ComponentProperties & ) = default;
@@ -61,6 +73,7 @@ public:
   arrayView1d< real64 > const & getComponentCriticalPressure() const { return m_componentCriticalPressure; }
   arrayView1d< real64 > const & getComponentCriticalTemperature() const { return m_componentCriticalTemperature; }
   arrayView1d< real64 > const & getComponentAcentricFactor() const { return m_componentAcentricFactor; }
+  arrayView1d< integer > const & getComponentType() const { return m_componentType; }
   arrayView1d< real64 > const & getComponentVolumeShift() const { return m_componentVolumeShift; }
 
   struct KernelWrapper
@@ -70,12 +83,14 @@ public:
                    arrayView1d< real64 const > const & componentCriticalTemperature,
                    arrayView1d< real64 const > const & componentAcentricFactor,
                    arrayView1d< real64 const > const & componentVolumeShift,
+                   arrayView1d< integer const > const & componentType,
                    arrayView2d< real64 const > const & componentBinaryCoeff ):
       m_componentMolarWeight ( componentMolarWeight ),
       m_componentCriticalPressure ( componentCriticalPressure ),
       m_componentCriticalTemperature( componentCriticalTemperature ),
       m_componentAcentricFactor( componentAcentricFactor ),
       m_componentVolumeShift( componentVolumeShift ),
+      m_componentType( componentType ),
       m_componentBinaryCoeff( componentBinaryCoeff )
     {}
 
@@ -93,6 +108,7 @@ public:
       m_componentCriticalTemperature.move( space, touch );
       m_componentAcentricFactor.move( space, touch );
       m_componentVolumeShift.move( space, touch );
+      m_componentType.move( space, touch );
       m_componentBinaryCoeff.move( space, touch );
     }
 
@@ -102,6 +118,7 @@ public:
     arrayView1d< real64 const > m_componentCriticalTemperature;
     arrayView1d< real64 const > m_componentAcentricFactor;
     arrayView1d< real64 const > m_componentVolumeShift;
+    arrayView1d< integer const > m_componentType;
     arrayView2d< real64 const > m_componentBinaryCoeff;
   };
 
@@ -116,8 +133,12 @@ public:
                           m_componentCriticalTemperature,
                           m_componentAcentricFactor,
                           m_componentVolumeShift,
+                          m_componentType,
                           m_componentBinaryCoeff );
   }
+
+private:
+  static void classifyComponents( string_array const & componentNames, array1d< integer > & componentType );
 
 public:
   // Standard compositional input
@@ -127,6 +148,7 @@ public:
   array1d< real64 > m_componentCriticalTemperature;
   array1d< real64 > m_componentAcentricFactor;
   array1d< real64 > m_componentVolumeShift;
+  array1d< integer > m_componentType;
   array2d< real64 > m_componentBinaryCoeff;
 };
 

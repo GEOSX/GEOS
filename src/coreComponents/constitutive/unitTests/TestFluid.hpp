@@ -158,7 +158,7 @@ public:
   template< typename ARRAY, typename LIST >
   static void createArray( ARRAY & array, LIST const & data )
   {
-    for( auto const value : data )
+    for( auto const & value : data )
     {
       array.emplace_back( value );
     }
@@ -167,7 +167,7 @@ public:
   static void populateArray( ARRAY & array, LIST const & data )
   {
     integer i = 0;
-    for( auto const value : data )
+    for( auto const & value : data )
     {
       array[i++] = value;
     }
