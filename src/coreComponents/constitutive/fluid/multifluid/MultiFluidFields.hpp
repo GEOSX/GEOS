@@ -207,6 +207,14 @@ DECLARE_FIELD( dTotalDensity,
                NO_WRITE,
                "Derivative of total density with respect to pressure, temperature, and global component fractions" );
 
+DECLARE_FIELD( kValues,
+               "kValues",
+               array4dLayoutPhaseComp,
+               0,
+               NOPLOT,
+               WRITE_AND_READ,
+               "Phase equilibrium ratios" );
+
 }
 
 }

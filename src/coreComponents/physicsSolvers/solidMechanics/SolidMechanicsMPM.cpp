@@ -52,6 +52,7 @@ namespace geos
 
 using namespace dataRepository;
 using namespace constitutive;
+using namespace fields;
 
 SolidMechanicsMPM::SolidMechanicsMPM( const string & name,
                                       Group * const parent ):
@@ -324,8 +325,6 @@ SolidMechanicsMPM::~SolidMechanicsMPM()
 
 void SolidMechanicsMPM::registerDataOnMesh( Group & meshBodies )
 {
-  using namespace fields::mpm;
-
   ExecutableGroup::registerDataOnMesh( meshBodies );
 
   forDiscretizationOnMeshTargets( meshBodies, [&] ( string const & meshBodyName,
@@ -368,23 +367,23 @@ void SolidMechanicsMPM::registerDataOnMesh( Group & meshBodies )
         string const voightLabels[6] = { "XX", "YY", "ZZ", "YZ", "XZ", "XY" };
 
         // Single-indexed fields (scalars)
-        subRegion.registerField< isBad >( getName() );
-        subRegion.registerField< particleMass >( getName() );
-        subRegion.registerField< particleInitialVolume >( getName() );
-        subRegion.registerField< particleDensity >( getName() );
-        subRegion.registerField< particleOverlap >( getName() );
+        subRegion.registerField< mpm::isBad >( getName() );
+        subRegion.registerField< mpm::particleMass >( getName() );
+        subRegion.registerField< mpm::particleInitialVolume >( getName() );
+        subRegion.registerField< mpm::particleDensity >( getName() );
+        subRegion.registerField< mpm::particleOverlap >( getName() );
 
         // Double-indexed fields (vectors and symmetric tensors stored in Voigt notation)
-        subRegion.registerField< particleStress >( getName() ).setDimLabels( 1, voightLabels ).reference().resizeDimension< 1 >( 6 );
-        subRegion.registerField< particleDamageGradient >( getName() ).reference().resizeDimension< 1 >( 3 );
-        subRegion.registerField< particleReferencePosition >( getName() ).reference().resizeDimension< 1 >( 3 );
+        subRegion.registerField< mpm::particleStress >( getName() ).setDimLabels( 1, voightLabels ).reference().resizeDimension< 1 >( 6 );
+        subRegion.registerField< mpm::particleDamageGradient >( getName() ).reference().resizeDimension< 1 >( 3 );
+        subRegion.registerField< mpm::particleReferencePosition >( getName() ).reference().resizeDimension< 1 >( 3 );
 
         // Triple-indexed fields (vectors of vectors, non-symmetric tensors)
-        subRegion.registerField< particleInitialRVectors >( getName() ).reference().resizeDimension< 1, 2 >( 3, 3 );
-        subRegion.registerField< particleDeformationGradient >( getName() ).reference().resizeDimension< 1, 2 >( 3, 3 );
-        subRegion.registerField< particleFDot >( getName() ).reference().resizeDimension< 1, 2 >( 3, 3 );
-        subRegion.registerField< particleVelocityGradient >( getName() ).reference().resizeDimension< 1, 2 >( 3, 3 );
-        subRegion.registerField< particleSphF >( getName() ).reference().resizeDimension< 1, 2 >( 3, 3 );
+        subRegion.registerField< mpm::particleInitialRVectors >( getName() ).reference().resizeDimension< 1, 2 >( 3, 3 );
+        subRegion.registerField< mpm::particleDeformationGradient >( getName() ).reference().resizeDimension< 1, 2 >( 3, 3 );
+        subRegion.registerField< mpm::particleFDot >( getName() ).reference().resizeDimension< 1, 2 >( 3, 3 );
+        subRegion.registerField< mpm::particleVelocityGradient >( getName() ).reference().resizeDimension< 1, 2 >( 3, 3 );
+        subRegion.registerField< mpm::particleSphF >( getName() ).reference().resizeDimension< 1, 2 >( 3, 3 );
       } );
     }
     else // Background grid field registration
@@ -784,17 +783,17 @@ void SolidMechanicsMPM::initialize( NodeManager & nodeManager,
     SolidBase & constitutiveRelation = getConstitutiveModel< SolidBase >( subRegion, solidMaterialName );
     arrayView2d< real64 const > const particlePosition = subRegion.getParticleCenter();
     arrayView2d< real64 const > const constitutiveDensity = constitutiveRelation.getDensity();
-    arrayView1d< real64 > const particleDensity = subRegion.getField< fields::mpm::particleDensity >();
+    arrayView1d< real64 > const particleDensity = subRegion.getField< mpm::particleDensity >();
     arrayView1d< real64 const > const particleVolume = subRegion.getParticleVolume();
     arrayView3d< real64 const > const particleRVectors = subRegion.getParticleRVectors();
-    arrayView1d< real64 > const particleMass = subRegion.getField< fields::mpm::particleMass >();
-    arrayView3d< real64 > const particleDeformationGradient = subRegion.getField< fields::mpm::particleDeformationGradient >();
-    arrayView3d< real64 > const particleFDot = subRegion.getField< fields::mpm::particleFDot >();
-    arrayView3d< real64 > const particleVelocityGradient = subRegion.getField< fields::mpm::particleVelocityGradient >();
-    arrayView1d< real64 > const particleInitialVolume = subRegion.getField< fields::mpm::particleInitialVolume >();
-    arrayView3d< real64 > const particleInitialRVectors = subRegion.getField< fields::mpm::particleInitialRVectors >();
-    arrayView3d< real64 > const particleSphF = subRegion.getField< fields::mpm::particleSphF >();
-    arrayView2d< real64 > const particleReferencePosition = subRegion.getField< fields::mpm::particleReferencePosition >();
+    arrayView1d< real64 > const particleMass = subRegion.getField< mpm::particleMass >();
+    arrayView3d< real64 > const particleDeformationGradient = subRegion.getField< mpm::particleDeformationGradient >();
+    arrayView3d< real64 > const particleFDot = subRegion.getField< mpm::particleFDot >();
+    arrayView3d< real64 > const particleVelocityGradient = subRegion.getField< mpm::particleVelocityGradient >();
+    arrayView1d< real64 > const particleInitialVolume = subRegion.getField< mpm::particleInitialVolume >();
+    arrayView3d< real64 > const particleInitialRVectors = subRegion.getField< mpm::particleInitialRVectors >();
+    arrayView3d< real64 > const particleSphF = subRegion.getField< mpm::particleSphF >();
+    arrayView2d< real64 > const particleReferencePosition = subRegion.getField< mpm::particleReferencePosition >();
 
     // Set reference position, volume and R-vectors
     for( int p=0; p<subRegion.size(); p++ )
@@ -1526,7 +1525,7 @@ void SolidMechanicsMPM::computeGridSurfaceNormals( ParticleManager & particleMan
     // Particle fields
     arrayView1d< real64 const > const particleVolume = subRegion.getParticleVolume();
     arrayView1d< int const > const particleGroup = subRegion.getParticleGroup();
-    arrayView2d< real64 const > const particleDamageGradient = subRegion.getField< fields::mpm::particleDamageGradient >();
+    arrayView2d< real64 const > const particleDamageGradient = subRegion.getField< mpm::particleDamageGradient >();
 
     // Get views to mapping arrays
     int const numberOfVerticesPerParticle = subRegion.numberOfVerticesPerParticle();
@@ -2455,7 +2454,7 @@ void SolidMechanicsMPM::computeDamageFieldGradient( ParticleManager & particleMa
 
     // Get particle position and damage field gradient
     arrayView2d< real64 const > const particlePosition = subRegion.getParticleCenter();
-    arrayView2d< real64 > const particleDamageGradient = subRegion.getField< fields::mpm::particleDamageGradient >();
+    arrayView2d< real64 > const particleDamageGradient = subRegion.getField< mpm::particleDamageGradient >();
 
     // Loop over neighbors
     SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
@@ -2543,7 +2542,7 @@ void SolidMechanicsMPM::projectDamageFieldGradientToGrid( ParticleManager & part
   particleManager.forParticleSubRegions( [&]( ParticleSubRegion & subRegion )
   {
     // Get particle fields
-    arrayView2d< real64 const > const particleDamageGradient = subRegion.getField< fields::mpm::particleDamageGradient >();
+    arrayView2d< real64 const > const particleDamageGradient = subRegion.getField< mpm::particleDamageGradient >();
 
     // Get nodes this particle maps to
     arrayView2d< localIndex const > const mappedNodes = m_mappedNodes[subRegionIndex];
@@ -2579,9 +2578,9 @@ void SolidMechanicsMPM::updateDeformationGradient( real64 dt,
   particleManager.forParticleSubRegions( [&]( ParticleSubRegion & subRegion )
   {
     // Get fields
-    arrayView3d< real64 > const particleDeformationGradient = subRegion.getField< fields::mpm::particleDeformationGradient >();
-    arrayView3d< real64 > const particleFDot = subRegion.getField< fields::mpm::particleFDot >();
-    arrayView3d< real64 const > const particleVelocityGradient = subRegion.getField< fields::mpm::particleVelocityGradient >();
+    arrayView3d< real64 > const particleDeformationGradient = subRegion.getField< mpm::particleDeformationGradient >();
+    arrayView3d< real64 > const particleFDot = subRegion.getField< mpm::particleFDot >();
+    arrayView3d< real64 const > const particleVelocityGradient = subRegion.getField< mpm::particleVelocityGradient >();
 
     // Update F
     SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
@@ -2631,10 +2630,10 @@ void SolidMechanicsMPM::updateStress( real64 dt,
     SolidBase & solid = getConstitutiveModel< SolidBase >( subRegion, solidMaterialName );
 
     // Get particle kinematic fields that are fed into constitutive model
-    arrayView3d< real64 const > const particleDeformationGradient = subRegion.getField< fields::mpm::particleDeformationGradient >();
-    arrayView3d< real64 const > const particleFDot = subRegion.getField< fields::mpm::particleFDot >();
-    arrayView3d< real64 const > const particleVelocityGradient = subRegion.getField< fields::mpm::particleVelocityGradient >();
-    arrayView2d< real64 > const particleStress = subRegion.getField< fields::mpm::particleStress >();
+    arrayView3d< real64 const > const particleDeformationGradient = subRegion.getField< mpm::particleDeformationGradient >();
+    arrayView3d< real64 const > const particleFDot = subRegion.getField< mpm::particleFDot >();
+    arrayView3d< real64 const > const particleVelocityGradient = subRegion.getField< mpm::particleVelocityGradient >();
+    arrayView2d< real64 > const particleStress = subRegion.getField< mpm::particleStress >();
 
     // Call constitutive model
     ConstitutivePassThruMPM< SolidBase >::execute( solid, [&] ( auto & castedSolid )
@@ -2660,13 +2659,13 @@ void SolidMechanicsMPM::particleKinematicUpdate( ParticleManager & particleManag
     // Get particle fields
     arrayView1d< globalIndex const > const particleID = subRegion.getParticleID();
     arrayView1d< real64 > const particleVolume = subRegion.getParticleVolume();
-    arrayView1d< int > const isBad = subRegion.getField< fields::mpm::isBad >();
-    arrayView1d< real64 const > const particleInitialVolume = subRegion.getField< fields::mpm::particleInitialVolume >();
-    arrayView1d< real64 > const particleDensity = subRegion.getField< fields::mpm::particleDensity >();
-    arrayView1d< real64 const > const particleMass = subRegion.getField< fields::mpm::particleMass >();
+    arrayView1d< int > const isBad = subRegion.getField< mpm::isBad >();
+    arrayView1d< real64 const > const particleInitialVolume = subRegion.getField< mpm::particleInitialVolume >();
+    arrayView1d< real64 > const particleDensity = subRegion.getField< mpm::particleDensity >();
+    arrayView1d< real64 const > const particleMass = subRegion.getField< mpm::particleMass >();
     arrayView3d< real64 > const particleRVectors = subRegion.getParticleRVectors();
-    arrayView3d< real64 const > const particleInitialRVectors = subRegion.getField< fields::mpm::particleInitialRVectors >();
-    arrayView3d< real64 const > const particleDeformationGradient = subRegion.getField< fields::mpm::particleDeformationGradient >();
+    arrayView3d< real64 const > const particleInitialRVectors = subRegion.getField< mpm::particleInitialRVectors >();
+    arrayView3d< real64 const > const particleDeformationGradient = subRegion.getField< mpm::particleDeformationGradient >();
 
     // Update volume and r-vectors
     SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
@@ -2709,10 +2708,10 @@ void SolidMechanicsMPM::computeAndWriteBoxAverage( const real64 dt,
     particleManager.forParticleSubRegions( [&]( ParticleSubRegion & subRegion )
     {
       // Get fields
-      arrayView1d< real64 > const particleMass = subRegion.getField< fields::mpm::particleMass >();
+      arrayView1d< real64 > const particleMass = subRegion.getField< mpm::particleMass >();
       arrayView1d< real64 > const particleVolume = subRegion.getParticleVolume();
-      arrayView1d< real64 > const particleInitialVolume = subRegion.getField< fields::mpm::particleInitialVolume >();
-      arrayView2d< real64 > const particleStress = subRegion.getField< fields::mpm::particleStress >();
+      arrayView1d< real64 > const particleInitialVolume = subRegion.getField< mpm::particleInitialVolume >();
+      arrayView2d< real64 > const particleStress = subRegion.getField< mpm::particleStress >();
       arrayView1d< real64 > const particleDamage = subRegion.getParticleDamage();
 
       // Accumulate values
@@ -2873,13 +2872,13 @@ void SolidMechanicsMPM::particleToGrid( ParticleManager & particleManager,
     // Particle fields
     arrayView2d< real64 const > const particlePosition = subRegion.getParticleCenter();
     arrayView2d< real64 const > const particleVelocity = subRegion.getParticleVelocity();
-    arrayView1d< real64 const > const particleMass = subRegion.getField< fields::mpm::particleMass >();
+    arrayView1d< real64 const > const particleMass = subRegion.getField< mpm::particleMass >();
     arrayView1d< real64 const > const particleVolume = subRegion.getParticleVolume();
     arrayView1d< int const > const particleGroup = subRegion.getParticleGroup();
     arrayView1d< int const > const particleSurfaceFlag = subRegion.getParticleSurfaceFlag();
 
-    arrayView2d< real64 const > const particleStress = subRegion.getField< fields::mpm::particleStress >();
-    arrayView2d< real64 const > const particleDamageGradient = subRegion.getField< fields::mpm::particleDamageGradient >();
+    arrayView2d< real64 const > const particleStress = subRegion.getField< mpm::particleStress >();
+    arrayView2d< real64 const > const particleDamageGradient = subRegion.getField< mpm::particleDamageGradient >();
     arrayView1d< real64 const > const particleDamage = subRegion.getParticleDamage();
 
     // Grid fields
@@ -3142,8 +3141,8 @@ void SolidMechanicsMPM::gridToParticle( real64 dt,
     arrayView1d< int const > const particleGroup = subRegion.getParticleGroup();
 
     // Registered by MPM solver
-    arrayView3d< real64 > const particleVelocityGradient = subRegion.getField< fields::mpm::particleVelocityGradient >();
-    arrayView2d< real64 const > const particleDamageGradient = subRegion.getField< fields::mpm::particleDamageGradient >();
+    arrayView3d< real64 > const particleVelocityGradient = subRegion.getField< mpm::particleVelocityGradient >();
+    arrayView2d< real64 const > const particleDamageGradient = subRegion.getField< mpm::particleDamageGradient >();
 
     // Get views to mapping arrays
     int const numberOfVerticesPerParticle = subRegion.numberOfVerticesPerParticle();
@@ -3254,7 +3253,7 @@ real64 SolidMechanicsMPM::getStableTimeStep( ParticleManager & particleManager )
     // For the time being we restrict our attention to elastic isotropic solids.
     //TODO: Have all constitutive models automatically calculate a wave speed.
     ElasticIsotropic & constitutiveRelation = getConstitutiveModel< ElasticIsotropic >( subRegion, solidMaterialName );
-    arrayView1d< real64 const > const rho = subRegion.getField< fields::mpm::particleDensity >();
+    arrayView1d< real64 const > const rho = subRegion.getField< mpm::particleDensity >();
     arrayView1d< real64 const > const shearModulus = constitutiveRelation.shearModulus();
     arrayView1d< real64 const > const bulkModulus = constitutiveRelation.bulkModulus();
     SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
@@ -3286,7 +3285,7 @@ void SolidMechanicsMPM::deleteBadParticles( ParticleManager & particleManager )
     } );
 
     // Get relevant particle arrays
-    arrayView1d< int > const isBad = subRegion.getField< fields::mpm::isBad >();
+    arrayView1d< int > const isBad = subRegion.getField< mpm::isBad >();
 
     // Initialize the set of particles to delete
     std::set< localIndex > indicesToErase;
@@ -3372,7 +3371,7 @@ void SolidMechanicsMPM::computeSurfaceFlags( ParticleManager & particleManager )
 
     // Get particle position and surface flags
     arrayView2d< real64 const > const particlePosition = subRegion.getParticleCenter();
-    arrayView1d< int > const particleSurfaceFlag = subRegion.getField< fields::mpm::particleSurfaceFlag >();
+    arrayView1d< int > const particleSurfaceFlag = subRegion.getField< mpm::particleSurfaceFlag >();
 
     // Loop over neighbors
     SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
@@ -3447,8 +3446,8 @@ void SolidMechanicsMPM::computeSphF( ParticleManager & particleManager )
 
     // Get particle position and sphF
     arrayView2d< real64 const > const particlePosition = subRegion.getParticleCenter();
-    arrayView2d< real64 > const particleReferencePosition = subRegion.getField< fields::mpm::particleReferencePosition >();
-    arrayView3d< real64 > const particleSphF = subRegion.getField< fields::mpm::particleSphF >();
+    arrayView2d< real64 > const particleReferencePosition = subRegion.getField< mpm::particleReferencePosition >();
+    arrayView3d< real64 > const particleSphF = subRegion.getField< mpm::particleSphF >();
 
     // Loop over neighbors
     SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
@@ -3525,13 +3524,13 @@ void SolidMechanicsMPM::computeSphF( ParticleManager & particleManager )
 //   // If we're at a surface, induce corrective deformation normal to the surface
 //   particleManager.forParticleSubRegions( [&]( ParticleSubRegion & subRegion )
 //   {
-//     arrayView1d< real64 > const particleOverlap = subRegion.getField< fields::mpm::particleOverlap >();
+//     arrayView1d< real64 > const particleOverlap = subRegion.getField< mpm::particleOverlap >();
 //     particleOverlap.zero();
-//     arrayView2d< real64 const > const particleDamageGradient = subRegion.getField< fields::mpm::particleDamageGradient >();
-//     arrayView3d< real64 > const particleVelocityGradient = subRegion.getField< fields::mpm::particleVelocityGradient >();
+//     arrayView2d< real64 const > const particleDamageGradient = subRegion.getField< mpm::particleDamageGradient >();
+//     arrayView3d< real64 > const particleVelocityGradient = subRegion.getField< mpm::particleVelocityGradient >();
 //     particleVelocityGradient.zero();
-//     arrayView3d< real64 const > const particleDeformationGradient = subRegion.getField< fields::mpm::particleDeformationGradient >();
-//     arrayView3d< real64 const > const particleSphF = subRegion.getField< fields::mpm::particleSphF >();
+//     arrayView3d< real64 const > const particleDeformationGradient = subRegion.getField< mpm::particleDeformationGradient >();
+//     arrayView3d< real64 const > const particleSphF = subRegion.getField< mpm::particleSphF >();
 
 //     SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
 //     forAll< serialPolicy >( activeParticleIndices.size(), [=] GEOS_HOST ( localIndex const pp )
@@ -3650,7 +3649,7 @@ void SolidMechanicsMPM::flagOutOfRangeParticles( ParticleManager & particleManag
     // Get particle fields
     SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
     arrayView2d< real64 const > const particlePosition = subRegion.getParticleCenter();
-    arrayView1d< int > const isBad = subRegion.getField< fields::mpm::isBad >();
+    arrayView1d< int > const isBad = subRegion.getField< mpm::isBad >();
     ParticleType particleType = subRegion.getParticleType();
 
     // Define tolerance
@@ -3729,8 +3728,8 @@ void SolidMechanicsMPM::computeRVectors( ParticleManager & particleManager )
     {
       SortedArrayView< localIndex const > const activeParticleIndices = subRegion.activeParticleIndices();
       arrayView3d< real64 > const particleRVectors = subRegion.getParticleRVectors();
-      arrayView3d< real64 const > const particleInitialRVectors = subRegion.getField< fields::mpm::particleInitialRVectors >();
-      arrayView3d< real64 const > const particleDeformationGradient = subRegion.getField< fields::mpm::particleDeformationGradient >();
+      arrayView3d< real64 const > const particleInitialRVectors = subRegion.getField< mpm::particleInitialRVectors >();
+      arrayView3d< real64 const > const particleDeformationGradient = subRegion.getField< mpm::particleDeformationGradient >();
       forAll< serialPolicy >( activeParticleIndices.size(), [=] GEOS_HOST_DEVICE ( localIndex const pp )
       {
         localIndex const p = activeParticleIndices[pp];

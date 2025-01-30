@@ -67,7 +67,7 @@ void MultiphasePoromechanicsConformingFractures< FLOW_SOLVER >::setupCoupling( D
 
   // 2. Traction - pressure coupling in the fracture
   dofManager.addCoupling( m_flowDofKey,
-                          fields::contact::traction::key(),
+                          contact::traction::key(),
                           DofManager::Connector::Elem );
 }
 
@@ -567,6 +567,8 @@ assembleFluidMassResidualDerivativeWrtDisplacement( MeshLevel const & mesh,
 {
   GEOS_MARK_FUNCTION;
 
+  using namespace contact;
+
   integer const numComp = this->flowSolver()->numFluidComponents();
 
   FaceManager const & faceManager = mesh.getFaceManager();
@@ -598,14 +600,14 @@ assembleFluidMassResidualDerivativeWrtDisplacement( MeshLevel const & mesh,
                                                             [&]( localIndex const,
                                                                  FaceElementSubRegion const & subRegion )
   {
-    arrayView2d< real64 const, compflow::USD_COMP > const compDens = subRegion.getField< fields::flow::globalCompDensity >();
+    arrayView2d< real64 const, compflow::USD_COMP > const compDens = subRegion.getField< flow::globalCompDensity >();
 
     arrayView1d< globalIndex const > const & flowDofNumber = subRegion.getReference< array1d< globalIndex > >( flowDofKey );
 
     arrayView2d< localIndex const > const & elemsToFaces = subRegion.faceList().toViewConst();
     arrayView1d< real64 const > const & area = subRegion.getElementArea().toViewConst();
 
-    arrayView1d< integer const > const & fractureState = subRegion.getField< fields::contact::fractureState >();
+    arrayView1d< integer const > const & fractureState = subRegion.getField< contact::fractureState >();
 
     forAll< serialPolicy >( subRegion.size(), [&]( localIndex const kfe )
     {
@@ -621,7 +623,7 @@ assembleFluidMassResidualDerivativeWrtDisplacement( MeshLevel const & mesh,
 
       stackArray2d< real64, 2*3*m_maxFaceNodes * MultiFluidBase::MAX_NUM_COMPONENTS > dRdU( MultiFluidBase::MAX_NUM_COMPONENTS, 2*3*m_maxFaceNodes );
 
-      bool const isFractureOpen = ( fractureState[kfe] == fields::contact::FractureState::Open );
+      bool const isFractureOpen = ( fractureState[kfe] == FractureState::Open );
 
       // Accumulation derivative
       if( isFractureOpen )
@@ -690,7 +692,7 @@ assembleFluidMassResidualDerivativeWrtDisplacement( MeshLevel const & mesh,
           real64 const dR_dAper = values[kfe1];
           localIndex const kfe2 = columns[kfe1];
 
-          bool const isOpen = ( fractureState[kfe2] == fields::contact::FractureState::Open );
+          bool const isOpen = ( fractureState[kfe2] == FractureState::Open );
           skipAssembly &= !isOpen;
 
           for( localIndex kf = 0; kf < 2; ++kf )
@@ -775,9 +777,9 @@ void MultiphasePoromechanicsConformingFractures< FLOW_SOLVER >::updateHydraulicA
       arrayView2d< real64 const > const dispJump           = subRegion.getField< contact::dispJump >();
       arrayView1d< real64 const > const area               = subRegion.getElementArea();
       arrayView1d< real64 const > const volume             = subRegion.getElementVolume();
-      arrayView2d< real64 const > const fractureTraction   = subRegion.getField< fields::contact::traction >();
-      arrayView1d< real64 const > const pressure           = subRegion.getField< fields::flow::pressure >();
-      arrayView1d< real64 const > const oldHydraulicAperture = subRegion.getField< fields::flow::aperture0 >();
+      arrayView2d< real64 const > const fractureTraction   = subRegion.getField< contact::traction >();
+      arrayView1d< real64 const > const pressure           = subRegion.getField< flow::pressure >();
+      arrayView1d< real64 const > const oldHydraulicAperture = subRegion.getField< flow::aperture0 >();
 
       arrayView1d< real64 > const aperture                 = subRegion.getElementAperture();
       arrayView1d< real64 > const hydraulicAperture        = subRegion.getField< flow::hydraulicAperture >();

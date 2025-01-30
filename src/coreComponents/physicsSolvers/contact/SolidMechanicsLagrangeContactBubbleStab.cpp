@@ -98,9 +98,6 @@ real64 SolidMechanicsLagrangeContactBubbleStab::solverStep( real64 const & time_
 
 void SolidMechanicsLagrangeContactBubbleStab::registerDataOnMesh( Group & meshBodies )
 {
-  using namespace fields::solidMechanics;
-  using namespace fields::contact;
-
   ContactSolverBase::registerDataOnMesh( meshBodies );
 
   forDiscretizationOnMeshTargets( meshBodies, [&] ( string const &,
@@ -110,11 +107,11 @@ void SolidMechanicsLagrangeContactBubbleStab::registerDataOnMesh( Group & meshBo
     FaceManager & faceManager = meshLevel.getFaceManager();
 
     // Register the total bubble displacement
-    faceManager.registerField< totalBubbleDisplacement >( this->getName() ).
+    faceManager.registerField< solidMechanics::totalBubbleDisplacement >( this->getName() ).
       reference().resizeDimension< 1 >( 3 );
 
     // Register the incremental bubble displacement
-    faceManager.registerField< incrementalBubbleDisplacement >( this->getName() ).
+    faceManager.registerField< solidMechanics::incrementalBubbleDisplacement >( this->getName() ).
       reference().resizeDimension< 1 >( 3 );
   } );
 
@@ -123,13 +120,13 @@ void SolidMechanicsLagrangeContactBubbleStab::registerDataOnMesh( Group & meshBo
     fractureRegion.forElementSubRegions< SurfaceElementSubRegion >( [&]( SurfaceElementSubRegion & subRegion )
     {
       // Register the rotation matrix
-      subRegion.registerField< rotationMatrix >( this->getName() ).
+      subRegion.registerField< contact::rotationMatrix >( this->getName() ).
         reference().resizeDimension< 1, 2 >( 3, 3 );
 
-      subRegion.registerField< deltaTraction >( getName() ).
+      subRegion.registerField< contact::deltaTraction >( getName() ).
         reference().resizeDimension< 1 >( 3 );
 
-      subRegion.registerField< targetIncrementalJump >( getName() ).
+      subRegion.registerField< contact::targetIncrementalJump >( getName() ).
         reference().resizeDimension< 1 >( 3 );
     } );
   } );
@@ -276,10 +273,10 @@ void SolidMechanicsLagrangeContactBubbleStab::computeRotationMatrices( DomainPar
     arrayView2d< localIndex const > const elemsToFaces = subRegion.faceList().toViewConst();
 
     arrayView2d< real64 > const incrBubbleDisp =
-      faceManager.getField< fields::solidMechanics::incrementalBubbleDisplacement >();
+      faceManager.getField< solidMechanics::incrementalBubbleDisplacement >();
 
     arrayView3d< real64 > const rotationMatrix =
-      subRegion.getField< fields::contact::rotationMatrix >().toView();
+      subRegion.getField< contact::rotationMatrix >().toView();
 
     arrayView2d< real64 > const unitNormal   = subRegion.getNormalVector();
     arrayView2d< real64 > const unitTangent1 = subRegion.getTangentVector1();

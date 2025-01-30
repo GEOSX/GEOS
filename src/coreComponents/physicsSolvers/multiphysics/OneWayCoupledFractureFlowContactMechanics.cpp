@@ -25,7 +25,9 @@
 
 namespace geos
 {
+
 using namespace dataRepository;
+using namespace fields;
 
 template< typename FLOW_SOLVER >
 OneWayCoupledFractureFlowContactMechanics< FLOW_SOLVER >::OneWayCoupledFractureFlowContactMechanics( const string & name,
@@ -64,8 +66,8 @@ real64 OneWayCoupledFractureFlowContactMechanics< FLOW_SOLVER >::sequentiallyCou
                                                                            [&]( localIndex const,
                                                                                 SurfaceElementSubRegion & subRegion )
     {
-      arrayView2d< real64 > const traction = subRegion.getField< fields::contact::traction >();
-      arrayView1d< real64 > const pressure = subRegion.getField< fields::flow::pressure >();
+      arrayView2d< real64 > const traction = subRegion.getField< contact::traction >();
+      arrayView1d< real64 > const pressure = subRegion.getField< flow::pressure >();
 
       forAll< parallelDevicePolicy<> >( subRegion.size(), [=] GEOS_HOST_DEVICE ( localIndex const k )
       {

@@ -36,6 +36,7 @@ namespace geos
 
 using namespace dataRepository;
 using namespace constitutive;
+using namespace fields;
 
 WellSolverBase::WellSolverBase( string const & name,
                                 Group * const parent )
@@ -103,8 +104,6 @@ void WellSolverBase::postInputInitialization()
 
 void WellSolverBase::registerDataOnMesh( Group & meshBodies )
 {
-  using namespace fields::well;
-
   PhysicsSolverBase::registerDataOnMesh( meshBodies );
 
   // loop over the wells
@@ -118,19 +117,19 @@ void WellSolverBase::registerDataOnMesh( Group & meshBodies )
                                                                        [&]( localIndex const,
                                                                             WellElementSubRegion & subRegion )
     {
-      subRegion.registerField< pressure >( getName() );
-      subRegion.registerField< pressure_n >( getName() );
+      subRegion.registerField< well::pressure >( getName() );
+      subRegion.registerField< well::pressure_n >( getName() );
 
-      subRegion.registerField< temperature >( getName() );
+      subRegion.registerField< well::temperature >( getName() );
       if( isThermal() )
       {
-        subRegion.registerField< temperature_n >( getName() );
+        subRegion.registerField< well::temperature_n >( getName() );
       }
 
-      subRegion.registerField< gravityCoefficient >( getName() );
+      subRegion.registerField< well::gravityCoefficient >( getName() );
 
       PerforationData * const perforationData = subRegion.getPerforationData();
-      perforationData->registerField< gravityCoefficient >( getName() );
+      perforationData->registerField< well::gravityCoefficient >( getName() );
     } );
   } );
 }
@@ -263,10 +262,10 @@ void WellSolverBase::precomputeData( DomainPartition & domain )
       real64 const refElev = wellControls.getReferenceElevation();
 
       arrayView2d< real64 const > const wellElemLocation = subRegion.getElementCenter();
-      arrayView1d< real64 > const wellElemGravCoef = subRegion.getField< fields::well::gravityCoefficient >();
+      arrayView1d< real64 > const wellElemGravCoef = subRegion.getField< well::gravityCoefficient >();
 
-      arrayView2d< real64 const > const perfLocation = perforationData.getField< fields::perforation::location >();
-      arrayView1d< real64 > const perfGravCoef = perforationData.getField< fields::well::gravityCoefficient >();
+      arrayView2d< real64 const > const perfLocation = perforationData.getField< perforation::location >();
+      arrayView1d< real64 > const perfGravCoef = perforationData.getField< well::gravityCoefficient >();
 
       forAll< serialPolicy >( perforationData.size(), [=]( localIndex const iperf )
       {

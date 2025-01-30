@@ -99,15 +99,13 @@ void SolidMechanicsLagrangeContact::setMGRStrategy()
 
 void SolidMechanicsLagrangeContact::registerDataOnMesh( Group & meshBodies )
 {
-  using namespace fields::contact;
-
   ContactSolverBase::registerDataOnMesh( meshBodies );
 
   forFractureRegionOnMeshTargets( meshBodies, [&] ( SurfaceElementRegion & fractureRegion )
   {
     fractureRegion.forElementSubRegions< SurfaceElementSubRegion >( [&]( SurfaceElementSubRegion & subRegion )
     {
-      subRegion.registerField< deltaTraction >( getName() ).
+      subRegion.registerField< contact::deltaTraction >( getName() ).
         reference().resizeDimension< 1 >( 3 );
 
       subRegion.registerWrapper< array3d< real64 > >( viewKeyStruct::rotationMatrixString() ).
@@ -524,8 +522,8 @@ void SolidMechanicsLagrangeContact::computeFaceDisplacementJump( DomainPartition
         arrayView1d< real64 const > const & area = subRegion.getElementArea().toViewConst();
 
         arrayView2d< real64 > const dispJump = subRegion.getField< contact::dispJump >();
-        arrayView1d< real64 > const slip = subRegion.getField< fields::contact::slip >();
-        arrayView1d< real64 > const aperture = subRegion.getField< fields::elementAperture >();
+        arrayView1d< real64 > const slip = subRegion.getField< contact::slip >();
+        arrayView1d< real64 > const aperture = subRegion.getField< elementAperture >();
 
         forAll< parallelHostPolicy >( subRegion.size(), [=] ( localIndex const kfe )
         {
@@ -2194,7 +2192,7 @@ bool SolidMechanicsLagrangeContact::resetConfigurationToDefault( DomainPartition
 {
   GEOS_MARK_FUNCTION;
 
-  using namespace fields::contact;
+  using namespace contact;
 
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
                                                                 MeshLevel & mesh,
@@ -2225,7 +2223,7 @@ bool SolidMechanicsLagrangeContact::updateConfiguration( DomainPartition & domai
 {
   GEOS_MARK_FUNCTION;
 
-  using namespace fields::contact;
+  using namespace contact;
 
   real64 changedArea = 0;
   real64 totalArea = 0;

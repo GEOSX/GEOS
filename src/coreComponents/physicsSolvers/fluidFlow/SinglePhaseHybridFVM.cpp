@@ -43,6 +43,7 @@ namespace geos
 
 using namespace dataRepository;
 using namespace constitutive;
+using namespace fields;
 using namespace singlePhaseHybridFVMKernels;
 using namespace mimeticInnerProduct;
 
@@ -61,8 +62,6 @@ SinglePhaseHybridFVM::SinglePhaseHybridFVM( const string & name,
 
 void SinglePhaseHybridFVM::registerDataOnMesh( Group & meshBodies )
 {
-  using namespace fields::flow;
-
   SinglePhaseBase::registerDataOnMesh( meshBodies );
 
   forDiscretizationOnMeshTargets( meshBodies, [&] ( string const &,
@@ -76,7 +75,7 @@ void SinglePhaseHybridFVM::registerDataOnMesh( Group & meshBodies )
                                                                    ElementSubRegionBase & subRegion )
     {
       // pressureGradient is specific for HybridFVM
-      subRegion.registerField< pressureGradient >( getName() ).
+      subRegion.registerField< flow::pressureGradient >( getName() ).
         reference().resizeDimension< 1 >( 3 );
     } );
 
@@ -84,7 +83,7 @@ void SinglePhaseHybridFVM::registerDataOnMesh( Group & meshBodies )
     FaceManager & faceManager = mesh.getFaceManager();
     {
       // primary variables: face pressures at the previous converged time step
-      faceManager.registerField< facePressure_n >( getName() );
+      faceManager.registerField< flow::facePressure_n >( getName() );
     }
   } );
 }
@@ -132,7 +131,7 @@ void SinglePhaseHybridFVM::initializePostInitialConditionsPreSubGroups()
 
     // check that multipliers are stricly larger than 0, which would work with SinglePhaseFVM, but not with SinglePhaseHybridFVM.
     // To deal with a 0 multiplier, we would just have to skip the corresponding face in the FluxKernel
-    arrayView1d< real64 const > const transMultiplier = faceManager.getField< fields::flow::transMultiplier >();
+    arrayView1d< real64 const > const transMultiplier = faceManager.getField< flow::transMultiplier >();
 
     RAJA::ReduceMin< parallelDeviceReduce, real64 > minVal( 1.0 );
     forAll< parallelDevicePolicy<> >( faceManager.size(), [=] GEOS_HOST_DEVICE ( localIndex const iface )
@@ -173,9 +172,9 @@ void SinglePhaseHybridFVM::implicitStepSetup( real64 const & time_n,
 
     // get the face-based pressures
     arrayView1d< real64 const > const & facePres =
-      faceManager.getField< fields::flow::facePressure >();
+      faceManager.getField< flow::facePressure >();
     arrayView1d< real64 > const & facePres_n =
-      faceManager.getField< fields::flow::facePressure_n >();
+      faceManager.getField< flow::facePressure_n >();
     facePres_n.setValues< parallelDevicePolicy<> >( facePres );
   } );
 }
@@ -197,17 +196,17 @@ void SinglePhaseHybridFVM::setupDofs( DomainPartition const & GEOS_UNUSED_PARAM(
                           DofManager::Connector::Face );
 
   // setup the connectivity of face fields
-  dofManager.addField( fields::flow::facePressure::key(),
+  dofManager.addField( flow::facePressure::key(),
                        FieldLocation::Face,
                        1,
                        getMeshTargets() );
 
-  dofManager.addCoupling( fields::flow::facePressure::key(),
-                          fields::flow::facePressure::key(),
+  dofManager.addCoupling( flow::facePressure::key(),
+                          flow::facePressure::key(),
                           DofManager::Connector::Elem );
 
   // setup coupling between pressure and face pressure
-  dofManager.addCoupling( fields::flow::facePressure::key(),
+  dofManager.addCoupling( flow::facePressure::key(),
                           viewKeyStruct::elemDofFieldString(),
                           DofManager::Connector::Elem );
 }
@@ -226,7 +225,7 @@ void SinglePhaseHybridFVM::assembleFluxTerms( real64 const dt,
   MimeticInnerProductBase const & mimeticInnerProductBase =
     hmDiscretization.getReference< MimeticInnerProductBase >( HybridMimeticDiscretization::viewKeyStruct::innerProductString() );
 
-  string const faceDofKey = dofManager.getKey( fields::flow::facePressure::key() );
+  string const faceDofKey = dofManager.getKey( flow::facePressure::key() );
   string const elemDofKey = dofManager.getKey( viewKeyStruct::elemDofFieldString() );
 
   // tolerance for transmissibility calculation
@@ -344,7 +343,7 @@ void SinglePhaseHybridFVM::applyFaceDirichletBC( real64 const time_n,
 
   FieldSpecificationManager & fsManager = FieldSpecificationManager::getInstance();
 
-  string const faceDofKey = dofManager.getKey( fields::flow::facePressure::key() );
+  string const faceDofKey = dofManager.getKey( flow::facePressure::key() );
 
   this->forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
                                                                       MeshLevel & mesh,
@@ -353,7 +352,7 @@ void SinglePhaseHybridFVM::applyFaceDirichletBC( real64 const time_n,
     FaceManager & faceManager = mesh.getFaceManager();
 
     arrayView1d< real64 const > const presFace =
-      faceManager.getField< fields::flow::facePressure >();
+      faceManager.getField< flow::facePressure >();
     arrayView1d< globalIndex const > const faceDofNumber =
       faceManager.getReference< array1d< globalIndex > >( faceDofKey );
     arrayView1d< integer const > const faceGhostRank = faceManager.ghostRank();
@@ -364,7 +363,7 @@ void SinglePhaseHybridFVM::applyFaceDirichletBC( real64 const time_n,
     // this is done this way for consistency with the standard TPFA scheme, which works in the same fashion
     fsManager.apply< FaceManager >( time_n + dt,
                                     mesh,
-                                    fields::flow::pressure::key(),
+                                    flow::pressure::key(),
                                     [&] ( FieldSpecificationBase const & fs,
                                           string const & setName,
                                           SortedArrayView< localIndex const > const & targetSet,
@@ -388,7 +387,7 @@ void SinglePhaseHybridFVM::applyFaceDirichletBC( real64 const time_n,
                           parallelDevicePolicy<> >( targetSet,
                                                     time_n + dt,
                                                     targetGroup,
-                                                    fields::flow::facePressure::key() );
+                                                    flow::facePressure::key() );
 
       // 2. second, modify the residual/jacobian matrix as needed to impose the boundary conditions
       forAll< parallelDevicePolicy<> >( targetSet.size(), [=] GEOS_HOST_DEVICE ( localIndex const a )
@@ -458,7 +457,7 @@ real64 SinglePhaseHybridFVM::calculateResidualNorm( real64 const & GEOS_UNUSED_P
 
   globalIndex const rankOffset = dofManager.rankOffset();
   string const elemDofKey = dofManager.getKey( viewKeyStruct::elemDofFieldString() );
-  string const faceDofKey = dofManager.getKey( fields::flow::facePressure::key() );
+  string const faceDofKey = dofManager.getKey( flow::facePressure::key() );
 
   forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
                                                                 MeshLevel const & mesh,
@@ -588,14 +587,14 @@ void SinglePhaseHybridFVM::applySystemSolution( DofManager const & dofManager,
 
   dofManager.addVectorToField( localSolution,
                                viewKeyStruct::elemDofFieldString(),
-                               fields::flow::pressure::key(),
+                               flow::pressure::key(),
                                scalingFactor );
 
   // 2. apply the face-based update
 
   dofManager.addVectorToField( localSolution,
-                               fields::flow::facePressure::key(),
-                               fields::flow::facePressure::key(),
+                               flow::facePressure::key(),
+                               flow::facePressure::key(),
                                scalingFactor );
 
   // 3. synchronize
@@ -605,8 +604,8 @@ void SinglePhaseHybridFVM::applySystemSolution( DofManager const & dofManager,
   {
     FieldIdentifiers fieldsToBeSync;
 
-    fieldsToBeSync.addElementFields( { fields::flow::pressure::key() }, regionNames );
-    fieldsToBeSync.addFields( FieldLocation::Face, { fields::flow::facePressure::key() } );
+    fieldsToBeSync.addElementFields( { flow::pressure::key() }, regionNames );
+    fieldsToBeSync.addFields( FieldLocation::Face, { flow::facePressure::key() } );
 
     CommunicationTools::getInstance().synchronizeFields( fieldsToBeSync, mesh, domain.getNeighbors(), true );
   } );
@@ -627,9 +626,9 @@ void SinglePhaseHybridFVM::resetStateToBeginningOfStep( DomainPartition & domain
 
     // get the face pressure update
     arrayView1d< real64 > const & facePres =
-      faceManager.getField< fields::flow::facePressure >();
+      faceManager.getField< flow::facePressure >();
     arrayView1d< real64 const > const & facePres_n =
-      faceManager.getField< fields::flow::facePressure_n >();
+      faceManager.getField< flow::facePressure_n >();
     facePres.setValues< parallelDevicePolicy<> >( facePres_n );
   } );
 }

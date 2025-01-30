@@ -34,6 +34,7 @@ namespace geos
 {
 
 using namespace constitutive;
+using namespace fields;
 
 using constitutive::SlurryFluidBase;
 
@@ -76,19 +77,19 @@ SinglePhaseBase::FluidPropViews SinglePhaseProppantBase::getFluidProperties( con
            slurryFluid.dDensity_dPressure(),
            slurryFluid.viscosity(),
            slurryFluid.dViscosity_dPressure(),
-           slurryFluid.getField< fields::singlefluid::density >().getDefaultValue(),
-           slurryFluid.getField< fields::singlefluid::viscosity >().getDefaultValue() };
+           slurryFluid.getField< singlefluid::density >().getDefaultValue(),
+           slurryFluid.getField< singlefluid::viscosity >().getDefaultValue() };
 }
 
 void SinglePhaseProppantBase::updateFluidModel( ObjectManagerBase & dataGroup ) const
 {
   GEOS_MARK_FUNCTION;
 
-  arrayView1d< real64 const > const pres = dataGroup.getField< fields::flow::pressure >();
-  arrayView1d< real64 const > const proppantConcentration = dataGroup.getField< fields::proppant::proppantConcentration >();
-  arrayView2d< real64 const > const componentConcentration = dataGroup.getField< fields::proppant::componentConcentration >();
-  arrayView2d< real64 const > const cellBasedFlux = dataGroup.getField< fields::proppant::cellBasedFlux >();
-  arrayView1d< integer const > const isProppantBoundaryElement = dataGroup.getField< fields::proppant::isProppantBoundary >();
+  arrayView1d< real64 const > const pres = dataGroup.getField< flow::pressure >();
+  arrayView1d< real64 const > const proppantConcentration = dataGroup.getField< proppant::proppantConcentration >();
+  arrayView2d< real64 const > const componentConcentration = dataGroup.getField< proppant::componentConcentration >();
+  arrayView2d< real64 const > const cellBasedFlux = dataGroup.getField< proppant::cellBasedFlux >();
+  arrayView1d< integer const > const isProppantBoundaryElement = dataGroup.getField< proppant::isProppantBoundary >();
 
   string const & fluidName = dataGroup.getReference< string >( viewKeyStruct::fluidNamesString() );
   SlurryFluidBase & fluid = getConstitutiveModel< SlurryFluidBase >( dataGroup, fluidName );
@@ -110,10 +111,10 @@ void SinglePhaseProppantBase::updatePorosityAndPermeability( SurfaceElementSubRe
 {
   GEOS_MARK_FUNCTION;
 
-  arrayView1d< real64 const > const proppantPackVolumeFraction = subRegion.getField< fields::proppant::proppantPackVolumeFraction >();
+  arrayView1d< real64 const > const proppantPackVolumeFraction = subRegion.getField< proppant::proppantPackVolumeFraction >();
 
-  arrayView1d< real64 const > const newHydraulicAperture = subRegion.getField< fields::flow::hydraulicAperture >();
-  arrayView1d< real64 const > const oldHydraulicAperture = subRegion.getField< fields::flow::aperture0 >();
+  arrayView1d< real64 const > const newHydraulicAperture = subRegion.getField< flow::hydraulicAperture >();
+  arrayView1d< real64 const > const oldHydraulicAperture = subRegion.getField< flow::aperture0 >();
 
   string const & solidName = subRegion.getReference< string >( viewKeyStruct::solidNamesString() );
   CoupledSolidBase & porousSolid = subRegion.template getConstitutiveModel< CoupledSolidBase >( solidName );

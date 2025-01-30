@@ -33,7 +33,7 @@ namespace geos
 
 using namespace dataRepository;
 using namespace constitutive;
-using namespace fields::contact;
+using namespace fields;
 
 ContactSolverBase::ContactSolverBase( const string & name,
                                       Group * const parent ):
@@ -60,8 +60,6 @@ void ContactSolverBase::postInputInitialization()
 
 void ContactSolverBase::registerDataOnMesh( dataRepository::Group & meshBodies )
 {
-  using namespace fields::contact;
-
   SolidMechanicsLagrangianFEM::registerDataOnMesh( meshBodies );
 
   setFractureRegions( meshBodies );
@@ -73,38 +71,38 @@ void ContactSolverBase::registerDataOnMesh( dataRepository::Group & meshBodies )
   {
     fractureRegion.forElementSubRegions< SurfaceElementSubRegion >( [&]( SurfaceElementSubRegion & subRegion )
     {
-      subRegion.registerField< dispJump >( getName() ).
+      subRegion.registerField< contact::dispJump >( getName() ).
         setDimLabels( 1, labels ).
         reference().resizeDimension< 1 >( 3 );
 
-      subRegion.registerField< deltaDispJump >( getName() ).
+      subRegion.registerField< contact::deltaDispJump >( getName() ).
         setDimLabels( 1, labels ).
         reference().resizeDimension< 1 >( 3 );
 
-      subRegion.registerField< oldDispJump >( getName() ).
+      subRegion.registerField< contact::oldDispJump >( getName() ).
         setDimLabels( 1, labels ).
         reference().resizeDimension< 1 >( 3 );
 
-      subRegion.registerField< dispJump_n >( getName() ).
+      subRegion.registerField< contact::dispJump_n >( getName() ).
         setDimLabels( 1, labels ).
         reference().resizeDimension< 1 >( 3 );
 
-      subRegion.registerField< traction >( getName() ).
+      subRegion.registerField< contact::traction >( getName() ).
         setDimLabels( 1, labels ).
         reference().resizeDimension< 1 >( 3 );
 
-      subRegion.registerField< fractureState >( getName() );
+      subRegion.registerField< contact::fractureState >( getName() );
 
-      subRegion.registerField< oldFractureState >( getName() );
+      subRegion.registerField< contact::oldFractureState >( getName() );
 
-      subRegion.registerField< slip >( getName() );
+      subRegion.registerField< contact::slip >( getName() );
 
-      subRegion.registerField< tangentialTraction >( getName() );
+      subRegion.registerField< contact::tangentialTraction >( getName() );
 
-      subRegion.registerField< deltaSlip >( getName() ).
+      subRegion.registerField< contact::deltaSlip >( getName() ).
         setDimLabels( 1, labelsTangent ).reference().resizeDimension< 1 >( 2 );
 
-      subRegion.registerField< deltaSlip_n >( this->getName() ).
+      subRegion.registerField< contact::deltaSlip_n >( this->getName() ).
         setDimLabels( 1, labelsTangent ).reference().resizeDimension< 1 >( 2 );
     } );
 
@@ -136,6 +134,8 @@ void ContactSolverBase::computeFractureStateStatistics( MeshLevel const & mesh,
                                                         globalIndex & numSlip,
                                                         globalIndex & numOpen ) const
 {
+  using namespace contact;
+
   ElementRegionManager const & elemManager = mesh.getElemManager();
 
   array1d< globalIndex > localCounter( 4 );
@@ -143,7 +143,7 @@ void ContactSolverBase::computeFractureStateStatistics( MeshLevel const & mesh,
   elemManager.forElementSubRegions< SurfaceElementSubRegion >( [&]( SurfaceElementSubRegion const & subRegion )
   {
     arrayView1d< integer const > const & ghostRank = subRegion.ghostRank();
-    arrayView1d< integer const > const & fractureState = subRegion.getField< fields::contact::fractureState >();
+    arrayView1d< integer const > const & fractureState = subRegion.getField< contact::fractureState >();
 
     RAJA::ReduceSum< parallelHostReduce, localIndex > stickCount( 0 ), newSlipCount( 0 ), slipCount( 0 ), openCount( 0 );
     forAll< parallelHostPolicy >( subRegion.size(), [=] ( localIndex const kfe )
@@ -235,7 +235,7 @@ void ContactSolverBase::synchronizeFractureState( DomainPartition & domain ) con
   {
     FieldIdentifiers fieldsToBeSync;
 
-    fieldsToBeSync.addElementFields( { fields::contact::fractureState::key() }, { getUniqueFractureRegionName() } );
+    fieldsToBeSync.addElementFields( { contact::fractureState::key() }, { getUniqueFractureRegionName() } );
 
     CommunicationTools::getInstance().synchronizeFields( fieldsToBeSync,
                                                          mesh,
