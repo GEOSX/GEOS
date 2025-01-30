@@ -60,9 +60,11 @@ public:
   using AbstractBase::m_gravCoef;
   using AbstractBase::m_pres;
   using AbstractBase::m_mob;
+  using AbstractBase::m_dMob;
   using AbstractBase::m_dMob_dPres;
   using AbstractBase::m_dens;
-  using AbstractBase::m_dDens_dPres;
+  using AbstractBase::m_dDens;
+
 
   using Base = singlePhaseFVMKernels::FluxComputeKernel< NUM_EQN, NUM_DOF, SurfaceElementStencilWrapper >;
   using Base::numDof;
@@ -197,9 +199,9 @@ public:
                                                               m_pres,
                                                               m_gravCoef,
                                                               m_dens,
-                                                              m_dDens_dPres,
+                                                              m_dDens,
                                                               m_mob,
-                                                              m_dMob_dPres,
+                                                              m_dMob,
                                                               alpha,
                                                               mobility,
                                                               potGrad,

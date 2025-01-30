@@ -248,11 +248,12 @@ PressureRelationKernel::
           arrayView1d< real64 const > const & wellElemGravCoef,
           arrayView1d< localIndex const > const & nextWellElemIndex,
           arrayView1d< real64 const > const & wellElemPressure,
-          arrayView2d< real64 const > const & wellElemDensity,
-          arrayView2d< real64 const > const & dWellElemDensity_dPres,
+          arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const & wellElemDensity,
+          arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > const & dWellElemDensity,
           CRSMatrixView< real64, globalIndex const > const & localMatrix,
           arrayView1d< real64 > const & localRhs )
 {
+  using Deriv = constitutive::singlefluid::DerivativeOffset;
   // static well control data
   bool const isProducer = wellControls.isProducer();
   WellControls::Control const currentControl = wellControls.getControl();
@@ -317,8 +318,8 @@ PressureRelationKernel::
 
       // compute avg density
       real64 const avgDensity = 0.5 * ( wellElemDensity[iwelem][0] + wellElemDensity[iwelemNext][0] );
-      real64 const dAvgDensity_dPresNext    = 0.5 * dWellElemDensity_dPres[iwelemNext][0];
-      real64 const dAvgDensity_dPresCurrent = 0.5 * dWellElemDensity_dPres[iwelem][0];
+      real64 const dAvgDensity_dPresNext    = 0.5 * dWellElemDensity[iwelemNext][0][Deriv::dP];
+      real64 const dAvgDensity_dPresCurrent = 0.5 * dWellElemDensity[iwelem][0][Deriv::dP];
 
       // compute depth diff times acceleration
       real64 const gravD = wellElemGravCoef[iwelemNext] - wellElemGravCoef[iwelem];
@@ -462,16 +463,16 @@ void
 PerforationKernel::
   launch( localIndex const size,
           ElementViewConst< arrayView1d< real64 const > > const & resPressure,
-          ElementViewConst< arrayView2d< real64 const > > const & resDensity,
-          ElementViewConst< arrayView2d< real64 const > > const & dResDensity_dPres,
-          ElementViewConst< arrayView2d< real64 const > > const & resViscosity,
-          ElementViewConst< arrayView2d< real64 const > > const & dResViscosity_dPres,
+          ElementViewConst< arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > > const & resDensity,
+          ElementViewConst< arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > > const & dResDensity,
+          ElementViewConst< arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > > const & resViscosity,
+          ElementViewConst< arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > > const & dResViscosity,
           arrayView1d< real64 const > const & wellElemGravCoef,
           arrayView1d< real64 const > const & wellElemPressure,
-          arrayView2d< real64 const > const & wellElemDensity,
-          arrayView2d< real64 const > const & dWellElemDensity_dPres,
-          arrayView2d< real64 const > const & wellElemViscosity,
-          arrayView2d< real64 const > const & dWellElemViscosity_dPres,
+          arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const & wellElemDensity,
+          arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > const & dWellElemDensity,
+          arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const & wellElemViscosity,
+          arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > const & dWellElemViscosity,
           arrayView1d< real64 const > const & perfGravCoef,
           arrayView1d< localIndex const > const & perfWellElemIndex,
           arrayView1d< real64 const > const & perfTransmissibility,
@@ -481,7 +482,7 @@ PerforationKernel::
           arrayView1d< real64 > const & perfRate,
           arrayView2d< real64 > const & dPerfRate_dPres )
 {
-
+  using Deriv = constitutive::singlefluid::DerivativeOffset;
   forAll< parallelDevicePolicy<> >( size, [=] GEOS_HOST_DEVICE ( localIndex const iperf )
   {
 
@@ -495,15 +496,15 @@ PerforationKernel::
 
     compute( resPressure[er][esr][ei],
              resDensity[er][esr][ei][0],
-             dResDensity_dPres[er][esr][ei][0],
+             dResDensity[er][esr][ei][0][Deriv::dP],
              resViscosity[er][esr][ei][0],
-             dResViscosity_dPres[er][esr][ei][0],
+             dResViscosity[er][esr][ei][0][Deriv::dP],
              wellElemGravCoef[iwelem],
              wellElemPressure[iwelem],
              wellElemDensity[iwelem][0],
-             dWellElemDensity_dPres[iwelem][0],
+             dWellElemDensity[iwelem][0][Deriv::dP],
              wellElemViscosity[iwelem][0],
-             dWellElemViscosity_dPres[iwelem][0],
+             dWellElemViscosity[iwelem][0][Deriv::dP],
              perfGravCoef[iperf],
              perfTransmissibility[iperf],
              perfRate[iperf],
@@ -523,12 +524,13 @@ AccumulationKernel::
           arrayView1d< globalIndex const > const & wellElemDofNumber,
           arrayView1d< integer const > const & wellElemGhostRank,
           arrayView1d< real64 const > const & wellElemVolume,
-          arrayView2d< real64 const > const & wellElemDensity,
-          arrayView2d< real64 const > const & dWellElemDensity_dPres,
-          arrayView2d< real64 const > const & wellElemDensity_n,
+          arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const & wellElemDensity,
+          arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > const & dWellElemDensity,
+          arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const & wellElemDensity_n,
           CRSMatrixView< real64, globalIndex const > const & localMatrix,
           arrayView1d< real64 > const & localRhs )
 {
+  using Deriv = constitutive::singlefluid::DerivativeOffset;
   forAll< parallelDevicePolicy<> >( size, [=] GEOS_HOST_DEVICE ( localIndex const iwelem )
   {
 
@@ -541,7 +543,7 @@ AccumulationKernel::
     globalIndex const presDofColIndex = wellElemDofNumber[iwelem] + COFFSET::DPRES;
 
     real64 const localAccum = wellElemVolume[iwelem] * ( wellElemDensity[iwelem][0] - wellElemDensity_n[iwelem][0] );
-    real64 const localAccumJacobian = wellElemVolume[iwelem] * dWellElemDensity_dPres[iwelem][0];
+    real64 const localAccumJacobian = wellElemVolume[iwelem] * dWellElemDensity[iwelem][0][Deriv::dP];
 
     // add contribution to global residual and jacobian (no need for atomics here)
     localMatrix.addToRow< serialAtomic >( eqnRowIndex, &presDofColIndex, &localAccumJacobian, 1 );
@@ -560,7 +562,7 @@ PresInitializationKernel::
           WellControls const & wellControls,
           real64 const & currentTime,
           ElementViewConst< arrayView1d< real64 const > > const & resPressure,
-          ElementViewConst< arrayView2d< real64 const > > const & resDensity,
+          ElementViewConst< arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > > const & resDensity,
           arrayView1d< localIndex const > const & resElementRegion,
           arrayView1d< localIndex const > const & resElementSubRegion,
           arrayView1d< localIndex const > const & resElementIndex,
@@ -670,7 +672,7 @@ RateInitializationKernel::
   launch( localIndex const subRegionSize,
           WellControls const & wellControls,
           real64 const & currentTime,
-          arrayView2d< real64 const > const & wellElemDens,
+          arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const & wellElemDens,
           arrayView1d< real64 > const & connRate )
 {
   real64 const targetRate = wellControls.getTargetTotalRate( currentTime );

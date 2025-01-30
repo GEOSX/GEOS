@@ -89,8 +89,8 @@ void CompressibleSinglePhaseFluid::allocateConstitutiveData( dataRepository::Gro
   getField< fields::singlefluid::density >().setApplyDefaultValue( m_defaultDensity );
   getField< fields::singlefluid::viscosity >().setApplyDefaultValue( m_defaultViscosity );
 
-  m_density.setValues< serialPolicy >( m_referenceDensity );
-  m_viscosity.setValues< serialPolicy >( m_referenceViscosity );
+  m_density.value.setValues< serialPolicy >( m_referenceDensity );
+  m_viscosity.value.setValues< serialPolicy >( m_referenceViscosity );
 }
 
 void CompressibleSinglePhaseFluid::postInputInitialization()
@@ -131,8 +131,11 @@ void CompressibleSinglePhaseFluid::postInputInitialization()
   real64 dRho_dP;
   real64 dVisc_dP;
   createKernelWrapper().compute( m_referencePressure, m_referenceDensity, dRho_dP, m_referenceViscosity, dVisc_dP );
-  getField< fields::singlefluid::dDensity_dPressure >().setDefaultValue( dRho_dP );
-  getField< fields::singlefluid::dViscosity_dPressure >().setDefaultValue( dVisc_dP );
+
+  for( integer i=0; i<m_density.value.size(); i++ )
+  {
+    m_density.derivs[0][i][DerivOffset::dP] = dRho_dP;
+  }
 }
 
 CompressibleSinglePhaseFluid::KernelWrapper
@@ -140,10 +143,10 @@ CompressibleSinglePhaseFluid::createKernelWrapper()
 {
   return KernelWrapper( KernelWrapper::DensRelationType( m_referencePressure, m_referenceDensity, m_compressibility ),
                         KernelWrapper::ViscRelationType( m_referencePressure, m_referenceViscosity, m_viscosibility ),
-                        m_density,
-                        m_dDensity_dPressure,
-                        m_viscosity,
-                        m_dViscosity_dPressure );
+                        m_density.value,
+                        m_density.derivs,
+                        m_viscosity.value,
+                        m_viscosity.derivs );
 }
 
 REGISTER_CATALOG_ENTRY( ConstitutiveBase, CompressibleSinglePhaseFluid, string const &, Group * const )

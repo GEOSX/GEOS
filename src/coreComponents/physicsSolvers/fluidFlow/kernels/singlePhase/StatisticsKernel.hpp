@@ -54,7 +54,7 @@ struct StatisticsKernel
           arrayView1d< real64 const > const & temp,
           arrayView1d< real64 const > const & refPorosity,
           arrayView2d< real64 const > const & porosity,
-          arrayView2d< real64 const > const & density,
+          arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const & density,
           real64 & minPres,
           real64 & avgPresNumerator,
           real64 & maxPres,

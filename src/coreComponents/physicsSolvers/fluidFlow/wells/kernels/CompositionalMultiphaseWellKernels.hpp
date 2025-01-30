@@ -850,7 +850,6 @@ public:
   using ROFFSET = compositionalMultiphaseWellKernels::RowOffset;
 
   // Well jacobian column and row indicies
-  // tjb  - change NUM_DOF to IS_THERMAL
   using FLUID_PROP_COFFSET = constitutive::multifluid::DerivativeOffsetC< NUM_COMP, IS_THERMAL >;
   using WJ_COFFSET = compositionalMultiphaseWellKernels::ColOffset_WellJac< NUM_COMP, IS_THERMAL >;
   using WJ_ROFFSET = compositionalMultiphaseWellKernels::RowOffset_WellJac< NUM_COMP, IS_THERMAL >;
@@ -1038,9 +1037,7 @@ public:
     {
       real64 const phaseAmount = stack.volume * phaseVolFrac[ip] * phaseDens[ip];
       real64 const phaseAmount_n = stack.volume * phaseVolFrac_n[ip] * phaseDens_n[ip];
-      //remove tjb
-      real64 const dPhaseAmount_dP = stack.volume * ( dPhaseVolFrac[ip][Deriv::dP] * phaseDens[ip]
-                                                      + phaseVolFrac[ip] * dPhaseDens[ip][Deriv::dP] );
+
       dPhaseAmount[FLUID_PROP_COFFSET::dP]=stack.volume * ( dPhaseVolFrac[ip][Deriv::dP] * phaseDens[ip]
                                                             + phaseVolFrac[ip] * dPhaseDens[ip][Deriv::dP] );
 
@@ -1056,12 +1053,6 @@ public:
                                                   + phaseDens[ip] * dPhaseVolFrac[ip][Deriv::dC+jc];
         dPhaseAmount[FLUID_PROP_COFFSET::dC+jc] *= stack.volume;
       }
-// tjb- remove when safe
-      for( integer ic = 0; ic < numComp; ic++ )
-      {
-        assert( fabs( dPhaseAmount[FLUID_PROP_COFFSET::dC+ic] -dPhaseAmount_dC[ic] ) < FLT_EPSILON );
-
-      }
       // ic - index of component whose conservation equation is assembled
       // (i.e. row number in local matrix)
       for( integer ic = 0; ic < numComp; ++ic )
@@ -1069,7 +1060,7 @@ public:
         real64 const phaseCompAmount = phaseAmount * phaseCompFrac[ip][ic];
         real64 const phaseCompAmount_n = phaseAmount_n * phaseCompFrac_n[ip][ic];
 
-        real64 const dPhaseCompAmount_dP = dPhaseAmount_dP * phaseCompFrac[ip][ic]
+        real64 const dPhaseCompAmount_dP = dPhaseAmount[FLUID_PROP_COFFSET::dP] * phaseCompFrac[ip][ic]
                                            + phaseAmount * dPhaseCompFrac[ip][ic][Deriv::dP];
 
         stack.localResidual[ic] += phaseCompAmount - phaseCompAmount_n;

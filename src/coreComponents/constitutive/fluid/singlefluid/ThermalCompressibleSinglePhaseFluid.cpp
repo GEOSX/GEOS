@@ -34,7 +34,7 @@ ThermalCompressibleSinglePhaseFluid::ThermalCompressibleSinglePhaseFluid( string
   m_internalEnergyModelType( ExponentApproximationType::Linear )
 {
   m_densityModelType = ExponentApproximationType::Full;
-
+  m_numDOF=2;
   registerWrapper( viewKeyStruct::thermalExpansionCoeffString(), &m_thermalExpansionCoeff ).
     setApplyDefaultValue( 0.0 ).
     setInputFlag( InputFlags::OPTIONAL ).
@@ -69,7 +69,7 @@ void ThermalCompressibleSinglePhaseFluid::allocateConstitutiveData( dataReposito
 {
   CompressibleSinglePhaseFluid::allocateConstitutiveData( parent, numConstitutivePointsPerParentIndex );
 
-  m_internalEnergy.setValues< serialPolicy >( m_referenceInternalEnergy );
+  m_internalEnergy.value.setValues< serialPolicy >( m_referenceInternalEnergy );
 }
 
 void ThermalCompressibleSinglePhaseFluid::postInputInitialization()
@@ -103,18 +103,14 @@ ThermalCompressibleSinglePhaseFluid::createKernelWrapper()
   return KernelWrapper( KernelWrapper::DensRelationType( m_referencePressure, m_referenceTemperature, m_referenceDensity, m_compressibility, -m_thermalExpansionCoeff ),
                         KernelWrapper::ViscRelationType( m_referencePressure, m_referenceViscosity, m_viscosibility ),
                         KernelWrapper::IntEnergyRelationType( m_referenceTemperature, m_referenceInternalEnergy, m_specificHeatCapacity/m_referenceInternalEnergy ),
-                        m_density,
-                        m_dDensity_dPressure,
-                        m_dDensity_dTemperature,
-                        m_viscosity,
-                        m_dViscosity_dPressure,
-                        m_dViscosity_dTemperature,
-                        m_internalEnergy,
-                        m_dInternalEnergy_dPressure,
-                        m_dInternalEnergy_dTemperature,
-                        m_enthalpy,
-                        m_dEnthalpy_dPressure,
-                        m_dEnthalpy_dTemperature,
+                        m_density.value,
+                        m_density.derivs,
+                        m_viscosity.value,
+                        m_viscosity.derivs,
+                        m_internalEnergy.value,
+                        m_internalEnergy.derivs,
+                        m_enthalpy.value,
+                        m_enthalpy.derivs,
                         m_referenceInternalEnergy );
 }
 

@@ -51,10 +51,13 @@ public:
   using Base::m_porosity;
   using Base::m_dPoro_dPres;
   using Base::m_density;
-  using Base::m_dDensity_dPres;
+  using Base::m_dDensity;
   using Base::m_localMatrix;
   using Base::m_localRhs;
 
+  /// Note: Derivative lineup only supports dP & dT, not component terms
+  static constexpr integer isThermal = NUM_DOF-1;
+  using DerivOffset = constitutive::singlefluid::DerivativeOffsetC< isThermal >;
   /**
    * @brief Constructor
    * @param[in] rankOffset the offset of my MPI rank
@@ -73,11 +76,9 @@ public:
                       CRSMatrixView< real64, globalIndex const > const & localMatrix,
                       arrayView1d< real64 > const & localRhs )
     : Base( rankOffset, dofKey, subRegion, fluid, solid, localMatrix, localRhs ),
-    m_dDensity_dTemp( fluid.dDensity_dTemperature() ),
     m_dPoro_dTemp( solid.getDporosity_dTemperature() ),
     m_internalEnergy( fluid.internalEnergy() ),
-    m_dInternalEnergy_dPres( fluid.dInternalEnergy_dPressure() ),
-    m_dInternalEnergy_dTemp( fluid.dInternalEnergy_dTemperature() ),
+    m_dInternalEnergy( fluid.dInternalEnergy() ),
     m_rockInternalEnergy( solid.getInternalEnergy() ),
     m_dRockInternalEnergy_dTemp( solid.getDinternalEnergy_dTemperature() ),
     m_energy_n( subRegion.template getField< fields::flow::energy_n >() )
@@ -159,19 +160,18 @@ public:
     Base::computeAccumulation( ei, stack, [&] ()
     {
       // Step 1: assemble the derivatives of the mass balance equation w.r.t temperature
-      stack.localJacobian[0][numDof-1] = stack.poreVolume * m_dDensity_dTemp[ei][0] + stack.dPoreVolume_dTemp * m_density[ei][0];
+      stack.localJacobian[0][numDof-1] = stack.poreVolume * m_dDensity[ei][0][DerivOffset::dT] + stack.dPoreVolume_dTemp * m_density[ei][0];
 
       // Step 2: assemble the fluid part of the accumulation term of the energy equation
       real64 const fluidEnergy = stack.poreVolume * m_density[ei][0] * m_internalEnergy[ei][0];
 
       real64 const dFluidEnergy_dP = stack.dPoreVolume_dPres * m_density[ei][0] * m_internalEnergy[ei][0]
-                                     + stack.poreVolume * m_dDensity_dPres[ei][0] * m_internalEnergy[ei][0]
-                                     + stack.poreVolume * m_density[ei][0] * m_dInternalEnergy_dPres[ei][0];
+                                     + stack.poreVolume * m_dDensity[ei][0][DerivOffset::dP] * m_internalEnergy[ei][0]
+                                     + stack.poreVolume * m_density[ei][0] * m_dInternalEnergy[ei][0][DerivOffset::dP];
 
-      real64 const dFluidEnergy_dT = stack.poreVolume * m_dDensity_dTemp[ei][0] * m_internalEnergy[ei][0]
-                                     + stack.poreVolume * m_density[ei][0] * m_dInternalEnergy_dTemp[ei][0]
+      real64 const dFluidEnergy_dT = stack.poreVolume * m_dDensity[ei][0][DerivOffset::dT] * m_internalEnergy[ei][0]
+                                     + stack.poreVolume * m_density[ei][0] * m_dInternalEnergy[ei][0][DerivOffset::dT]
                                      + stack.dPoreVolume_dTemp * m_density[ei][0] * m_internalEnergy[ei][0];
-
       // local accumulation
       stack.localResidual[numEqn-1] += fluidEnergy;
 
@@ -208,16 +208,13 @@ public:
 
 protected:
 
-  /// View on derivative of fluid density w.r.t temperature
-  arrayView2d< real64 const > const m_dDensity_dTemp;
 
   /// View on derivative of porosity w.r.t temperature
   arrayView2d< real64 const > const m_dPoro_dTemp;
 
   /// Views on fluid internal energy
-  arrayView2d< real64 const > const m_internalEnergy;
-  arrayView2d< real64 const > const m_dInternalEnergy_dPres;
-  arrayView2d< real64 const > const m_dInternalEnergy_dTemp;
+  arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const m_internalEnergy;
+  arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > const m_dInternalEnergy;
 
   /// Views on rock internal energy
   arrayView2d< real64 const > const m_rockInternalEnergy;

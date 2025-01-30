@@ -78,8 +78,8 @@ SinglePhasePoromechanicsEFEM( NodeManager const & nodeManager,
   m_solidDensity( inputConstitutiveType.getDensity() ),
   m_fluidDensity( embeddedSurfSubRegion.template getConstitutiveModel< constitutive::SingleFluidBase >( elementSubRegion.template getReference< string >( fluidModelKey ) ).density() ),
   m_fluidDensity_n( embeddedSurfSubRegion.template getConstitutiveModel< constitutive::SingleFluidBase >( elementSubRegion.template getReference< string >( fluidModelKey ) ).density_n() ),
-  m_dFluidDensity_dPressure( embeddedSurfSubRegion.template getConstitutiveModel< constitutive::SingleFluidBase >( elementSubRegion.template getReference< string >(
-                                                                                                                     fluidModelKey ) ).dDensity_dPressure() ),
+  m_dFluidDensity( embeddedSurfSubRegion.template getConstitutiveModel< constitutive::SingleFluidBase >( elementSubRegion.template getReference< string >(
+                                                                                                           fluidModelKey ) ).dDensity() ),
   m_matrixPressure( elementSubRegion.template getField< fields::flow::pressure >() ),
   m_fracturePressure( embeddedSurfSubRegion.template getField< fields::flow::pressure >() ),
   m_porosity_n( inputConstitutiveType.getPorosity_n() ),
@@ -326,7 +326,7 @@ complete( localIndex const k,
   real64 const oldMass = m_fluidDensity_n( embSurfIndex, 0 ) * m_elementVolumeFrac( embSurfIndex );
   real64 const localFlowResidual = ( newMass - oldMass );
   real64 const localFlowJumpJacobian = m_fluidDensity( embSurfIndex, 0 ) * m_surfaceArea[ embSurfIndex ];
-  real64 const localFlowFlowJacobian = m_dFluidDensity_dPressure( embSurfIndex, 0 ) * newVolume;
+  real64 const localFlowFlowJacobian = m_dFluidDensity( embSurfIndex, 0, DerivOffset::dP ) * newVolume;
 
   for( localIndex i = 0; i < nUdof; ++i )
   {

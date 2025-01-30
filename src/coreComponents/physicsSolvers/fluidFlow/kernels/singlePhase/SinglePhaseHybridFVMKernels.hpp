@@ -231,6 +231,8 @@ public:
    * Can be converted from ElementRegionManager::ElementViewConstAccessor
    * by calling .toView() or .toViewConst() on an accessor instance
    */
+
+  using DerivOffset = constitutive::singlefluid::DerivativeOffsetC< 0 >;
   template< typename VIEWTYPE >
   using ElementViewConst = ElementRegionManager::ElementViewConst< VIEWTYPE >;
 
@@ -238,7 +240,7 @@ public:
 
   using FlowAccessors =
     StencilAccessors< fields::flow::mobility,
-                      fields::flow::dMobility_dPressure >;
+                      fields::flow::dMobility >;
 
   /**
    * @brief Constructor
@@ -301,9 +303,9 @@ public:
     m_elemPres( subRegion.getField< fields::flow::pressure >() ),
     m_facePres( faceManager.getField< fields::flow::facePressure >() ),
     m_elemDens ( fluid.density() ),
-    m_dElemDens_dPres( fluid.dDensity_dPressure() ),
+    m_dElemDens( fluid.dDensity()),
     m_mob( flowAccessors.get( fields::flow::mobility {} ) ),
-    m_dMob_dPres( flowAccessors.get( fields::flow::dMobility_dPressure {} ) ),
+    m_dMob( flowAccessors.get( fields::flow::dMobility {} ) ),
     m_localMatrix( localMatrix ),
     m_localRhs( localRhs )
   {}
@@ -378,7 +380,7 @@ public:
         real64 const fGravCoef = m_faceGravCoef[m_elemToFaces[ei][jFaceLoc]];
 
         real64 const ccDens = m_elemDens[ei][0];
-        real64 const dCcDens_dPres = m_dElemDens_dPres[ei][0];
+        real64 const dCcDens_dPres = m_dElemDens[ei][0][DerivOffset::dP];
         // no density evaluated at the face center
 
         // pressure difference
@@ -444,13 +446,13 @@ public:
       if( stack.oneSidedVolFlux[iFaceLoc] >= 0 || !isNeighborFound )
       {
         upwMobility = m_mob[m_er][m_esr][ei];
-        dUpwMobility_dPres = m_dMob_dPres[m_er][m_esr][ei];
+        dUpwMobility_dPres = m_dMob[m_er][m_esr][ei][DerivOffset::dP];
         upwDofNumber = m_elemDofNumber[m_er][m_esr][ei];
       }
       else
       {
         upwMobility = m_mob[neighbor[0]][neighbor[1]][neighbor[2]];
-        dUpwMobility_dPres = m_dMob_dPres[neighbor[0]][neighbor[1]][neighbor[2]];
+        dUpwMobility_dPres = m_dMob[neighbor[0]][neighbor[1]][neighbor[2]][DerivOffset::dP];
         upwDofNumber = m_elemDofNumber[neighbor[0]][neighbor[1]][neighbor[2]];
       }
 
@@ -658,10 +660,10 @@ protected:
   /// pressure and fluid data
   arrayView1d< real64 const > const m_elemPres;
   arrayView1d< real64 const > const m_facePres;
-  arrayView2d< real64 const > const m_elemDens;
-  arrayView2d< real64 const > const m_dElemDens_dPres;
+  arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > const m_elemDens;
+  arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > const m_dElemDens;
   ElementViewConst< arrayView1d< real64 const > > const m_mob;
-  ElementViewConst< arrayView1d< real64 const > > const m_dMob_dPres;
+  ElementViewConst< arrayView2d< real64 const > > const m_dMob;
 
   /// View on the local CRS matrix
   CRSMatrixView< real64, globalIndex const > const m_localMatrix;

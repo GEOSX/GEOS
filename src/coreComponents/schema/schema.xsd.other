@@ -2171,29 +2171,21 @@
 		<xsd:attribute name="useMass" type="integer" />
 	</xsd:complexType>
 	<xsd:complexType name="CompressibleSinglePhaseFluidType">
-		<!--dDensity_dPressure => Derivative of density with respect to pressure-->
-		<xsd:attribute name="dDensity_dPressure" type="real64_array2d" />
-		<!--dDensity_dTemperature => Derivative of density with respect to temperature-->
-		<xsd:attribute name="dDensity_dTemperature" type="real64_array2d" />
-		<!--dEnthalpy_dPressure => Derivative of enthalpy with respect to pressure-->
-		<xsd:attribute name="dEnthalpy_dPressure" type="real64_array2d" />
-		<!--dEnthalpy_dTemperature => Derivative of enthalpy with respect to temperature-->
-		<xsd:attribute name="dEnthalpy_dTemperature" type="real64_array2d" />
-		<!--dInternalEnergy_dPressure => Derivative of internal energy with respect to pressure-->
-		<xsd:attribute name="dInternalEnergy_dPressure" type="real64_array2d" />
-		<!--dInternalEnergy_dTemperature => Derivative of internal energy with respect to temperature-->
-		<xsd:attribute name="dInternalEnergy_dTemperature" type="real64_array2d" />
-		<!--dViscosity_dPressure => Derivative of viscosity with respect to pressure-->
-		<xsd:attribute name="dViscosity_dPressure" type="real64_array2d" />
-		<!--dViscosity_dTemperature => Derivative of viscosity with respect to temperature-->
-		<xsd:attribute name="dViscosity_dTemperature" type="real64_array2d" />
+		<!--dDensity => dDensity-->
+		<xsd:attribute name="dDensity" type="real64_array3d" />
+		<!--dEnthalpy => dEnthalpy-->
+		<xsd:attribute name="dEnthalpy" type="real64_array3d" />
+		<!--dInternalEnergy => dInternalEnergy-->
+		<xsd:attribute name="dInternalEnergy" type="real64_array3d" />
+		<!--dViscosity => dViscosity-->
+		<xsd:attribute name="dViscosity" type="real64_array3d" />
 		<!--density => Density-->
 		<xsd:attribute name="density" type="real64_array2d" />
 		<!--density_n => Density at the previous converged time step-->
 		<xsd:attribute name="density_n" type="real64_array2d" />
 		<!--enthalpy => Enthalpy-->
 		<xsd:attribute name="enthalpy" type="real64_array2d" />
-		<!--internalEnergy => Internal energy-->
+		<!--internalEnergy => InternalEnergy-->
 		<xsd:attribute name="internalEnergy" type="real64_array2d" />
 		<!--internalEnergy_n => Fluid internal energy at the previous converged step-->
 		<xsd:attribute name="internalEnergy_n" type="real64_array2d" />
@@ -2686,14 +2678,10 @@
 		<xsd:attribute name="dDens_dCompConc" type="real64_array3d" />
 		<!--dDens_dProppantConc => Derivative of density with respect to proppant concentration-->
 		<xsd:attribute name="dDens_dProppantConc" type="real64_array2d" />
-		<!--dDensity_dPressure => Derivative of density with respect to pressure-->
-		<xsd:attribute name="dDensity_dPressure" type="real64_array2d" />
-		<!--dDensity_dTemperature => Derivative of density with respect to temperature-->
-		<xsd:attribute name="dDensity_dTemperature" type="real64_array2d" />
-		<!--dEnthalpy_dPressure => Derivative of enthalpy with respect to pressure-->
-		<xsd:attribute name="dEnthalpy_dPressure" type="real64_array2d" />
-		<!--dEnthalpy_dTemperature => Derivative of enthalpy with respect to temperature-->
-		<xsd:attribute name="dEnthalpy_dTemperature" type="real64_array2d" />
+		<!--dDensity => dDensity-->
+		<xsd:attribute name="dDensity" type="real64_array3d" />
+		<!--dEnthalpy => dEnthalpy-->
+		<xsd:attribute name="dEnthalpy" type="real64_array3d" />
 		<!--dFluidDens_dCompConc => Derivative of fluid density with respect to component concentration-->
 		<xsd:attribute name="dFluidDens_dCompConc" type="real64_array3d" />
 		<!--dFluidDens_dPres => Derivative of fluid density with respect to pressure-->
@@ -2702,25 +2690,21 @@
 		<xsd:attribute name="dFluidVisc_dCompConc" type="real64_array3d" />
 		<!--dFluidVisc_dPres => Derivative of fluid viscosity with respect to pressure-->
 		<xsd:attribute name="dFluidVisc_dPres" type="real64_array2d" />
-		<!--dInternalEnergy_dPressure => Derivative of internal energy with respect to pressure-->
-		<xsd:attribute name="dInternalEnergy_dPressure" type="real64_array2d" />
-		<!--dInternalEnergy_dTemperature => Derivative of internal energy with respect to temperature-->
-		<xsd:attribute name="dInternalEnergy_dTemperature" type="real64_array2d" />
+		<!--dInternalEnergy => dInternalEnergy-->
+		<xsd:attribute name="dInternalEnergy" type="real64_array3d" />
 		<!--dVisc_dCompConc => Derivative of viscosity with respect to component concentration-->
 		<xsd:attribute name="dVisc_dCompConc" type="real64_array3d" />
 		<!--dVisc_dProppantConc => Derivative of viscosity with respect to proppant concentration-->
 		<xsd:attribute name="dVisc_dProppantConc" type="real64_array2d" />
-		<!--dViscosity_dPressure => Derivative of viscosity with respect to pressure-->
-		<xsd:attribute name="dViscosity_dPressure" type="real64_array2d" />
-		<!--dViscosity_dTemperature => Derivative of viscosity with respect to temperature-->
-		<xsd:attribute name="dViscosity_dTemperature" type="real64_array2d" />
+		<!--dViscosity => dViscosity-->
+		<xsd:attribute name="dViscosity" type="real64_array3d" />
 		<!--density => Density-->
 		<xsd:attribute name="density" type="real64_array2d" />
 		<!--density_n => Density at the previous converged time step-->
 		<xsd:attribute name="density_n" type="real64_array2d" />
 		<!--enthalpy => Enthalpy-->
 		<xsd:attribute name="enthalpy" type="real64_array2d" />
-		<!--internalEnergy => Internal energy-->
+		<!--internalEnergy => InternalEnergy-->
 		<xsd:attribute name="internalEnergy" type="real64_array2d" />
 		<!--internalEnergy_n => Fluid internal energy at the previous converged step-->
 		<xsd:attribute name="internalEnergy_n" type="real64_array2d" />
@@ -2945,29 +2929,21 @@
 		<xsd:attribute name="waterOilMaxRelPerm" type="real64" />
 	</xsd:complexType>
 	<xsd:complexType name="ThermalCompressibleSinglePhaseFluidType">
-		<!--dDensity_dPressure => Derivative of density with respect to pressure-->
-		<xsd:attribute name="dDensity_dPressure" type="real64_array2d" />
-		<!--dDensity_dTemperature => Derivative of density with respect to temperature-->
-		<xsd:attribute name="dDensity_dTemperature" type="real64_array2d" />
-		<!--dEnthalpy_dPressure => Derivative of enthalpy with respect to pressure-->
-		<xsd:attribute name="dEnthalpy_dPressure" type="real64_array2d" />
-		<!--dEnthalpy_dTemperature => Derivative of enthalpy with respect to temperature-->
-		<xsd:attribute name="dEnthalpy_dTemperature" type="real64_array2d" />
-		<!--dInternalEnergy_dPressure => Derivative of internal energy with respect to pressure-->
-		<xsd:attribute name="dInternalEnergy_dPressure" type="real64_array2d" />
-		<!--dInternalEnergy_dTemperature => Derivative of internal energy with respect to temperature-->
-		<xsd:attribute name="dInternalEnergy_dTemperature" type="real64_array2d" />
-		<!--dViscosity_dPressure => Derivative of viscosity with respect to pressure-->
-		<xsd:attribute name="dViscosity_dPressure" type="real64_array2d" />
-		<!--dViscosity_dTemperature => Derivative of viscosity with respect to temperature-->
-		<xsd:attribute name="dViscosity_dTemperature" type="real64_array2d" />
+		<!--dDensity => dDensity-->
+		<xsd:attribute name="dDensity" type="real64_array3d" />
+		<!--dEnthalpy => dEnthalpy-->
+		<xsd:attribute name="dEnthalpy" type="real64_array3d" />
+		<!--dInternalEnergy => dInternalEnergy-->
+		<xsd:attribute name="dInternalEnergy" type="real64_array3d" />
+		<!--dViscosity => dViscosity-->
+		<xsd:attribute name="dViscosity" type="real64_array3d" />
 		<!--density => Density-->
 		<xsd:attribute name="density" type="real64_array2d" />
 		<!--density_n => Density at the previous converged time step-->
 		<xsd:attribute name="density_n" type="real64_array2d" />
 		<!--enthalpy => Enthalpy-->
 		<xsd:attribute name="enthalpy" type="real64_array2d" />
-		<!--internalEnergy => Internal energy-->
+		<!--internalEnergy => InternalEnergy-->
 		<xsd:attribute name="internalEnergy" type="real64_array2d" />
 		<!--internalEnergy_n => Fluid internal energy at the previous converged step-->
 		<xsd:attribute name="internalEnergy_n" type="real64_array2d" />

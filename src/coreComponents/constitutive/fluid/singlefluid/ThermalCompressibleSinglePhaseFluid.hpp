@@ -45,35 +45,28 @@ public:
   using DensRelationType      = ExponentialRelation< real64, DENS_EAT, 3 >;
   using ViscRelationType      = ExponentialRelation< real64, VISC_EAT >;
   using IntEnergyRelationType = ExponentialRelation< real64, INTENERGY_EAT >;
+  using DerivOffset = constitutive::singlefluid::DerivativeOffsetC< 1 >;
 
   ThermalCompressibleSinglePhaseUpdate( DensRelationType const & densRelation,
                                         ViscRelationType const & viscRelation,
                                         IntEnergyRelationType const & intEnergyRelation,
-                                        arrayView2d< real64 > const & density,
-                                        arrayView2d< real64 > const & dDens_dPres,
-                                        arrayView2d< real64 > const & dDens_dTemp,
-                                        arrayView2d< real64 > const & viscosity,
-                                        arrayView2d< real64 > const & dVisc_dPres,
-                                        arrayView2d< real64 > const & dVisc_dTemp,
-                                        arrayView2d< real64 > const & internalEnergy,
-                                        arrayView2d< real64 > const & dIntEnergy_dPres,
-                                        arrayView2d< real64 > const & dIntEnergy_dTemp,
-                                        arrayView2d< real64 > const & enthalpy,
-                                        arrayView2d< real64 > const & dEnthalpy_dPres,
-                                        arrayView2d< real64 > const & dEnthalpy_dTemp,
+                                        arrayView2d< real64, constitutive::singlefluid::USD_FLUID > const & density,
+                                        arrayView3d< real64, constitutive::singlefluid::USD_FLUID_DER > const & dDensity,
+                                        arrayView2d< real64, constitutive::singlefluid::USD_FLUID > const & viscosity,
+                                        arrayView3d< real64, constitutive::singlefluid::USD_FLUID_DER > const & dViscosity,
+                                        arrayView2d< real64, constitutive::singlefluid::USD_FLUID > const & internalEnergy,
+                                        arrayView3d< real64, constitutive::singlefluid::USD_FLUID_DER > const & dInternalEnergy,
+                                        arrayView2d< real64, constitutive::singlefluid::USD_FLUID > const & enthalpy,
+                                        arrayView3d< real64, constitutive::singlefluid::USD_FLUID_DER > const & dEnthalpy,
                                         real64 const & refIntEnergy )
     : SingleFluidBaseUpdate( density,
-                             dDens_dPres,
+                             dDensity,
                              viscosity,
-                             dVisc_dPres ),
-    m_dDens_dTemp( dDens_dTemp ),
-    m_dVisc_dTemp( dVisc_dTemp ),
+                             dViscosity ),
     m_internalEnergy( internalEnergy ),
-    m_dIntEnergy_dPres( dIntEnergy_dPres ),
-    m_dIntEnergy_dTemp( dIntEnergy_dTemp ),
+    m_dInternalEnergy( dInternalEnergy ),
     m_enthalpy( enthalpy ),
-    m_dEnthalpy_dPres( dEnthalpy_dPres ),
-    m_dEnthalpy_dTemp( dEnthalpy_dTemp ),
+    m_dEnthalpy( dEnthalpy ),
     m_densRelation( densRelation ),
     m_viscRelation( viscRelation ),
     m_intEnergyRelation( intEnergyRelation ),
@@ -144,9 +137,9 @@ public:
   {
     compute( pressure,
              m_density[k][q],
-             m_dDens_dPres[k][q],
+             m_dDensity[k][q][DerivOffset::dP],
              m_viscosity[k][q],
-             m_dVisc_dPres[k][q] );
+             m_dViscosity[k][q][DerivOffset::dP] );
   }
 
   GEOS_HOST_DEVICE
@@ -159,44 +152,28 @@ public:
     compute( pressure,
              temperature,
              m_density[k][q],
-             m_dDens_dPres[k][q],
-             m_dDens_dTemp[k][q],
+             m_dDensity[k][q][DerivOffset::dP],
+             m_dDensity[k][q][DerivOffset::dT],
              m_viscosity[k][q],
-             m_dVisc_dPres[k][q],
-             m_dVisc_dTemp[k][q],
+             m_dViscosity[k][q][DerivOffset::dP],
+             m_dViscosity[k][q][DerivOffset::dT],
              m_internalEnergy[k][q],
-             m_dIntEnergy_dPres[k][q],
-             m_dIntEnergy_dTemp[k][q],
+             m_dInternalEnergy[k][q][DerivOffset::dP],
+             m_dInternalEnergy[k][q][DerivOffset::dT],
              m_enthalpy[k][q],
-             m_dEnthalpy_dPres[k][q],
-             m_dEnthalpy_dTemp[k][q] );
+             m_dEnthalpy[k][q][DerivOffset::dP],
+             m_dEnthalpy[k][q][DerivOffset::dT] );
   }
 
 private:
 
-  /// Derivative of density w.r.t. temperature
-  arrayView2d< real64 > m_dDens_dTemp;
+  /// Fluid internal energy and derivatives
+  arrayView2d< real64, constitutive::singlefluid::USD_FLUID > m_internalEnergy;
+  arrayView3d< real64, constitutive::singlefluid::USD_FLUID_DER > m_dInternalEnergy;
 
-  /// Derivative of viscosity w.r.t. temperature
-  arrayView2d< real64 > m_dVisc_dTemp;
-
-  /// Fluid internal energy
-  arrayView2d< real64 > m_internalEnergy;
-
-  /// Derivative of internal energy w.r.t. pressure
-  arrayView2d< real64 > m_dIntEnergy_dPres;
-
-  /// Derivative of internal energy w.r.t. temperature
-  arrayView2d< real64 > m_dIntEnergy_dTemp;
-
-  /// Fluid enthalpy
-  arrayView2d< real64 > m_enthalpy;
-
-  /// Derivative of enthalpy w.r.t. pressure
-  arrayView2d< real64 > m_dEnthalpy_dPres;
-
-  /// Derivative of enthalpy w.r.t. temperature
-  arrayView2d< real64 > m_dEnthalpy_dTemp;
+  /// Fluid enthalpy and derivatives
+  arrayView2d< real64, constitutive::singlefluid::USD_FLUID > m_enthalpy;
+  arrayView3d< real64, constitutive::singlefluid::USD_FLUID_DER > m_dEnthalpy;
 
   /// Relationship between the fluid density and pressure & temperature
   DensRelationType m_densRelation;

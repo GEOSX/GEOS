@@ -21,7 +21,8 @@
 #define GEOS_CONSTITUTIVE_FLUID_SINGLEFLUID_SLURRYFLUIDFIELDS_HPP_
 
 #include "mesh/MeshFields.hpp"
-
+#include "constitutive/fluid/singlefluid/SingleFluidLayouts.hpp"
+#include "constitutive/fluid/singlefluid/SingleFluidUtils.hpp"
 namespace geos
 {
 
@@ -30,6 +31,8 @@ namespace fields
 
 namespace slurryfluid
 {
+using array2dLayoutFluid = array2d< real64, constitutive::singlefluid::LAYOUT_FLUID >;
+using array3dLayoutFluid_der = array3d< real64, constitutive::singlefluid::LAYOUT_FLUID_DER >;
 
 DECLARE_FIELD( dDensity_dProppantConcentration,
                "dDens_dProppantConc",
@@ -73,7 +76,15 @@ DECLARE_FIELD( dComponentDensity_dComponentConcentration,
 
 DECLARE_FIELD( fluidDensity,
                "FluidDensity",
-               array2d< real64 >,
+               array2dLayoutFluid,
+               0,
+               LEVEL_0,
+               WRITE_AND_READ,
+               "Fluid density" );
+
+DECLARE_FIELD( dFluidDensity,
+               "dFluidDensity",
+               array3dLayoutFluid_der,
                0,
                LEVEL_0,
                WRITE_AND_READ,

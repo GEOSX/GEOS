@@ -49,6 +49,8 @@ public:
  * Can be converted from ElementRegionManager::ElementViewConstAccessor
  * by calling .toView() or .toViewConst() on an accessor instance
  */
+
+  using DerivOffset = constitutive::singlefluid::DerivativeOffsetC< 1 >;
   template< typename VIEWTYPE >
   using ElementViewConst = ElementRegionManager::ElementViewConst< VIEWTYPE >;
 
@@ -67,6 +69,8 @@ public:
   using AbstractBase::m_pres;
   using AbstractBase::m_permeability;
   using AbstractBase::m_dPerm_dPres;
+  using AbstractBase::m_dDens;
+  using AbstractBase::m_dMob;
 
   using AbstractBase::m_localMatrix;
   using AbstractBase::m_localRhs;
@@ -82,15 +86,12 @@ public:
   using Base::m_faceGravCoef;
 
   using ThermalSinglePhaseFlowAccessors =
-    StencilAccessors< fields::flow::temperature,
-                      fields::flow::dMobility_dTemperature >;
+    StencilAccessors< fields::flow::temperature >;
 
   using ThermalSinglePhaseFluidAccessors =
     StencilMaterialAccessors< constitutive::SingleFluidBase,
-                              fields::singlefluid::dDensity_dTemperature,
                               fields::singlefluid::enthalpy,
-                              fields::singlefluid::dEnthalpy_dPressure,
-                              fields::singlefluid::dEnthalpy_dTemperature >;
+                              fields::singlefluid::dEnthalpy >;
 
   using ThermalConductivityAccessors =
     StencilMaterialAccessors< constitutive::SinglePhaseThermalConductivityBase,
@@ -142,11 +143,8 @@ public:
             localRhs ),
     m_temp( thermalSinglePhaseFlowAccessors.get( fields::flow::temperature {} ) ),
     m_faceTemp( faceManager.getField< fields::flow::faceTemperature >() ),
-    m_dMob_dTemp( thermalSinglePhaseFlowAccessors.get( fields::flow::dMobility_dTemperature {} ) ),
-    m_dDens_dTemp( thermalSinglePhaseFluidAccessors.get( fields::singlefluid::dDensity_dTemperature {} ) ),
     m_enthalpy( thermalSinglePhaseFluidAccessors.get( fields::singlefluid::enthalpy {} ) ),
-    m_dEnthalpy_dPres( thermalSinglePhaseFluidAccessors.get( fields::singlefluid::dEnthalpy_dPressure {} ) ),
-    m_dEnthalpy_dTemp( thermalSinglePhaseFluidAccessors.get( fields::singlefluid::dEnthalpy_dTemperature {} ) ),
+    m_dEnthalpy( thermalSinglePhaseFluidAccessors.get( fields::singlefluid::dEnthalpy {} ) ),
     m_thermalConductivity( thermalConductivityAccessors.get( fields::thermalconductivity::effectiveConductivity {} ) ),
     m_dThermalCond_dT( thermalConductivityAccessors.get( fields::thermalconductivity::dEffectiveConductivity_dT {} ) )
   {}
@@ -206,8 +204,7 @@ public:
 
       // Compute the derivatives of the density wrt temperature
 
-      real64 const dDens_dT = 0.5 * m_dDens_dTemp[er][esr][ei][0];
-
+      real64 const dDens_dT = 0.5 * m_dDens[er][esr][ei][0][DerivOffset::dT];
       // Compute the derivatives of the phase potential difference wrt temperature
 
       real64 const dF_dT = -stack.transmissibility * dDens_dT * ( m_gravCoef[er][esr][ei] - m_faceGravCoef[kf] );
@@ -223,10 +220,10 @@ public:
       if( f >= 0 ) // the element is upstream
       {
         real64 const dFlux_dP = mobility_up * dF_dP + dMobility_dP_up * f;
-        real64 const dFlux_dT = mobility_up * dF_dT + m_dMob_dTemp[er][esr][ei] * f;
+        real64 const dFlux_dT = mobility_up * dF_dT + m_dMob[er][esr][ei][DerivOffset::dT] * f;
 
-        stack.dEnergyFlux_dP += dFlux_dP * enthalpy + flux * m_dEnthalpy_dPres[er][esr][ei][0];
-        stack.dEnergyFlux_dT += dFlux_dT * enthalpy + flux * m_dEnthalpy_dTemp[er][esr][ei][0];
+        stack.dEnergyFlux_dP += dFlux_dP * enthalpy + flux * m_dEnthalpy[er][esr][ei][0][DerivOffset::dP];
+        stack.dEnergyFlux_dT += dFlux_dT * enthalpy + flux * m_dEnthalpy[er][esr][ei][0][DerivOffset::dT];
       }
       else
       {
@@ -290,16 +287,9 @@ protected:
   /// Views on face temperature
   arrayView1d< real64 const > const m_faceTemp;
 
-  /// Views on derivatives of fluid mobilities
-  ElementViewConst< arrayView1d< real64 const > > const m_dMob_dTemp;
-
-  /// Views on derivatives of fluid densities
-  ElementViewConst< arrayView2d< real64 const > > const m_dDens_dTemp;
-
   /// Views on enthalpies
-  ElementViewConst< arrayView2d< real64 const > > const m_enthalpy;
-  ElementViewConst< arrayView2d< real64 const > > const m_dEnthalpy_dPres;
-  ElementViewConst< arrayView2d< real64 const > > const m_dEnthalpy_dTemp;
+  ElementViewConst< arrayView2d< real64 const, constitutive::singlefluid::USD_FLUID > > const m_enthalpy;
+  ElementViewConst< arrayView3d< real64 const, constitutive::singlefluid::USD_FLUID_DER > > const m_dEnthalpy;
 
   /// View on thermal conductivity
   ElementViewConst< arrayView3d< real64 const > > m_thermalConductivity;

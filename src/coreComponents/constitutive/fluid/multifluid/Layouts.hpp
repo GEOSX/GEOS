@@ -31,17 +31,6 @@ namespace geos
 namespace constitutive
 {
 
-namespace singlefluid
-{
-struct DerivativeOffset
-{
-  /// index of derivative wrt pressure
-  static integer constexpr dP = 0;
-  /// index of derivative wrt temperature
-  static integer constexpr dT = 1;
-
-};
-}
 namespace multifluid
 {
 
