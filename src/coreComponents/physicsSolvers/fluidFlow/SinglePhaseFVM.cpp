@@ -68,14 +68,7 @@ void SinglePhaseFVM< BASE >::initializePreSubGroups()
 {
   BASE::initializePreSubGroups();
 
-  DomainPartition & domain = this->template getGroupByPath< DomainPartition >( "/Problem/domain" );
-  NumericalMethodsManager const & numericalMethodManager = domain.getNumericalMethodManager();
-  FiniteVolumeManager const & fvManager = numericalMethodManager.getFiniteVolumeManager();
-
-  if( !fvManager.hasGroup< FluxApproximationBase >( m_discretizationName ) )
-  {
-    GEOS_ERROR( "A discretization deriving from FluxApproximationBase must be selected with SinglePhaseFVM" );
-  }
+  this->checkDiscretizationName();
 
   if( m_isThermal )
   {
