@@ -1,0 +1,194 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Included>
+    <File
+      name="./dfit_pennyShaped_base.xml"/>
+  </Included>
+  
+  <Solvers
+    gravityVector="{ 0.0, 0.0, -0.0 }">
+    <Hydrofracture
+      name="hydrofracture"
+      solidSolverName="solidMechSolver"
+      flowSolverName="SinglePhaseFlow"
+      surfaceGeneratorName="SurfaceGen"
+      logLevel="1"
+      targetRegions="{ Fracture }"
+      contactRelationName="fractureContact"
+      maxNumResolves="5"
+      initialDt="0.1">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-4"
+        newtonMaxIter="15"/>
+      <LinearSolverParameters
+        solverType="gmres"
+        preconditionerType="mgr"
+        logLevel="0"
+        krylovAdaptiveTol="1"/>
+    </Hydrofracture>
+
+    <SolidMechanicsLagrangianSSLE
+      name="solidMechSolver"
+      timeIntegrationOption="QuasiStatic"
+      discretization="FE1"
+      targetRegions="{ Domain, Fracture }"
+      contactRelationName="fractureContact">
+    </SolidMechanicsLagrangianSSLE>
+
+    <SinglePhaseFVM
+      name="SinglePhaseFlow"
+      discretization="singlePhaseTPFA"
+      targetRegions="{ Domain, Fracture }"
+      inputFluxEstimate="1.0">
+    </SinglePhaseFVM>
+
+    <SurfaceGenerator
+      name="SurfaceGen"
+      targetRegions="{ Domain }"
+      nodeBasedSIF="1"      
+      rockToughness="10.0e6"
+      mpiCommOrder="0"/>
+  </Solvers>
+ 
+  <Mesh>
+    <InternalMesh
+      name="mesh1"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0, 100, 200, 400 }"
+      yCoords="{ 0, 100, 200, 400 }"
+      zCoords="{ -400, -100, -20, 20, 100, 400 }"
+      nx="{ 50, 10, 20 }"
+      ny="{ 50, 10, 20 }"
+      nz="{ 10, 10, 20, 10, 10 }"
+      cellBlockNames="{ cb1 }"/>
+  </Mesh>
+ 
+  <Geometry>
+    <Box
+      name="fracture"
+      xMin="{ -4.1, -4.1, -0.1 }"
+      xMax="{ 4.1, 4.1, 0.1 }"/>
+
+    <Box
+      name="source"
+      xMin="{ -2.1, -2.1, -0.1 }"
+      xMax="{ 2.1, 2.1, 0.1 }"/>
+
+    <Box
+      name="core"
+      xMin="{ -500.1, -500.1, -0.1 }"
+      xMax="{ 500.1, 500.1, 0.1 }"/>
+  </Geometry>
+
+  <Events
+    maxTime="400.0">
+    <SoloEvent
+      name="preFracture"
+      target="/Solvers/SurfaceGen"/>
+    
+    <SoloEvent
+      name="outputs0"
+      target="/Outputs/vtkOutput"/>
+
+    <PeriodicEvent
+      name="timeHistoryCollection0"
+      timeFrequency="1.0"
+      targetExactTimestep="0"
+      target="/Tasks/pressureCollection" />
+
+    <PeriodicEvent
+      name="timeHistoryCollection1"
+      timeFrequency="1.0"
+      targetExactTimestep="0"
+      target="/Tasks/apertureCollection" />
+
+    <PeriodicEvent
+      name="timeHistoryCollection2"
+      timeFrequency="1.0"
+      targetExactTimestep="0"
+      target="/Tasks/hydraulicApertureCollection" /> 
+
+   <PeriodicEvent
+      name="timeHistoryCollection3"
+      timeFrequency="1.0"
+      targetExactTimestep="0"
+      target="/Tasks/areaCollection" />      
+
+    <PeriodicEvent
+      name="timeHistoryOutput"
+      timeFrequency="1.0"
+      targetExactTimestep="0"
+      target="/Outputs/timeHistoryOutput"/> 
+
+    <PeriodicEvent
+      name="solverApplications1"
+      beginTime="0.0"
+      endTime="1.0"
+      forceDt="0.1"
+      target="/Solvers/hydrofracture"/>
+    
+    <PeriodicEvent
+      name="outputs1"
+      beginTime="0.0"
+      timeFrequency="0.2"
+      targetExactTimestep="0"
+      target="/Outputs/vtkOutput"/>
+
+    <PeriodicEvent
+      name="solverApplications2"
+      beginTime="1.0"
+      endTime="3.0"
+      forceDt="0.5"
+      target="/Solvers/hydrofracture"/>
+
+    <PeriodicEvent
+      name="solverApplications3"
+      beginTime="3.0"
+      endTime="8.0"
+      forceDt="1.0"
+      target="/Solvers/hydrofracture"/>
+
+    <PeriodicEvent
+      name="solverApplications4"
+      beginTime="8.0"
+      endTime="20.0"
+      forceDt="2.0"
+      target="/Solvers/hydrofracture"/>
+
+    <PeriodicEvent
+      name="solverApplications5"
+      beginTime="20.0"
+      endTime="60.0"
+      forceDt="4.0"
+      target="/Solvers/hydrofracture"/>
+
+    <PeriodicEvent
+      name="solverApplications6"
+      beginTime="60.0"
+      endTime="120.0"
+      forceDt="8.0"
+      target="/Solvers/hydrofracture"/>
+
+    <PeriodicEvent
+      name="solverApplications7"
+      beginTime="120.0"
+      endTime="200.0"
+      forceDt="1.0"
+      target="/Solvers/hydrofracture"/>
+
+    <PeriodicEvent
+      name="solverApplications8"
+      beginTime="200.0"
+      endTime="400.0"
+      forceDt="5.0"
+      target="/Solvers/hydrofracture"/>
+
+    <PeriodicEvent
+      name="outputs2"
+      beginTime="2.0"
+      timeFrequency="2.0"
+      targetExactTimestep="0"
+      target="/Outputs/vtkOutput"/>
+  </Events>
+</Problem>

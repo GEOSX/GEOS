@@ -1,0 +1,222 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <ElementRegions>
+    <CellElementRegion
+      name="Domain"
+      cellBlocks="{ cb1 }"
+      materialList="{ water, porousRock, rock }"/>
+
+    <SurfaceElementRegion
+      name="Fracture"
+      defaultAperture="0.2e-2"
+      materialList="{ water, rock, fractureFilling, fractureContact }"/>
+  </ElementRegions>
+
+  <Constitutive>
+    <CompressibleSinglePhaseFluid
+      name="water"
+      defaultDensity="1000"
+      defaultViscosity="1.0e-3"
+      referencePressure="35e6"
+      compressibility="4.58e-10"
+      referenceViscosity="1.0e-3"
+      viscosibility="0.0"/>
+
+    <CompressibleSolidConstantPermeability
+      name="porousRock"
+      solidModelName="nullSolid"
+      porosityModelName="rockPorosity"
+      permeabilityModelName="rockPerm"/>
+
+    <PressurePorosity
+      name="rockPorosity"
+      defaultReferencePorosity="0.3"
+      referencePressure="0.0"
+      compressibility="1.0e-9"/>
+
+    <ConstantPermeability
+      name="rockPerm"
+      permeabilityComponents="{ 2.0e-19, 2.0e-19, 2.0e-19 }"/>    
+
+    <ElasticIsotropic
+      name="rock"
+      defaultDensity="2700"
+      defaultBulkModulus="25.0e9"
+      defaultShearModulus="15.0e9"/>
+
+    <CompressibleSolidParallelPlatesPermeability
+      name="fractureFilling"
+      solidModelName="nullSolid"
+      porosityModelName="fracturePorosity"
+      permeabilityModelName="fracturePerm"/>
+
+    <NullModel
+      name="nullSolid"/>
+
+    <PressurePorosity
+      name="fracturePorosity"
+      defaultReferencePorosity="1.00"
+      referencePressure="0.0"
+      compressibility="0.0"/>
+
+    <ParallelPlatesPermeability
+      name="fracturePerm"/>
+
+    <FrictionlessContact
+      name="fractureContact"
+      penaltyStiffness="1.0e0"
+      apertureTableName="apertureTable"/>
+  </Constitutive>
+  
+  <NumericalMethods>
+    <FiniteElements>
+      <FiniteElementSpace
+        name="FE1"
+        order="1"/>
+    </FiniteElements>
+
+    <FiniteVolume>
+      <TwoPointFluxApproximation
+        name="singlePhaseTPFA"/>
+    </FiniteVolume>
+  </NumericalMethods>
+
+  <FieldSpecifications>
+    <!-- In situ stress  -->
+    <FieldSpecification
+      name="sigma_xx"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions"
+      fieldName="rock_stress"
+      component="0"
+      scale="-60e6"/>
+
+    <FieldSpecification
+      name="sigma_yy"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions"
+      fieldName="rock_stress"
+      component="1"
+      scale="-60e6"/>
+
+    <FieldSpecification
+      name="sigma_zz"
+      initialCondition="1"
+      setNames="{ all }"
+      objectPath="ElementRegions"
+      fieldName="rock_stress"
+      component="2"
+      scale="-54e6"/>  
+
+    <!-- Initial pressure -->
+    <FieldSpecification
+      name="initialPressure"
+      initialCondition="1"
+      objectPath="ElementRegions"
+      fieldName="pressure"
+      setNames="{all}"
+      scale="35e6"/>  
+
+    <FieldSpecification
+      name="separableFace"
+      initialCondition="1"
+      setNames="{ core }"
+      objectPath="faceManager"
+      fieldName="isFaceSeparable"
+      scale="1"/>
+
+    <FieldSpecification
+      name="frac"
+      initialCondition="1"
+      setNames="{ fracture }"
+      objectPath="faceManager"
+      fieldName="ruptureState"
+      scale="1"/>
+
+    <FieldSpecification
+      name="xconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="0"
+      scale="0.0"
+      setNames="{ xneg, xpos }"/>
+    
+    <FieldSpecification
+      name="yconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="1"
+      scale="0.0"
+      setNames="{ yneg, ypos }"/>
+
+    <FieldSpecification
+      name="zconstraint"
+      objectPath="nodeManager"
+      fieldName="totalDisplacement"
+      component="2"
+      scale="0.0"
+      setNames="{ zneg, zpos }"/>
+
+    <SourceFlux
+      name="sourceTerm"
+      objectPath="ElementRegions/Fracture"
+      scale="-1"
+      functionName="flow_rate"
+      setNames="{ source }"/>
+  </FieldSpecifications>
+  
+
+  <Functions>
+    <TableFunction
+      name="apertureTable"
+      coordinates="{ -1.0e-3, 0.0 }"
+      values="{ 0.12e-2, 0.2e-2 }"/>
+
+  <!-- Pumping Schedule -->
+    <TableFunction
+      name="flow_rate"
+      inputVarNames="{ time }"
+      coordinateFiles="{ tables/dfit_penny_flowRate_time.csv }"
+      voxelFile="tables/dfit_penny_flowRate.csv"/>        
+  </Functions>
+
+  <Tasks>
+    <PackCollection
+      name="pressureCollection"
+      objectPath="ElementRegions/Fracture/FractureSubRegion"
+      fieldName="pressure"/>
+
+    <PackCollection
+      name="apertureCollection"
+      objectPath="ElementRegions/Fracture/FractureSubRegion"
+      fieldName="elementAperture"/> 
+
+    <PackCollection
+      name="hydraulicApertureCollection"
+      objectPath="ElementRegions/Fracture/FractureSubRegion"
+      fieldName="hydraulicAperture"/>  
+
+    <PackCollection
+      name="areaCollection"
+      objectPath="ElementRegions/Fracture/FractureSubRegion"
+      fieldName="elementArea"/> 
+</Tasks>
+
+  <Outputs>
+    <VTK
+      name="vtkOutput"
+      plotFileRoot="dfit_pennyShaped"
+      plotLevel="1"
+      parallelThreads="16"
+      onlyPlotSpecifiedFieldNames="0"
+      fieldNames="{ TotalDisplacement, pressure, elementAperture, elementArea }"/>
+
+    <TimeHistory
+      name="timeHistoryOutput"
+      sources="{/Tasks/pressureCollection, /Tasks/apertureCollection, /Tasks/hydraulicApertureCollection, /Tasks/areaCollection}"
+      filename="dfit_penny_output" />  
+  </Outputs>
+</Problem>

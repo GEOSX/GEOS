@@ -1,0 +1,134 @@
+<?xml version="1.0" ?>
+
+<Problem>
+  <Included>
+    <File
+      name="./dfit_pennyShaped_base.xml"/>
+  </Included>
+
+  <Solvers
+    gravityVector="{ 0.0, 0.0, -0.0 }">
+    <Hydrofracture
+      name="hydrofracture"
+      solidSolverName="lagsolve"
+      flowSolverName="SinglePhaseFlow"
+      surfaceGeneratorName="SurfaceGen"
+      logLevel="1"
+      targetRegions="{ Fracture }"
+      contactRelationName="fractureContact"
+      maxNumResolves="1"
+      initialDt="0.1">
+      <NonlinearSolverParameters
+        newtonTol="1.0e-3"
+        newtonMaxIter="25"
+        maxTimeStepCuts="5"/>
+      <LinearSolverParameters
+        directParallel="0"
+        solverType="gmres"
+        preconditionerType="mgr"/>
+    </Hydrofracture>
+
+    <SolidMechanicsLagrangianSSLE
+      name="lagsolve"
+      timeIntegrationOption="QuasiStatic"
+      discretization="FE1"
+      targetRegions="{ Domain, Fracture }"
+      contactRelationName="fractureContact">     
+    </SolidMechanicsLagrangianSSLE>
+
+    <SinglePhaseFVM
+      name="SinglePhaseFlow"
+      discretization="singlePhaseTPFA"
+      targetRegions="{ Domain, Fracture }"
+      inputFluxEstimate="1.0"> 
+    </SinglePhaseFVM>
+
+    <SurfaceGenerator
+      name="SurfaceGen"
+      targetRegions="{ Domain }"
+      nodeBasedSIF="1"      
+      rockToughness="10.0e6"
+      mpiCommOrder="1"/>
+  </Solvers> 
+
+  <Mesh>
+    <InternalMesh
+      name="mesh1"
+      elementTypes="{ C3D8 }"
+      xCoords="{ 0, 100, 200, 400 }"
+      yCoords="{ 0, 100, 200, 400 }"
+      zCoords="{ -400, -100, -20, 20, 100, 400 }"
+      nx="{ 20, 4, 6 }"
+      ny="{ 20, 4, 6 }"
+      nz="{ 5, 5, 10, 5, 5 }"
+      cellBlockNames="{ cb1 }"/> 
+  </Mesh>
+ 
+  <Geometry> 
+    <Box
+      name="fracture"
+      xMin="{ -0.1, -0.1, -0.1 }"
+      xMax="{ 10.1, 10.1, 0.1 }"/>
+
+    <Box
+      name="source"
+      xMin="{ -0.1, -0.1, -0.1 }"
+      xMax="{ 10.1, 10.1, 0.1 }"/>
+
+    <Box
+      name="core"
+      xMin="{ -500.1, -500.1, -0.1 }"
+      xMax="{ 500.1, 500.1, 0.1 }"/>
+  </Geometry>
+
+  <Events
+    maxTime="600.0">
+    <SoloEvent
+      name="preFracture"
+      target="/Solvers/SurfaceGen"/>
+
+    <SoloEvent
+      name="outputs0"
+      target="/Outputs/vtkOutput"/>  
+
+    <PeriodicEvent
+      name="solverApplications1"
+      beginTime="0.0"
+      endTime="10.0"
+      forceDt="1.0"
+      target="/Solvers/hydrofracture"/>
+
+    <PeriodicEvent
+      name="solverApplications2"
+      beginTime="10.0"
+      endTime="120.0"
+      forceDt="2.0"
+      target="/Solvers/hydrofracture"/>
+    
+    <PeriodicEvent
+      name="solverApplications3"
+      beginTime="120.0"
+      endTime="200.0"
+      forceDt="1.0"
+      target="/Solvers/hydrofracture"/>
+
+    <PeriodicEvent
+      name="solverApplications4"
+      beginTime="200.0"
+      endTime="500.0"
+      target="/Solvers/hydrofracture"/>  
+    
+    <PeriodicEvent
+      name="outputs"
+      beginTime="2.0"
+      timeFrequency="2.0"
+      targetExactTimestep="0"
+      target="/Outputs/vtkOutput"/>
+
+    <!-- <PeriodicEvent 
+      name="restarts"
+      timeFrequency="5.0"
+      targetExactTimestep="0"
+      target="/Outputs/restartOutput" /> -->
+  </Events>
+</Problem>
