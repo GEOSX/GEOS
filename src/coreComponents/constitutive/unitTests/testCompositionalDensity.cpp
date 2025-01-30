@@ -72,6 +72,10 @@ public:
     string const eosName = EnumStrings< EquationOfStateType >::toString( EOS_TYPE );
     equationOfState->m_equationsOfStateNames.emplace_back( eosName );
 
+    auto densityParameters = const_cast< CompositionalDensity::Parameters * >(m_parameters->get< CompositionalDensity::Parameters >());
+    densityParameters->m_componentVolumeShift.resize( NC );
+    densityParameters->m_componentVolumeShift.zero();
+
     m_density = std::make_unique< CompositionalDensity >( "PhaseDensity", componentProperties, 0, *m_parameters );
   }
 

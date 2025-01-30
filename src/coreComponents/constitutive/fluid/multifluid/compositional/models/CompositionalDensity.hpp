@@ -102,9 +102,30 @@ public:
   // Create parameters unique to this model
   static std::unique_ptr< ModelParameters > createParameters( std::unique_ptr< ModelParameters > parameters );
 
+  class Parameters : public ModelParameters
+  {
+public:
+    Parameters( std::unique_ptr< ModelParameters > parameters );
+    ~Parameters() override = default;
+
+    static std::unique_ptr< ModelParameters > create( std::unique_ptr< ModelParameters > parameters );
+
+    struct viewKeyStruct
+    {
+      static constexpr char const * componentVolumeShiftString() { return "componentVolumeShift"; }
+    };
+
+    array1d< real64 > m_componentVolumeShift;
+
+protected:
+    void registerParametersImpl( MultiFluidBase * fluid ) override;
+    void postInputInitializationImpl( MultiFluidBase const * fluid, ComponentProperties const & componentProperties ) override;
+  };
+
 private:
   static void calculateDimensionalVolumeShift( ComponentProperties const & componentProperties,
                                                EquationOfStateType const & equationOfState,
+                                               arraySlice1d< real64 const > componentVolumeShift,
                                                arraySlice1d< real64 > componentDimensionalVolumeShift );
 
 private:

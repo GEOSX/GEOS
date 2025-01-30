@@ -206,7 +206,8 @@ private:
   {
     auto const componentProperties = this->m_fluid->createKernelWrapper();
     auto const binaryInteractionCoefficients = componentProperties.m_componentBinaryCoeff;
-    auto const volumeShift = componentProperties.m_componentVolumeShift;
+    stackArray1d< real64, NC > volumeShift( NC );
+    volumeShift.zero();
 
     real64 compressibilityFactor = 0.0;
     stackArray1d< real64, numComps > aPureCoefficient( numComps );
