@@ -1010,7 +1010,7 @@ protected:
   template< typename CONSTITUTIVE_TYPE >
   static CONSTITUTIVE_TYPE const & getConstitutiveModel( ElementSubRegionBase const & subRegion )
   {
-    return getConstitutiveModel< CONSTITUTIVE_TYPE >( subRegion, getConstitutiveName< BASETYPE >( subRegion ) );
+    return getConstitutiveModel< CONSTITUTIVE_TYPE >( subRegion, getConstitutiveName< CONSTITUTIVE_TYPE >( subRegion ) );
   }
 
   /**
