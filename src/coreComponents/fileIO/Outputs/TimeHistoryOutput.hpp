@@ -98,11 +98,13 @@ public:
     static constexpr char const * timeHistoryOutputFilenameString() { return "filename"; }
     static constexpr char const * timeHistoryOutputFormatString() { return "format"; }
     static constexpr char const * timeHistoryRestartString() { return "restart"; }
+    static constexpr char const * timeHistoryMPIOString() { return "mpio"; }
 
     dataRepository::ViewKey timeHistoryOutputTarget = { "sources" };
     dataRepository::ViewKey timeHistoryOutputFilename = { "filename" };
     dataRepository::ViewKey timeHistoryOutputFormat = { "format" };
     dataRepository::ViewKey timeHistoryRestart = { "restart" };
+    dataRepository::ViewKey timeHistoryMPIO = { "mpio" };
   } timeHistoryOutputViewKeys;
   /// @endcond
 
@@ -137,6 +139,8 @@ private:
   string m_filename;
   /// The discrete number of time history states expected to be written to the file
   integer m_recordCount;
+  /// Whether to use MPIO to write time history output files, or write individual files (only for hdf5 format)
+  integer m_useMPIO;
   /// The buffered time history output objects for each collector to collect data into and to use to configure/write to file.
   std::vector< std::unique_ptr< BufferedHistoryIO > > m_io;
 };

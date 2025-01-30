@@ -47,6 +47,7 @@ public:
    * @param[in] comm A communicator where every rank will participate in writting to the output file.
    */
   HDFHistoryIO( string const & filename,
+                bool useMPIO,
                 localIndex rank,
                 std::vector< localIndex > const & dims,
                 string const & name,
@@ -66,12 +67,14 @@ public:
    * @param[in] comm A communicator where every rank will participate in writing to the output file.
    */
   HDFHistoryIO( string const & filename,
+                bool useMPIO,
                 const HistoryMetadata & spec,
                 localIndex writeHead = 0,
                 localIndex initAlloc = 1,
                 localIndex overallocMultiple = 2,
                 MPI_Comm comm = MPI_COMM_GEOS ):
     HDFHistoryIO( filename,
+                  useMPIO,
                   spec.getRank(),
                   spec.getDims(),
                   spec.getName(),
@@ -147,6 +150,8 @@ private:
   // file io params
   /// The filename to write to
   string m_filename;
+  /// Whether to write a single file using MPIO (true) or a separate file for each rank (false)
+  bool m_useMPIO;
   /// How much to scale the internal and file allocations by when room runs out
   const localIndex m_overallocMultiple;
   /// The global index offset for this mpi rank for this data set
