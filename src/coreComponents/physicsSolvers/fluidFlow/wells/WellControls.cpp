@@ -53,8 +53,6 @@ WellControls::WellControls( string const & name, Group * const parent )
 {
   setInputFlags( InputFlags::OPTIONAL_NONUNIQUE );
 
-  enableLogLevelInput();
-
   registerWrapper( viewKeyStruct::typeString(), &m_type ).
     setInputFlag( InputFlags::REQUIRED ).
     setDescription( "Well type. Valid options:\n* " + EnumStrings< Type >::concat( "\n* " ) );

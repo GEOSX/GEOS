@@ -36,7 +36,6 @@ SolidMechanicsStateReset::SolidMechanicsStateReset( const string & name,
   TaskBase( name, parent ),
   m_solidSolverName()
 {
-  enableLogLevelInput();
 
   registerWrapper( viewKeyStruct::solidSolverNameString(), &m_solidSolverName ).
     setRTTypeName( rtTypes::CustomTypes::groupNameRef ).

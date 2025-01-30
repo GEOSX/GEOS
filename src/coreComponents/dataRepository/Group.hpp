@@ -1493,11 +1493,6 @@ public:
   void loadFromConduit();
 
   /**
-   * @deprecated will be remove and replace by addLogLevel
-   */
-  void enableLogLevelInput();
-
-  /**
    * @brief Set verbosity level
    * @param logLevel new verbosity level value
    */

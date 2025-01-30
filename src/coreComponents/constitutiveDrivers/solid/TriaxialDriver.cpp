@@ -29,7 +29,6 @@ TriaxialDriver::TriaxialDriver( const string & name,
                                 Group * const parent ):
   TaskBase( name, parent )
 {
-  enableLogLevelInput();
 
   registerWrapper( viewKeyStruct::solidMaterialNameString(), &m_solidMaterialName ).
     setRTTypeName( rtTypes::CustomTypes::groupNameRef ).

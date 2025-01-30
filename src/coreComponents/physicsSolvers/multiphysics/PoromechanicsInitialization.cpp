@@ -47,7 +47,6 @@ PoromechanicsInitialization( const string & name,
   m_solidMechanicsStatistics(),
   m_solidMechanicsStateResetTask( name, parent )
 {
-  enableLogLevelInput();
 
   registerWrapper( viewKeyStruct::poromechanicsSolverNameString(), &m_poromechanicsSolverName ).
     setRTTypeName( rtTypes::CustomTypes::groupNameRef ).

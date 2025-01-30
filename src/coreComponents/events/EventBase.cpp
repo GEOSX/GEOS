@@ -54,9 +54,6 @@ EventBase::EventBase( const string & name,
 {
   setInputFlags( InputFlags::OPTIONAL_NONUNIQUE );
 
-  // This enables logLevel filtering
-  enableLogLevelInput();
-
   registerWrapper( viewKeyStruct::eventTargetString(), &m_eventTarget ).
     setRTTypeName( rtTypes::CustomTypes::groupNameRef ).
     setInputFlag( InputFlags::OPTIONAL ).

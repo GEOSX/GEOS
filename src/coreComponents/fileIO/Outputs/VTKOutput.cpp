@@ -55,8 +55,6 @@ VTKOutput::VTKOutput( string const & name,
   m_levelNames(),
   m_writer( getOutputDirectory() + '/' + m_plotFileRoot )
 {
-  enableLogLevelInput();
-
   registerWrapper( viewKeysStruct::plotFileRoot, &m_plotFileRoot ).
     setDefaultValue( m_plotFileRoot ).
     setInputFlag( InputFlags::OPTIONAL ).

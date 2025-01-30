@@ -651,15 +651,6 @@ void Group::postRestartInitializationRecursive()
   postRestartInitialization();
 }
 
-void Group::enableLogLevelInput()
-{
-  // TODO : Improve the Log Level description to clearly assign a usecase per log level (incoming PR).
-  registerWrapper( viewKeyStruct::logLevelString(), &m_logLevel ).
-    setApplyDefaultValue( 0 ).
-    setInputFlag( InputFlags::OPTIONAL ).
-    setDescription( "Log level" );
-}
-
 Group const & Group::getBaseGroupByPath( string const & path ) const
 {
   Group const * currentGroup = this;

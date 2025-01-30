@@ -40,7 +40,6 @@ StencilDataCollection::StencilDataCollection( const string & name,
                                               Group * const parent ):
   Base( name, parent )
 {
-  enableLogLevelInput();
   getWrapperBase( Group::viewKeyStruct::logLevelString() ).
     setDescription( "When higher than 1: Display store events details." );
 
