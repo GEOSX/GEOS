@@ -95,7 +95,7 @@
 
     <WellElementRegion
       name="wellRegion"
-      materialList="{ fluid, relperm, cappres }"/>
+      materialList="{ fluid }"/>
   </ElementRegions>
     <!-- SPHINX_ER_END -->
  

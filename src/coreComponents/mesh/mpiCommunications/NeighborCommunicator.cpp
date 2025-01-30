@@ -537,6 +537,10 @@ int NeighborCommunicator::packCommSizeForSync( FieldIdentifiers const & fieldsTo
         } );
         break;
       }
+      default:
+      {
+        GEOS_ERROR( "Invalid field location" );
+      }
     }
   }
   this->m_sendBufferSize[commID] = bufferSize;
@@ -593,6 +597,10 @@ void NeighborCommunicator::packCommBufferForSync( FieldIdentifiers const & field
           packedSize += subRegion.pack( sendBufferPtr, iter.second, subRegion.getNeighborData( m_neighborRank ).ghostsToSend(), 0, onDevice, events );
         } );
         break;
+      }
+      default:
+      {
+        GEOS_ERROR( "Invalid field location" );
       }
     }
   }
@@ -651,6 +659,10 @@ void NeighborCommunicator::unpackBufferForSync( FieldIdentifiers const & fieldsT
           unpackedSize += subRegion.unpack( receiveBufferPtr, subRegion.getNeighborData( m_neighborRank ).ghostsToReceive(), 0, onDevice, events );
         } );
         break;
+      }
+      default:
+      {
+        GEOS_ERROR( "Invalid field location" );
       }
     }
   }

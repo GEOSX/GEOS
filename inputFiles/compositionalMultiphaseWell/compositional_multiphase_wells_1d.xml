@@ -124,11 +124,11 @@
 
     <WellElementRegion
       name="wellRegion1"
-      materialList="{ fluid1, relperm }"/>
+      materialList="{ fluid1 }"/>
 
     <WellElementRegion
       name="wellRegion2"
-      materialList="{ fluid1, relperm }"/>
+      materialList="{ fluid1 }"/>
   </ElementRegions>
 
   <Constitutive>

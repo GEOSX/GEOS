@@ -27,8 +27,6 @@
 #include "constitutive/fluid/multifluid/MultiFluidBase.hpp"
 #include "constitutive/fluid/multifluid/MultiFluidFields.hpp"
 #include "constitutive/fluid/multifluid/MultiFluidSelector.hpp"
-#include "constitutive/relativePermeability/RelativePermeabilityBase.hpp"
-#include "constitutive/relativePermeability/RelativePermeabilityFields.hpp"
 #include "dataRepository/Group.hpp"
 #include "mesh/DomainPartition.hpp"
 #include "mesh/PerforationFields.hpp"
@@ -294,22 +292,8 @@ void CompositionalMultiphaseWell::setConstitutiveNames( ElementSubRegionBase & s
                  GEOS_FMT( "{}: Fluid model not found on subregion {}",
                            getDataContext(), subRegion.getName() ),
                  InputError );
-
-  string & relPermName = subRegion.registerWrapper< string >( viewKeyStruct::relPermNamesString() ).
-                           setPlotLevel( PlotLevel::NOPLOT ).
-                           setRestartFlags( RestartFlags::NO_WRITE ).
-                           setSizedFromParent( 0 ).
-                           setDescription( "Name of the relative permeability constitutive model to use" ).
-                           reference();
-
-  relPermName = getConstitutiveName< RelativePermeabilityBase >( subRegion );
-
-  GEOS_THROW_IF( relPermName.empty(),
-                 GEOS_FMT( "{}: Relative permeability model not found on subregion {}",
-                           getDataContext(), subRegion.getName() ),
-                 InputError );
-
 }
+
 namespace
 {
 
@@ -392,10 +376,6 @@ void CompositionalMultiphaseWell::validateConstitutiveModels( DomainPartition co
       MultiFluidBase const & fluid = getConstitutiveModel< MultiFluidBase >( subRegion, fluidName );
       compareMultiphaseModels( fluid, referenceFluid );
       compareMulticomponentModels( fluid, referenceFluid );
-
-      string const & relpermName = subRegion.getReference< string >( viewKeyStruct::relPermNamesString() );
-      RelativePermeabilityBase const & relPerm = getConstitutiveModel< RelativePermeabilityBase >( subRegion, relpermName );
-      compareMultiphaseModels( relPerm, referenceFluid );
 
       WellControls const & wellControls = getWellControls( subRegion );
       validateWellControlsForFluid( wellControls, fluid );
@@ -525,13 +505,6 @@ void CompositionalMultiphaseWell::initializePostSubGroups()
     mesh.getElemManager().forElementSubRegions< WellElementSubRegion >( regionNames, [&]( localIndex const,
                                                                                           WellElementSubRegion & subRegion )
     {
-      string & relPermName = subRegion.getReference< string >( viewKeyStruct::relPermNamesString() );
-      relPermName = getConstitutiveName< RelativePermeabilityBase >( subRegion );
-      GEOS_THROW_IF( relPermName.empty(),
-                     GEOS_FMT( "{}: Relative permeability not found on subregion {}",
-                               getDataContext(), subRegion.getName() ),
-                     InputError );
-
       validateInjectionStreams( subRegion );
     } );
   } );

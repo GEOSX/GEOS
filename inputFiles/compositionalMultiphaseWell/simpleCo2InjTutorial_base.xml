@@ -63,7 +63,7 @@
 
     <WellElementRegion
       name="wellRegion"
-      materialList="{ fluid, relperm, rockPerm }"/>
+      materialList="{ fluid }"/>
   </ElementRegions>
   <!-- SPHINX_FIELD_CASE_Co2_REGION_END --> 
  
@@ -122,7 +122,7 @@
       initialCondition="1"
       component="0"
       setNames="{ all }"
-      objectPath="ElementRegions"
+      objectPath="ElementRegions/reservoir"
       fieldName="rockPerm_permeability"
       scale="1e-15"
       functionName="permxFunc"/>
@@ -132,7 +132,7 @@
       initialCondition="1"
       component="1"
       setNames="{ all }"
-      objectPath="ElementRegions"
+      objectPath="ElementRegions/reservoir"
       fieldName="rockPerm_permeability"
       scale="1e-15"
       functionName="permyFunc"/>
@@ -142,7 +142,7 @@
       initialCondition="1"
       component="2"
       setNames="{ all }"
-      objectPath="ElementRegions"
+      objectPath="ElementRegions/reservoir"
       fieldName="rockPerm_permeability"
       scale="3e-15"
       functionName="permzFunc"/>
