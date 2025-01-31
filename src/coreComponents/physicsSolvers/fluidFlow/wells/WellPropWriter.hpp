@@ -318,6 +318,26 @@ public:
     m_perfPropWriterVec.push_back( new typed_2d_perf_res_prop_writer1( prop, m_numComponent ));
   }
   template< typename T >
+  void registerSeg2dProp( std::vector< std::string > const & name, const T & prop )
+  {
+    if( m_initialized == 0 )
+      for( const auto & c : name )
+      {
+        m_header.push_back( c );
+      }
+    m_propWriterVec.push_back( new typed_2d_prop_writer( prop, name.size() ));
+  }
+  template< typename T >
+  void registerPerf2dProp( std::vector< std::string > const & name, const T & prop )
+  {
+    if( m_initialized == 0 )
+      for( const auto & c : name )
+      {
+        m_perfHeader.push_back( c );
+      }
+    m_perfPropWriterVec.push_back( new typed_2d_perf_res_prop_writer1( prop, name.size() ));
+  }
+  template< typename T >
   void registerPerfResComponentProp( std::string const & name, const T & prop )
   {
     if( m_initialized == 0 )

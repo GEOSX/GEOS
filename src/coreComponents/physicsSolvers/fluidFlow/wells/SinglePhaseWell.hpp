@@ -224,13 +224,13 @@ public:
                                           CRSMatrixView< real64, globalIndex const > const & localMatrix,
                                           arrayView1d< real64 > const & localRhs ) override;
 
- 
+
 
   virtual void outputWellDebug( real64 const time,
-                                real64 const dt, 
+                                real64 const dt,
                                 integer num_timesteps,
                                 integer current_newton_iteration,
-                                integer num_timestep_cuts, 
+                                integer num_timestep_cuts,
                                 DomainPartition & domain,
                                 DofManager const & dofManager,
                                 CRSMatrixView< real64, globalIndex const > const & localMatrix,

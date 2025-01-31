@@ -253,10 +253,10 @@ public:
 
 
   virtual void outputWellDebug( real64 const time,
-                                real64 const dt, 
+                                real64 const dt,
                                 integer num_timesteps,
                                 integer current_newton_iteration,
-                                integer num_timestep_cuts, 
+                                integer num_timestep_cuts,
                                 DomainPartition & domain,
                                 DofManager const & dofManager,
                                 CRSMatrixView< real64, globalIndex const > const & localMatrix,
@@ -368,6 +368,13 @@ protected:
   void printRates( real64 const & time_n,
                    real64 const & dt,
                    DomainPartition & domain ) override;
+
+  void printSegRates( real64 const & time_n,
+                      real64 const & dt,
+                      integer num_timesteps,
+                      integer num_timestep_cuts,
+                      integer current_newton_iteration,
+                      DomainPartition & domain );
 
 private:
 
