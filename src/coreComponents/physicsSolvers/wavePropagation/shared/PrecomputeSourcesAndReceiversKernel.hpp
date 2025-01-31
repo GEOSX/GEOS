@@ -72,7 +72,12 @@ struct PreComputeSourcesAndReceivers
                                        arrayView2d< real64 const > const receiverCoordinates,
                                        arrayView1d< localIndex > const receiverIsLocal,
                                        arrayView2d< localIndex > const receiverNodeIds,
-                                       arrayView2d< real64 > const receiverConstants )
+                                       arrayView2d< real64 > const receiverConstants,
+                                       arrayView2d< real32 > const sourceValue,
+                                       real64 const dt,
+                                       real32 const timeSourceFrequency,
+                                       real32 const timeSourceDelay,
+                                       localIndex const rickerOrder )
   {
     constexpr localIndex numNodesPerElem = FE_TYPE::numNodes;
 
@@ -121,6 +126,12 @@ struct PreComputeSourcesAndReceivers
               sourceNodeIds[isrc][a] = elemsToNodes( k, a );
               sourceConstants[isrc][a] = Ntest[a];
             }
+
+            for( localIndex cycle = 0; cycle < sourceValue.size( 0 ); ++cycle )
+            {
+              sourceValue[cycle][isrc] = WaveSolverUtils::evaluateRicker( cycle * dt, timeSourceFrequency, timeSourceDelay, rickerOrder );
+            }
+
           }
         }
       } // end loop over all sources

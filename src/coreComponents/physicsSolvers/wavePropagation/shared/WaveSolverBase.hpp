@@ -83,6 +83,7 @@ public:
   struct viewKeyStruct : PhysicsSolverBase::viewKeyStruct
   {
     static constexpr char const * sourceCoordinatesString() { return "sourceCoordinates"; }
+    static constexpr char const * sourceValueString() { return "sourceValue"; }
 
     static constexpr char const * timeSourceFrequencyString() { return "timeSourceFrequency"; }
     static constexpr char const * timeSourceDelayString() { return "timeSourceDelay"; }
@@ -253,6 +254,9 @@ protected:
   virtual void registerDataOnMesh( Group & meshBodies ) override;
 
   localIndex getNumNodesPerElem();
+
+  /// Precomputed value of the source terms
+  array2d< real32 > m_sourceValue;
 
   /// Coordinates of the sources in the mesh
   array2d< real64 > m_sourceCoordinates;

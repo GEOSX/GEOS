@@ -129,7 +129,7 @@ void AcousticElasticWaveEquationSEM::initializePostInitialConditionsPreSubGroups
 
 real64 AcousticElasticWaveEquationSEM::solverStep( real64 const & time_n,
                                                    real64 const & dt,
-                                                   int const,
+                                                   integer const cycleNumber,
                                                    DomainPartition & domain )
 {
   GEOS_MARK_FUNCTION;
@@ -174,7 +174,7 @@ real64 AcousticElasticWaveEquationSEM::solverStep( real64 const & time_n,
 
     elasSolver->synchronizeUnknowns( time_n, dt, domain, mesh, m_elasRegions );
 
-    acousSolver->computeUnknowns( time_n, dt, domain, mesh, m_acousRegions );
+    acousSolver->computeUnknowns( time_n, dt, cycleNumber, domain, mesh, m_acousRegions );
 
     forAll< EXEC_POLICY >( interfaceNodesSet.size(), [=] GEOS_HOST_DEVICE ( localIndex const in )
     {

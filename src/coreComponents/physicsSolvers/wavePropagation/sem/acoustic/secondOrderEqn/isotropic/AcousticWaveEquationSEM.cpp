@@ -146,6 +146,32 @@ void AcousticWaveEquationSEM::precomputeSourceAndReceiverTerm( MeshLevel & baseM
   receiverConstants.setValues< EXEC_POLICY >( -1 );
   receiverIsLocal.zero();
 
+  //Correct size for sourceValue
+  EventManager const & event = getGroupByPath< EventManager >( "/Problem/Events" );
+  real64 const & maxTime = event.getReference< real64 >( EventManager::viewKeyStruct::maxTimeString() );
+  real64 const & minTime = event.getReference< real64 >( EventManager::viewKeyStruct::minTimeString() );
+  real64 dt = 0;
+  for( localIndex numSubEvent = 0; numSubEvent < event.numSubGroups(); ++numSubEvent )
+  {
+    EventBase const * subEvent = static_cast< EventBase const * >( event.getSubGroups()[numSubEvent] );
+    if( subEvent->getEventName() == "/Solvers/" + this->getName() )
+    {
+      dt = subEvent->getReference< real64 >( EventBase::viewKeyStruct::forceDtString() );
+    }
+  }
+
+  real64 dtCompute;
+
+  localIndex nSubSteps = (int) ceil( dt/m_timeStep );
+  dtCompute = dt/nSubSteps;
+
+  localIndex const nsamples = int( (maxTime - minTime) / dtCompute) + 1;
+
+  localIndex const numSourcesGlobal = m_sourceCoordinates.size( 0 );
+  m_sourceValue.resize( nsamples, numSourcesGlobal );
+
+  arrayView2d< real32 > const sourceValue = m_sourceValue.toView();
+
   mesh.getElemManager().forElementSubRegionsComplete< CellElementSubRegion >( regionNames, [&]( localIndex const,
                                                                                                 localIndex const er,
                                                                                                 localIndex const esr,
@@ -192,7 +218,12 @@ void AcousticWaveEquationSEM::precomputeSourceAndReceiverTerm( MeshLevel & baseM
           receiverCoordinates,
           receiverIsLocal,
           receiverNodeIds,
-          receiverConstants );
+          receiverConstants,
+          sourceValue,
+          dtCompute,
+          m_timeSourceFrequency,
+          m_timeSourceDelay,
+          m_rickerOrder );
       }
     } );
     elementSubRegion.faceList().freeOnDevice();
@@ -209,25 +240,24 @@ void AcousticWaveEquationSEM::precomputeSourceAndReceiverTerm( MeshLevel & baseM
   nodesToElements.freeOnDevice();
 }
 
-void AcousticWaveEquationSEM::addSourceToRightHandSide( real64 const & time_n, arrayView1d< real32 > const rhs )
+void AcousticWaveEquationSEM::addSourceToRightHandSide( integer const & cycleNumber, arrayView1d< real32 > const rhs )
 {
   arrayView2d< localIndex const > const sourceNodeIds = m_sourceNodeIds.toViewConst();
   arrayView2d< real64 const > const sourceConstants   = m_sourceConstants.toViewConst();
   arrayView1d< localIndex const > const sourceIsAccessible = m_sourceIsAccessible.toViewConst();
-  real32 const timeSourceFrequency = m_timeSourceFrequency;
-  real32 const timeSourceDelay = m_timeSourceDelay;
-  localIndex const rickerOrder = m_rickerOrder;
-  bool useSourceWaveletTables = m_useSourceWaveletTables;
-  arrayView1d< TableFunction::KernelWrapper const > const sourceWaveletTableWrappers = m_sourceWaveletTableWrappers.toViewConst();
+  arrayView2d< real32 const > const sourceValue   = m_sourceValue.toViewConst();
+
+  GEOS_THROW_IF( cycleNumber > sourceValue.size( 0 ),
+                 getDataContext() << ": Too many steps compared to array size",
+                 std::runtime_error );
   forAll< EXEC_POLICY >( sourceConstants.size( 0 ), [=] GEOS_HOST_DEVICE ( localIndex const isrc )
   {
     if( sourceIsAccessible[isrc] == 1 )
     {
-      real64 const srcValue =
-        useSourceWaveletTables ? sourceWaveletTableWrappers[ isrc ].compute( &time_n ) : WaveSolverUtils::evaluateRicker( time_n, timeSourceFrequency, timeSourceDelay, rickerOrder );
+
       for( localIndex inode = 0; inode < sourceConstants.size( 1 ); ++inode )
       {
-        real32 const localIncrement = sourceConstants[isrc][inode] * srcValue;
+        real32 const localIncrement = sourceConstants[isrc][inode] * sourceValue[cycleNumber][isrc];
         RAJA::atomicAdd< ATOMIC_POLICY >( &rhs[sourceNodeIds[isrc][inode]], localIncrement );
       }
     }
@@ -252,12 +282,10 @@ void AcousticWaveEquationSEM::initializePostInitialConditionsPreSubGroups()
 
 
 
-  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const & meshBodyName,
+  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const & ,
                                                                 MeshLevel & mesh,
                                                                 arrayView1d< string const > const & regionNames )
   {
-    MeshLevel & baseMesh = domain.getMeshBodies().getGroup< MeshBody >( meshBodyName ).getBaseDiscretization();
-    precomputeSourceAndReceiverTerm( baseMesh, mesh, regionNames );
 
     NodeManager & nodeManager = mesh.getNodeManager();
     FaceManager & faceManager = mesh.getFaceManager();
@@ -337,6 +365,16 @@ void AcousticWaveEquationSEM::initializePostInitialConditionsPreSubGroups()
     m_timestepStabilityLimit = 0;
     m_timeStep=dtOut;
   }
+
+  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const & meshBodyName,
+                                                                MeshLevel & mesh,
+                                                                arrayView1d< string const > const & regionNames )
+  {
+    GEOS_UNUSED_VAR( meshBodyName );
+    MeshLevel & baseMesh = domain.getMeshBodies().getGroup< MeshBody >( meshBodyName ).getBaseDiscretization();
+    precomputeSourceAndReceiverTerm( baseMesh, mesh, regionNames );
+
+  } );
 
 
   WaveSolverUtils::initTrace( "seismoTraceReceiver", getName(), m_outputSeismoTrace, m_receiverConstants.size( 0 ), m_receiverIsLocal );
@@ -875,7 +913,7 @@ real64 AcousticWaveEquationSEM::explicitStepForward( real64 const & time_n,
                                                      DomainPartition & domain,
                                                      bool computeGradient )
 {
-  real64 dtCompute = explicitStepInternal( time_n, dt, domain );
+  real64 dtCompute = explicitStepInternal( time_n, dt, cycleNumber, domain );
 
   forDiscretizationOnMeshTargets( domain.getMeshBodies(),
                                   [&] ( string const &,
@@ -946,7 +984,7 @@ real64 AcousticWaveEquationSEM::explicitStepBackward( real64 const & time_n,
                                                       DomainPartition & domain,
                                                       bool computeGradient )
 {
-  real64 dtCompute = explicitStepInternal( time_n, dt, domain );
+  real64 dtCompute = explicitStepInternal( time_n, dt, cycleNumber, domain );
   forDiscretizationOnMeshTargets( domain.getMeshBodies(),
                                   [&] ( string const &,
                                         MeshLevel & mesh,
@@ -1076,6 +1114,7 @@ void AcousticWaveEquationSEM::prepareNextTimestep( MeshLevel & mesh )
 
 void AcousticWaveEquationSEM::computeUnknowns( real64 const & time_n,
                                                real64 const & dt,
+                                               integer const & cycleNumber,
                                                DomainPartition & domain,
                                                MeshLevel & mesh,
                                                arrayView1d< string const > const & regionNames )
@@ -1103,8 +1142,14 @@ void AcousticWaveEquationSEM::computeUnknowns( real64 const & time_n,
                                                           getDiscretizationName(),
                                                           "",
                                                           kernelFactory );
+
   //Modification of cycleNember useful when minTime < 0
-  addSourceToRightHandSide( time_n, rhs );
+  EventManager const & event = getGroupByPath< EventManager >( "/Problem/Events" );
+  real64 const & minTime = event.getReference< real64 >( EventManager::viewKeyStruct::minTimeString() );
+  //localIndex const cycleNumber = time_n/dt;
+  integer const cycleForSource = int(round( -minTime / dt + cycleNumber ));
+
+  addSourceToRightHandSide( cycleForSource, rhs );
 
   /// calculate your time integrators
   real64 const dt2 = pow( dt, 2 );
@@ -1228,6 +1273,7 @@ void AcousticWaveEquationSEM::synchronizeUnknowns( real64 const & time_n,
 
 real64 AcousticWaveEquationSEM::explicitStepInternal( real64 const & time_n,
                                                       real64 const & dt,
+                                                      integer const & cycleNumber,
                                                       DomainPartition & domain )
 {
   GEOS_MARK_FUNCTION;
@@ -1241,7 +1287,7 @@ real64 AcousticWaveEquationSEM::explicitStepInternal( real64 const & time_n,
   {
     localIndex nSubSteps = (int) ceil( dt/m_timeStep );
     dtCompute = dt/nSubSteps;
-    computeUnknowns( time_n, dtCompute, domain, mesh, regionNames );
+    computeUnknowns( time_n, dtCompute, cycleNumber, domain, mesh, regionNames );
     synchronizeUnknowns( time_n, dtCompute, domain, mesh, regionNames );
   } );
 
