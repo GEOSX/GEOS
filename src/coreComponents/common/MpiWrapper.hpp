@@ -784,36 +784,21 @@ MPI_Datatype getMpiType()
 }
 
 template< typename FIRST, typename SECOND >
-MPI_Datatype getMpiCustomPairType()
+MPI_Datatype getMpiPairType()
 {
-  static auto const createTypeHolder = [] () {
-    using PAIR_T = MpiWrapper::PairType< FIRST, SECOND >;
-    static_assert( std::is_standard_layout< PAIR_T >::value );
-    MPI_Datatype types[2] = { getMpiType< FIRST >(), getMpiType< SECOND >() };
-    MPI_Aint offsets[2] = { offsetof( PAIR_T, first ), offsetof( PAIR_T, second ) };
-    int blocksCount[2] = { 1, 1 };
-    MPI_Datatype mpiType;
-    GEOS_ERROR_IF_NE( MPI_Type_create_struct( 2, blocksCount, offsets, types, &mpiType ), MPI_SUCCESS );
-    GEOS_ERROR_IF_NE( MPI_Type_commit( &mpiType ), MPI_SUCCESS );
-    return mpiType;
-  };
-  static MPI_Datatype mpiType{ createTypeHolder() };
-  return mpiType;
+  static_assert("no default implementation, please add a template specialization and add it in the \"testMpiWrapper\" unit test.");
+  return {};
 }
 
-/* no default get() implementation, please add a template specialization and add it in the "testMpiWrapper" unit test. */
-template< typename FIRST, typename SECOND >
-MPI_Datatype const mpiPairType;
-
-template<> MPI_Datatype const mpiPairType< float, int > = MPI_FLOAT_INT;
-template<> MPI_Datatype const mpiPairType< double, int > = MPI_DOUBLE_INT;
-template<> MPI_Datatype const mpiPairType< int, int > = MPI_2INT;
-template<> MPI_Datatype const mpiPairType< long int, int > = MPI_LONG_INT;
-template<> MPI_Datatype const mpiPairType< long int, long int > = getMpiCustomPairType< long int, long int >();
-template<> MPI_Datatype const mpiPairType< long long int, long long int > = getMpiCustomPairType< long long int, long long int >();
-template<> MPI_Datatype const mpiPairType< double, long int > = getMpiCustomPairType< double, long int >();
-template<> MPI_Datatype const mpiPairType< double, long long int > = getMpiCustomPairType< double, long long int >();
-template<> MPI_Datatype const mpiPairType< double, double > = getMpiCustomPairType< double, double >();
+template<> MPI_Datatype getMpiPairType< int, int >();
+template<> MPI_Datatype getMpiPairType< long int, int >();
+template<> MPI_Datatype getMpiPairType< long int, long int >();
+template<> MPI_Datatype getMpiPairType< long long int, long long int >();
+template<> MPI_Datatype getMpiPairType< float, int >();
+template<> MPI_Datatype getMpiPairType< double, int >();
+template<> MPI_Datatype getMpiPairType< double, long int >();
+template<> MPI_Datatype getMpiPairType< double, long long int >();
+template<> MPI_Datatype getMpiPairType< double, double >();
 
 // It is advised to always use this custom operator for pairs as MPI_MAXLOC is not a true lexicographical comparator.
 template< typename FIRST, typename SECOND, MpiWrapper::PairReduction OP >
@@ -1373,13 +1358,12 @@ void MpiWrapper::reduce( Span< T const > const src, Span< T > const dst, Reducti
   reduce( src.data(), dst.data(), LvArray::integerConversion< int >( src.size() ), getMpiOp( op ), root, comm );
 }
 
-
 template< typename FIRST, typename SECOND, MpiWrapper::PairReduction const OP >
 MpiWrapper::PairType< FIRST, SECOND >
 MpiWrapper::allReduce( PairType< FIRST, SECOND > const & localPair, MPI_Comm comm )
 {
 #ifdef GEOS_USE_MPI
-  auto const type = internal::mpiPairType< FIRST, SECOND >;
+  auto const type = internal::getMpiPairType< FIRST, SECOND >();
   auto const mpiOp = internal::getMpiPairReductionOp< FIRST, SECOND, OP >();
   PairType< FIRST, SECOND > pair{ localPair.first, localPair.second };
   MPI_Allreduce( MPI_IN_PLACE, &pair, 1, type, mpiOp, comm );
