@@ -90,7 +90,7 @@ option( GEOS_INSTALL_SCHEMA "Enables schema generation and installation" ON )
 
 option( GEOS_BUILD_OBJ_LIBS "Builds coreComponent modules as object libraries" OFF )
 
-option( GEOS_BUILD_SHARED_LIBS "Builds geosx_core as a shared library " ON )
+option( GEOS_BUILD_SHARED_LIBS "Builds geosx_core as a shared library " OFF )
 
 set( GEOS_PARALLEL_COMPILE_JOBS "" CACHE STRING "Maximum number of concurrent compilation jobs" )
 if( GEOS_PARALLEL_COMPILE_JOBS )

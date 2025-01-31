@@ -614,6 +614,27 @@ void SinglePhaseWell::assembleVolumeBalanceTerms( DomainPartition const & GEOS_U
   // not implemented for single phase flow
 }
 
+
+void SinglePhaseWell::outputWellDebug( real64 const time,
+                                       real64 const dt,
+                                       integer num_timesteps,
+                                       integer current_newton_iteration,
+                                       integer num_timestep_cuts,
+                                       DomainPartition & domain,
+                                       DofManager const & dofManager,
+                                       CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                                       arrayView1d< real64 > const & localRhs )
+{
+  GEOS_UNUSED_VAR( time );
+  GEOS_UNUSED_VAR( dt );
+  GEOS_UNUSED_VAR( num_timesteps );
+  GEOS_UNUSED_VAR( current_newton_iteration );
+  GEOS_UNUSED_VAR( num_timestep_cuts );
+  GEOS_UNUSED_VAR( domain );
+  GEOS_UNUSED_VAR( dofManager );
+  GEOS_UNUSED_VAR( localMatrix );
+  GEOS_UNUSED_VAR( localRhs );
+}
 void SinglePhaseWell::computePerforationRates( real64 const & time_n,
                                                real64 const & dt, DomainPartition & domain )
 {

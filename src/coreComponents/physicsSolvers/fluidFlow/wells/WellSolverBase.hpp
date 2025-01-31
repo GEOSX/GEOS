@@ -21,6 +21,7 @@
 #define GEOS_PHYSICSSOLVERS_FLUIDFLOW_WELLS_WELLSOLVERBASE_HPP_
 
 #include "physicsSolvers/PhysicsSolverBase.hpp"
+#include "physicsSolvers/fluidFlow/wells/WellPropWriter.hpp"
 
 namespace geos
 {
@@ -103,6 +104,8 @@ public:
    * @return True if thermal
    */
   integer isThermal() const { return m_isThermal; }
+
+
 
   /**
    * @brief get the name of DOF defined on well elements
@@ -234,6 +237,15 @@ public:
                                           CRSMatrixView< real64, globalIndex const > const & localMatrix,
                                           arrayView1d< real64 > const & localRhs ) = 0;
 
+  virtual void outputWellDebug( real64 const time,
+                                real64 const dt,
+                                integer num_timesteps,
+                                integer current_newton_iteration,
+                                integer num_timestep_cuts,
+                                DomainPartition & domain,
+                                DofManager const & dofManager,
+                                CRSMatrixView< real64, globalIndex const > const & localMatrix,
+                                arrayView1d< real64 > const & localRhs ) = 0;
   /**
    * @brief Recompute all dependent quantities from primary variables (including constitutive models)
    * @param domain the domain containing the mesh and fields
@@ -267,8 +279,11 @@ public:
     static constexpr char const * fluidNamesString() { return "fluidNames"; }
     static constexpr char const * isThermalString() { return "isThermal"; }
     static constexpr char const * writeCSVFlagString() { return "writeCSV"; }
+    static constexpr char const * writeSegDebugFlagString() { return "writeSegDebug"; }
   };
 
+
+  std::tuple< integer, integer, integer > currentIter( real64 const time, real64 const dt );
 private:
 
   /**
@@ -329,7 +344,19 @@ protected:
   /// rates output
   integer m_writeCSV;
   string const m_ratesOutputDir;
+  /// flag to write detailed segment properties
+  integer m_writeSegDebug;
 
+  integer m_globalNumTimeSteps;
+  real64 m_currentTime;
+  real64 m_currentDt;
+  real64 m_prevTime;
+  real64 m_prevDt;
+  integer m_numTimeStepCuts;
+  integer m_currentNewtonIteration;
+
+  std::map< std::string, WellPropWriter > m_wellPropWriter;
+  std::map< std::string, WellPropWriter > m_wellPropWriter_eot;
   /// flag to freeze the initial state during initialization in coupled problems
   integer m_keepVariablesConstantDuringInitStep;
 

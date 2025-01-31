@@ -38,6 +38,18 @@ SolverStatistics::SolverStatistics( string const & name, Group * const parent )
     setApplyDefaultValue( 0 ).
     setDescription( "Number of time step cuts" );
 
+  registerWrapper( viewKeyStruct::numCurrentOuterLoopIterationsString(), &m_currentNumOuterLoopIterations ).
+    setApplyDefaultValue( 0 ).
+    setDescription( "Cumulative number of current outer loop iterations" );
+
+  registerWrapper( viewKeyStruct::numCurrentNonlinearIterationsString(), &m_currentNumNonlinearIterations ).
+    setApplyDefaultValue( 0 ).
+    setDescription( "Cumulative number of current nonlinear iterations" );
+
+  registerWrapper( viewKeyStruct::numCurrentLinearIterationsString(), &m_currentNumLinearIterations ).
+    setApplyDefaultValue( 0 ).
+    setDescription( "Cumulative number of current linear iterations" );
+
   registerWrapper( viewKeyStruct::numSuccessfulOuterLoopIterationsString(), &m_numSuccessfulOuterLoopIterations ).
     setApplyDefaultValue( 0 ).
     setDescription( "Cumulative number of successful outer loop iterations" );
