@@ -184,10 +184,9 @@ void ContactSolverBase::computeFractureStateStatistics( MeshLevel const & mesh,
 
   array1d< globalIndex > totalCounter( 4 );
 
-  MpiWrapper::allReduce( localCounter.data(),
-                         totalCounter.data(),
-                         4,
-                         MPI_SUM,
+  MpiWrapper::allReduce( localCounter,
+                         totalCounter,
+                         MpiWrapper::Reduction::Sum,
                          MPI_COMM_GEOS );
 
   numStick    = totalCounter[0];

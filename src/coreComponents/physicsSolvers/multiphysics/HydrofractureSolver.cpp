@@ -226,11 +226,9 @@ real64 HydrofractureSolver< POROMECHANICS_SOLVER >::fullyCoupledSolverStep( real
     {
       locallyFractured = 1;
     }
-    MpiWrapper::allReduce( &locallyFractured,
-                           &globallyFractured,
-                           1,
-                           MPI_MAX,
-                           MPI_COMM_GEOS );
+    globallyFractured = MpiWrapper::allReduce( locallyFractured,
+                                               MpiWrapper::Reduction::Max,
+                                               MPI_COMM_GEOS );
 
     if( globallyFractured == 0 )
     {
