@@ -31,6 +31,7 @@
 #include "constitutive/ConstitutiveManager.hpp"
 #include "constitutive/contact/FrictionBase.hpp"
 #include "finiteElement/FiniteElementDiscretizationManager.hpp"
+#include "finiteElement/FiniteElementDiscretization.hpp"
 #include "finiteElement/Kinematics.h"
 #include "LvArray/src/output.hpp"
 #include "mesh/DomainPartition.hpp"

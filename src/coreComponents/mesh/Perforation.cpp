@@ -46,6 +46,11 @@ Perforation::Perforation( string const & name, Group * const parent )
     setApplyDefaultValue( 0.0 ).
     setInputFlag( InputFlags::OPTIONAL ).
     setDescription( "Perforation skin factor" );
+
+  registerWrapper( viewKeyStruct::targetRegionString(), &m_targetRegionName ).
+    setRTTypeName( rtTypes::CustomTypes::groupNameRef ).
+    setInputFlag( InputFlags::OPTIONAL ).
+    setDescription( "Target region to connect the perforation" );
 }
 
 
