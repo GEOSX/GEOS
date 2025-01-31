@@ -498,35 +498,75 @@ public:
   GEOS_FORCE_INLINE
   real64 kernel( real64 const & r ); // distance from particle to query point
 
-  GEOS_HOST_DEVICE
-  GEOS_FORCE_INLINE
-  void kernelGradient( arraySlice1d< real64 const > const x,  // query point
-                       arraySlice1d< real64 const > const xp,            // particle location
+  void kernelGradient( arraySlice1d< real64 const > const & x,  // query point
+                       arraySlice1d< real64 const > const & xp,            // particle location
                        real64 const & r,                      // distance from particle to query point
                        real64 * result );
 
   GEOS_HOST_DEVICE
   GEOS_FORCE_INLINE
+  void kernelGradient( arraySlice1d< real64 const > const & x,  // query point
+                       arraySlice1d< real64 const > const & xp,            // particle location
+                       real64 const & r,                      // distance from particle to query point
+                       real64 const & neighborRadius,
+                       int const & planeStrain,
+                       real64 * result );
+
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
   real64 computeKernelField( arraySlice1d< real64 const > const x,    // query point
-                             arrayView2d< real64 const > const xp,    // List of neighbor particle locations.
-                             arrayView1d< real64 const > const Vp,    // List of neighbor particle volumes.
-                             arrayView1d< real64 const > const fp );  // scalar field values (e.g. damage) at neighbor particles
+                             localIndex const numNeighbors,
+                             arrayView2d< real64 const > const & xp,    // List of neighbor particle locations.
+                             arrayView1d< real64 const > const & Vp,    // List of neighbor particle volumes.
+                             arrayView1d< real64 const > const & fp );  // scalar field values (e.g. damage) at neighbor particles
 
   GEOS_HOST_DEVICE
   GEOS_FORCE_INLINE
   void computeKernelFieldGradient( arraySlice1d< real64 const > const x, // query point
-                                   arrayView2d< real64 > & xp,           // List of neighbor particle locations.
-                                   arrayView1d< real64 > & Vp,           // List of neighbor particle volumes.
-                                   arrayView1d< real64 > & fp,           // scalar field values (e.g. damage) at neighbor particles
+                                   localIndex const numNeighbors,
+                                   arrayView2d< real64 const > const & xp,           // List of neighbor particle locations.
+                                   arrayView1d< real64 const > const & Vp,           // List of neighbor particle volumes.
+                                   arrayView1d< real64 const > const & fp,           // scalar field values (e.g. damage) at neighbor particles
                                    arraySlice1d< real64 > const result );
 
   GEOS_HOST_DEVICE
   GEOS_FORCE_INLINE
+  void computeKernelFieldGradientDevice( arraySlice1d< real64 const > const x, // query point
+                                         real64 const & neighborRadius,
+                                         int const & planeStrain,
+                                         localIndex const & numNeighbors,
+                                         arraySlice1d< localIndex const > const regionIndices,
+                                         arraySlice1d< localIndex const > const subRegionIndices,
+                                         arraySlice1d< localIndex const > const particleIndices,
+                                         ParticleManager::ParticleView< arrayView1d< real64 const > > particleVolumeView,
+                                         ParticleManager::ParticleView< arrayView2d< real64 const > > particlePositionView, 
+                                         ParticleManager::ParticleView< arrayView1d< real64 const > > particleDamageView,
+                                         ParticleManager::ParticleView< arrayView1d< int const > > particleSurfaceFlagView,
+                                         ParticleManager::ParticleView< arrayView1d< int const > > particleCohesiveZoneFlag,
+                                         arraySlice1d< real64 > const result );
+
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
   void computeKernelVectorGradient( arraySlice1d< real64 const > const x,       // query point
-                                    arrayView2d< real64 > & xp,  // List of neighbor particle locations.
-                                    arrayView1d< real64 > & Vp,                 // List of neighbor particle volumes.
-                                    arrayView2d< real64 > & fp,  // vector field values (e.g. velocity) at neighbor particles
+                                    localIndex const numNeighbors,
+                                    arrayView2d< real64 const > const & xp,  // List of neighbor particle locations.
+                                    arrayView1d< real64 const > const & Vp,                 // List of neighbor particle volumes.
+                                    arrayView2d< real64 const > const & fp,  // vector field values (e.g. velocity) at neighbor particles
                                     arraySlice2d< real64 > const result );
+
+  GEOS_HOST_DEVICE
+  GEOS_FORCE_INLINE
+  void computeKernelVectorGradientDevice( arraySlice1d< real64 const > const x,       // query point
+                                          real64 const & neighborRadius,
+                                          int const & planeStrain,
+                                          localIndex const numNeighbors,
+                                          arraySlice1d< localIndex const > const regionIndices,
+                                          arraySlice1d< localIndex const > const subRegionIndices,
+                                          arraySlice1d< localIndex const > const particleIndices,
+                                          ParticleManager::ParticleView< arrayView1d< real64 const > > particleVolumeView,
+                                          ParticleManager::ParticleView< arrayView2d< real64 const > > particlePositionView,
+                                          ParticleManager::ParticleView< arrayView2d< real64 const > > particleDisplacementView, 
+                                          arraySlice2d< real64 > const result );
 
   void computeDamageFieldGradient( ParticleManager & particleManager );
 
@@ -959,6 +999,7 @@ protected:
   int m_needsNeighborList;
   real64 m_neighborRadius;
   int m_binSizeMultiplier;
+  int m_maxNumNeighbors;
 
   real64 m_thinFeatureDFGThreshold;
 
