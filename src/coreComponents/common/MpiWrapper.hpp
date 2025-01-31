@@ -786,7 +786,7 @@ MPI_Datatype getMpiType()
 template< typename FIRST, typename SECOND >
 MPI_Datatype getMpiPairType()
 {
-  static_assert("no default implementation, please add a template specialization and add it in the \"testMpiWrapper\" unit test.");
+  static_assert( "no default implementation, please add a template specialization and add it in the \"testMpiWrapper\" unit test." );
   return {};
 }
 

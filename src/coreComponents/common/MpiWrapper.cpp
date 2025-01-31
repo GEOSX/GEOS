@@ -462,31 +462,31 @@ MPI_Datatype getMpiCustomPairType()
   return mpiType;
 }
 
-template<> MPI_Datatype getMpiPairType< int, int >() 
+template<> MPI_Datatype getMpiPairType< int, int >()
 { return MPI_2INT; }
 
-template<> MPI_Datatype getMpiPairType< long int, int >() 
+template<> MPI_Datatype getMpiPairType< long int, int >()
 { return MPI_LONG_INT; }
 
-template<> MPI_Datatype getMpiPairType< long int, long int >() 
+template<> MPI_Datatype getMpiPairType< long int, long int >()
 { return getMpiCustomPairType< long int, long int >(); }
 
-template<> MPI_Datatype getMpiPairType< long long int, long long int >() 
+template<> MPI_Datatype getMpiPairType< long long int, long long int >()
 { return getMpiCustomPairType< long long int, long long int >(); }
 
-template<> MPI_Datatype getMpiPairType< float, int >() 
+template<> MPI_Datatype getMpiPairType< float, int >()
 { return MPI_FLOAT_INT; }
 
-template<> MPI_Datatype getMpiPairType< double, int >() 
+template<> MPI_Datatype getMpiPairType< double, int >()
 { return MPI_DOUBLE_INT; }
 
-template<> MPI_Datatype getMpiPairType< double, long int >() 
+template<> MPI_Datatype getMpiPairType< double, long int >()
 { return getMpiCustomPairType< double, long int >(); }
 
-template<> MPI_Datatype getMpiPairType< double, long long int >() 
+template<> MPI_Datatype getMpiPairType< double, long long int >()
 { return getMpiCustomPairType< double, long long int >(); }
 
-template<> MPI_Datatype getMpiPairType< double, double >() 
+template<> MPI_Datatype getMpiPairType< double, double >()
 { return getMpiCustomPairType< double, double >(); }
 
 } /* namespace internal */
