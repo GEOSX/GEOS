@@ -439,6 +439,58 @@ int MpiWrapper::nodeCommSize()
   MPI_Comm_size( nodeComm, &nodeCommSize );
   return nodeCommSize;
 }
+
+namespace internal
+{
+
+template< typename FIRST, typename SECOND >
+MPI_Datatype getMpiCustomPairType()
+{
+  static auto const createTypeHolder = [] () {
+    using PAIR_T = MpiWrapper::PairType< FIRST, SECOND >;
+    static_assert( std::is_standard_layout_v< PAIR_T > );
+    static_assert( std::is_trivially_copyable_v< PAIR_T > );
+    MPI_Datatype types[2] = { getMpiType< FIRST >(), getMpiType< SECOND >() };
+    MPI_Aint offsets[2] = { offsetof( PAIR_T, first ), offsetof( PAIR_T, second ) };
+    int blocksCount[2] = { 1, 1 };
+    MPI_Datatype mpiType;
+    GEOS_ERROR_IF_NE( MPI_Type_create_struct( 2, blocksCount, offsets, types, &mpiType ), MPI_SUCCESS );
+    GEOS_ERROR_IF_NE( MPI_Type_commit( &mpiType ), MPI_SUCCESS );
+    return mpiType;
+  };
+  static MPI_Datatype mpiType{ createTypeHolder() };
+  return mpiType;
+}
+
+template<> MPI_Datatype getMpiPairType< int, int >()
+{ return MPI_2INT; }
+
+template<> MPI_Datatype getMpiPairType< long int, int >()
+{ return MPI_LONG_INT; }
+
+template<> MPI_Datatype getMpiPairType< long int, long int >()
+{ return getMpiCustomPairType< long int, long int >(); }
+
+template<> MPI_Datatype getMpiPairType< long long int, long long int >()
+{ return getMpiCustomPairType< long long int, long long int >(); }
+
+template<> MPI_Datatype getMpiPairType< float, int >()
+{ return MPI_FLOAT_INT; }
+
+template<> MPI_Datatype getMpiPairType< double, int >()
+{ return MPI_DOUBLE_INT; }
+
+template<> MPI_Datatype getMpiPairType< double, long int >()
+{ return getMpiCustomPairType< double, long int >(); }
+
+template<> MPI_Datatype getMpiPairType< double, long long int >()
+{ return getMpiCustomPairType< double, long long int >(); }
+
+template<> MPI_Datatype getMpiPairType< double, double >()
+{ return getMpiCustomPairType< double, double >(); }
+
+} /* namespace internal */
+
 } /* namespace geos */
 
 #if defined(__clang__)

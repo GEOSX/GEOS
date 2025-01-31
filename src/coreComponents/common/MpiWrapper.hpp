@@ -24,6 +24,8 @@
 #include "common/Span.hpp"
 #include "common/TypesHelpers.hpp"
 
+#include <numeric>
+
 #if defined(GEOS_USE_MPI)
   #include <mpi.h>
 #define MPI_PARAM( x ) x
@@ -131,6 +133,28 @@ public:
     Prod, //!< Prod
     LogicalAnd, //!< Logical and
     LogicalOr, //!< Logical or
+  };
+
+  /**
+   * @enum PairReduction
+   * Strongly typed enum class for calling collective functions processing pairs (ie. indexed values).
+   */
+  enum class PairReduction
+  {
+    Max, //!< Max pair first value
+    Min, //!< Min pair first value
+  };
+
+  /**
+   * @struct PairType
+   * Represents a pair of values. `first` (typically, a given measure) is the primary value for comparison,
+   * `second` (typically an index) will be compared in case of `first` equality.
+   */
+  template< typename FIRST, typename SECOND >
+  struct PairType
+  {
+    FIRST first;
+    SECOND second;
   };
 
   MpiWrapper() = delete;
@@ -399,6 +423,32 @@ public:
   template< typename SRC_CONTAINER_TYPE, typename DST_CONTAINER_TYPE >
   static void allReduce( SRC_CONTAINER_TYPE const & src, DST_CONTAINER_TYPE & dst, int const count, Reduction const op, MPI_Comm const comm );
 
+  /**
+   * @brief Perform a collective reduction on a pair using MPI.
+   * @tparam FIRST Pair first element type. Typically a numerical quantity (e.g., real64, int).
+   * @tparam SECOND Pair second element type. Typically a numerical quantity (e.g., localIndex, globalIndex).
+   * @tparam OP The reduction operation to apply (`PairReduction::Max`, `PairReduction::Min`).
+   * @param pair The local pair to reduce.
+   * @param comm The MPI communicator to use.
+   * @return The resulting reduced pair, consistent across all processes.
+   */
+  template< typename FIRST, typename SECOND, PairReduction OP >
+  static PairType< FIRST, SECOND > allReduce( PairType< FIRST, SECOND > const & pair,
+                                              MPI_Comm comm = MPI_COMM_GEOS );
+
+  /**
+   * @brief Perform a collective reduction on a container of pairs using MPI.
+   * @tparam FIRST Pairs first element type. Typically a numerical quantity (e.g., real64, int).
+   * @tparam SECOND Pairs second element type. Typically a numerical quantity (e.g., localIndex, globalIndex).
+   * @tparam CONTAINER Pairs container type (e.g., `std::vector<PairType<FIRST, SECOND>>`).
+   * @tparam OP The reduction operation to apply (`PairReduction::Max` or `PairReduction::Min`).
+   * @param pairs The local container of pairs to be reduced.
+   * @param comm The MPI communicator to use.
+   * @return The resulting reduced pair, consistent across all processes.
+   */
+  template< typename FIRST, typename SECOND, typename CONTAINER, PairReduction OP >
+  static PairType< FIRST, SECOND > allReduce( CONTAINER const & pairs,
+                                              MPI_Comm comm = MPI_COMM_GEOS );
 
   /**
    * @brief Strongly typed wrapper around MPI_Reduce.
@@ -628,6 +678,24 @@ public:
   static void min( Span< T const > src, Span< T > dst, MPI_Comm comm = MPI_COMM_GEOS );
 
   /**
+   * @brief Convenience function for a MPI_Allreduce using a min-pair operation.
+   * @param[in] value the value to send into the reduction.
+   * @param[out] dst The resulting values.
+   * @return The maximum of all \p value across the ranks.
+   */
+  template< typename FIRST, typename SECOND >
+  static PairType< FIRST, SECOND > min( PairType< FIRST, SECOND > const & pair, MPI_Comm comm = MPI_COMM_GEOS );
+
+  /**
+   * @brief Convenience function for a MPI_Allreduce using a min-pair operation.
+   * @param[in] value the value to send into the reduction.
+   * @param[out] dst The resulting values.
+   * @return The maximum of all \p value across the ranks.
+   */
+  template< typename FIRST, typename SECOND, typename CONTAINER >
+  static PairType< FIRST, SECOND > min( CONTAINER const & pairs, MPI_Comm comm = MPI_COMM_GEOS );
+
+  /**
    * @brief Convenience function for a MPI_Allreduce using a MPI_MAX operation.
    * @param[in] value the value to send into the reduction.
    * @return The maximum of all \p value across the ranks.
@@ -644,14 +712,23 @@ public:
   template< typename T >
   static void max( Span< T const > src, Span< T > dst, MPI_Comm comm = MPI_COMM_GEOS );
 
+  /**
+   * @brief Convenience function for a MPI_Allreduce using a max-pair operation.
+   * @param[in] value the value to send into the reduction.
+   * @param[out] dst The resulting values.
+   * @return The maximum of all \p value across the ranks.
+   */
+  template< typename FIRST, typename SECOND >
+  static PairType< FIRST, SECOND > max( PairType< FIRST, SECOND > const & pair, MPI_Comm comm = MPI_COMM_GEOS );
 
   /**
-   * @brief Convenience function for MPI_Gather using a MPI_MAX operation on struct of value and location
-   * @brief Max is performed on value and location (global index) is returned
-   * @param[in] struct to send into the max gather.
-   * @return struct with max val and location
+   * @brief Convenience function for a MPI_Allreduce using a max-pair operation.
+   * @param[in] value the value to send into the reduction.
+   * @param[out] dst The resulting values.
+   * @return The maximum of all \p value across the ranks.
    */
-  template< typename T > static T maxValLoc( T localValueLocation, MPI_Comm comm = MPI_COMM_GEOS );
+  template< typename FIRST, typename SECOND, typename CONTAINER >
+  static PairType< FIRST, SECOND > max( CONTAINER const & pairs, MPI_Comm comm = MPI_COMM_GEOS );
 
 private:
 
@@ -704,6 +781,58 @@ template< typename T >
 MPI_Datatype getMpiType()
 {
   return MpiTypeImpl< T >::get();
+}
+
+template< typename FIRST, typename SECOND >
+MPI_Datatype getMpiPairType()
+{
+  static_assert( "no default implementation, please add a template specialization and add it in the \"testMpiWrapper\" unit test." );
+  return {};
+}
+
+template<> MPI_Datatype getMpiPairType< int, int >();
+template<> MPI_Datatype getMpiPairType< long int, int >();
+template<> MPI_Datatype getMpiPairType< long int, long int >();
+template<> MPI_Datatype getMpiPairType< long long int, long long int >();
+template<> MPI_Datatype getMpiPairType< float, int >();
+template<> MPI_Datatype getMpiPairType< double, int >();
+template<> MPI_Datatype getMpiPairType< double, long int >();
+template<> MPI_Datatype getMpiPairType< double, long long int >();
+template<> MPI_Datatype getMpiPairType< double, double >();
+
+// It is advised to always use this custom operator for pairs as MPI_MAXLOC is not a true lexicographical comparator.
+template< typename FIRST, typename SECOND, MpiWrapper::PairReduction OP >
+MPI_Op getMpiPairReductionOp()
+{
+  static auto const createOpHolder = [] () {
+    using PAIR_T = MpiWrapper::PairType< FIRST, SECOND >;
+
+    auto const customOpFunc =
+      []( void * invec, void * inoutvec, int * len, MPI_Datatype * )
+    {
+      for( int i = 0; i < *len; ++i )
+      {
+        PAIR_T & in = static_cast< PAIR_T * >(invec)[i];
+        PAIR_T & inout = static_cast< PAIR_T * >(inoutvec)[i];
+        if constexpr ( OP == MpiWrapper::PairReduction::Min )
+        {
+          if( std::tie( in.first, in.second ) < std::tie( inout.first, inout.second ) )
+            inout = in;
+        }
+        else
+        {
+          if( std::tie( in.first, in.second ) > std::tie( inout.first, inout.second ) )
+            inout = in;
+        }
+      }
+    };
+
+    MPI_Op mpiOp;
+    GEOS_ERROR_IF_NE( MPI_Op_create( customOpFunc, 1, &mpiOp ), MPI_SUCCESS );
+    return mpiOp;
+  };
+  static MPI_Op mpiOp{ createOpHolder() };
+  return mpiOp;
 }
 
 }
@@ -1229,32 +1358,58 @@ void MpiWrapper::reduce( Span< T const > const src, Span< T > const dst, Reducti
   reduce( src.data(), dst.data(), LvArray::integerConversion< int >( src.size() ), getMpiOp( op ), root, comm );
 }
 
-// Mpi helper function to return  struct containing the max value and location across ranks
-template< typename T >
-T MpiWrapper::maxValLoc( T localValueLocation, MPI_Comm comm )
+template< typename FIRST, typename SECOND, MpiWrapper::PairReduction const OP >
+MpiWrapper::PairType< FIRST, SECOND >
+MpiWrapper::allReduce( PairType< FIRST, SECOND > const & localPair, MPI_Comm comm )
 {
-  // Ensure T is trivially copyable
-  static_assert( std::is_trivially_copyable< T >::value, "maxValLoc requires a trivially copyable type" );
-
-  // T to have only 2 data members named value and location
-  static_assert( (sizeof(T::value)+sizeof(T::location)) == sizeof(T) );
-
-  // Ensure T has value and location members are scalars
-  static_assert( std::is_scalar_v< decltype(T::value) > || std::is_scalar_v< decltype(T::location) >, "members of struct should be scalar" );
-  static_assert( !std::is_pointer_v< decltype(T::value) > && !std::is_pointer_v< decltype(T::location) >, "members of struct should not be pointers" );
-
-  // receive "buffer"
-  int const numProcs =  commSize( comm );
-  std::vector< T > recvValLoc( numProcs );
-
-  MPI_Allgather( &localValueLocation, sizeof(T), MPI_BYTE, recvValLoc.data(), sizeof(T), MPI_BYTE, comm );
-
-  T maxValLoc= *std::max_element( recvValLoc.begin(),
-                                  recvValLoc.end(),
-                                  []( auto & lhs, auto & rhs ) -> bool {return lhs.value  <  rhs.value; } );
-
-  return maxValLoc;
+#ifdef GEOS_USE_MPI
+  auto const type = internal::getMpiPairType< FIRST, SECOND >();
+  auto const mpiOp = internal::getMpiPairReductionOp< FIRST, SECOND, OP >();
+  PairType< FIRST, SECOND > pair{ localPair.first, localPair.second };
+  MPI_Allreduce( MPI_IN_PLACE, &pair, 1, type, mpiOp, comm );
+  return pair;
+#else
+  return localPair;
+#endif
 }
+
+template< typename FIRST, typename SECOND, typename CONTAINER, MpiWrapper::PairReduction const OP >
+MpiWrapper::PairType< FIRST, SECOND >
+MpiWrapper::allReduce( CONTAINER const & pairs, MPI_Comm const comm )
+{
+  using PAIR_T = PairType< FIRST, SECOND >;
+  std::function< PAIR_T( PAIR_T, PAIR_T ) > const getMin = []( PAIR_T const & a, PAIR_T const & b ) {
+    return ( std::tie( a.first, a.second ) < std::tie( b.first, b.second ) ) ? a : b;
+  };
+  std::function< PAIR_T( PAIR_T, PAIR_T ) > const getMax = []( PAIR_T const & a, PAIR_T const & b ) {
+    return ( std::tie( a.first, a.second ) > std::tie( b.first, b.second ) ) ? a : b;
+  };
+  PAIR_T const defaultPair{
+    OP == PairReduction::Min ? std::numeric_limits< FIRST >::max() : std::numeric_limits< FIRST >::lowest(),
+    OP == PairReduction::Min ? std::numeric_limits< SECOND >::max() : std::numeric_limits< SECOND >::lowest()
+  };
+  // based on the operation, pair will be the minimum / maximum element (or defaultPair if pairs is empty)
+  PAIR_T pair = std::accumulate( pairs.begin(), pairs.end(), defaultPair,
+                                 OP == PairReduction::Min ? getMin : getMax );
+  return allReduce< FIRST, SECOND, OP >( pair, comm );
+}
+
+template< typename FIRST, typename SECOND >
+MpiWrapper::PairType< FIRST, SECOND > MpiWrapper::min( MpiWrapper::PairType< FIRST, SECOND > const & pair, MPI_Comm comm )
+{ return allReduce< FIRST, SECOND, PairReduction::Min >( pair, comm ); }
+
+template< typename FIRST, typename SECOND, typename CONTAINER >
+MpiWrapper::PairType< FIRST, SECOND > MpiWrapper::min( CONTAINER const & pairs, MPI_Comm comm )
+{ return allReduce< FIRST, SECOND, CONTAINER, PairReduction::Min >( pairs, comm ); }
+
+template< typename FIRST, typename SECOND >
+MpiWrapper::PairType< FIRST, SECOND > MpiWrapper::max( MpiWrapper::PairType< FIRST, SECOND > const & pair, MPI_Comm comm )
+{ return allReduce< FIRST, SECOND, PairReduction::Max >( pair, comm ); }
+
+template< typename FIRST, typename SECOND, typename CONTAINER >
+MpiWrapper::PairType< FIRST, SECOND > MpiWrapper::max( CONTAINER const & pairs, MPI_Comm comm )
+{ return allReduce< FIRST, SECOND, CONTAINER, PairReduction::Max >( pairs, comm ); }
+
 } /* namespace geos */
 
 #endif /* GEOS_COMMON_MPIWRAPPER_HPP_ */

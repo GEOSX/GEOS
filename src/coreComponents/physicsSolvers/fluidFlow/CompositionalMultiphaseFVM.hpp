@@ -213,19 +213,6 @@ public:
     static constexpr char const * gravityDensitySchemeString()    { return "gravityDensityScheme"; }
   };
 
-  /**
-   * @brief Storage for value and element location, used to determine global max + location
-   */
-  template< typename VALUE_TYPE, typename INDEX_TYPE >
-  struct valueAndLocation
-  {
-    valueAndLocation(){}
-    valueAndLocation( VALUE_TYPE val, INDEX_TYPE loc ): value( val ), location( loc ){}
-    VALUE_TYPE value;
-    INDEX_TYPE location;
-  };
-  typedef valueAndLocation< real64, globalIndex > valueAndLocationType;
-
 protected:
 
   virtual void postInputInitialization() override;
