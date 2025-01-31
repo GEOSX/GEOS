@@ -414,12 +414,12 @@ void ElasticWaveEquationSEM::initializePostInitialConditionsPreSubGroups()
       {
         using FE_TYPE = TYPEOFREF( finiteElement );
 
-        elasticWaveEquationSEMKernels::MassMatrixKernel< FE_TYPE > kernelM( finiteElement );
-        kernelM.template launch< EXEC_POLICY, ATOMIC_POLICY >( elementSubRegion.size(),
-                                                               nodeCoords,
-                                                               elemsToNodes,
-                                                               density,
-                                                               mass );
+        ElasticMatricesSEM::MassMatrix< FE_TYPE > kernelM( finiteElement );
+        kernelM.template computeMassMatrix< EXEC_POLICY, ATOMIC_POLICY >( elementSubRegion.size(),
+                                                                          nodeCoords,
+                                                                          elemsToNodes,
+                                                                          density,
+                                                                          mass );
 
 
 
@@ -822,7 +822,6 @@ void ElasticWaveEquationSEM::computeUnknowns( real64 const & time_n,
 
   addSourceToRightHandSide( time_n, rhsx, rhsy, rhsz );
 
-  real64 const dt2 = pow( dt, 2 );
   SortedArrayView< localIndex const > const solverTargetNodesSet = m_solverTargetNodesSet.toViewConst();
   if( m_attenuationType == WaveSolverUtils::AttenuationType::sls )
   {

@@ -27,7 +27,12 @@ set( physicsSolvers_headers
      wavePropagation/sem/acoustoelastic/secondOrderEqn/isotropic/AcoustoElasticFields.hpp
      wavePropagation/sem/acoustoelastic/secondOrderEqn/isotropic/AcoustoElasticTimeSchemeSEMKernel.hpp
      wavePropagation/sem/acoustoelastic/secondOrderEqn/isotropic/AcousticElasticWaveEquationSEM.hpp
-     wavePropagation/sem/acoustoelastic/secondOrderEqn/isotropic/AcousticElasticWaveEquationSEMKernel.hpp 
+     wavePropagation/sem/acoustoelastic/secondOrderEqn/isotropic/AcousticElasticWaveEquationSEMKernel.hpp
+     wavePropagation/sem/acoustic/secondOrderEqn/isotropic/rom/AcousticPOD.hpp
+     wavePropagation/sem/acoustic/secondOrderEqn/isotropic/rom/AcousticPODKernel.hpp
+     wavePropagation/sem/acoustic/secondOrderEqn/isotropic/rom/AcousticROMFrechet.hpp
+     wavePropagation/sem/acoustic/secondOrderEqn/isotropic/rom/AcousticROMFrechetKernel.hpp
+     #wavePropagation/sem/acoustic/secondOrderEqn/isotropic/rom/ROMUtils.hpp
      PARENT_SCOPE )
 
 # Specify solver sources
@@ -39,5 +44,7 @@ set( physicsSolvers_sources
      wavePropagation/sem/elastic/firstOrderEqn/isotropic/ElasticFirstOrderWaveEquationSEM.cpp
      wavePropagation/sem/acoustic/firstOrderEqn/isotropic/AcousticFirstOrderWaveEquationSEM.cpp
      wavePropagation/sem/acoustic/secondOrderEqn/anisotropic/AcousticVTIWaveEquationSEM.cpp
-     wavePropagation/sem/acoustoelastic/secondOrderEqn/isotropic/AcousticElasticWaveEquationSEM.cpp 
+     wavePropagation/sem/acoustoelastic/secondOrderEqn/isotropic/AcousticElasticWaveEquationSEM.cpp
+     wavePropagation/sem/acoustic/secondOrderEqn/isotropic/rom/AcousticPOD.cpp
+     wavePropagation/sem/acoustic/secondOrderEqn/isotropic/rom/AcousticROMFrechet.cpp
      PARENT_SCOPE)

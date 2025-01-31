@@ -141,8 +141,8 @@ public:
   string getCatalogName() const override { return catalogName(); }
 
   /**
-   * @brief accessor for the pointer to the solid mechanics solver
-   * @return a pointer to the solid mechanics solver
+   * @brief accessor for the pointer to the acoustic solver
+   * @return a pointer to the acoustic solver
    */
   AcousticWaveEquationSEM * acousticSolver() const
   {
@@ -150,8 +150,8 @@ public:
   }
 
   /**
-   * @brief accessor for the pointer to the flow solver
-   * @return a pointer to the flow solver
+   * @brief accessor for the pointer to the elastic solver
+   * @return a pointer to the elastic solver
    */
   ElasticWaveEquationSEM * elasticSolver() const
   {

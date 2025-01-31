@@ -63,27 +63,32 @@ struct CouplingKernel
   launch( localIndex const size,
           arrayView2d< WaveSolverBase::wsCoordType const,
                        nodes::REFERENCE_POSITION_USD > const nodeCoords,
-          localIndex const regionIndex,
-          localIndex const subRegionIndex,
+          localIndex const fluidRegionIndex,
+          localIndex const fluidSubRegionIndex,
           arrayView2d< localIndex const > const faceToSubRegion,
           arrayView2d< localIndex const > const faceToRegion,
           arrayView2d< localIndex const > const faceToElement,
           ArrayOfArraysView< localIndex const > const facesToNodes,
           arrayView2d< real64 const > const faceNormals,
+          arrayView2d< real64 const > const faceCenters,
+          arrayView2d< real64 const > const elemCenters,
           arrayView1d< real32 > const couplingVectorx,
           arrayView1d< real32 > const couplingVectory,
           arrayView1d< real32 > const couplingVectorz )
   {
     forAll< EXEC_POLICY >( size, [=] GEOS_HOST_DEVICE ( localIndex const f )
     {
-      localIndex e0 = faceToElement( f, 0 ), e1 = faceToElement( f, 1 );
-      localIndex er0 = faceToRegion( f, 0 ), er1 = faceToRegion( f, 1 );
-      localIndex esr0 = faceToSubRegion( f, 0 ), esr1 = faceToSubRegion( f, 1 );
+      localIndex const e0 = faceToElement( f, 0 ), e1 = faceToElement( f, 1 );
+      localIndex const er0 = faceToRegion( f, 0 ), er1 = faceToRegion( f, 1 );
+      localIndex const esr0 = faceToSubRegion( f, 0 ), esr1 = faceToSubRegion( f, 1 );
 
       if( e0 != -1 && e1 != -1 && er0 != er1 )  // an interface is defined as a transition between regions
       {
         // check that one of the region is the fluid subregion for the fluid -> solid coupling term
-        if((er0 == regionIndex && esr0 == subRegionIndex) || (er1 == regionIndex && esr1 == subRegionIndex))
+        bool const e0IsFluid = er0 == fluidRegionIndex && esr0 == fluidSubRegionIndex;
+        bool const e1IsFluid = er1 == fluidRegionIndex && esr1 == fluidSubRegionIndex;
+
+        if( e0IsFluid != e1IsFluid )  // xor: a single element must be fluid
         {
           // only the four corners of the mesh face are needed to compute the Jacobian
           real64 xLocal[ 4 ][ 3 ];
@@ -96,16 +101,23 @@ struct CouplingKernel
             }
           }
 
-          // determine normal sign for fluid -> solid coupling
-          localIndex sgn = er0 == regionIndex ? 1 : (er1 == regionIndex ? -1 : 0);
+          real64 const nx = faceNormals( f, 0 ), ny = faceNormals( f, 1 ), nz = faceNormals( f, 2 );
+
+          // determine sign to get an outward pointing normal for the fluid -> solid coupling
+          localIndex const e = e0IsFluid ? e0 : (e1IsFluid ? e1 : -1);  // fluid element
+          localIndex const sgn = (
+            (faceCenters( f, 0 ) - elemCenters( e, 0 )) * nx +
+            (faceCenters( f, 1 ) - elemCenters( e, 1 )) * ny +
+            (faceCenters( f, 2 ) - elemCenters( e, 2 )) * nz
+            ) < 0 ? 1 : -1;
 
           for( localIndex q = 0; q < numNodesPerFace; ++q )
           {
             real64 const aux = FE_TYPE::computeDampingTerm( q, xLocal );
 
-            real32 const localIncrementx = aux * (sgn * faceNormals( f, 0 ));
-            real32 const localIncrementy = aux * (sgn * faceNormals( f, 1 ));
-            real32 const localIncrementz = aux * (sgn * faceNormals( f, 2 ));
+            real32 const localIncrementx = aux * (sgn * nx);
+            real32 const localIncrementy = aux * (sgn * ny);
+            real32 const localIncrementz = aux * (sgn * nz);
 
             RAJA::atomicAdd< ATOMIC_POLICY >( &couplingVectorx[facesToNodes( f, q )], localIncrementx );
             RAJA::atomicAdd< ATOMIC_POLICY >( &couplingVectory[facesToNodes( f, q )], localIncrementy );
