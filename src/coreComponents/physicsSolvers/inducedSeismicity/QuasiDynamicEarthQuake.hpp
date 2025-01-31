@@ -59,6 +59,8 @@ public:
                                  const int cycleNumber,
                                  DomainPartition & domain ) const override final;
 
+  void resetStateToBeginningOfStep( DomainPartition & domain ) override final;                               
+
 private:
 
   string m_stressSolverName;

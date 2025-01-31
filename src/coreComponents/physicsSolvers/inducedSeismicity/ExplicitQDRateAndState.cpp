@@ -91,6 +91,7 @@ real64 ExplicitQDRateAndState::solverStep( real64 const & time_n,
     real64 dtStage = m_butcherTable.c[1]*dtAdaptive;
     dtStress = updateStresses( time_n, dtStage, cycleNumber, domain );
     updateSlipVelocity( time_n, dtStage, domain );
+    resetStateToBeginningOfStep( domain );
 
     // Remaining stages
     for( integer stageIndex = 1; stageIndex < m_butcherTable.numStages-1; stageIndex++ )
@@ -99,6 +100,7 @@ real64 ExplicitQDRateAndState::solverStep( real64 const & time_n,
       dtStage = m_butcherTable.c[stageIndex+1]*dtAdaptive;
       dtStress = updateStresses( time_n, dtStage, cycleNumber, domain );
       updateSlipVelocity( time_n, dtStage, domain );
+      resetStateToBeginningOfStep( domain );
     }
 
     stepRateStateODEAndComputeError( dtAdaptive, domain );
