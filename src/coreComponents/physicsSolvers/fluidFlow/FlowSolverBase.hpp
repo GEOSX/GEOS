@@ -230,6 +230,8 @@ protected:
 
   virtual void initializePreSubGroups() override;
 
+  void checkDiscretizationName() const;
+
   virtual void initializePostInitialConditionsPreSubGroups() override;
 
   void initializeState( DomainPartition & domain );
