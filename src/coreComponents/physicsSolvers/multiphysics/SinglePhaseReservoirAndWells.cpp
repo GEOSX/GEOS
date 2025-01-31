@@ -29,6 +29,7 @@
 #include "physicsSolvers/fluidFlow/wells/WellControls.hpp"
 #include "physicsSolvers/fluidFlow/wells/kernels/SinglePhaseWellKernels.hpp"
 #include "physicsSolvers/multiphysics/SinglePhasePoromechanics.hpp"
+#include "physicsSolvers/multiphysics/HydrofractureSolver.hpp"
 #include "physicsSolvers/multiphysics/SinglePhasePoromechanicsConformingFractures.hpp"
 
 namespace geos
@@ -364,6 +365,8 @@ typedef SinglePhaseReservoirAndWells<> SinglePhaseFlowAndWells;
 REGISTER_CATALOG_ENTRY( PhysicsSolverBase, SinglePhaseFlowAndWells, string const &, Group * const )
 typedef SinglePhaseReservoirAndWells< SinglePhasePoromechanics<> > SinglePhasePoromechanicsAndWells;
 REGISTER_CATALOG_ENTRY( PhysicsSolverBase, SinglePhasePoromechanicsAndWells, string const &, Group * const )
+typedef SinglePhaseReservoirAndWells< HydrofractureSolver<> > HydrofractureAndWells;
+REGISTER_CATALOG_ENTRY( PhysicsSolverBase, HydrofractureAndWells, string const &, Group * const )
 typedef SinglePhaseReservoirAndWells< SinglePhasePoromechanicsConformingFractures<> > SinglePhasePoromechanicsConformingFracturesAndWells;
 REGISTER_CATALOG_ENTRY( PhysicsSolverBase, SinglePhasePoromechanicsConformingFracturesAndWells, string const &, Group * const )
 }

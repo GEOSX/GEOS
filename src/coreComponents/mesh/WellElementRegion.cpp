@@ -71,7 +71,7 @@ void WellElementRegion::generateWell( MeshLevel & mesh,
   GEOS_THROW_IF( matchedPerforations != numPerforationsGlobal,
                  "Invalid mapping perforation-to-element in "<<
                  InternalWellGenerator::catalogName() << " " << getWellGeneratorName() << "." <<
-                 " This happens when GEOSX cannot match a perforation with a reservoir element." <<
+                 " This happens when GEOS cannot match a perforation with a reservoir element." <<
                  " There are two common reasons for this error:\n" <<
                  " 1- The most common reason for this error is that a perforation is on a section of " <<
                  " the well polyline located outside the domain.\n" <<
