@@ -58,7 +58,7 @@ WaveSolverBase::WaveSolverBase( const std::string & name,
     setInputFlag( InputFlags::FALSE ).
     setRestartFlags( RestartFlags::NO_WRITE ).
     setSizedFromParent( 0 ).
-    setDescription( "Source Value of the sources" );
+    setDescription( "Array which contains the value of the Ricker wavelets at each time-steps" );
 
 
   registerWrapper( viewKeyStruct::timeSourceDelayString(), &m_timeSourceDelay ).

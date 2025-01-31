@@ -246,8 +246,6 @@ void AcousticWaveEquationSEM::addSourceToRightHandSide( integer const & cycleNum
   arrayView2d< real64 const > const sourceConstants   = m_sourceConstants.toViewConst();
   arrayView1d< localIndex const > const sourceIsAccessible = m_sourceIsAccessible.toViewConst();
   arrayView2d< real32 const > const sourceValue   = m_sourceValue.toViewConst();
-  //bool useSourceWaveletTables = m_useSourceWaveletTables;
-  //arrayView1d< TableFunction::KernelWrapper const > const sourceWaveletTableWrappers = m_sourceWaveletTableWrappers.toViewConst();
 
   GEOS_THROW_IF( cycleNumber > sourceValue.size( 0 ),
                  getDataContext() << ": Too many steps compared to array size",
@@ -256,14 +254,10 @@ void AcousticWaveEquationSEM::addSourceToRightHandSide( integer const & cycleNum
   {
     if( sourceIsAccessible[isrc] == 1 )
     {
-      //real64 const srcValue =
-      //  useSourceWaveletTables ? sourceWaveletTableWrappers[ isrc ].compute( &time_n ) : WaveSolverUtils::evaluateRicker( time_n,
-      // timeSourceFrequency, timeSourceDelay, rickerOrder );
 
       for( localIndex inode = 0; inode < sourceConstants.size( 1 ); ++inode )
       {
         real32 const localIncrement = sourceConstants[isrc][inode] * sourceValue[cycleNumber][isrc];
-        //real32 const localIncrement = sourceConstants[isrc][inode] * srcValue;
         RAJA::atomicAdd< ATOMIC_POLICY >( &rhs[sourceNodeIds[isrc][inode]], localIncrement );
       }
     }
@@ -288,7 +282,7 @@ void AcousticWaveEquationSEM::initializePostInitialConditionsPreSubGroups()
 
 
 
-  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const &,
+  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&] ( string const & meshBodyName,
                                                                 MeshLevel & mesh,
                                                                 arrayView1d< string const > const & regionNames )
   {
@@ -376,7 +370,7 @@ void AcousticWaveEquationSEM::initializePostInitialConditionsPreSubGroups()
                                                                 MeshLevel & mesh,
                                                                 arrayView1d< string const > const & regionNames )
   {
-
+    GEOS_UNUSED_VAR( meshBodyName );
     MeshLevel & baseMesh = domain.getMeshBodies().getGroup< MeshBody >( meshBodyName ).getBaseDiscretization();
     precomputeSourceAndReceiverTerm( baseMesh, mesh, regionNames );
 
