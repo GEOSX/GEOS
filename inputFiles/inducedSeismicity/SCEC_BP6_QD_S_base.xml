@@ -18,9 +18,9 @@
       name="mesh1"
       elementTypes="{ C3D8 }"
       xCoords="{ -10.0e3, 10.0e3 }"
-      yCoords="{ -0.5e3, 0.5e3 }"
-      zCoords="{ -20.0e3, -10.0e3, 10.0e3, 20.0e3 }"
-      nx="{ 100 }"
+      yCoords="{ -0.1e3, 0.1e3 }"
+      zCoords="{ -40.0e3, -10.0e3, 10.0e3, 40.0e3 }"
+      nx="{ 50 }"
       ny="{ 1 }"
       nz="{ 20, 201, 20 }"
       cellBlockNames="{ cb1 }"/>
@@ -29,13 +29,58 @@
   <Geometry>    
     <Box
       name="faultPlane"
-      xMin="{ -0.01, -1.01e3, -10.0e3 }"
-      xMax="{ 0.01,   1.01e3,  10.0e3 }"/>
+      xMin="{ -0.01, -1.01e3, -20.0e3 }"
+      xMax="{ 0.01,   1.01e3,  20.0e3 }"/>
     
+    <!-- Boxes for single-cell sources/receivers on fault -->
+
+    <!-- Source at z = 0 m -->
     <Box
       name="source"
-      xMin="{ -0.01, -1.01e3, -50.0 }"
-      xMax="{ 0.01,   1.01e3,  50.0 }"/>
+      xMin="{ -0.01, -1.01e3, -0.1e3 }"
+      xMax="{ 0.01,   1.01e3,  0.1e3 }"/>
+
+    <!-- Receiver at  z = 500 m-->
+    <Box 
+      name="receiver1"
+      xMin="{ -0.01, -1.01e3,  0.4e3 }"
+      xMax="{ 0.01,   1.01e3,  0.6e3 }"/>
+    
+    <!-- Receiver at  z = 1500 m-->
+    <Box
+      name="receiver2"
+      xMin="{ -0.01, -1.01e3,  1.4e3 }"
+      xMax="{ 0.01,   1.01e3,  1.6e3 }"/>
+   
+    <!-- Receiver at  z = 2500 m-->
+    <Box
+      name="receiver3"
+      xMin="{ -0.01, -1.01e3,  2.4e3 }"
+      xMax="{ 0.01,   1.01e3,  2.6e3 }"/>
+
+    <!-- Receiver at  z = 3500 m-->
+    <Box
+      name="receiver4"
+      xMin="{ -0.01, -1.01e3,  3.4e3 }"
+      xMax="{ 0.01,   1.01e3,  3.6e3 }"/>
+
+    <!-- Receiver at  z = 5000 m-->
+    <Box
+      name="receiver5"
+      xMin="{ -0.01, -1.01e3,  4.9e3 }"
+      xMax="{ 0.01,   1.01e3,  5.1e3 }"/> 
+
+    <!-- Receiver at  z = 7500 m-->
+    <Box
+      name="receiver6"
+      xMin="{ -0.01, -1.01e3,  7.4e3 }"
+      xMax="{ 0.01,   1.01e3,  7.6e3 }"/>
+
+    <!-- Receiver at  z = -1500 m-->
+    <Box
+      name="receiver7"
+      xMin="{ -0.01, -1.01e3,  -1.6e3 }"
+      xMax="{ 0.01,   1.01e3,  -1.4e3 }"/>     
   </Geometry>
 
   <ElementRegions>
@@ -47,7 +92,7 @@
     <SurfaceElementRegion
       name="Fault"
       materialList="{frictionLaw, faultMaterial, water}"
-      defaultAperture="1e-3"/>  
+      defaultAperture="5e-3"/>  
     </ElementRegions>
   
     <Constitutive>
@@ -83,7 +128,7 @@
      name="rock"
      defaultDensity="2670"
      defaultBulkModulus="50.0e9"
-     defaultShearModulus="24.03e9"/>
+     defaultShearModulus="24.03e9"/> <!-- Note: Adjusted to translate antiplane shear to plane strain  -->
 
     <RateAndStateFriction
       name="frictionLaw"
@@ -110,13 +155,13 @@
       name="slipRateCollection"
       objectPath="ElementRegions/Fault/FractureSubRegion"
       fieldName="slipRate"
-      setNames="{source}"/>
+      setNames="{ receiver1, receiver2, receiver3, receiver4, receiver5, receiver6, receiver7, source}"/>
 
     <PackCollection
       name="pressureCollection"
       objectPath="ElementRegions/Fault/FractureSubRegion"
       fieldName="pressure"
-      setNames="{source}"/>    
+      setNames="{ receiver1, receiver2, receiver3, receiver4, receiver5, receiver6, receiver7, source}"/> 
    </Tasks>
 
   <ElementRegions>
@@ -169,7 +214,7 @@
       objectPath="ElementRegions/Fault"
       fieldName="stateVariable"
       scale="0.68070857"
-      setNames="{ all }"
+      setNames="{ faultPlane }"
       initialCondition="1"/>  
       
     <FieldSpecification
@@ -179,7 +224,7 @@
       objectPath="ElementRegions/Fault/FractureSubRegion"
       component="0"
       scale="1.0e-12"
-      setNames="{all}"/>
+      setNames="{ faultPlane }"/>
 
     <FieldSpecification
       name="slipVelocity2"
@@ -188,7 +233,7 @@
       objectPath="ElementRegions/Fault/FractureSubRegion"
       component="1"
       scale="0."
-      setNames="{all}"/>
+      setNames="{ faultPlane }"/>
 
     <FieldSpecification
       name="backgroundShearStress"
@@ -197,7 +242,7 @@
       objectPath="ElementRegions/Fault/FractureSubRegion"
       component="0"
       scale="29.2e6"
-      setNames="{all}"/> 
+      setNames="{ faultPlane }"/> 
 
     <FieldSpecification
       name="backgroundNormalStress"
@@ -205,13 +250,13 @@
       initialCondition="1"
       objectPath="ElementRegions/Fault/FractureSubRegion"
       scale="50.0e6"
-      setNames="{all}"/>                      
+      setNames="{ faultPlane }"/>                      
 
     <SourceFlux
       name="sourceTerm"
       objectPath="ElementRegions/Fault"
       scale="-1.25e-3"
-      setNames="{ source }"
+      setNames="{source}"
       endTime="8.64e6"/>
   </FieldSpecifications>
 </Problem>

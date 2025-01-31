@@ -83,9 +83,10 @@
     </SinglePhaseFVM>
   </Solvers>
 
-
+  <!-- <Events
+    maxTime="6.312e7"> -->
   <Events
-    maxTime="6.312e7">
+    maxTime="1e6">
 
    <!-- fault generation  -->
    <SoloEvent 
@@ -101,21 +102,9 @@
 
   <!-- solver application  -->
    <PeriodicEvent
-     name="solverApplications1"
+     name="solverApplications"
      maxEventDt="1e4"
-     endTime="8.64e6"
      target="/Solvers/QDSolver"/> 
-   <PeriodicEvent
-     name="solverApplications2"
-     maxEventDt="10"
-     beginTime="8.64e6"
-     endTime="8.6499e6"
-     target="/Solvers/QDSolver"/>
-   <PeriodicEvent
-     name="solverApplications3"
-     maxEventDt="1e3"
-     beginTime="8.6499e6"
-     target="/Solvers/QDSolver"/>
 
   <!-- Time history collection -->
     <PeriodicEvent
