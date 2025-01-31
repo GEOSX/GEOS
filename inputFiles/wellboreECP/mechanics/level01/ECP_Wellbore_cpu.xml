@@ -3,7 +3,7 @@
 <Problem>
   <Solvers
     gravityVector="{0.0, 0.0, 0.0}">
-    <SolidMechanicsLagrangianSSLE
+    <SolidMechanicsLagrangianFEM
       name="lagsolve"
       timeIntegrationOption="QuasiStatic"
       discretization="FE1"
@@ -25,7 +25,7 @@
         amgNumFunctions="1"
         amgAggressiveCoarseningLevels="0"
         />
-    </SolidMechanicsLagrangianSSLE>
+    </SolidMechanicsLagrangianFEM>
   </Solvers>
 
   <Included>

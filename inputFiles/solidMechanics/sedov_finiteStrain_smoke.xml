@@ -23,7 +23,7 @@
   
   <!-- SPHINX_SOLID_MECHANICS_SOLVER -->
   <Solvers>
-    <SolidMechanics_LagrangianFEM
+    <SolidMechanicsLagrangianFEM
       name="lagsolve"
       strainTheory="1"
       cflFactor="0.25"

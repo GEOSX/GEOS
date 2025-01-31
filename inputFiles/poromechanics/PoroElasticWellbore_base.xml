@@ -164,7 +164,7 @@
 <!-- SPHINX_WELLBORE_POROMECHANICSSOLVER_END -->
 
 <!-- SPHINX_WELLBORE_MECHANICALSOLVER -->
-<SolidMechanics_LagrangianFEM 
+<SolidMechanicsLagrangianFEM 
   name="mechanicsSolver" 
   timeIntegrationOption="QuasiStatic"
   logLevel="1"
@@ -175,7 +175,7 @@
     newtonTol = "1.0e-5"
     newtonMaxIter = "15"
   />  
-</SolidMechanics_LagrangianFEM>
+</SolidMechanicsLagrangianFEM>
 <!-- SPHINX_WELLBORE_MECHANICALSOLVER_END -->
 
 <!-- SPHINX_WELLBORE_SINGLEPHASEFVM -->

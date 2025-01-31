@@ -44,7 +44,7 @@
         krylovAdaptiveTol="1"/>
     </Hydrofracture>
 
-    <SolidMechanicsLagrangianSSLE
+    <SolidMechanicsLagrangianFEM
       name="lagsolve"
       timeIntegrationOption="QuasiStatic"
       logLevel="0"

@@ -53,7 +53,7 @@ Solvers
 
 As demonstrated in this example, to setup a thermoporomechanical coupling, we need to define three different solvers in the **Solvers** part of the XML file:
 
-- the mechanics solver, a solver of type ``SolidMechanicsLagrangianSSLE`` called here ``solidMechSolver`` (more information here: :ref:`SolidMechanicsLagrangianFEM`),
+- the mechanics solver, a solver of type ``SolidMechanicsLagrangianFEM`` called here ``solidMechSolver`` (more information here: :ref:`SolidMechanicsLagrangianFEM`),
 
 .. literalinclude:: ../../../../../../../inputFiles/thermoPoromechanics/ThermoPoroElastic_consolidation_smoke_fim.xml
   :language: xml

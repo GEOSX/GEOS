@@ -29,7 +29,7 @@
       logLevel="1"
       targetRegions="{ channel, barrier }"/>
 
-    <SolidMechanicsLagrangianSSLE
+    <SolidMechanicsLagrangianFEM
       name="linearElasticity"
       timeIntegrationOption="QuasiStatic"
       logLevel="1"

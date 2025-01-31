@@ -24,7 +24,7 @@
         directParallel="0"/>
     </CompositionalMultiphaseReservoirPoromechanics>
     
-    <SolidMechanicsLagrangianSSLE
+    <SolidMechanicsLagrangianFEM
       name="linearElasticity"
       timeIntegrationOption="QuasiStatic"
       logLevel="1"

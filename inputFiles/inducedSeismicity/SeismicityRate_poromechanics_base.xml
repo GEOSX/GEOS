@@ -23,7 +23,7 @@
         directParallel="0"/>
     </SinglePhasePoromechanics>
 
-    <SolidMechanicsLagrangianSSLE
+    <SolidMechanicsLagrangianFEM
       name="LinearElasticitySolver"
       timeIntegrationOption="QuasiStatic"
       logLevel="1"

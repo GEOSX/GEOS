@@ -11,7 +11,7 @@
     gravityVector="{ 0.0, 0.0, 0.0 }">
     <!-- SPHINX_GravityEnd -->
     <!-- SPHINX_SolidMechanicsSolver -->
-    <SolidMechanicsLagrangianSSLE
+    <SolidMechanicsLagrangianFEM
       name="lagsolve"
       timeIntegrationOption="QuasiStatic"
       discretization="FE1"
@@ -26,7 +26,7 @@
         krylovTol="1.0e-6"
         preconditionerType="amg"
         logLevel="0"/>
-    </SolidMechanicsLagrangianSSLE>
+    </SolidMechanicsLagrangianFEM>
   </Solvers>
 
   <!-- SPHINX_FEDiscretization -->

@@ -117,7 +117,7 @@ A homogeneous domain with one solid material is assumed, whose mechanical proper
     :end-before: <!-- SPHINX_DP_WELLBORE_MATERIAL_END -->
 
 
-Recall that in the ``SolidMechanics_LagrangianFEM`` section, 
+Recall that in the ``SolidMechanicsLagrangianFEM`` section, 
 ``rock`` is designated as the material in the computational domain. 
 Here, Extended Drucker Prager model ``ExtendedDruckerPrager`` is used to simulate the elastoplastic behavior of ``rock``.
 As for the material parameters, ``defaultInitialFrictionAngle``, ``defaultResidualFrictionAngle`` and ``defaultCohesion`` denote the initial friction angle, the residual friction angle, and cohesion, respectively, as defined by the Mohr-Coulomb failure envelope. In this example, zero cohesion is considered to consist with the reference analytical results. As the residual friction angle ``defaultResidualFrictionAngle`` is larger than the initial one ``defaultInitialFrictionAngle``, a  strain hardening model is adopted, whose hardening rate is given as ``defaultHardening="0.01"``. 

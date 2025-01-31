@@ -135,7 +135,7 @@
 
 <!-- SPHINX_SOLVER -->
   <Solvers gravityVector="{0.0, 0.0, 0.0}">
-    <SolidMechanics_LagrangianFEM 
+    <SolidMechanicsLagrangianFEM 
       name="mechanicsSolver" 
       timeIntegrationOption="QuasiStatic"
       logLevel="1"
@@ -147,7 +147,7 @@
       />
       <LinearSolverParameters
         directParallel="0"/>
-    </SolidMechanics_LagrangianFEM>
+    </SolidMechanicsLagrangianFEM>
   </Solvers>
 <!-- SPHINX_SOLVER_END -->
 

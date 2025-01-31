@@ -30,7 +30,7 @@
     gravityVector="{ 0.0, 0.0, 0.0 }">
     <!-- SPHINX_GravityEnd -->
     <!-- SPHINX_SolidMechanicsSolver -->
-    <SolidMechanicsLagrangianSSLE
+    <SolidMechanicsLagrangianFEM
       name="lagsolve"
       timeIntegrationOption="QuasiStatic"
       discretization="FE1"
@@ -44,7 +44,7 @@
         solverType="gmres"
         directParallel="0"
         logLevel="0"/>
-    </SolidMechanicsLagrangianSSLE>
+    </SolidMechanicsLagrangianFEM>
   </Solvers>
 
 </Problem>

@@ -29,7 +29,7 @@ TEST( testXML, testXMLString )
     <?xml version="1.0" ?>
     <Problem>
       <Solvers>
-        <SolidMechanics_LagrangianFEM
+        <SolidMechanicsLagrangianFEM
           name="lagsolve"
           cflFactor="0.25"
           discretization="FE1"

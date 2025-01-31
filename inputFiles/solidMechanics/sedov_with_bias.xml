@@ -25,7 +25,7 @@
   </Mesh>
   
   <Solvers>
-    <SolidMechanics_LagrangianFEM
+    <SolidMechanicsLagrangianFEM
       name="lagsolve"
       strainTheory="1"
       cflFactor="0.25"

@@ -46,7 +46,7 @@
     </SinglePhasePoromechanics>
 
     <!-- SPHINX_SolidMechanicsSolver -->
-    <SolidMechanicsLagrangianSSLE
+    <SolidMechanicsLagrangianFEM
       name="lagsolve"
       timeIntegrationOption="QuasiStatic"
       discretization="FE1"
@@ -61,7 +61,7 @@
         solverType="direct"
         directParallel="0"
         logLevel="0"/>
-    </SolidMechanicsLagrangianSSLE>
+    </SolidMechanicsLagrangianFEM>
 
     <!-- SPHINX_SinglePhaseFVM -->
     <SinglePhaseFVM

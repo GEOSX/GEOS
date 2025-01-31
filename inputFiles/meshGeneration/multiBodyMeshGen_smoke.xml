@@ -43,7 +43,7 @@
 
   <Solvers
     gravityVector="{ 0.0, 0.0, 0.0 }">
-    <SolidMechanicsLagrangianSSLE
+    <SolidMechanicsLagrangianFEM
       name="lagsolve"
       timeIntegrationOption="ExplicitDynamic"
       discretization="FE1"
@@ -55,7 +55,7 @@
         newtonMaxIter="8"/>
       <LinearSolverParameters
         directParallel="0"/>
-    </SolidMechanicsLagrangianSSLE>
+    </SolidMechanicsLagrangianFEM>
   </Solvers>
 
 

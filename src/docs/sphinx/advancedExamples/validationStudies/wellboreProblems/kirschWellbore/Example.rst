@@ -126,7 +126,7 @@ A homogeneous and isotropic domain with one solid material is assumed, with mech
     :end-before: <!-- SPHINX_MATERIAL_END -->
 
 
-Recall that in the ``SolidMechanics_LagrangianFEM`` section, 
+Recall that in the ``SolidMechanicsLagrangianFEM`` section, 
 ``rock`` is the material in the computational domain. 
 Here, the isotropic elastic model ``ElasticIsotropic`` simulates the mechanical behavior of ``rock``.
 

@@ -108,7 +108,7 @@ To setup a coupling between rock and fracture deformations, we define three diff
 
 - For solving the frictional contact, we define a Lagrangian contact solver, called here ``lagrangiancontact``. In this solver, we specify ``targetRegions`` that include both the continuum region ``Region`` and the discontinuum region ``Fracture``  where the solver is applied to couple rock and fracture deformations. The contact constitutive law used for the fracture elements is named ``fractureMaterial``,  and is defined later in the ``Constitutive`` section. 
 
-- Rock deformations are handled by a solid mechanics solver ``SolidMechanics_LagrangianFEM``. This solid mechanics solver (see :ref:`SolidMechanicsLagrangianFEM <SolidMechanicsLagrangianFEM>`) is based on the Lagrangian finite element formulation. The problem runs in ``QuasiStatic`` mode without inertial effects. The computational domain is discretized by ``FE1``, which is defined in the ``NumericalMethods`` section. The solid material is named ``rock`` and its mechanical properties are specified later in the ``Constitutive`` section.
+- Rock deformations are handled by a solid mechanics solver ``SolidMechanicsLagrangianFEM``. This solid mechanics solver (see :ref:`SolidMechanicsLagrangianFEM <SolidMechanicsLagrangianFEM>`) is based on the Lagrangian finite element formulation. The problem runs in ``QuasiStatic`` mode without inertial effects. The computational domain is discretized by ``FE1``, which is defined in the ``NumericalMethods`` section. The solid material is named ``rock`` and its mechanical properties are specified later in the ``Constitutive`` section.
 
 - The solver ``SurfaceGenerator`` defines the fracture region and rock toughness.
 
@@ -134,7 +134,7 @@ Fracture surface slippage is assumed to be governed by the Coulomb failure crite
     :end-before: <!-- SPHINX_MATERIAL_END -->
 
 
-Recall that in the ``SolidMechanics_LagrangianFEM`` section, 
+Recall that in the ``SolidMechanicsLagrangianFEM`` section, 
 ``rock`` is the material of the computational domain. 
 Here, the isotropic elastic model ``ElasticIsotropic`` is used to simulate the mechanical behavior of ``rock``.
 

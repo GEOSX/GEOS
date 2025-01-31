@@ -15,7 +15,7 @@
         newtonMaxIter="100"/>
     </PhaseFieldFracture>
 
-    <SolidMechanicsLagrangianSSLE
+    <SolidMechanicsLagrangianFEM
       name="SolidMechSolve"
       timeIntegrationOption="QuasiStatic"
       logLevel="1"
@@ -27,7 +27,7 @@
         newtonTol="1.0e-12"/>
       <LinearSolverParameters
         directParallel="0"/>
-    </SolidMechanicsLagrangianSSLE>
+    </SolidMechanicsLagrangianFEM>
 
     <PhaseFieldDamageFEM
       name="DamageSolve"

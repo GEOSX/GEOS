@@ -4,7 +4,7 @@
   <Solvers
     gravityVector="{ 0.0, 0.0, 0.0 }">
 
-    <SolidMechanicsLagrangianSSLE
+    <SolidMechanicsLagrangianFEM
       name="SolidMechSolveBody1"
       timeIntegrationOption="QuasiStatic"
       logLevel="1"
@@ -13,9 +13,9 @@
       <NonlinearSolverParameters
         newtonMaxIter="50"
         newtonTol="1.0e-0"/>
-    </SolidMechanicsLagrangianSSLE>
+    </SolidMechanicsLagrangianFEM>
     
-    <SolidMechanicsLagrangianSSLE
+    <SolidMechanicsLagrangianFEM
       name="SolidMechSolveBody2"
       timeIntegrationOption="QuasiStatic"
       logLevel="1"
@@ -27,7 +27,7 @@
         newtonTol="1.0e-0"/>
       <LinearSolverParameters
         directParallel="0"/>
-    </SolidMechanicsLagrangianSSLE>
+    </SolidMechanicsLagrangianFEM>
 
   </Solvers>
 

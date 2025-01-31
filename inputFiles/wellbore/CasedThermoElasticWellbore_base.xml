@@ -17,13 +17,13 @@
         directParallel="0"/>
     </SinglePhasePoromechanics>
 
-    <SolidMechanicsLagrangianSSLE
+    <SolidMechanicsLagrangianFEM
       name="solidMechSolver"
       timeIntegrationOption="QuasiStatic"
       logLevel="1"
       discretization="FE1"
       targetRegions="{ casing, cement, rock }">
-    </SolidMechanicsLagrangianSSLE>
+    </SolidMechanicsLagrangianFEM>
    
     <SinglePhaseFVM
       name="flowSolver"

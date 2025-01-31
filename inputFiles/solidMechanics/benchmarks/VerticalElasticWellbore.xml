@@ -6,7 +6,7 @@
     gravityVector="{ 0.0, 0.0, 0.0 }">
     <!-- SPHINX_GravityEnd -->
     <!-- SPHINX_SolidMechanicsSolver -->
-    <SolidMechanicsLagrangianSSLE
+    <SolidMechanicsLagrangianFEM
       name="lagsolve"
       timeIntegrationOption="QuasiStatic"
       discretization="FE1"
@@ -18,7 +18,7 @@
         newtonMaxIter="8"/>
       <LinearSolverParameters
         directParallel="0"/>
-    </SolidMechanicsLagrangianSSLE>
+    </SolidMechanicsLagrangianFEM>
   </Solvers>
 
   <!-- SPHINX_WellboreMesh -->

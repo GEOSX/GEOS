@@ -20,7 +20,7 @@
     <!-- SPHINX_POROMECHANICSSOLVER_END -->
 
     <!-- SPHINX_MECHANICALSOLVER -->
-    <SolidMechanicsLagrangianSSLE
+    <SolidMechanicsLagrangianFEM
       name="linearElasticity"
       timeIntegrationOption="QuasiStatic"
       logLevel="1"
@@ -32,7 +32,7 @@
       <LinearSolverParameters
         solverType="direct"
         directParallel="0"/>
-    </SolidMechanicsLagrangianSSLE>      
+    </SolidMechanicsLagrangianFEM>      
     <!-- SPHINX_MECHANICALSOLVER_END -->
 
     <!-- SPHINX_SINGLEPHASEFVM -->

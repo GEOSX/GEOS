@@ -5,7 +5,6 @@ set( physicsSolvers_headers
      solidMechanics/SolidMechanicsFields.hpp
      solidMechanics/SolidMechanicsLagrangianFEM.hpp
      solidMechanics/SolidMechanicsLagrangianFEM.hpp
-     solidMechanics/SolidMechanicsLagrangianSSLE.hpp
      solidMechanics/kernels/SolidMechanicsLagrangianFEMKernels.hpp
      solidMechanics/SolidMechanicsMPM.hpp
      solidMechanics/MPMSolverFields.hpp
@@ -28,7 +27,6 @@ set( physicsSolvers_headers
 set( physicsSolvers_sources
      ${physicsSolvers_sources}
      solidMechanics/SolidMechanicsLagrangianFEM.cpp
-     solidMechanics/SolidMechanicsLagrangianSSLE.cpp
      solidMechanics/SolidMechanicsMPM.cpp
      solidMechanics/SolidMechanicsStateReset.cpp
      solidMechanics/SolidMechanicsStatistics.cpp

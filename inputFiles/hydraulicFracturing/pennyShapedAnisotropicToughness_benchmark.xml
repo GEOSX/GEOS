@@ -31,7 +31,7 @@
   <!-- SPHINX_HYDROFRACSOLVER_END -->
 
   <!-- SPHINX_MECHANICALSOLVER -->
-    <SolidMechanicsLagrangianSSLE
+    <SolidMechanicsLagrangianFEM
       name="lagsolve"
       timeIntegrationOption="QuasiStatic"
       logLevel="1"
@@ -44,7 +44,7 @@
       <LinearSolverParameters
         solverType="gmres"
         krylovTol="1.0e-10"/>
-    </SolidMechanicsLagrangianSSLE>
+    </SolidMechanicsLagrangianFEM>
   <!-- SPHINX_MECHANICALSOLVER_END -->
 
   <!-- SPHINX_SINGLEPHASEFVM -->

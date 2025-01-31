@@ -57,14 +57,14 @@
         /-->
     </Hydrofracture>
 
-    <SolidMechanicsLagrangianSSLE
+    <SolidMechanicsLagrangianFEM
       name="lagsolve"
       timeIntegrationOption="QuasiStatic"
       logLevel="1"
       discretization="FE1"
       targetRegions="{Domain, void, Fracture}"
       contactRelationName="fractureContact">
-    </SolidMechanicsLagrangianSSLE>
+    </SolidMechanicsLagrangianFEM>
 
     <SinglePhaseFVM
       name="SinglePhaseFlow"

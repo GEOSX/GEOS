@@ -90,7 +90,7 @@ compatible with the first order interpolation functions.
 ------------------------------------
 Constitutive model
 ------------------------------------
-Recall that in the ``SolidMechanicsLagrangianSSLE`` block,
+Recall that in the ``SolidMechanicsLagrangianFEM`` block,
 ``shale`` is designated as the material in the computational domain. Here, the material
 is defined as linear isotropic.
 
