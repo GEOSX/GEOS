@@ -951,10 +951,9 @@ void TwoPointFluxApproximation::computeAquiferStencil( DomainPartition & domain,
     localSumFaceAreasView[aquiferIndex] += targetSetSumFaceAreas.get();
   } );
 
-  MpiWrapper::allReduce( localSumFaceAreas.data(),
-                         globalSumFaceAreas.data(),
-                         localSumFaceAreas.size(),
-                         MpiWrapper::getMpiOp( MpiWrapper::Reduction::Sum ),
+  MpiWrapper::allReduce( localSumFaceAreas,
+                         globalSumFaceAreas,
+                         MpiWrapper::Reduction::Sum,
                          MPI_COMM_GEOS );
 
   // Step 3: compute the face area fraction for each connection, and insert into boundary stencil

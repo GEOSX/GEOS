@@ -603,10 +603,9 @@ void InternalMeshGenerator::fillCellBlockManager( CellBlockManager & cellBlockMa
     {
       elemCenterCoordsLocal[k] = m_min[dim] + ( m_max[dim] - m_min[dim] ) * ( k + 0.5 ) / m_numElemsTotal[dim];
     }
-    MpiWrapper::allReduce( elemCenterCoordsLocal.data(),
-                           elemCenterCoords[dim].data(),
-                           m_numElemsTotal[dim],
-                           MPI_MAX,
+    MpiWrapper::allReduce( elemCenterCoordsLocal,
+                           elemCenterCoords[dim],
+                           MpiWrapper::Reduction::Max,
                            MPI_COMM_GEOS );
   }
 
