@@ -24,7 +24,7 @@
   </SinglePhasePoromechanics>
   <!-- SPHINX_POROMECHANICSSOLVER_END -->
   <!-- SPHINX_MECHANICALSOLVER -->    
-  <SolidMechanicsLagrangianSSLE
+  <SolidMechanicsLagrangianFEM
     name="solidMechSolver"
     timeIntegrationOption="QuasiStatic"
     logLevel="1"

@@ -3,7 +3,7 @@
 <Problem>
   <Solvers
     gravityVector="{ 0.0, 0.0, -9.81 }">
-    <SolidMechanicsLagrangianSSLE
+    <SolidMechanicsLagrangianFEM
       name="lagsolve"
       timeIntegrationOption="QuasiStatic"
       discretization="FE1"
@@ -13,7 +13,7 @@
       <LinearSolverParameters
         solverType="gmres"
         krylovTol="1.0e-10"/>
-    </SolidMechanicsLagrangianSSLE>
+    </SolidMechanicsLagrangianFEM>
   </Solvers>
 
   <!-- SPHINX_INTERNAL_MESH -->

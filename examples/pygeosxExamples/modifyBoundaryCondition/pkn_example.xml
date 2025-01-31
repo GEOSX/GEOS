@@ -34,7 +34,7 @@
         preconditionerType="amg"/>
     </Hydrofracture>
 
-    <SolidMechanicsLagrangianSSLE
+    <SolidMechanicsLagrangianFEM
       timeIntegrationOption="QuasiStatic"
       discretization="FE1"
       name="lagsolve"
@@ -45,7 +45,7 @@
       <LinearSolverParameters
         krylovTol="1.0e-10"
         solverType="gmres"/>
-    </SolidMechanicsLagrangianSSLE>
+    </SolidMechanicsLagrangianFEM>
 
     <SinglePhaseFVM
       discretization="singlePhaseTPFA"

@@ -121,7 +121,7 @@ Three elementary solvers are combined in the solver ``Hydrofracture`` to model t
   :end-before: <!-- SPHINX_HYDROFRACSOLVER_END -->
 
 
-- Rock and fracture deformation are modeled by the solid mechanics solver ``SolidMechanicsLagrangianSSLE``. In this solver, we define ``targetRegions`` that includes both the continuum region and the fracture region. The name of the contact constitutive behavior is specified in this solver by the ``contactRelationName``.
+- Rock and fracture deformation are modeled by the solid mechanics solver ``SolidMechanicsLagrangianFEM``. In this solver, we define ``targetRegions`` that includes both the continuum region and the fracture region. The name of the contact constitutive behavior is specified in this solver by the ``contactRelationName``.
 
 
 .. literalinclude:: ../../../../../../../inputFiles/hydraulicFracturing/pennyShapedToughnessDominated_benchmark.xml

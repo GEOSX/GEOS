@@ -72,12 +72,12 @@ The solver ``SurfaceGenerator`` defines rock toughness :math:`K_{Ic}` as:
   :start-after: <!-- Sphinx_Solvers_SurfaceGenerator -->
   :end-before:  <!-- Sphinx_Solvers_SurfaceGenerator_End -->
 
-Rock and fracture deformation are modeled by the solid mechanics solver ``SolidMechanicsLagrangianSSLE``. In this solver, we define ``targetRegions`` that includes both the continuum region and the fracture region. The name of the contact constitutive behavior is also specified in this solver by the ``contactRelationName``, besides the ``solidMaterialNames``.
+Rock and fracture deformation are modeled by the solid mechanics solver ``SolidMechanicsLagrangianFEM``. In this solver, we define ``targetRegions`` that includes both the continuum region and the fracture region. The name of the contact constitutive behavior is also specified in this solver by the ``contactRelationName``, besides the ``solidMaterialNames``.
 
 .. literalinclude:: ../../../../../../../inputFiles/hydraulicFracturing/kgdToughnessDominated_base.xml
   :language: xml
-  :start-after: <!-- Sphinx_Solvers_SolidMechanicsLagrangianSSLE -->
-  :end-before:  <!-- Sphinx_Solvers_SolidMechanicsLagrangianSSLE_End -->
+  :start-after: <!-- Sphinx_Solvers_SolidMechanicsLagrangianFEM -->
+  :end-before:  <!-- Sphinx_Solvers_SolidMechanicsLagrangianFEM_End -->
 
 The single phase fluid flow inside the fracture is solved by the finite volume method in the solver ``SinglePhaseFVM`` as:
 

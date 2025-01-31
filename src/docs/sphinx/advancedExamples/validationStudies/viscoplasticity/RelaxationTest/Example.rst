@@ -107,7 +107,7 @@ A homogeneous domain with one solid material is assumed, and its mechanical prop
     :end-before: <!-- SPHINX_MATERIAL_END -->
 
 
-Recall that in the ``SolidMechanics_LagrangianFEM`` section, 
+Recall that in the ``SolidMechanicsLagrangianFEM`` section, 
 ``rock`` is designated as the material in the computational domain. 
 Here, Visco Extended Drucker Prager model ``ViscoExtendedDruckerPrager`` is used to simulate the viscoplastic behavior of ``rock``.
 As for the material parameters, ``defaultInitialFrictionAngle``, ``defaultResidualFrictionAngle`` and ``defaultCohesion`` denote the initial friction angle, the residual friction angle, and cohesion, respectively, as defined by the Mohr-Coulomb failure envelope. As the residual friction angle ``defaultResidualFrictionAngle`` is larger than the initial one ``defaultInitialFrictionAngle``, a  strain hardening model is adopted, with a  hardening rate given as ``defaultHardening="0.0005"``. 

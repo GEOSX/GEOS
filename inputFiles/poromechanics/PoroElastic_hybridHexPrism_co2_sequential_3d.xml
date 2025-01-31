@@ -25,7 +25,7 @@
         directParallel="0"/>
     </MultiphasePoromechanics>
 
-    <SolidMechanicsLagrangianSSLE
+    <SolidMechanicsLagrangianFEM
       name="linearElasticity"
       timeIntegrationOption="QuasiStatic"
       logLevel="1"
@@ -35,7 +35,7 @@
         newtonTol="1.0e-9"
         lineSearchAction="None"
         newtonMaxIter="40"/>
-    </SolidMechanicsLagrangianSSLE>      
+    </SolidMechanicsLagrangianFEM>      
 
     <CompositionalMultiphaseFVM
       name="twoPhaseFlow"

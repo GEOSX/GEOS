@@ -22,7 +22,7 @@
         directParallel="0"/>
     </Hydrofracture>
 
-    <SolidMechanicsLagrangianSSLE
+    <SolidMechanicsLagrangianFEM
       name="lagsolve"
       timeIntegrationOption="QuasiStatic"
       discretization="FE1"
@@ -33,7 +33,7 @@
         newtonTol="1.0e-6"/>
       <LinearSolverParameters
         krylovTol="1.0e-10"/>
-    </SolidMechanicsLagrangianSSLE>
+    </SolidMechanicsLagrangianFEM>
 
     <SinglePhaseFVM
       name="SinglePhaseFlow"

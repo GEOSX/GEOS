@@ -157,7 +157,7 @@ Key points to the GEOS style are:
    .. code-block:: c
 
     void
-    SolidMechanics_LagrangianFEM::
+    SolidMechanicsLagrangianFEM::
     TimeStepExplicit( real64 const& time_n,
                       real64 const& dt,
                       const int cycleNumber,

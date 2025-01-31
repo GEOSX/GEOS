@@ -23,15 +23,15 @@
         directParallel="0"/>
     </Hydrofracture>
 
-    <!-- Sphinx_Solvers_SolidMechanicsLagrangianSSLE -->
-    <SolidMechanicsLagrangianSSLE
+    <!-- Sphinx_Solvers_SolidMechanicsLagrangianFEM -->
+    <SolidMechanicsLagrangianFEM
       name="lagsolve"
       timeIntegrationOption="QuasiStatic"
       discretization="FE1"
       targetRegions="{ Domain, Fracture }"
       contactRelationName="fractureContact"
       contactPenaltyStiffness="1.0"/>
-    <!-- Sphinx_Solvers_SolidMechanicsLagrangianSSLE_End -->
+    <!-- Sphinx_Solvers_SolidMechanicsLagrangianFEM_End -->
 
     <!-- Sphinx_Solvers_SinglePhaseFVM -->
     <SinglePhaseFVM

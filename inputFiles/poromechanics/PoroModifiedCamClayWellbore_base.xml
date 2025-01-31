@@ -160,7 +160,7 @@
   />
 </SinglePhasePoromechanics>
 
-<SolidMechanics_LagrangianFEM 
+<SolidMechanicsLagrangianFEM 
   name="mechanicsSolver" 
   timeIntegrationOption="QuasiStatic"
   logLevel="1"
@@ -171,7 +171,7 @@
     newtonTol = "1.0e-5"
     newtonMaxIter = "15"
   />  
-</SolidMechanics_LagrangianFEM>
+</SolidMechanicsLagrangianFEM>
 
 <SinglePhaseFVM 
   name="SinglePhaseFlowSolver"

@@ -82,7 +82,7 @@ public:
   /**
    * @return The string that may be used to generate a new instance from the PhysicsSolverBase::CatalogInterface::CatalogType
    */
-  static string catalogName() { return "SolidMechanics_LagrangianFEM"; }
+  static string catalogName() { return "SolidMechanicsLagrangianFEM"; }
   /**
    * @copydoc PhysicsSolverBase::getCatalogName()
    */

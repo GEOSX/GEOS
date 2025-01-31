@@ -109,7 +109,7 @@ A homogeneous domain with one solid material is assumed, whose mechanical proper
     :end-before: <!-- SPHINX_WELLBORE_MATERIAL_END -->
 
 
-Recall that in the ``SolidMechanics_LagrangianFEM`` section, 
+Recall that in the ``SolidMechanicsLagrangianFEM`` section, 
 ``rock`` is designated as the material in the computational domain. 
 Here, Modified Cam-Clay ``ModifiedCamClay`` is used to simulate the elastoplastic behavior of ``rock``.
 

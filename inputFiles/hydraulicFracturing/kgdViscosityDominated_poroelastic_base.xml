@@ -21,7 +21,7 @@
         directParallel="0"/>
     </Hydrofracture>
 
-    <SolidMechanicsLagrangianSSLE
+    <SolidMechanicsLagrangianFEM
       name="lagsolve"
       timeIntegrationOption="QuasiStatic"
       discretization="FE1"

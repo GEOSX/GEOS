@@ -60,7 +60,7 @@
 
   <Solvers
     gravityVector="{ 0.0, 0.0, 0.0 }">
-    <SolidMechanics_LagrangianFEM
+    <SolidMechanicsLagrangianFEM
       name="solidMechanics"
       timeIntegrationOption="QuasiStatic"
       discretization="FE1"
@@ -72,7 +72,7 @@
         newtonMaxIter="8"/>
       <LinearSolverParameters
         directParallel="0"/>
-    </SolidMechanics_LagrangianFEM>
+    </SolidMechanicsLagrangianFEM>
   </Solvers>
 
  <Tasks> 

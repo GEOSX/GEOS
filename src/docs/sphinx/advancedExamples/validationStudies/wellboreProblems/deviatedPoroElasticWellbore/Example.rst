@@ -46,7 +46,7 @@ In this example, we would focus our attention on the ``Solvers`` and the ``Mesh`
 Poroelastic solver
 -----------------------------------------------------------
 
-The coupled ``Poroelastic`` solver, that defines a coupling strategy between the solid mechanics solver ``SolidMechanicsLagrangianSSLE`` and the single phase flow solver ``SinglePhaseFVM``, is required for solving this wellbore problem.
+The coupled ``Poroelastic`` solver, that defines a coupling strategy between the solid mechanics solver ``SolidMechanicsLagrangianFEM`` and the single phase flow solver ``SinglePhaseFVM``, is required for solving this wellbore problem.
 
 .. literalinclude:: ../../../../../../../inputFiles/wellbore/DeviatedPoroElasticWellbore_Injection_benchmark.xml
   :language: xml

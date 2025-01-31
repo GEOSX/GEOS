@@ -17,7 +17,7 @@
   <!-- With this value of g, the stress matches what we'd expect with the correct value: -12998.1 -->
   <Solvers
     gravityVector="{ 0.0, 0.0, -9.81 }">
-    <SolidMechanicsLagrangianSSLE
+    <SolidMechanicsLagrangianFEM
       name="lagsolve"
       timeIntegrationOption="QuasiStatic"
       logLevel="1"
@@ -28,7 +28,7 @@
         newtonTol="1.0e-8"/>
       <LinearSolverParameters
         directParallel="0"/>
-    </SolidMechanicsLagrangianSSLE>
+    </SolidMechanicsLagrangianFEM>
   </Solvers>
 
   <Outputs>

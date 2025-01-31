@@ -32,7 +32,7 @@ TEST( testGroupPath, testGlobalPaths )
     R"xml(
     <Problem>
       <Solvers>
-        <SolidMechanics_LagrangianFEM
+        <SolidMechanicsLagrangianFEM
           name="lagsolve"
           cflFactor="0.25"
           discretization="FE1"

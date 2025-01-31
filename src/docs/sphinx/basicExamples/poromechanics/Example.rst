@@ -101,7 +101,7 @@ will be used to recognize them and create the coupling.
 To define a poromechanical coupling, we will effectively define three solvers:
 
  - the single-physics flow solver, a solver of type ``SinglePhaseFVM`` called here ``SinglePhaseFlowSolver`` (more information on these solvers at :ref:`SinglePhaseFlow`),
- - the small-stress Lagrangian mechanics solver, a solver of type ``SolidMechanicsLagrangianSSLE`` called here ``LinearElasticitySolver`` (more information here: :ref:`SolidMechanicsLagrangianFEM`),
+ - the small-stress Lagrangian mechanics solver, a solver of type ``SolidMechanicsLagrangianFEM`` called here ``LinearElasticitySolver`` (more information here: :ref:`SolidMechanicsLagrangianFEM`),
  - the coupling solver that will bind the two single-physics solvers above, an object of type ``SinglePhasePoromechanics`` called here ``PoroelasticitySolver`` (more information at :ref:`PoroelasticSolver`).
 
 Note that the ``name`` attribute of these solvers is

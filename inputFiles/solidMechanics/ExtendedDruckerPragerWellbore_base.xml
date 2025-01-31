@@ -144,7 +144,7 @@
   <!-- SPHINX_DP_WELLBORE_SOLVER -->
   <Solvers
     gravityVector="{ 0.0, 0.0, 0.0 }">
-    <SolidMechanics_LagrangianFEM
+    <SolidMechanicsLagrangianFEM
       name="mechanicsSolver"
       timeIntegrationOption="QuasiStatic"
       logLevel="1"
@@ -156,7 +156,7 @@
       <NonlinearSolverParameters
         newtonTol="1.0e-5"
         newtonMaxIter="15"/>
-    </SolidMechanics_LagrangianFEM>
+    </SolidMechanicsLagrangianFEM>
   </Solvers>
 
   <!-- SPHINX_DP_WELLBORE_SOLVER_END -->

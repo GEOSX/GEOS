@@ -13,7 +13,7 @@
         preconditionerType="mgr"/>
     </SinglePhasePoromechanics>
 
-    <SolidMechanicsLagrangianSSLE
+    <SolidMechanicsLagrangianFEM
       name="LinearElasticitySolver"
       timeIntegrationOption="QuasiStatic"
       logLevel="1"

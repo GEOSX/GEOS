@@ -28,7 +28,7 @@
     <!-- SPHINX_POROMECHANICSSOLVER_END -->
 
     <!-- SPHINX_MECHANICALSOLVER -->
-    <SolidMechanicsLagrangianSSLE
+    <SolidMechanicsLagrangianFEM
       name="lagsolve"
       timeIntegrationOption="QuasiStatic"
       logLevel="1"
@@ -39,7 +39,7 @@
         newtonMaxIter="40"/>
       <LinearSolverParameters
         directParallel="0"/>
-    </SolidMechanicsLagrangianSSLE>      
+    </SolidMechanicsLagrangianFEM>      
     <!-- SPHINX_MECHANICALSOLVER_END -->
 
     <!-- SPHINX_SINGLEPHASEFVM -->

@@ -110,7 +110,7 @@ Note that end-users should give each single-physics solver a meaningful and dist
 
 As demonstrated in this example, to setup a poromechanical coupling, we need to define three different solvers in the XML file:
 
-- the mechanics solver, a solver of type ``SolidMechanics_LagrangianFEM`` called here ``mechanicsSolver`` (more information here: :ref:`SolidMechanicsLagrangianFEM`),
+- the mechanics solver, a solver of type ``SolidMechanicsLagrangianFEM`` called here ``mechanicsSolver`` (more information here: :ref:`SolidMechanicsLagrangianFEM`),
 
 .. literalinclude:: ../../../../../../../inputFiles/poromechanics/PoroElasticWellbore_base.xml
   :language: xml

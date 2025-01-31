@@ -3,7 +3,7 @@
 <Problem>
   <Solvers
     gravityVector="{ 0.0, 0.0, 0.0 }">
-    <SolidMechanicsLagrangianSSLE
+    <SolidMechanicsLagrangianFEM
       name="lagsolve"
       timeIntegrationOption="QuasiStatic"
       discretization="FE1"
@@ -16,7 +16,7 @@
         solverType="bicgstab"
         preconditionerType="amg"
         krylovTol="1.0e-12"/>
-    </SolidMechanicsLagrangianSSLE>
+    </SolidMechanicsLagrangianFEM>
   </Solvers>
 
   <Mesh>
