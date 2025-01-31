@@ -39,6 +39,7 @@
       targetRegions="{ Region, Fault, wellRegion1, wellRegion2 }">
       <NonlinearSolverParameters
         newtonMaxIter="40"
+        newtonTol="1e-4"
         maxAllowedResidualNorm="1e+25"/>
       <LinearSolverParameters
         directParallel="0"/>

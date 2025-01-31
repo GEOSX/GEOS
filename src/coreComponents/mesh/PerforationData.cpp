@@ -233,23 +233,40 @@ void PerforationData::getReservoirElementDimensions( MeshLevel const & mesh,
 {
   ElementRegionManager const & elemManager = mesh.getElemManager();
   NodeManager const & nodeManager = mesh.getNodeManager();
-  CellElementRegion const & region = elemManager.getRegion< CellElementRegion >( er );
-  CellElementSubRegion const & subRegion = region.getSubRegion< CellElementSubRegion >( esr );
+  ElementRegionBase const & region = elemManager.getRegion< ElementRegionBase >( er );
+  ElementSubRegionBase const & subRegionBase = region.getSubRegion< ElementSubRegionBase >( esr );
 
-  // compute the bounding box of the element
-  real64 boxDims[ 3 ];
-  computationalGeometry::getBoundingBox( ei,
-                                         subRegion.nodeList(),
-                                         nodeManager.referencePosition(),
-                                         boxDims );
+  region.applyLambdaToContainer< CellElementSubRegion, SurfaceElementSubRegion >( subRegionBase, [&]( auto const & subRegion )
+  {
+    // compute the bounding box of the element
+    real64 boxDims[ 3 ];
+    computationalGeometry::getBoundingBox( ei,
+                                           subRegion.nodeList(),
+                                           nodeManager.referencePosition(),
+                                           boxDims );
 
-  // dx and dz from bounding box
-  dx = boxDims[ 0 ];
-  dy = boxDims[ 1 ];
+    // dx and dz from bounding box
+    dx = boxDims[ 0 ];
+    dy = boxDims[ 1 ];
+    dz = boxDims[ 2 ];
 
-  // dz is computed as vol / (dx * dy)
-  dz  = subRegion.getElementVolume()[ei];
-  dz /= dx * dy;
+    if( dx < 1e-10 )
+    {
+      dx  = subRegion.getElementVolume()[ei];
+      dx /= dy * dz;
+    }
+    else if( dy < 1e-10 )
+    {
+      dy  = subRegion.getElementVolume()[ei];
+      dy /= dx * dz;
+    }
+    else
+    {
+      // dz is computed as vol / (dx * dy)
+      dz  = subRegion.getElementVolume()[ei];
+      dz /= dx * dy;
+    }
+  } );
 }
 
 void PerforationData::connectToWellElements( LineBlockABC const & lineBlock,

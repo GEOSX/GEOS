@@ -208,7 +208,7 @@ void FaceManager::setGeometricalRelations( CellBlockManagerABC const & cellBlock
 
   if( isBaseMeshLevel )
   {
-    computeGeometry( nodeManager );
+    computeGeometry( nodeManager, elemRegionManager );
   }
 }
 
@@ -222,7 +222,8 @@ void FaceManager::setupRelatedObjectsInRelations( NodeManager const & nodeManage
   m_toElements.setElementRegionManager( elemRegionManager );
 }
 
-void FaceManager::computeGeometry( NodeManager const & nodeManager )
+void FaceManager::computeGeometry( NodeManager const & nodeManager,
+                                   ElementRegionManager const & elemManager )
 {
   arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const & X = nodeManager.referencePosition();
 
@@ -234,6 +235,11 @@ void FaceManager::computeGeometry( NodeManager const & nodeManager )
                                                                          m_faceCenter[ faceIndex ],
                                                                          m_faceNormal[ faceIndex ] );
 
+  } );
+
+  elemManager.forElementSubRegions< CellElementSubRegion, FaceElementSubRegion >( [&] ( auto const & subRegion )
+  {
+    subRegion.calculateElementCenters( X );
   } );
 }
 
@@ -262,11 +268,6 @@ void FaceManager::sortAllFaceNodes( NodeManager const & nodeManager,
   arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const X = nodeManager.referencePosition();
 
   ArrayOfArraysView< localIndex > const facesToNodes = nodeList().toView();
-
-  elemManager.forElementSubRegions< CellElementSubRegion, FaceElementSubRegion >( [&] ( auto const & subRegion )
-  {
-    subRegion.calculateElementCenters( X );
-  } );
 
   ElementRegionManager::ElementViewAccessor< arrayView2d< real64 const > > elemCenter =
     elemManager.constructArrayViewAccessor< real64, 2 >( ElementSubRegionBase::viewKeyStruct::elementCenterString() );

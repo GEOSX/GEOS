@@ -48,14 +48,6 @@ EmbeddedSurfaceSubRegion::EmbeddedSurfaceSubRegion( string const & name,
 {
   m_elementType = ElementType::Polygon;
 
-  registerWrapper( viewKeyStruct::elementCenterString(), &m_elementCenter ).
-    setDescription( "The center of each EmbeddedSurface element." );
-
-  registerWrapper( viewKeyStruct::elementVolumeString(), &m_elementVolume ).
-    setApplyDefaultValue( -1.0 ).
-    setPlotLevel( dataRepository::PlotLevel::LEVEL_0 ).
-    setDescription( "The volume of each EmbeddedSurface element." );
-
   registerWrapper( viewKeyStruct::connectivityIndexString(), &m_connectivityIndex ).
     setApplyDefaultValue( 1 ).
     setDescription( "Connectivity index of each EmbeddedSurface." );

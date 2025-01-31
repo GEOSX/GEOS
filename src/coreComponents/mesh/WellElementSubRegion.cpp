@@ -21,6 +21,7 @@
 #include "common/MpiWrapper.hpp"
 #include "LvArray/src/output.hpp"
 
+#include <unordered_set>
 
 namespace geos
 {
@@ -143,7 +144,6 @@ bool isPointInsideElement( SUBREGION_TYPE const & GEOS_UNUSED_PARAM( subRegion )
                            arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const & GEOS_UNUSED_PARAM( referencePosition ),
                            localIndex const & GEOS_UNUSED_PARAM( eiLocal ),
                            ArrayOfArraysView< localIndex const > const & GEOS_UNUSED_PARAM( facesToNodes ),
-                           real64 const (&GEOS_UNUSED_PARAM( elemCenter ))[3],
                            real64 const (&GEOS_UNUSED_PARAM( location ))[3] )
 {
   // only CellElementSubRegion is currently supported
@@ -154,15 +154,70 @@ bool isPointInsideElement( CellElementSubRegion const & subRegion,
                            arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const & referencePosition,
                            localIndex const & eiLocal,
                            ArrayOfArraysView< localIndex const > const & facesToNodes,
-                           real64 const (&elemCenter)[3],
                            real64 const (&location)[3] )
 {
   arrayView2d< localIndex const > const elemsToFaces = subRegion.faceList();
+  arrayView2d< real64 const > const elemCenters = subRegion.getElementCenter();
+  real64 const elemCenter[3] = { elemCenters[eiLocal][0],
+                                 elemCenters[eiLocal][1],
+                                 elemCenters[eiLocal][2] };
   return computationalGeometry::isPointInsidePolyhedron( referencePosition,
                                                          elemsToFaces[eiLocal],
                                                          facesToNodes,
                                                          elemCenter,
                                                          location );
+}
+
+// Define a hash function
+template< typename POINT_TYPE >
+struct PointHash
+{
+  std::size_t operator()( POINT_TYPE const point ) const
+  {
+    std::size_t h1 = std::hash< real64 >()( point[0] );
+    std::size_t h2 = std::hash< real64 >()( point[1] );
+    std::size_t h3 = std::hash< real64 >()( point[2] );
+    return h1 ^ (h2 << 1) ^ (h3 << 2);
+  }
+};
+
+// Define equality operator
+template< typename POINT_TYPE >
+struct PointsEqual
+{
+  bool operator()( POINT_TYPE const & p1, POINT_TYPE const & p2 ) const
+  {
+    return (std::abs( p1[0] - p2[0] ) < 1e-10) && (std::abs( p1[1] - p2[1] ) < 1e-10) && (std::abs( p1[2] - p2[2] ) < 1e-10);
+  }
+};
+
+bool isPointInsideElement( SurfaceElementSubRegion const & subRegion,
+                           arrayView2d< real64 const, nodes::REFERENCE_POSITION_USD > const & referencePosition,
+                           localIndex const & eiLocal,
+                           ArrayOfArraysView< localIndex const > const & GEOS_UNUSED_PARAM( facesToNodes ),
+                           real64 const (&location)[3] )
+{
+  typedef std::array< real64, 3 > Point3d;
+
+  // collect element nodes
+  integer const nV = subRegion.numNodesPerElement( eiLocal );
+  SurfaceElementSubRegion::NodeMapType const & nodeList = subRegion.nodeList();
+  std::vector< Point3d > polygon( nV );
+  for( integer i = 0; i < nV; ++i )
+  {
+    for( integer j = 0; j < 3; ++j )
+    {
+      polygon[i][j] = referencePosition[nodeList( eiLocal, i )][j];
+    }
+  }
+
+  // remove duplicates
+  std::unordered_set< Point3d, PointHash< Point3d >, PointsEqual< Point3d > >
+  unique_points( polygon.begin(), polygon.end());
+  polygon.clear();
+  std::copy( unique_points.begin(), unique_points.end(), std::back_inserter( polygon ));
+
+  return computationalGeometry::isPointInPolygon3d( polygon, polygon.size(), location );
 }
 
 /**
@@ -230,8 +285,6 @@ bool visitNeighborElements( MeshLevel const & mesh,
 
       ElementRegionBase const & region = elemManager.getRegion< ElementRegionBase >( er );
       SUBREGION_TYPE const & subRegion = region.getSubRegion< SUBREGION_TYPE >( esr );
-      arrayView2d< real64 const > const elemCenters = subRegion.getElementCenter();
-
       globalIndex const eiGlobal = subRegion.localToGlobalMap()[eiLocal];
 
       // if this element has not been visited yet, save it
@@ -239,13 +292,9 @@ bool visitNeighborElements( MeshLevel const & mesh,
       {
         elements.insert( eiGlobal );
 
-        real64 const elemCenter[3] = { elemCenters[eiLocal][0],
-                                       elemCenters[eiLocal][1],
-                                       elemCenters[eiLocal][2] };
-
         // perform the test to see if the point is in this reservoir element
         // if the point is in the resevoir element, save the indices and stop the search
-        if( isPointInsideElement( subRegion, referencePosition, eiLocal, facesToNodes, elemCenter, location ) )
+        if( isPointInsideElement( subRegion, referencePosition, eiLocal, facesToNodes, location ) )
         {
           eiMatched = eiLocal;
           giMatched = eiGlobal;
@@ -288,6 +337,7 @@ void initializeLocalSearch( MeshLevel const & mesh,
                             localIndex & eiInit )
 {
   ElementSubRegionBase const & subRegion = mesh.getElemManager().getRegion( targetRegionIndex ).getSubRegion( targetSubRegionIndex );
+
   ElementRegionManager::ElementViewAccessor< arrayView2d< real64 const > >
   resElemCenter = mesh.getElemManager().constructViewAccessor< array2d< real64 >,
                                                                arrayView2d< real64 const > >( ElementSubRegionBase::viewKeyStruct::elementCenterString() );

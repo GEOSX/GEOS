@@ -29,7 +29,7 @@
 
     <ConstantPermeability
       name="rockPerm"
-      permeabilityComponents="{ 1.0e-18, 1.0e-18, 1.0e-18 }" />
+      permeabilityComponents="{ 1.0e-14, 1.0e-14, 1.0e-14 }" />
       <!-- Material inside the fault -->
     <CompressibleSolidParallelPlatesPermeability
       name="faultFilling"
@@ -188,14 +188,15 @@
         logLevel="1"
         wellRegionName="wellRegion2"
         wellControlsName="wellControls2"
-        polylineNodeCoords="{ { -5400, -5400, 0 },
-                              { -5400, -5400, -2500 } }"
+        polylineNodeCoords="{ { 1200, -700, 0 },
+                              { 1200, -700, -2500 } }"
         polylineSegmentConn="{ { 0, 1 } }"
         radius="0.1"
         numElementsPerSegment="1">
         <Perforation
           name="injector1_perf1"
-          distanceFromHead="2500"/>
+          targetRegion="Fault"
+          distanceFromHead="1700"/>
       </InternalWell>
     </VTKMesh>
   </Mesh>

@@ -137,8 +137,10 @@ public:
   /**
    * @brief Compute faces center, area and normal.
    * @param[in] nodeManager NodeManager associated with the current DomainPartition
+   * @param[in] elemManager element manager allowing access to the cell elements
    */
-  void computeGeometry( NodeManager const & nodeManager );
+  void computeGeometry( NodeManager const & nodeManager,
+                        ElementRegionManager const & elemManager );
 
   /**
    * @brief Builds the face-on-domain-boundary indicator.
