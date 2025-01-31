@@ -299,9 +299,7 @@ struct ConstitutivePassThru< PorousSolidBase >
   template< typename LAMBDA >
   static void execute( ConstitutiveBase & constitutiveRelation, LAMBDA && lambda )
   {
-    ConstitutivePassThruHandler< PorousSolid< DruckerPragerExtended >,
-                                 PorousSolid< ModifiedCamClay >,
-                                 PorousSolid< DelftEgg >,
+    ConstitutivePassThruHandler< PorousSolid< ModifiedCamClay >,
                                  PorousSolid< DruckerPrager >,
                                  PorousSolid< DuvautLionsSolid< DruckerPrager > >,
                                  PorousSolid< DuvautLionsSolid< DruckerPragerExtended > >,
