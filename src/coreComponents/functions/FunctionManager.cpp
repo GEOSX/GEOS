@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -53,8 +53,9 @@ FunctionManager & FunctionManager::getInstance()
 Group * FunctionManager::createChild( string const & functionCatalogKey,
                                       string const & functionName )
 {
-  GEOS_LOG_RANK_0( "   " << functionCatalogKey << ": " << functionName );
-  std::unique_ptr< FunctionBase > function = FunctionBase::CatalogInterface::factory( functionCatalogKey, functionName, this );
+  GEOS_LOG_RANK_0( GEOS_FMT( "{}: adding {} {}", getName(), functionCatalogKey, functionName ) );
+  std::unique_ptr< FunctionBase > function =
+    FunctionBase::CatalogInterface::factory( functionCatalogKey, getDataContext(), functionName, this );
   return &this->registerGroup< FunctionBase >( functionName, std::move( function ) );
 }
 

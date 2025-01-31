@@ -44,7 +44,7 @@
       name="SurfaceGen"
       targetRegions="{ Domain }"
       fractureRegion="Fracture"
-      rockToughness="1e6"
+      initialRockToughness="1e6"
       mpiCommOrder="1"/>
   </Solvers>
 
@@ -89,7 +89,7 @@
       name="Fracture"
       faceBlock="FractureSubRegion"
       materialList="{ water, fractureFilling, fractureContact, rock, hApertureModel}"
-      defaultAperture="1e-3"/>
+      defaultAperture="1.0e-3"/>
   </ElementRegions>
 
   <Constitutive>
@@ -265,7 +265,7 @@
     <TableFunction
         name="aperTable"
         coordinates="{ -1.0e-3, 0.0 }"
-        values="{ 1.0e-6, 1.0e-4 }"/> 
+        values="{ 1.0e-6, 1.0e-3 }"/> 
 
     <TableFunction 
         name="timeFunction"

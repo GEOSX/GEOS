@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -239,18 +239,50 @@ private:
     constexpr static char const * slidingToleranceString() { return "slidingTolerance"; }
 
     constexpr static char const * dispJumpUpdPenaltyString() { return "dispJumpUpdPenalty"; }
+
+    constexpr static char const * simultaneousString() { return "simultaneous"; }
+
+    constexpr static char const * symmetricString() { return "symmetric"; }
+
+    constexpr static char const * iterativePenaltyNFacString() { return "iterPenaltyN"; }
+
+    constexpr static char const * iterativePenaltyTFacString() { return "iterPenaltyT"; }
+
+    constexpr static char const * tolJumpDispNFacString() { return "tolJumpN"; }
+
+    constexpr static char const * tolJumpDispTFacString() { return "tolJumpT"; }
+
+    constexpr static char const * tolNormalTracFacString() { return "tolNormalTrac"; }
+
+    constexpr static char const * tolTauLimitString() { return "tolTauLimit"; }
+
   };
 
   /// Tolerance for the sliding check: the tangential traction must exceed (1 + m_slidingCheckTolerance) * t_lim to activate the sliding
   /// condition
-  real64 const m_slidingCheckTolerance = 0.05;
+  real64 m_slidingCheckTolerance = 5.e-02;
 
   /// Flag to update the Lagrange multiplier at each Newton iteration (true), or only after the Newton loop has converged (false)
-  bool m_simultaneous = true;
+  int m_simultaneous = 1;
 
   /// Flag to neglect the non-symmetric contribution in the tangential matrix, i.e., the derivative of tangential traction with respect to
   /// the normal displacement is neglected
-  bool m_symmetric = true;
+  int m_symmetric = 1;
+
+  /// Factor for tuning the iterative penalty coefficient for normal traction
+  real64 m_iterPenaltyNFac = 10.0;
+
+  /// Factor for tuning the iterative penalty coefficient for tangential traction
+  real64 m_iterPenaltyTFac = 0.1;
+
+  /// Factor to adjust the tolerance for normal jump
+  real64 m_tolJumpDispNFac = 1.e-07;
+
+  /// Factor to adjust the tolerance for tangential jump
+  real64 m_tolJumpDispTFac = 1.e-05;
+
+  /// Factor to adjust the tolerance for normal traction
+  real64 m_tolNormalTracFac = 0.5;
 
 };
 

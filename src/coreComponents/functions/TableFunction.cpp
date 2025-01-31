@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -307,7 +307,7 @@ string TableCSVFormatter::toString< TableFunction >( TableFunction const & table
                                                  units::getDescription( tableFunction.getDimUnit( 0 ) ),
                                                  units::getDescription( tableFunction.getDimUnit( 1 ) ) );
 
-    TableLayout tableLayout( tableConverted.headerNames );
+    TableLayout const tableLayout( "", tableConverted.headerNames );
 
     TableCSVFormatter csvFormat( tableLayout );
     formatterStream << csvFormat.headerToString() << csvFormat.dataToString( tableConverted.tableData );
@@ -322,7 +322,7 @@ string TableTextFormatter::toString< TableFunction >( TableFunction const & tabl
   units::Unit const valueUnit = tableFunction.getValueUnit();
   arrayView1d< real64 const > const values = tableFunction.getValues();
   integer const numDimensions = LvArray::integerConversion< integer >( coordinates.size() );
-  string const filename = tableFunction.getName();
+  std::string_view filename = tableFunction.getName();
   string logOutput;
 
   GEOS_LOG_RANK_0( GEOS_FMT( "Values in the table are represented by : {}", units::getDescription( valueUnit )));
@@ -335,12 +335,10 @@ string TableTextFormatter::toString< TableFunction >( TableFunction const & tabl
     {
       tableData.addRow( coords[idx], values[idx] );
     }
-
-    TableLayout const tableLayout( {
+    TableLayout const tableLayout( filename, {
         string( units::getDescription( tableFunction.getDimUnit( 0 ))),
         string( units::getDescription( valueUnit ))
-      }, filename );
-
+      } );
     TableTextFormatter const logTable( tableLayout );
     logOutput = logTable.toString( tableData );
   }
@@ -358,17 +356,16 @@ string TableTextFormatter::toString< TableFunction >( TableFunction const & tabl
                                                    units::getDescription( tableFunction.getDimUnit( 0 ) ),
                                                    units::getDescription( tableFunction.getDimUnit( 1 ) ));
 
-      TableLayout tableLayout( tableConverted.headerNames, filename );
-
+      TableLayout const tableLayout( filename, tableConverted.headerNames );
       TableTextFormatter const table2DLog( tableLayout );
       logOutput =  table2DLog.toString( tableConverted.tableData );
     }
     else
     {
-      string log = GEOS_FMT( "The {} PVT table exceeding 500 rows.\nTo visualize the tables, go to the generated csv \n", filename );
-      TableLayout const tableLayoutInfos( {TableLayout::ColumnParam{{log}, TableLayout::Alignment::left}}, filename );
+      string const log = GEOS_FMT( "The {} PVT table exceeding 500 rows.\nTo visualize the tables, go to the generated csv", filename );
+      TableLayout const tableLayoutInfos( filename, {log} );
       TableTextFormatter const tableLog( tableLayoutInfos );
-      logOutput = tableLog.layoutToString();
+      logOutput = tableLog.toString();
     }
   }
   return logOutput;

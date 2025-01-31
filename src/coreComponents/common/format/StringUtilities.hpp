@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -88,7 +88,7 @@ string join( CONTAINER const & container, S const & delim = S() )
  * @return a string containing input values concatenated with a delimiter
  */
 template< typename IT, typename S, typename LAMBDA >
-string joinLamda( IT first, IT last, S const & delim, LAMBDA formattingFunc )
+string joinLambda( IT first, IT last, S const & delim, LAMBDA formattingFunc )
 {
   if( first == last )
   {
@@ -114,9 +114,9 @@ string joinLamda( IT first, IT last, S const & delim, LAMBDA formattingFunc )
  * @return a string containing input values concatenated with a delimiter
  */
 template< typename CONTAINER, typename S, typename LAMBDA >
-string joinLamda( CONTAINER const & container, S const & delim, LAMBDA formattingFunc )
+string joinLambda( CONTAINER const & container, S const & delim, LAMBDA formattingFunc )
 {
-  return joinLamda( std::begin( container ), std::end( container ), delim, formattingFunc );
+  return joinLambda( std::begin( container ), std::end( container ), delim, formattingFunc );
 }
 
 /**

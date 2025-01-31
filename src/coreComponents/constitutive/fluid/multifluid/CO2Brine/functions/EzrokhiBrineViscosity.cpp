@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -57,7 +57,7 @@ EzrokhiBrineViscosity::EzrokhiBrineViscosity( string const & name,
 
 void EzrokhiBrineViscosity::makeCoefficients( string_array const & inputPara )
 {
-  // compute brine viscosity following Ezrokhi`s method (referenced in Eclipse TD, Aqueous phase properties)
+  // compute brine viscosity following Ezrokhi`s method
   // Reference : Zaytsev, I.D. and Aseyev, G.G. Properties of Aqueous Solutions of Electrolytes, Boca Raton, Florida, USA CRC Press (1993).
   GEOS_THROW_IF_LT_MSG( inputPara.size(), 5,
                         GEOS_FMT( "{}: insufficient number of model parameters", m_functionName ),

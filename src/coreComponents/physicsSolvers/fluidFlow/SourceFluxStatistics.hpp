@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -23,7 +23,10 @@
 #include "../FieldStatisticsBase.hpp"
 #include "FlowSolverBase.hpp"
 #include "mesh/DomainPartition.hpp"
-
+#include "common/format/table/TableData.hpp"
+#include "common/format/table/TableFormatter.hpp"
+#include "common/format/table/TableLayout.hpp"
+#include <map>
 
 namespace geos
 {
@@ -311,6 +314,15 @@ private:
 
   /// the names of the SourceFlux(s) for which we want the statistics
   string_array m_fluxNames;
+  ///
+  TableLayout m_logLayout;
+  TableLayout m_csvLayout;
+
+  string_array m_subRegionsfilename;
+  string_array m_regionsfilename;
+  string_array m_allRegionFluxsfilename;
+  string_array m_allRegionWrapperFluxFilename;
+
 
   /**
    * @copydoc Group::registerDataOnMesh(Group &)
@@ -324,22 +336,41 @@ private:
 
   dataRepository::Wrapper< WrappedStats > & registerWrappedStats( Group & group,
                                                                   string_view fluxName,
-                                                                  string_view elementSetName );
+                                                                  string_view elementSetName,
+                                                                  string_array & filenames );
 
   /**
-   * @brief If requested, output in the log and CSV the given statistics.
-   * @param minLogLevel    the min log level to output any line.
-   * @param elementSetName the region / sub-subregion name concerned by the statistics.
-   * @param stats          the statistics that must be output in the log.
+   * @brief  If requested, collect statistics in a tableData.
+   * @param logLevel  the min log level to collect any statistics.
+   * @param regionName The region name where we collect statistics
+   * @param tableData The table data where we collect statistics
+   * @param wrappedStats the statistics that must be retrieved.
    */
-  void writeStatsToLog( integer minLogLevel, string_view elementSetName, WrappedStats const & stats );
+  void gatherStatsForLog( bool logLevelActive,
+                          string_view elementSetName,
+                          TableData & tableData,
+                          WrappedStats const & wrappedStats );
   /**
-   * @brief If CSV is enabled, create or append a new CSV file.
-   * @param elementSetName the region / sub-subregion name concerned by the statistics.
-   * @param stats          the statistics that must be output in the log.
-   * @param writeHeader    If true, create the CSV with the header. If false, append it with the statistics.
+   * @brief  If requested, collect statistics in a tableData.
+   * @param tableData The TableData where we collect the statistics
+   * @param stats the statistics that must be retrieved.
    */
-  void writeStatsToCSV( string_view elementSetName, WrappedStats const & stats, bool writeHeader );
+  void gatherStatsForCSV( TableData & tableData, WrappedStats const & stats );
+
+  /**
+   * @brief If requested, output statistics in the log.
+   * @param logLevel the min log level to output any statistics.
+   * @param statsName The stat name where we collect
+   * @param tableMeshData The TableData where we have all collected statistics
+   */
+  void outputStatsToLog( bool logLevelActive, string_view elementSetName, TableData const & tableMeshData );
+
+  /**
+   * @brief If requested, output statistics in csv.
+   * @param filenames String array containing all filenames to be generated
+   * @param csvData The TableData where we have all collected statistics
+   */
+  void outputStatsToCSV( string_array const & filenames, TableData & csvData );
 
 };
 

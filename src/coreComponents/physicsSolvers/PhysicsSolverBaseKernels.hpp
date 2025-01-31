@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -267,10 +267,9 @@ public:
   static void computeGlobalNorm( array1d< real64 > const & localResidualNorm,
                                  array1d< real64 > & globalResidualNorm )
   {
-    MpiWrapper::allReduce( localResidualNorm.data(),
-                           globalResidualNorm.data(),
-                           localResidualNorm.size(),
-                           MpiWrapper::getMpiOp( MpiWrapper::Reduction::Max ),
+    MpiWrapper::allReduce( localResidualNorm,
+                           globalResidualNorm,
+                           MpiWrapper::Reduction::Max,
                            MPI_COMM_GEOS );
   }
 };
@@ -309,16 +308,17 @@ public:
   {
     array1d< real64 > sumLocalResidualNorm( localResidualNorm.size() );
     array1d< real64 > sumLocalResidualNormalizer( localResidualNormalizer.size() );
-    MpiWrapper::allReduce( localResidualNorm.data(),
-                           sumLocalResidualNorm.data(),
-                           localResidualNorm.size(),
-                           MpiWrapper::getMpiOp( MpiWrapper::Reduction::Sum ),
+
+    MpiWrapper::allReduce( localResidualNorm,
+                           sumLocalResidualNorm,
+                           MpiWrapper::Reduction::Sum,
                            MPI_COMM_GEOS );
-    MpiWrapper::allReduce( localResidualNormalizer.data(),
-                           sumLocalResidualNormalizer.data(),
-                           localResidualNormalizer.size(),
-                           MpiWrapper::getMpiOp( MpiWrapper::Reduction::Sum ),
+
+    MpiWrapper::allReduce( localResidualNormalizer,
+                           sumLocalResidualNormalizer,
+                           MpiWrapper::Reduction::Sum,
                            MPI_COMM_GEOS );
+
     for( integer i = 0; i < localResidualNorm.size(); ++i )
     {
       globalResidualNorm[i] = sqrt( sumLocalResidualNorm[i] ) / sqrt( sumLocalResidualNormalizer[i] );

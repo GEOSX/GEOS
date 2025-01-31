@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -27,6 +27,19 @@ namespace geos
 
 namespace compositionalMultiphaseUtilities
 {
+
+/**
+ * @brief Solution scaling type, used in CompositionalMultiphaseFVM
+ */
+enum class ScalingType : integer
+{
+  Global,         ///< Scale the Newton update with a unique scaling factor
+  Local            ///< Scale the Newton update locally (modifies the Newton direction)
+};
+
+ENUM_STRINGS( ScalingType,
+              "Global",
+              "Local" );
 
 /**
  * @brief In each block, shift the elements from 0 to numRowsToShift-1 one position ahead and replaces the first element

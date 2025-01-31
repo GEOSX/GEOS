@@ -19,7 +19,7 @@
 
     <SurfaceGenerator
       name="SurfaceGen"
-      rockToughness="1e6"
+      initialRockToughness="1e6"
       nodeBasedSIF="1"
       logLevel="1"
       targetRegions="{ Region2 }"

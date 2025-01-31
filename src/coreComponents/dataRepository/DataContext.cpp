@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -25,7 +25,7 @@ namespace dataRepository
 {
 
 
-DataContext::DataContext( string const & targetName ):
+DataContext::DataContext( string_view targetName ):
   m_targetName( targetName )
 {}
 
@@ -35,12 +35,12 @@ std::ostream & operator<<( std::ostream & os, DataContext const & ctx )
   return os;
 }
 
-DataContext::ToStringInfo::ToStringInfo( string const & targetName, string const & filePath, size_t line ):
+DataContext::ToStringInfo::ToStringInfo( string_view targetName, string_view filePath, size_t line ):
   m_targetName( targetName ),
   m_filePath( filePath ),
   m_line( line )
 {}
-DataContext::ToStringInfo::ToStringInfo( string const & targetName ):
+DataContext::ToStringInfo::ToStringInfo( string_view targetName ):
   m_targetName( targetName )
 {}
 
@@ -83,6 +83,15 @@ DataFileContext::DataFileContext( xmlWrapper::xmlNode const & targetNode,
   m_offset( attPos.offset )
 {}
 
+DataFileContext::DataFileContext( string_view targetName, string_view file, size_t line ):
+  DataContext( targetName ),
+  m_typeName( "C++ Source File" ),
+  m_filePath( file ),
+  m_line( line ),
+  m_offsetInLine( 0 ),
+  m_offset( 0 )
+{}
+
 string DataFileContext::toString() const
 {
   if( m_line != xmlWrapper::xmlDocument::npos )
@@ -95,7 +104,7 @@ string DataFileContext::toString() const
   }
   else
   {
-    return GEOS_FMT( "{} (Source file not found)", m_targetName );
+    return GEOS_FMT( "{} ({})", m_targetName, ( m_filePath.empty() ? "Source file not found" : m_filePath ) );
   }
 }
 

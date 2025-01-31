@@ -21,7 +21,7 @@
     <SurfaceGenerator
       name="SurfaceGen"
       targetRegions="{ Region2 }"
-      rockToughness="1e6"
+      initialRockToughness="1e6"
       mpiCommOrder="1" />
   </Solvers>
 
@@ -190,5 +190,5 @@
       name="restartOutput"/>
   </Outputs>
 
-  <!-- <Fracture failCriterion="1" failGap="0.0004" fractureFlag="100" preFractureSetName="perf" rockToughness="1e6" separableSet="all"/> -->
+  <!-- <Fracture failCriterion="1" failGap="0.0004" fractureFlag="100" preFractureSetName="perf" initialRockToughness="1e6" separableSet="all"/> -->
 </Problem>

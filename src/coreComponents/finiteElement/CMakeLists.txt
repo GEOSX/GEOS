@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: LGPL-2.1-only
 #
 # Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
-# Copyright (c) 2018-2024 Total, S.A
+# Copyright (c) 2018-2024 TotalEnergies
 # Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
 # Copyright (c) 2023-2024 Chevron
 # Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -32,8 +32,8 @@ set( finiteElement_headers
      elementFormulations/H1_Hexahedron_Lagrange1_GaussLegendre2.hpp
      elementFormulations/H1_Pyramid_Lagrange1_Gauss5.hpp
      elementFormulations/H1_QuadrilateralFace_Lagrange1_GaussLegendre2.hpp
-     elementFormulations/H1_Tetrahedron_Lagrange1_Gauss1.hpp
-     elementFormulations/H1_TriangleFace_Lagrange1_Gauss1.hpp
+     elementFormulations/H1_Tetrahedron_Lagrange1_Gauss.hpp
+     elementFormulations/H1_TriangleFace_Lagrange1_Gauss.hpp
      elementFormulations/H1_Wedge_Lagrange1_Gauss6.hpp
      elementFormulations/ConformingVirtualElementOrder1.hpp
      elementFormulations/ConformingVirtualElementOrder1_impl.hpp

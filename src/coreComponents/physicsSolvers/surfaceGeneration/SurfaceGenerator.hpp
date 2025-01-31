@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -503,6 +503,11 @@ private:
 
   real64 calculateRuptureRate( SurfaceElementRegion & faceElementRegion );
 
+  real64 scalingToughness( R1Tensor const fractureOrigin,
+                           real64 const (&faceCenter)[3],
+                           real64 const initialRockToughness,
+                           real64 const toughnessScalingFactor );
+
   /**
    * @struct viewKeyStruct holds char strings and viewKeys for fast lookup
    */
@@ -521,7 +526,10 @@ private:
 
     //TODO: rock toughness should be a material parameter, and we need to make rock toughness to KIC a constitutive
     // relation.
-    constexpr static char const * rockToughnessString() { return "rockToughness"; }
+    constexpr static char const * initialRockToughnessString() { return "initialRockToughness"; }
+    constexpr static char const * toughnessScalingFactorString() { return "toughnessScalingFactor"; }
+    //TODO: fracture origin can be obtained from the initial fracture geometry
+    constexpr static char const * fractureOriginString() { return "fractureOrigin"; }
 
 //    //TODO: Once the node-based SIF criterion becomes mature and robust, remove the edge-based criterion.
     constexpr static char const * nodeBasedSIFString() { return "nodeBasedSIF"; }
@@ -541,7 +549,11 @@ private:
 
   int m_isPoroelastic;
 
-  real64 m_rockToughness;
+  real64 m_initialRockToughness;
+
+  real64 m_toughnessScalingFactor;
+
+  R1Tensor m_fractureOrigin;
 
   // Flag for consistent communication ordering
   int m_mpiCommOrder;

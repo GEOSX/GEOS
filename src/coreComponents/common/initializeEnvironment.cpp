@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -290,7 +290,7 @@ static void addUmpireHighWaterMarks()
     string allocatorNameMinChars = string( MAX_NAME_LENGTH, '\0' );
 
     // Make sure that each rank is looking at the same allocator.
-    MpiWrapper::allReduce( allocatorNameFixedSize.c_str(), &allocatorNameMinChars.front(), MAX_NAME_LENGTH, MPI_MIN, MPI_COMM_GEOS );
+    MpiWrapper::allReduce( allocatorNameFixedSize, allocatorNameMinChars, MpiWrapper::Reduction::Min, MPI_COMM_GEOS );
     if( allocatorNameFixedSize != allocatorNameMinChars )
     {
       GEOS_WARNING( "Not all ranks have an allocator named " << allocatorNameFixedSize << ", cannot compute high water mark." );
@@ -345,11 +345,11 @@ static void addUmpireHighWaterMarks()
     pushStatsIntoAdiak( allocatorName + " rank max", mark );
   }
 
-  TableLayout const memoryStatLayout ( {"Umpire Memory Pool\n(reserved / % over total)",
-                                        "Min over ranks",
-                                        "Max  over ranks",
-                                        "Avg  over ranks",
-                                        "Sum over ranks" } );
+  TableLayout const memoryStatLayout ( { "Umpire Memory Pool\n(reserved / % over total)",
+                                         "Min over ranks",
+                                         "Max  over ranks",
+                                         "Avg  over ranks",
+                                         "Sum over ranks" } );
   TableTextFormatter const memoryStatLog( memoryStatLayout );
 
   GEOS_LOG_RANK_0( memoryStatLog.toString( tableData ));

@@ -1,19 +1,10 @@
 <?xml version="1.0" ?>
 <Problem>
   <Solvers>
-    <QuasiDynamicEQ
-      name="SpringSlider"
-      targetRegions="{ Fault }"
-      shearImpedance="4.41"
-      initialDt="1"
-      logLevel="1"
-      discretization="FE1">
-    </QuasiDynamicEQ>
-    
     <SurfaceGenerator
       name="SurfaceGen"
       targetRegions="{ Domain }"
-      rockToughness="1.0"
+      initialRockToughness="1.0"
       mpiCommOrder="1"
       fractureRegion="Fault"/>  
   </Solvers>
@@ -80,27 +71,26 @@
 
     <FieldSpecification
       name="normalTraction"
-      fieldName="traction"
+      fieldName="backgroundNormalStress"
       initialCondition="1"
       objectPath="ElementRegions/Fault/FractureSubRegion"
-      component="0"
       scale="50"
       setNames="{all}"/>
     
     <FieldSpecification
       name="shearTraction1"
-      fieldName="traction"
+      fieldName="backgroundShearStress"
       initialCondition="1"
       objectPath="ElementRegions/Fault/FractureSubRegion"
-      component="1"
+      component="0"
       scale="21.2132034356"
       setNames="{all}"/>
     <FieldSpecification
       name="shearTraction2"
-      fieldName="traction"
+      fieldName="backgroundShearStress"
       initialCondition="1"
       objectPath="ElementRegions/Fault/FractureSubRegion"
-      component="2"
+      component="1"
       scale="21.2132034356"
       setNames="{all}"/>  
     <FieldSpecification
@@ -111,19 +101,12 @@
       scale="0.6"
       setNames="{all}"/>
     <FieldSpecification
-      name="slipRate"
-      fieldName="slipRate"
-      initialCondition="1"
-      objectPath="ElementRegions/Fault/FractureSubRegion"
-      scale="1.0e-6"
-      setNames="{all}"/>
-    <FieldSpecification
       name="slipVelocity1"
       fieldName="slipVelocity"
       initialCondition="1"
       objectPath="ElementRegions/Fault/FractureSubRegion"
       component="0"
-      scale="0."
+      scale="0.70710678118e-6"
       setNames="{all}"/>               
     <FieldSpecification
       name="slipVelocity2"
@@ -131,7 +114,7 @@
       initialCondition="1"
       objectPath="ElementRegions/Fault/FractureSubRegion"
       component="1"
-      scale="0."
+      scale="0.70710678118e-6"
       setNames="{all}"/>               
   </FieldSpecifications>
 
@@ -139,6 +122,7 @@
     <VTK
       name="vtkOutput"
       plotFileRoot="springSlider"/>
+
     <Restart
       name="restart"/>  
 

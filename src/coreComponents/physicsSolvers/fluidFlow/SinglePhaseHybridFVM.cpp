@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: LGPL-2.1-only
  *
  * Copyright (c) 2016-2024 Lawrence Livermore National Security LLC
- * Copyright (c) 2018-2024 Total, S.A
+ * Copyright (c) 2018-2024 TotalEnergies
  * Copyright (c) 2018-2024 The Board of Trustees of the Leland Stanford Junior University
  * Copyright (c) 2023-2024 Chevron
  * Copyright (c) 2019-     GEOS/GEOSX Contributors
@@ -309,25 +309,6 @@ void SinglePhaseHybridFVM::assembleEDFMFluxTerms( real64 const GEOS_UNUSED_PARAM
                      dofManager,
                      localMatrix,
                      localRhs );
-}
-
-void SinglePhaseHybridFVM::assembleHydrofracFluxTerms( real64 const time_n,
-                                                       real64 const dt,
-                                                       DomainPartition const & domain,
-                                                       DofManager const & dofManager,
-                                                       CRSMatrixView< real64, globalIndex const > const & localMatrix,
-                                                       arrayView1d< real64 > const & localRhs,
-                                                       CRSMatrixView< real64, localIndex const > const & dR_dAper )
-{
-  GEOS_UNUSED_VAR ( time_n );
-  GEOS_UNUSED_VAR ( dt );
-  GEOS_UNUSED_VAR ( domain );
-  GEOS_UNUSED_VAR ( dofManager );
-  GEOS_UNUSED_VAR ( localMatrix );
-  GEOS_UNUSED_VAR ( localRhs );
-  GEOS_UNUSED_VAR ( dR_dAper );
-
-  GEOS_ERROR( "Poroelastic fluxes with conforming fractures not yet implemented." );
 }
 
 void SinglePhaseHybridFVM::applyBoundaryConditions( real64 const time_n,
