@@ -305,6 +305,14 @@ private:
 
 private:
 
+  /**
+   * @brief Utility function to validate the consistency of Dirichlet BC input
+   * @param[in] domain the domain partition
+   * @param[in] time the time at the end of the time step (time_n + dt)
+   */
+  bool validateDirichletBC( DomainPartition & domain,
+                            real64 const time ) const;
+
   virtual void setConstitutiveNames( ElementSubRegionBase & subRegion ) const override;
 
 };

@@ -30,7 +30,9 @@
 #include "constitutive/capillaryPressure/capillaryPressureSelector.hpp"
 #include "constitutive/relativePermeability/RelativePermeabilitySelector.hpp"
 
+#include "fieldSpecification/EquilibriumInitialCondition.hpp"
 #include "fieldSpecification/SourceFluxBoundaryCondition.hpp"
+#include "physicsSolvers/fluidFlow/SourceFluxStatistics.hpp"
 
 #include "constitutive/ConstitutivePassThru.hpp"
 #include "constitutive/fluid/twophasefluid/TwoPhaseFluid.hpp"
@@ -677,13 +679,126 @@ void ImmiscibleMultiphaseFlow::applyBoundaryConditions( real64 const time_n,
 namespace
 {
 char const bcLogMessage[] =
-  "CompositionalMultiphaseBase {}: at time {}s, "
+  "ImmiscibleMultiphaseFlow {}: at time {}s, "
   "the <{}> boundary condition '{}' is applied to the element set '{}' in subRegion '{}'. "
   "\nThe scale of this boundary condition is {} and multiplies the value of the provided function (if any). "
   "\nThe total number of target elements (including ghost elements) is {}. "
   "\nNote that if this number is equal to zero for all subRegions, the boundary condition will not be applied on this element set.";
 }
 
+bool ImmiscibleMultiphaseFlow::validateDirichletBC( DomainPartition & domain,
+                                                       real64 const time ) const
+{
+  constexpr integer MAX_NP = 2;
+  FieldSpecificationManager & fsManager = FieldSpecificationManager::getInstance();
+
+  bool bcConsistent = true;
+
+  forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
+                                                               MeshLevel & mesh,
+                                                               arrayView1d< string const > const & )
+  {
+    // map: regionName -> subRegionName -> setName -> numPhases to check pressure/phase are present consistent
+    map< string, map< string, map< string, ComponentMask< MAX_NP > > > > bcPresCompStatusMap;
+
+    // 1. Check pressure Dirichlet BCs
+    fsManager.apply< ElementSubRegionBase >( time,
+                                             mesh,
+                                             fields::flow::pressure::key(),
+                                             [&]( FieldSpecificationBase const &,
+                                                  string const & setName,
+                                                  SortedArrayView< localIndex const > const &,
+                                                  ElementSubRegionBase & subRegion,
+                                                  string const & )
+    {
+      // Check whether pressure has already been applied to this set
+      string const & subRegionName = subRegion.getName();
+      string const & regionName = subRegion.getParent().getParent().getName();
+
+      auto & subRegionSetMap = bcPresCompStatusMap[regionName][subRegionName];
+      if( subRegionSetMap.count( setName ) > 0 )
+      {
+        bcConsistent = false;
+        GEOS_WARNING( BCMessage::pressureConflict( regionName, subRegionName, setName,
+                                                   fields::flow::pressure::key() ) );
+      }
+      subRegionSetMap[setName].setNumComp( m_numPhases );
+     } );
+    // 2. Check saturation Dirichlet BCs
+       fsManager.apply< ElementSubRegionBase >( time,
+                                             mesh,
+                                             fields::immiscibleMultiphaseFlow::phaseVolumeFraction::key(),
+                                             [&] ( FieldSpecificationBase const & fs,
+                                                   string const & setName,
+                                                   SortedArrayView< localIndex const > const &,
+                                                   ElementSubRegionBase & subRegion,
+                                                   string const & )
+    {
+      string const & subRegionName = subRegion.getName(   );
+      string const & regionName = subRegion.getParent().getParent().getName();
+      integer const comp = fs.getComponent();
+
+      auto & subRegionSetMap = bcPresCompStatusMap[regionName][subRegionName];
+      if( subRegionSetMap.count( setName ) == 0 )
+      {
+        bcConsistent = false;
+        GEOS_WARNING( BCMessage::missingPressure( regionName, subRegionName, setName,
+                                                  fields::flow::pressure::key() ) );
+      }
+      if( comp < 0 || comp >= m_numPhases )
+      {
+        bcConsistent = false;
+        GEOS_WARNING( BCMessage::invalidComponentIndex( comp, fs.getName(),
+                                                        fields::immiscibleMultiphaseFlow::phaseVolumeFraction::key() ) );
+        return; // can't check next part with invalid component id
+      }
+
+      ComponentMask< MAX_NP > & compMask = subRegionSetMap[setName];
+      if( compMask[comp] )
+      {
+        bcConsistent = false;
+        fsManager.forSubGroups< EquilibriumInitialCondition >( [&] ( EquilibriumInitialCondition const & bc )
+        {
+          arrayView1d< string const > componentNames = bc.getComponentNames();
+          GEOS_WARNING( BCMessage::conflictingComposition( comp, componentNames[comp],
+                                                           regionName, subRegionName, setName,
+                                                           fields::immiscibleMultiphaseFlow::phaseVolumeFraction::key() ) );
+        } );
+      }
+      compMask.set( comp );
+    } );
+
+    // 3.2 Check consistency between composition BC applied to sets
+    // Note: for a temperature-only boundary condition, this loop does not do anything
+    for( auto const & regionEntry : bcPresCompStatusMap )
+    {
+      for( auto const & subRegionEntry : regionEntry.second )
+      {
+        for( auto const & setEntry : subRegionEntry.second )
+        {
+          ComponentMask< MAX_NP > const & compMask = setEntry.second;
+
+          fsManager.forSubGroups< EquilibriumInitialCondition >( [&] ( EquilibriumInitialCondition const & fs )
+          {
+            arrayView1d< string const > componentNames = fs.getComponentNames();
+            for( int ic = 0; ic < componentNames.size(); ic++ )
+            {
+              if( !compMask[ic] )
+              {
+                bcConsistent = false;
+                GEOS_WARNING( BCMessage::notAppliedOnRegion( ic, componentNames[ic],
+                                                             regionEntry.first, subRegionEntry.first, setEntry.first,
+                                                             fields::immiscibleMultiphaseFlow::phaseVolumeFraction::key() ) );
+              }
+            }
+          } );
+        }
+      }
+    }
+  } ); 
+
+  return bcConsistent;
+}
 
 void ImmiscibleMultiphaseFlow::applyDirichletBC( real64 const time_n,
                                                  real64 const dt,
@@ -694,12 +809,12 @@ void ImmiscibleMultiphaseFlow::applyDirichletBC( real64 const time_n,
 {
   GEOS_MARK_FUNCTION;
 
-  // // Only validate BC at the beginning of Newton loop
-  // if( m_nonlinearSolverParameters.m_numNewtonIterations == 0 )
-  // {
-  //   bool const bcConsistent = validateDirichletBC( domain, time_n + dt );
-  //   GEOS_ERROR_IF( !bcConsistent, GEOS_FMT( "CompositionalMultiphaseBase {}: inconsistent boundary conditions", getDataContext() ) );
-  // }
+  // Only validate BC at the beginning of Newton loop
+  if( m_nonlinearSolverParameters.m_numNewtonIterations == 0 )
+  {
+    bool const bcConsistent = validateDirichletBC( domain, time_n + dt );
+    GEOS_ERROR_IF( !bcConsistent, GEOS_FMT( "ImmiscibleMultiphaseFlow {}: inconsistent boundary conditions", getDataContext() ) );
+  }
 
   FieldSpecificationManager & fsManager = FieldSpecificationManager::getInstance();
 
@@ -719,7 +834,7 @@ void ImmiscibleMultiphaseFlow::applyDirichletBC( real64 const time_n,
     globalIndex const rankOffset = dofManager.rankOffset();
     string const dofKey = dofManager.getKey( viewKeyStruct::elemDofFieldString() );
 
-    // 3. Call constitutive update, back-calculate target global component densities and apply to the system
+    // 3. Call constitutive update
     fsManager.apply< ElementSubRegionBase >( time_n + dt,
                                              mesh,
                                              fields::flow::pressure::key(),
@@ -939,18 +1054,17 @@ void ImmiscibleMultiphaseFlow::applySourceFluxBC( real64 const time,
         }
       } );
 
-      // SourceFluxStatsAggregator::forAllFluxStatWrappers( subRegion, fs.getName(),
-      //                                                    [&]( SourceFluxStatsAggregator::WrappedStats & wrapper )
-      // {
-      //   // set the new sub-region statistics for this timestep
-      //   array1d< real64 > massProdArr{ m_numPhases };
-      //   massProdArr[fluidPhaseId] = massProd.get();
-      //   wrapper.gatherTimeStepStats( time, dt, massProdArr.toViewConst(), targetSet.size() );
-      // } );
+      SourceFluxStatsAggregator::forAllFluxStatWrappers( subRegion, fs.getName(),
+                                                         [&]( SourceFluxStatsAggregator::WrappedStats & wrapper )
+      {
+        // set the new sub-region statistics for this timestep
+        array1d< real64 > massProdArr{ m_numPhases };
+        massProdArr[fluidPhaseId] = massProd.get();
+        wrapper.gatherTimeStepStats( time, dt, massProdArr.toViewConst(), targetSet.size() );
+      } );
     } );
   } );
 }
-
 
 real64 ImmiscibleMultiphaseFlow::calculateResidualNorm( real64 const & GEOS_UNUSED_PARAM( time_n ),
                                                         real64 const & GEOS_UNUSED_PARAM( dt ),
