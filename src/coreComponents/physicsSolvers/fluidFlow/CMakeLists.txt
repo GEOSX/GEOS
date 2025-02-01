@@ -7,6 +7,8 @@ set( physicsSolvers_headers
      fluidFlow/CompositionalMultiphaseBaseFields.hpp
      fluidFlow/CompositionalMultiphaseStatistics.hpp
      fluidFlow/CompositionalMultiphaseFVM.hpp
+     fluidFlow/ImmiscibleMultiphaseFlow.hpp
+     fluidFlow/ImmiscibleMultiphaseFlowFields.hpp
      fluidFlow/CompositionalMultiphaseHybridFVM.hpp
      fluidFlow/CompositionalMultiphaseUtilities.hpp
      fluidFlow/ReactiveCompositionalMultiphaseOBL.hpp
@@ -109,6 +111,7 @@ set( physicsSolvers_sources
      fluidFlow/CompositionalMultiphaseBase.cpp
      fluidFlow/CompositionalMultiphaseFVM.cpp
      fluidFlow/CompositionalMultiphaseStatistics.cpp
+     fluidFlow/ImmiscibleMultiphaseFlow.cpp
      fluidFlow/CompositionalMultiphaseHybridFVM.cpp
      fluidFlow/ReactiveCompositionalMultiphaseOBL.cpp
      fluidFlow/FlowSolverBase.cpp

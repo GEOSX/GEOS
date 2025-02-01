@@ -21,6 +21,7 @@
 #define GEOS_COMMON_DATALAYOUTS_HPP_
 
 #include "common/GeosxConfig.hpp"
+#include "common/DataTypes.hpp"
 
 #include "LvArray/src/Array.hpp"
 #include "RAJA/RAJA.hpp"
@@ -204,6 +205,44 @@ static constexpr int STRESS_USD = LvArray::typeManipulation::getStrideOneDimensi
 static constexpr int STIFFNESS_USD = LvArray::typeManipulation::getStrideOneDimension( STIFFNESS_PERMUTATION {} );
 
 } // namespace solid
+
+
+namespace immiscibleFlow
+{
+#if defined( GEOS_USE_DEVICE )
+
+/// Phase property array layout
+using LAYOUT_PHASE = RAJA::PERM_JI;
+
+/// Phase property array layout
+using LAYOUT_PHASE_DS = RAJA::PERM_JKI;
+
+#else
+
+/// Phase property array layout
+using LAYOUT_PHASE = RAJA::PERM_IJ;
+
+/// Phase property array layout
+using LAYOUT_PHASE_DS = RAJA::PERM_IJK;
+
+#endif
+
+/// Phase property unit stride dimension
+static constexpr int USD_PHASE = LvArray::typeManipulation::getStrideOneDimension( LAYOUT_PHASE{} );
+
+/// Phase property compositional derivative unit stride dimension
+static constexpr int USD_PHASE_DS = LvArray::typeManipulation::getStrideOneDimension( LAYOUT_PHASE_DS{} );
+
+/// indices of pressure and saturation derivatives
+struct DerivativeOffset
+{
+  /// index of derivative wrt pressure
+  static int constexpr dP = 0;
+  /// index of first derivative wrt compositions
+  static int constexpr dS = 1;
+};
+
+} // namespace immiscibleFlow
 
 namespace compflow
 {

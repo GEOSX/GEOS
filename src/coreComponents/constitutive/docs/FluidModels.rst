@@ -11,6 +11,8 @@ single fluids and fluid mixtures.
 
    CompressibleSinglePhaseFluid
 
+   TwoPhaseFluid
+
    BlackOilFluid
 
    CompositionalMultiphaseFluid

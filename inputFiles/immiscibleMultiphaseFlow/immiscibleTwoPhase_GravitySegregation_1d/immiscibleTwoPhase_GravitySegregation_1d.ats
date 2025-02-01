@@ -1,0 +1,18 @@
+from geos.ats.test_builder import TestDeck, RestartcheckParameters, generate_geos_tests
+
+restartcheck_params = {}
+restartcheck_params['atol'] = 1.0E-8
+restartcheck_params['rtol'] = 1.0E-8
+
+decks = [
+    TestDeck(
+        name="immiscibleTwoPhase_GravitySegregation_1d",
+        description=
+        'Test that 2 fluids can be seperated based on gravity.',
+        partitions=((1, 1, 1), ),
+        restart_step=0,
+        check_step=45,
+        restartcheck_params=RestartcheckParameters(**restartcheck_params))
+]
+
+generate_geos_tests(decks)
