@@ -57,7 +57,7 @@ if __name__ == "__main__":
     
     # Plotting
     _, ax1 = plt.subplots()
-    # _, ax2 = plt.subplots()
+    _, ax2 = plt.subplots()
     
     positions_along_fault = [0., 500., 1500., 2500., 3500., 5000., 7500., -1500.]
     set_names = ["source", "receiver1", "receiver2", "receiver3", "receiver4", "receiver5", "receiver6", "receiver7"]
@@ -73,10 +73,15 @@ if __name__ == "__main__":
         ax1.tick_params(axis='y', labelcolor='tab:blue')
         ax1.legend(bbox_to_anchor=(1.05, 1.0), loc='upper left')
         
+        _, slipRate = getDataFromHDF5( filePath, "slipRate", set_name)
+        ax2.plot(time_in_years, slipRate, label=f"Slip Rate z = {position} m")
+        ax2.set_yscale('log')
+        ax2.tick_params(axis='y', labelcolor='tab:red')
+        ax2.legend(bbox_to_anchor=(1.05, 1.0), loc='upper left')
 
     # Set x-axis limits to 0 to 2 years
     ax1.set_xlim(0, np.max(time_in_years))
-    # ax2.set_xlim(0, np.max(time_in_years))
+    ax2.set_xlim(0, np.max(time_in_years))
 
 
     # Add grid and title
