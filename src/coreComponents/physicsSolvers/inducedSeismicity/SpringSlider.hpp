@@ -49,6 +49,12 @@ public:
                                  real64 const & dt,
                                  const int cycleNumber,
                                  DomainPartition & domain ) const override final;
+  
+  void resetStateToBeginningOfStep( DomainPartition & domain ) override final
+  {
+    GEOS_UNUSED_VAR(domain);
+    return;
+  };                               
 
 private:
 

@@ -57,8 +57,8 @@
         lineSearchMaxCuts="2"
         maxTimeStepCuts="1"/>
       <LinearSolverParameters
-        solverType="direct"
-        directParallel="0"
+        solverType="gmres"
+        preconditionerType="mgr"
         logLevel="0"/>
     </SolidMechanicsLagrangeContactBubbleStab>
     
@@ -78,14 +78,15 @@
         newtonTol = "1.0e-6"
         newtonMaxIter ="8"/>
       <LinearSolverParameters
-        solverType="direct"
-        directParallel="0"/>   
+        solverType="gmres"
+        preconditionerType="amg"
+        logLevel="0"/>  
     </SinglePhaseFVM>
   </Solvers>
 
 
   <Events
-    maxTime="6.312e7">
+    maxTime="1e6">
 
    <!-- fault generation  -->
    <SoloEvent 

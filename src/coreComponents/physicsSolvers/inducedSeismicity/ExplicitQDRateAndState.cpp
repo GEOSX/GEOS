@@ -86,21 +86,39 @@ real64 ExplicitQDRateAndState::solverStep( real64 const & time_n,
   {
     real64 dtStress; GEOS_UNUSED_VAR( dtStress );
 
+    //
     // Initial Runge-Kutta stage
+    // 
+
+    // Evolve ODE:s for slip and state evolution
     stepRateStateODEInitialSubstage( dtAdaptive, domain );
-    real64 dtStage = m_butcherTable.c[1]*dtAdaptive;
+    
+    // Compute stresses (linear mechanic + fluid solve) at next substage
+    real64 dtStage = m_butcherTable.c[1]*dtAdaptive;  // Stage time step size
     dtStress = updateStresses( time_n, dtStage, cycleNumber, domain );
     updateSlipVelocity( time_n, dtStage, domain );
 
-    // Remaining stages
+    //
+    // Remaining Runge-Kutta stages
+    //
     for( integer stageIndex = 1; stageIndex < m_butcherTable.numStages-1; stageIndex++ )
     {
+      // Evolve ODE:s for slip and state evolution
       stepRateStateODESubstage( stageIndex, dtAdaptive, domain );
-      dtStage = m_butcherTable.c[stageIndex+1]*dtAdaptive;
+
+      // Compute stresses (linear mechanic + fluid solve) at next substage
+      // Need to reset stress solver to beginning of time step to not
+      // accumulate field in the stages.
+      resetStateToBeginningOfStep( domain ); 
+      dtStage = m_butcherTable.c[stageIndex+1]*dtAdaptive; // Stage time step size
       dtStress = updateStresses( time_n, dtStage, cycleNumber, domain );
+
+      // Compute slip velocity using updated stresses and state
       updateSlipVelocity( time_n, dtStage, domain );
     }
 
+    // Evolve rate-and-state ODE:s to next time step and compute
+    // time step error
     stepRateStateODEAndComputeError( dtAdaptive, domain );
     // Update timestep based on the time step error
     evalTimestep( domain );
@@ -109,6 +127,7 @@ real64 ExplicitQDRateAndState::solverStep( real64 const & time_n,
       // Compute stresses, and slip velocity and save results at time_n + dtAdapitve
       if( !m_butcherTable.FSAL )
       {
+        resetStateToBeginningOfStep( domain ); // Reset stress fields
         dtStress = updateStresses( time_n, dtAdaptive, cycleNumber, domain );
         updateSlipVelocity( time_n, dtAdaptive, domain );
       }

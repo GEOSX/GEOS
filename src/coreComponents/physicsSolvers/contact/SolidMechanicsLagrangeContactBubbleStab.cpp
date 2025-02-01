@@ -48,7 +48,7 @@ SolidMechanicsLagrangeContactBubbleStab::SolidMechanicsLagrangeContactBubbleStab
 
   LinearSolverParameters & linSolParams = m_linearSolverParameters.get();
   linSolParams.mgr.strategy = LinearSolverParameters::MGR::StrategyType::lagrangianContactMechanicsBubbleStab;
-  linSolParams.mgr.separateComponents = true;
+  linSolParams.mgr.separateComponents = false;
   linSolParams.dofsPerNode = 3;
 }
 
@@ -896,6 +896,8 @@ void SolidMechanicsLagrangeContactBubbleStab::updateStickSlipList( DomainPartiti
 
     arrayView1d< integer const > const fractureState = subRegion.getField< contact::fractureState >();
 
+    // std::cout << fractureState << std::endl;
+
     forFiniteElementOnFractureSubRegions( meshName, [&] ( string const & finiteElementName,
                                                           finiteElement::FiniteElementBase const &,
                                                           arrayView1d< localIndex const > const & faceElementList )
@@ -910,6 +912,8 @@ void SolidMechanicsLagrangeContactBubbleStab::updateStickSlipList( DomainPartiti
 
       arrayView1d< localIndex > const keys_v = keys.toView();
       arrayView1d< localIndex > const vals_v = vals.toView();
+
+      // std::cout<< faceElementList.size() << std::endl;
       forAll< parallelDevicePolicy<> >( faceElementList.size(),
                                         [ = ]
                                         GEOS_HOST_DEVICE ( localIndex const kfe )
@@ -965,7 +969,7 @@ void SolidMechanicsLagrangeContactBubbleStab::updateStickSlipList( DomainPartiti
       this->m_faceTypesToFaceElementsStick[meshName][finiteElementName] =  stickList;
       this->m_faceTypesToFaceElementsSlip[meshName][finiteElementName]  =  slipList;
 
-      GEOS_LOG_LEVEL_INFO_RANK_0( logInfo::Configuration, GEOS_FMT( "# stick elements: {}, # slip elements: {}", nStick, nSlip ))
+      GEOS_LOG_LEVEL_INFO_BY_RANK( logInfo::Configuration, GEOS_FMT( "# stick elements: {}, # slip elements: {}", nStick, nSlip ))
     } );
   } );
 

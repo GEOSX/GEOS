@@ -108,6 +108,12 @@ real64 QuasiDynamicEarthQuake< RSSOLVER_TYPE >::updateStresses( real64 const & t
 }
 
 template< typename RSSOLVER_TYPE >
+void QuasiDynamicEarthQuake< RSSOLVER_TYPE >::resetStateToBeginningOfStep( DomainPartition & domain )
+{
+  m_stressSolver->resetStateToBeginningOfStep( domain );
+}
+
+template< typename RSSOLVER_TYPE >
 void QuasiDynamicEarthQuake< RSSOLVER_TYPE >::setTargetDispJump( DomainPartition & domain ) const
 {
   this->forDiscretizationOnMeshTargets( domain.getMeshBodies(), [&]( string const &,
